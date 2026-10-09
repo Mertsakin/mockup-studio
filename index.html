@@ -14,6 +14,7 @@
   <aside class="panel" aria-label="Ayarlar">
     <header class="brand">
       <h1>Mockup stüdyosu</h1>
+      <a class="brand-link" href="showcases.html">Hazır şablonlar →</a>
       <p>Ekran görüntülerini cihazlara yerleştir, sahneyi kur, istediğin açılardan yüksek çözünürlükte indir.</p>
     </header>
 
@@ -49,7 +50,7 @@
         <div class="seg" data-dkey="fit"><button data-v="cover">Doldur</button><button data-v="contain">Sığdır</button><button data-v="stretch">Esnet</button></div>
       </div>
       <div class="row" id="screenBgRow"><label class="lbl" for="screenBg">Boşluk rengi</label><input type="color" id="screenBg"></div>
-      <div class="row" data-for="phone tablet laptop monitor browser"><span class="lbl">Ekran camı yansıması</span><label class="switch"><input type="checkbox" id="glare" aria-label="Ekran camı yansıması"><span></span></label></div>
+      <div class="row" data-for="phone tablet laptop monitor browser page"><span class="lbl">Ekran camı yansıması</span><label class="switch"><input type="checkbox" id="glare" aria-label="Ekran camı yansıması"><span></span></label></div>
       <div class="row" data-for="phone tablet"><span class="lbl">Yön</span>
         <div class="seg" data-dkey="landscape"><button data-v="false">Dikey</button><button data-v="true">Yatay</button></div>
       </div>
@@ -63,8 +64,11 @@
       <div class="row" data-for="browser"><span class="lbl">Pencere oranı</span>
         <div class="seg" data-dkey="winRatio"><button data-v="16:9">16:9</button><button data-v="16:10">16:10</button><button data-v="4:3">4:3</button></div>
       </div>
+      <div class="row" data-for="page"><span class="lbl">Oran</span>
+        <div class="seg" data-dkey="pageRatio"><button data-v="16:10">16:10</button><button data-v="4:3">4:3</button><button data-v="3:4">3:4</button><button data-v="9:16">9:16</button></div>
+      </div>
       <div class="row" data-for="browser"><label class="lbl" for="url">Adres</label><input type="text" id="url" spellcheck="false" autocomplete="off"></div>
-      <div data-for="phone tablet laptop monitor">
+      <div data-for="phone tablet laptop monitor page">
         <span class="lbl block">Gövde rengi</span>
         <div class="swatches" id="swatches"></div>
         <span class="lbl block">Yüzey</span>
@@ -122,9 +126,11 @@
 
     <section>
       <h2>Arka plan</h2>
-      <div class="seg seg-wide" data-key="bg"><button data-v="transparent">Şeffaf</button><button data-v="solid">Düz</button><button data-v="gradient">Geçişli</button></div>
+      <div class="seg seg-wide" data-key="bg"><button data-v="transparent">Şeffaf</button><button data-v="solid">Düz</button><button data-v="gradient">Geçişli</button><button data-v="pattern">Desenli</button></div>
       <div class="row" data-bg="solid"><label class="lbl" for="solid">Renk</label><input type="color" id="solid"></div>
       <div class="row" data-bg="gradient"><span class="lbl">Renkler</span><span class="pair"><input type="color" id="bg1" aria-label="Başlangıç rengi"><input type="color" id="bg2" aria-label="Bitiş rengi"></span></div>
+      <div class="seg seg-wide" data-key="pattern" data-bg="pattern" role="group" aria-label="Desen"><button data-v="shards">Kırık ışık</button><button data-v="grid">Izgara</button><button data-v="glow">Parıltı</button><button data-v="circle">Daire</button></div>
+      <div class="row" data-bg="pattern"><span class="lbl">Zemin ve vurgu</span><span class="pair"><input type="color" id="pbase" aria-label="Zemin rengi"><input type="color" id="paccent" aria-label="Vurgu rengi"></span></div>
     </section>
   </aside>
 
@@ -133,8 +139,9 @@
       <div class="tb-left">
         <div class="seg" data-key="mode" role="group" aria-label="Sürükleme davranışı"><button data-v="rotate">Döndür</button><button data-v="move">Taşı</button></div>
         <div class="seg" data-key="ratio" role="group" aria-label="Görsel oranı">
-          <button data-v="1:1">1:1</button><button data-v="4:5">4:5</button><button data-v="9:16">9:16</button><button data-v="16:9">16:9</button><button data-v="4:3">4:3</button>
+          <button data-v="1:1">1:1</button><button data-v="4:5">4:5</button><button data-v="9:16">9:16</button><button data-v="16:9">16:9</button><button data-v="4:3">4:3</button><button data-v="21:9">21:9</button><button data-v="custom">Özel</button>
         </div>
+        <span class="artboard" id="artboard"><input type="number" id="customW" min="64" max="8192" step="1" inputmode="numeric" aria-label="Genişlik (px)"><span aria-hidden="true">×</span><input type="number" id="customH" min="64" max="8192" step="1" inputmode="numeric" aria-label="Yükseklik (px)"><span class="unit">px</span></span>
       </div>
       <div class="tb-right">
         <button class="btn" id="fitBtn" type="button">Kadraja sığdır</button>

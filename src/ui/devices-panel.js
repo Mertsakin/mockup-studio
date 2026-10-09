@@ -64,7 +64,7 @@ function applyComp(c){
   const next=c.items.map(it=>{
     const r=(pool[it.type]||[]).shift();
     const nd=newDevice(it.type,{colorKey:base.colorKey,custom:base.custom});
-    if(r)['img','imgName','fit','screenBg','glare','finish','notch','url','theme','winRatio','frameImg','frameName','screenRect','colorKey','custom','lidAngle','backFinish'].forEach(k=>nd[k]=r[k]);
+    if(r)['img','imgName','fit','screenBg','glare','finish','notch','url','theme','winRatio','frameImg','frameName','screenRect','colorKey','custom','lidAngle','backFinish','pageRatio'].forEach(k=>nd[k]=r[k]);
     return Object.assign(nd,it);
   });
   [...RT.keys()].forEach(disposeRT);
@@ -98,7 +98,7 @@ function onDevice(key,d){
   else if(key==='notch'){if(o.hole)o.hole.visible=d.notch==='hole';req();}
   else if(key==='fit')setScreenTexture(d);
   else if(key==='theme'){applyColorTo(o.mats,d);updateChrome(d);req();}
-  else if(key==='winRatio')rebuild(d,true);
+  else if(key==='winRatio'||key==='pageRatio')rebuild(d,true);
   syncUI();
 }
 const screenBgEl=$('#screenBg');screenBgEl.addEventListener('input',()=>{const d=sel();d.screenBg=screenBgEl.value;setScreenTexture(d);});

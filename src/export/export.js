@@ -14,7 +14,8 @@ const PHOTO_SAMPLES=128;
 // onProgress(0..1) is called while a photo-quality (path traced) render runs
 async function renderExport(onProgress){
   const [rw,rh]=ratioNums(),L=state.size;let W,H;
-  if(rw>=rh){W=L;H=Math.round(L*rh/rw);}else{H=L;W=Math.round(L*rw/rh);}
+  if(state.ratio==='custom'){W=state.customW;H=state.customH;}  // exact artboard size
+  else if(rw>=rh){W=L;H=Math.round(L*rh/rw);}else{H=L;W=Math.round(L*rw/rh);}
   const pr=renderer.getPixelRatio();
   renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
   LRT.forEach(o=>o.marker.visible=false);

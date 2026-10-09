@@ -1,0 +1,20 @@
+/* Showcases page; colours come from the tokens in style.css */
+body.sc{height:auto;min-height:100%;background:var(--bg)}
+.sc-head{max-width:1280px;margin:0 auto;padding:32px 24px 8px}
+.sc-back{display:inline-block;color:var(--muted);text-decoration:none;font-size:14px;margin-bottom:14px}
+.sc-back:hover{color:var(--ink)}
+.sc-head h1{font-size:32px;line-height:1.1;letter-spacing:-.02em;margin:0 0 8px;font-weight:700}
+.sc-head p{margin:0 0 18px;color:var(--muted);max-width:62ch}
+.sc-filter{flex-wrap:wrap}
+.sc-grid{max-width:1280px;margin:0 auto;padding:16px 24px 64px;columns:4 260px;column-gap:16px}
+.sc-card{display:block;break-inside:avoid;margin:0 0 16px;text-decoration:none;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:transform .15s ease,box-shadow .15s ease}
+.sc-card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(10,14,20,.14)}
+.sc-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sc-thumb{background:var(--field)}
+.sc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.sc-meta{display:flex;flex-direction:column;gap:2px;padding:10px 12px 12px}
+.sc-name{font-weight:600}
+.sc-sub{font-size:13px;color:var(--muted)}
+@media (max-width:600px){.sc-head{padding:24px 16px 4px}.sc-grid{padding:12px 16px 48px}}
+@media (prefers-reduced-motion:reduce){.sc-card{transition:none}.sc-card:hover{transform:none}}

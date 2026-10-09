@@ -32,6 +32,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/debug.js` | yalnızca dev: modülleri test düzeneğine `window.__app` olarak açar |
 | `src/util.js` | `$`, `$$`, `D2R`, `V3`, `clamp`, `wrap`, `mkCanvas`, `roundRect`, `rng` |
 | `src/state/constants.js` | `TYPES`, `DEFAULT_SCENE`, `COLORS`, `THEMES`, `PRESETS` (sahne açıları), `COMPS` (hazır kompozisyonlar), `DEFAULT_FINISH` |
+| `src/state/templates.js` | 20 hazır şablon (`TEMPLATES`, `FORMATS`): oran, sahne, arka plan, ışık preset adı, cihazlar. `ui/templates.js` `applyTemplate` ile normal duruma çevirir; `?template=<id>` stüdyoyu o şablonla açar |
 | `src/state/state.js` | `state`, `newDevice()`, `byId`, `sel`, `view` (`fitRadius`, `fitBox`, `aspect`) |
 | `src/render/pcss.js` | `patchShadows`: `THREE.ShaderChunk.shadowmap_pars_fragment` yaması; `BasicShadowMap`'in `getShadow` / `getPointShadow`'unu PCSS sürümleriyle değiştirir (aşağıya bak) |
 | `src/render/renderer.js` | renderer (ACES, sRGB çıkış, `BasicShadowMap`), sahne, kamera, `LIGHT_SCALE`, `req()` (render kirli bayrağı) |
@@ -39,10 +40,11 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/render/transform.js` | `refit` (kadraj), `extents`, `camDist`, `applyTransform` (her değişiklikte çağrılan ana güncelleme) |
 | `src/render/environment.js` | ışıklara göre üretilen PMREM ortamı: `rebuildEnv`, `scheduleEnv` (debounce + imza) |
 | `src/render/pathtrace.js` | fotoğraf kalitesinde dışa aktarım (three-gpu-pathtracer): ışıkları alan ışıklarına, ekranları ışık yayan cama çevirir, zemin açık ve arka plan opaksa stüdyo fonu ekler; render sonrası sahneyi geri yükler |
+| `src/render/backgrounds.js` | desenli arka planlar (`drawPattern`: kırık ışık, ızgara, parıltı, daire). Önizleme ve dışa aktarım aynı çizimi kullanır |
 | `src/render/accumulation.js` | ilerlemeli render: `ACC`, `hookSeed`, `renderSample`, `present`, `renderNow`, `startLoop` |
 | `src/devices/materials.js` | `M` (cam, lens, tuş, port, kauçuk, ekran camı yansıma katmanı `M.glare`), `tex`, prosedürel fırçalanmış/kumlanmış haritalar, `FINISHES`, `applyFinish`, `applyColorTo` |
 | `src/devices/geometry.js` | `rrShape(w,h,r,cx,cy)` (köşe başına yarıçap destekler), `flatRR`, `slab` (pahlı ekstrüzyon), `lens`, `hole`, `onSide`, doku üreticiler |
-| `src/devices/{phone,tablet,laptop,monitor,browser,custom}.js` | cihaz kurucuları; `details/phone.js` (anten bantları, portlar), `keyboard.js` (`KB_ROWS` Türkçe Q, `buildKeyboard` genişlik başına `InstancedMesh`), `index.js` (`BUILDERS`) |
+| `src/devices/{phone,tablet,laptop,monitor,browser,page,custom}.js` | cihaz kurucuları; `details/phone.js` (anten bantları, portlar), `keyboard.js` (`KB_ROWS` Türkçe Q, `buildKeyboard` genişlik başına `InstancedMesh`), `index.js` (`BUILDERS`) |
 | `src/devices/rt.js` | `RT` Map (id → mesh grubu + materyaller), `setHolder` |
 | `src/devices/runtime.js` | `buildRT`, `disposeRT`, `rebuild` |
 | `src/devices/screen.js` | `setScreenTexture`, `drawFit`, `customCanvas`, `updateChrome`, `detectScreen` (çerçeve PNG'sinde şeffaf ekran alanını flood-fill ile bulur) |
@@ -52,7 +54,8 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/ui/sync.js` | `syncUI` / `syncAll`: her panel kendi parçasını `onSyncUI(d => …)` ile kaydeder |
 | `src/ui/*.js` | `layout` (kadraj, arka plan), `sliders`, `controls` (genel segmentler, anahtarlar), `devices-panel` (cihaz listesi, tip, kompozisyon, renk/yüzey), `lights-panel`, `angles` (hazır/kayıtlı açılar), `image-input`, `pointer` (sahne sürükleme, `pickLight`, `dragLight3D`), `dome` (ışık haritası, `renderDome`, `setFromDome`), `toast` |
 | `src/export/export.js` | `renderExport(onProgress)` (`state.quality`: `fast` raster / `photo` yol izleme), `offer` (`<a download>` ile indirme), ZIP toplu dışa aktarma (JSZip dinamik import) |
-| `index.html`, `src/style.css` | arayüz iskeleti ve stiller |
+| `index.html`, `src/style.css` | stüdyo arayüzü ve stiller |
+| `showcases.html`, `src/showcases.js`, `src/showcases.css` | şablon galerisi (3B motoru yüklemez). Önizlemeler `public/showcases/<id>.jpg`: şablon ya da cihaz görünümü değişince `tools/showcases/thumbs.sh [id…]` ile yeniden üret |
 
 **Bağımlılık yönü:** `state` → `render`/`devices`/`lights` → `ui` → `main`. Döngüsel import yok, öyle kalsın. Alt katman UI'a ihtiyaç duyarsa kanca kullan (ör. `onLightsUpdated`, `onSyncUI`). Başka modülden yeniden atanması gereken değerler `export let` yerine bir nesnede tutulur (`view`, `redraw`).
 

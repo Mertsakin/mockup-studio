@@ -12,7 +12,7 @@ import {D2R,V3} from '../util.js';
    - the studio lights become area lights of the same size / position, the sun a directional light;
    - screens become emissive glass (MeshBasic does not emit in the path tracer), glare and contact-shadow decals hide;
    - with the floor on and an opaque background, a seamless sweep in the background colour replaces the shadow
-     catcher (real contact shadows and occlusion); otherwise the background stays transparent and the export
+     catcher (real contact shadows and occlusion); otherwise (transparent or pattern background) the background stays transparent and the export
      composites it as usual (no floor shadow, like the raster render without a floor). The wall option is ignored.
    Calibration: an area light's radiance is chosen so its irradiance at the subject matches the raster light
    (E = intensity * LIGHT_SCALE); the environment stands in for hemisphere + reflection environment. */
@@ -61,7 +61,7 @@ async function renderPathTraced(samples,onProgress){
       targets.forEach(m=>set(m,'material',glow));added.push(glow);
     });
   });
-  const sweepOn=state.floor&&state.bg!=='transparent';
+  const sweepOn=state.floor&&(state.bg==='solid'||state.bg==='gradient');  // patterns keep their artwork: composite instead
   const env=new GradientEquirectTexture(64);env.topColor.set('#d6d8dc');env.bottomColor.set('#8a8e94');env.update();added.push(env);
   set(scene,'environment',env);set(scene,'environmentIntensity',ENV_SCALE*(.25+.75*state.ambient));
   set(scene,'background',sweepOn?env:null);set(scene,'backgroundIntensity',scene.environmentIntensity);

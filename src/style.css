@@ -23,6 +23,8 @@ body{height:100%;margin:0;background:var(--bg);color:var(--ink);
 .panel{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:22px 20px 48px}
 .brand{padding-bottom:18px}
 .brand h1{font-size:23px;line-height:1.15;letter-spacing:-.015em;margin:0 0 6px;font-weight:700}
+.brand-link{display:inline-block;margin:0 0 8px;color:var(--accent);font-size:14px;font-weight:600;text-decoration:none}
+.brand-link:hover{text-decoration:underline}
 .brand p{margin:0;color:var(--muted);font-size:14px;max-width:34ch}
 section{padding:20px 0 4px;border-top:1px solid var(--line)}
 section+section{margin-top:16px}
@@ -73,6 +75,10 @@ input[type=text]{font:inherit;font-size:13.5px;padding:7px 10px;border:1px solid
 .btn:hover{border-color:var(--muted)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.full{width:100%;text-align:center;margin-top:8px}
+/* custom artboard size (px) */
+.artboard{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:13px}
+.artboard input{font:inherit;font-size:13px;width:74px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);text-align:right}
+.artboard input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 select{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);cursor:pointer}
 .devlist{display:flex;flex-wrap:wrap;gap:6px}
 .devlist button{appearance:none;border:1px solid var(--line);background:var(--field);color:var(--ink);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer}

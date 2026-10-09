@@ -30,6 +30,12 @@
 - [ ] **Video:** döner tabla animasyonu ve uzun ekran görüntüsünün kaydırılması, MP4/WebM (MediaRecorder veya WebCodecs).
 - [ ] **Mağaza görseli üretici:** başlık/metin katmanları, App Store ve Play Store ölçülerinde toplu çıktı.
 
+## Şablonlar
+
+- [x] 20 hazır şablon ve Showcases sayfası (`showcases.html`), desenli arka planlar, 21:9 oran, "Sade ekran" cihazı.
+- [ ] Kullanıcının kendi sahnesini şablon olarak kaydetmesi (proje kaydet/aç ile birlikte).
+- [ ] Şablon kartında örnek ekran görüntüleri (şu an yer tutucu ekran).
+
 ## Bilinen sorunlar
 
 - Fırçalanmış metal uzak mesafede hafif hare (moiré) oluşturabiliyor; mip seviyesine göre normal yoğunluğu azaltılabilir.

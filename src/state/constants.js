@@ -1,5 +1,5 @@
-const TYPES={phone:'Telefon',tablet:'Tablet',laptop:'Dizüstü',monitor:'Monitör',browser:'Tarayıcı',custom:'Kendi çerçeven'};
-const DEFAULT_SCENE={phone:{rx:-6,ry:26,rz:0},tablet:{rx:-6,ry:24,rz:0},laptop:{rx:16,ry:-26,rz:0},monitor:{rx:6,ry:-22,rz:0},browser:{rx:-6,ry:22,rz:0},custom:{rx:-4,ry:22,rz:0}};
+const TYPES={phone:'Telefon',tablet:'Tablet',laptop:'Dizüstü',monitor:'Monitör',browser:'Tarayıcı',page:'Sade ekran',custom:'Kendi çerçeven'};
+const DEFAULT_SCENE={phone:{rx:-6,ry:26,rz:0},tablet:{rx:-6,ry:24,rz:0},laptop:{rx:16,ry:-26,rz:0},monitor:{rx:6,ry:-22,rz:0},browser:{rx:-6,ry:22,rz:0},page:{rx:-8,ry:18,rz:0},custom:{rx:-4,ry:22,rz:0}};
 const COLORS=[
   {k:'graphite',n:'Grafit',c:'#2b2f36',m:.55,r:.32},{k:'silver',n:'Gümüş',c:'#c8cbd0',m:.85,r:.26},
   {k:'white',n:'Beyaz',c:'#ecebe7',m:.05,r:.42},{k:'navy',n:'Gece mavisi',c:'#24304a',m:.5,r:.34},
@@ -27,6 +27,6 @@ const COMPS=[
   {n:'Masaüstü seti',items:[{type:'monitor'},{type:'laptop',px:-31,py:-10.25,pz:8,ry:22},{type:'phone',px:27,py:-12.6,pz:10,ry:-22}],scene:{rx:8,ry:0,rz:0}},
   {n:'Tarayıcı + telefon',items:[{type:'browser',ry:6},{type:'phone',px:14.5,py:-3.6,pz:5,ry:-12}],scene:{rx:-6,ry:18,rz:0}}
 ];
-const DEFAULT_FINISH={phone:'blasted',tablet:'blasted',laptop:'anodized',monitor:'brushed',browser:'matte',custom:'matte'};
+const DEFAULT_FINISH={phone:'blasted',tablet:'blasted',laptop:'anodized',monitor:'brushed',browser:'matte',page:'matte',custom:'matte'};
 
 export {COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};

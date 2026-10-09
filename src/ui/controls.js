@@ -13,12 +13,12 @@ function parseV(v){return v==='true'?true:v==='false'?false:v;}
 $$('.seg[data-key]').forEach(seg=>{const key=seg.dataset.key;
   seg.querySelectorAll('button').forEach(b=>{b.type='button';b.addEventListener('click',()=>{state[key]=parseV(b.dataset.v);onGlobal(key);});});});
 function onGlobal(key){
-  if(key==='bg')bgCss();
+  if(key==='bg'||key==='pattern')bgCss();
   else if(key==='ratio')layout();
   syncUI();
 }
 const bindColor=(id,key,fn)=>{const el=$('#'+id);el.value=state[key];el.addEventListener('input',()=>{state[key]=el.value;fn();});};
-bindColor('solid','solid',bgCss);bindColor('bg1','bg1',bgCss);bindColor('bg2','bg2',bgCss);
+bindColor('solid','solid',bgCss);bindColor('pbase','pbase',bgCss);bindColor('paccent','paccent',bgCss);bindColor('bg1','bg1',bgCss);bindColor('bg2','bg2',bgCss);
 const bindSwitch=(id,key,fn)=>{const el=$('#'+id);el.checked=state[key];el.addEventListener('change',()=>{state[key]=el.checked;if(fn)fn();applyTransform();syncUI();});};
 bindSwitch('showDome','showDome',()=>renderDome());bindSwitch('floor','floor');bindSwitch('wall','wall');bindSwitch('markers','markers');
 bindSwitch('selfShadow','selfShadow',()=>RT.forEach(o=>o.holder.traverse(x=>{if(x.isMesh)x.receiveShadow=state.selfShadow&&x.material!==M.glare;})));
@@ -26,8 +26,18 @@ bindColor('shadowColor','shadowColor',applyTransform);
 const sizeEl=$('#size'),formatEl=$('#format');
 sizeEl.value=String(state.size);sizeEl.addEventListener('change',()=>{state.size=parseInt(sizeEl.value,10);});
 formatEl.value=state.format;formatEl.addEventListener('change',()=>{state.format=formatEl.value;syncUI();});
+// custom artboard: whole pixels within 64..8192; applied as you type, normalised on change
+const ART=['customW','customH'].map(k=>{const el=$('#'+k);el.value=state[k];
+  const read=fix=>{const v=Math.round(+el.value);if(!isFinite(v)||v<1)return;state[k]=Math.min(8192,Math.max(64,v));if(fix)el.value=state[k];if(state.ratio==='custom')layout();};
+  el.addEventListener('input',()=>read(false));el.addEventListener('change',()=>read(true));return el;});
 const qualityEl=$('#quality');qualityEl.value=state.quality;qualityEl.addEventListener('change',()=>{state.quality=qualityEl.value;syncUI();});
 onSyncUI(()=>{
+  // inputs bound once at start-up; templates change state underneath them
+  ['solid','bg1','bg2','pbase','paccent','shadowColor'].forEach(k=>{const el=$('#'+k);if(el&&document.activeElement!==el)el.value=state[k];});
+  ['floor','wall','markers','selfShadow','showDome'].forEach(k=>{const el=$('#'+k);if(el)el.checked=state[k];});
+  sizeEl.value=String(state.size);formatEl.value=state.format;qualityEl.value=state.quality;
+  const custom=state.ratio==='custom';$('#artboard').hidden=!custom;sizeEl.hidden=custom;
+  ART.forEach(el=>{if(document.activeElement!==el)el.value=state[el.id];});
   $$('.seg[data-key]').forEach(seg=>{const v=String(state[seg.dataset.key]);seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));});
   $$('[data-bg]').forEach(el=>{el.hidden=el.dataset.bg!==state.bg;});
   $('#shadowSlot').hidden=!(state.floor||state.wall);
