@@ -11,7 +11,12 @@
 ## 2. Gerçekçilik
 
 - [ ] **Alan ışıkları:** `RectAreaLight` ile softbox/strip/pencere aydınlatması; parlak yüzeylerde doğru şekilli vurgu (yükseltme sonrası).
-- [ ] **Yol izleme (path tracing) modu:** `three-gpu-pathtracer` ile kamera durunca fotoğraf kalitesine yakınsayan render; dışa aktarımda varsayılan olabilir.
+- [x] **Yol izleme (path tracing) modu:** dışa aktarımda "Fotoğraf" kalitesi (three-gpu-pathtracer, 128 örnek + gürültü giderme, ilerleme göstergesi). Devamı:
+  - şeffaf arka planda zemin gölgesi (iki geçişli gölge yakalayıcı)
+  - hız: 2160 px'de birkaç dakika; WebGPU sürümü (`WebGPUPathTracer`) ve uyarlanabilir örnek sayısı denenmeli
+  - ekranın gövdeye yansıyan ışığı bazı sahnelerde güçlü; `SCREEN_GLOW` ve ışık/ortam kalibrasyonu sahne çeşitliliğiyle ince ayarlanmalı
+- [ ] **Telefon, tablet, monitör:** dizüstündeki detay ve malzeme diline (ince kasa, eloksal, temas gölgesi) getirilmeli.
+- [ ] Dizüstü hoparlör ızgarasında uzak mesafede hare (moiré).
 - [ ] **Alan derinliği (bokeh)** ve odak noktası seçimi.
 - [ ] **Yansıtıcı / dokulu zemin:** parlak masa, mermer, ahşap, beton (prosedürel doku).
 - [ ] **GLB içe aktarma:** kullanıcının kendi (lisanslı) cihaz modelini yükleyip ekran malzemesini işaretleyebilmesi.

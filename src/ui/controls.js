@@ -26,6 +26,7 @@ bindColor('shadowColor','shadowColor',applyTransform);
 const sizeEl=$('#size'),formatEl=$('#format');
 sizeEl.value=String(state.size);sizeEl.addEventListener('change',()=>{state.size=parseInt(sizeEl.value,10);});
 formatEl.value=state.format;formatEl.addEventListener('change',()=>{state.format=formatEl.value;syncUI();});
+const qualityEl=$('#quality');qualityEl.value=state.quality;qualityEl.addEventListener('change',()=>{state.quality=qualityEl.value;syncUI();});
 onSyncUI(()=>{
   $$('.seg[data-key]').forEach(seg=>{const v=String(state[seg.dataset.key]);seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));});
   $$('[data-bg]').forEach(el=>{el.hidden=el.dataset.bg!==state.bg;});

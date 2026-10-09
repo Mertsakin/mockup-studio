@@ -38,6 +38,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/render/stage.js` | ortam ışığı, `SHADOW_CHUNK` (zemin gölgesi maskesi), zemin + duvar gölge yakalayıcıları, `lightRoot`, `pivot` > `comp` |
 | `src/render/transform.js` | `refit` (kadraj), `extents`, `camDist`, `applyTransform` (her değişiklikte çağrılan ana güncelleme) |
 | `src/render/environment.js` | ışıklara göre üretilen PMREM ortamı: `rebuildEnv`, `scheduleEnv` (debounce + imza) |
+| `src/render/pathtrace.js` | fotoğraf kalitesinde dışa aktarım (three-gpu-pathtracer): ışıkları alan ışıklarına, ekranları ışık yayan cama çevirir, zemin açık ve arka plan opaksa stüdyo fonu ekler; render sonrası sahneyi geri yükler |
 | `src/render/accumulation.js` | ilerlemeli render: `ACC`, `hookSeed`, `renderSample`, `present`, `renderNow`, `startLoop` |
 | `src/devices/materials.js` | `M` (cam, lens, tuş, port, kauçuk, ekran camı yansıma katmanı `M.glare`), `tex`, prosedürel fırçalanmış/kumlanmış haritalar, `FINISHES`, `applyFinish`, `applyColorTo` |
 | `src/devices/geometry.js` | `rrShape(w,h,r,cx,cy)` (köşe başına yarıçap destekler), `flatRR`, `slab` (pahlı ekstrüzyon), `lens`, `hole`, `onSide`, doku üreticiler |
@@ -50,7 +51,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/lights/actions.js` | `rebuildLights`, `applyLightPreset` |
 | `src/ui/sync.js` | `syncUI` / `syncAll`: her panel kendi parçasını `onSyncUI(d => …)` ile kaydeder |
 | `src/ui/*.js` | `layout` (kadraj, arka plan), `sliders`, `controls` (genel segmentler, anahtarlar), `devices-panel` (cihaz listesi, tip, kompozisyon, renk/yüzey), `lights-panel`, `angles` (hazır/kayıtlı açılar), `image-input`, `pointer` (sahne sürükleme, `pickLight`, `dragLight3D`), `dome` (ışık haritası, `renderDome`, `setFromDome`), `toast` |
-| `src/export/export.js` | `renderExport`, `offer` (`<a download>` ile indirme), ZIP toplu dışa aktarma (JSZip dinamik import) |
+| `src/export/export.js` | `renderExport(onProgress)` (`state.quality`: `fast` raster / `photo` yol izleme), `offer` (`<a download>` ile indirme), ZIP toplu dışa aktarma (JSZip dinamik import) |
 | `index.html`, `src/style.css` | arayüz iskeleti ve stiller |
 
 **Bağımlılık yönü:** `state` → `render`/`devices`/`lights` → `ui` → `main`. Döngüsel import yok, öyle kalsın. Alt katman UI'a ihtiyaç duyarsa kanca kullan (ör. `onLightsUpdated`, `onSyncUI`). Başka modülden yeniden atanması gereken değerler `export let` yerine bir nesnede tutulur (`view`, `redraw`).
@@ -83,6 +84,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 5. **Ortam yansımaları** ışıklardan türetilir (`rebuildEnv`): softbox dikdörtgen, oktabox sekizgen, güneş parlak nokta. Sürükleme sırasında debounce edilir; gölgeler anlık, yansımalar 140 ms sonra güncellenir.
 6. **Renk yönetimi ve ışık birimleri.** three'nin renk yönetimi açık: CSS/hex renkler (`color.set('#…')`) otomatik lineere çevrilir, `convertSRGBToLinear()` çağırma. r128'de lineer olarak ayarlanmış sabitler `lin(0x…)` ile verilir (`devices/materials.js`). Doku canvas'ları `colorSpace = SRGBColorSpace`. Ekran dokuları `toneMapped: false`. Işık şiddetleri durumda r128 anlamını korur; three'ye geçerken `LIGHT_SCALE` (π) ile çarpılır (doğrudan ışıklar, ortam ışığı ve zemin gölgesinin `uAmbientW` ağırlığı birlikte). Spot ve nokta ışık `decay = 0` (mesafeyle zayıflama yok).
 7. Tuş yazıları yazı tipi yüklendikten sonra yeniden çizilmek için dizüstü yeniden kurulur (`document.fonts.ready`).
+8. **Yol izleme (fotoğraf kalitesi).** Yol izleyici `InstancedMesh`'i okuyamaz (klavye düz mesh'lerle kurulur) ve `MeshBasicMaterial` ışık yaymaz (ekranlar render süresince ışık yayan malzemeye geçirilir). Sahneye yeni bir şey eklersen `renderPathTraced` içindeki geçici değişiklik/geri alma listesine bak. Zemin gölgesi yalnızca stüdyo fonu ile (zemin açık + opak arka plan) vardır; şeffaf arka planda gölge yakalanmaz. İlerleme gerçek: her örnekten sonra hedeften bir piksel okunur (yoksa GPU kuyruğu şişer ve bağlam düşer). Hız: 1080 px / 128 örnek ≈ 85 sn (M1 Pro, headless).
 
 ## Geçmişten kalanlar
 
@@ -92,6 +94,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 
 ## Tasarım ve hukuki kurallar
 
+- **Dizüstü** ince, jenerik bir model (6,75 mm gövde, alçak profilli tuşlar). Diğer cihazlar henüz aynı detay seviyesinde değil.
 - **Cihazlar jenerik kalmalı.** Apple veya başka bir markanın ürün tasarımını, logosunu ya da imza niteliğindeki detaylarını (ör. belirli kamera adası düzeni, çentik/ada şekli, ayırt edici kasa formu) birebir modelleme. Gerçek ürün görünümü isteyen kullanıcı, lisanslı görselini "Kendi çerçeven" ile yükler.
 - **UI metinleri Türkçe**, cümle düzeninde (yalnızca ilk harf büyük). Kod yorumları İngilizce olabilir.
 - Erişilebilirlik korunmalı: segment butonlarında `aria-pressed`, form alanlarında `label`/`aria-label`, ışık haritasında klavye desteği.

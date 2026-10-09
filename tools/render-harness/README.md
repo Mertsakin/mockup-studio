@@ -25,6 +25,7 @@ Düzenek bir Vite dev sunucusunu kendi başlatır, sayfayı açar, sahne dosyas�
 | `W`, `H` | çıktı boyutu (px) |
 | `SAMPLES` | ilerlemeli render örnek sayısı. Varsayılan `64` (tam yakınsamış). Hızlı önizleme için `1` |
 | `MARKERS=0` | ışık kürelerini gizle |
+| `EXPORT=1` | ham render yerine gerçek dışa aktarım yolunu (`renderExport`) çalıştırır: arka plan ve kodlama dahil. `QUALITY=photo` ile yol izlemeli fotoğraf kalitesi (SwiftShader'da çok yavaş, `GPU=1` ile kullan) |
 | `GPU=1` | SwiftShader yerine ANGLE/Metal. Daha hızlı ama sürücüye bağlı, bayt bayt kararlı değil. Karşılaştırma yaparken kullanma |
 | sahneye özel | `COLOR`, `FIN`, `PRESET`, `RX`, `RY`, `ZOOM`, `C`, `MOD`… sahne dosyalarının başındaki açıklamalara bak |
 

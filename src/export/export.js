@@ -10,12 +10,19 @@ import {toast} from '../ui/toast.js';
 import {$,mkCanvas} from '../util.js';
 
 /* ---------- export ---------- */
-function renderExport(){
+const PHOTO_SAMPLES=128;
+// onProgress(0..1) is called while a photo-quality (path traced) render runs
+async function renderExport(onProgress){
   const [rw,rh]=ratioNums(),L=state.size;let W,H;
   if(rw>=rh){W=L;H=Math.round(L*rh/rw);}else{H=L;W=Math.round(L*rw/rh);}
   const pr=renderer.getPixelRatio();
   renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
-  LRT.forEach(o=>o.marker.visible=false);renderNow(state.size>=3000?32:48);LRT.forEach(o=>o.marker.visible=state.markers);
+  LRT.forEach(o=>o.marker.visible=false);
+  try{
+    // the path tracer (~260 kB) loads on first use
+    if(state.quality==='photo')await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress);
+    else renderNow(state.size>=3000?32:48);
+  }finally{LRT.forEach(o=>o.marker.visible=state.markers);}
   const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);g.drawImage(canvas,0,0,W,H);
   renderer.setPixelRatio(pr);layout();req();
   return new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('blob')),state.format==='jpg'?'image/jpeg':'image/png',.93));
@@ -37,9 +44,10 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const exportBtn=$('#export'),exportAllBtn=$('#exportAll');
 exportBtn.addEventListener('click',async()=>{
   exportBtn.disabled=true;
-  try{const blob=await renderExport();offer('mockup-'+stamp()+'.'+ext(),blob);toast('İndirildi');}
+  const label=exportBtn.textContent;
+  try{const blob=await renderExport(p=>{exportBtn.textContent='Fotoğraf hazırlanıyor: %'+Math.round(p*100);});offer('mockup-'+stamp()+'.'+ext(),blob);toast('İndirildi');}
   catch(e){toast('Görsel oluşturulamadı. Daha küçük bir çözünürlük dene.');}
-  finally{exportBtn.disabled=false;}
+  finally{exportBtn.disabled=false;exportBtn.textContent=label;}
 });
 exportAllBtn.addEventListener('click',async()=>{
   if(!saved.length)return;
@@ -48,7 +56,7 @@ exportAllBtn.addEventListener('click',async()=>{
     const JSZip=await loadJSZip(),zip=JSZip?new JSZip():null,used={};
     for(let i=0;i<saved.length;i++){
       exportAllBtn.textContent='Hazırlanıyor: '+(i+1)+' / '+saved.length;
-      applySaved(saved[i]);const b=await renderExport();
+      applySaved(saved[i]);const b=await renderExport(p=>{exportAllBtn.textContent='Hazırlanıyor: '+(i+1)+' / '+saved.length+' (%'+Math.round(p*100)+')';});
       let base=slug(saved[i].name);if(used[base])base+='-'+(++used[base]);else used[base]=1;
       files.push([base+'.'+ext(),b]);if(zip)zip.file(base+'.'+ext(),b);
     }
@@ -60,3 +68,5 @@ exportAllBtn.addEventListener('click',async()=>{
   }catch(e){Object.assign(state.scene,keep);applyTransform();syncSliders();toast('Görseller oluşturulamadı. Daha küçük bir çözünürlük dene.');}
   finally{exportAllBtn.disabled=false;exportAllBtn.textContent='Kayıtlı açıların hepsini ZIP olarak indir';}
 });
+
+export {renderExport};

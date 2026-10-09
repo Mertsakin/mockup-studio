@@ -1,6 +1,7 @@
 // Headless render harness: runs the app in headless Chromium (WebGL2) and writes a PNG.
 // Usage: node tools/render-harness/harness.js <out.png> [scene.js]
 // Env: W, H (pixels), SAMPLES (progressive samples, default 64 = fully converged; 1 = quick single pass),
+//      EXPORT=1 (run the real export path instead: background + encoding; QUALITY=photo path traces, use GPU=1),
 //      MARKERS=0 (hide light spheres), GPU=1 (ANGLE/Metal instead of SwiftShader: faster, not bit-stable).
 // Scene-specific env vars (COLOR, PRESET, …) are passed through to the scene as `env`.
 const fs=require('fs'),path=require('path');
@@ -34,7 +35,12 @@ const W=+process.env.W||640,H=+process.env.H||800,SAMPLES=+process.env.SAMPLES||
     }
     // let debounced work (environment rebuild, chrome redraw) settle, then render like an export
     await page.evaluate(()=>new Promise(r=>setTimeout(r,400)));
-    const data=await page.evaluate(({W,H,SAMPLES,markers})=>{
+    const data=process.env.EXPORT?await page.evaluate(async({W,H,quality})=>{
+      // the real export path (renderExport): background, photo quality, encoding; size from W (long edge) and ratio
+      const app=window.__app,st=app('state');st.size=Math.max(W,H);st.format='png';if(quality)st.quality=quality;
+      let last=-1;const b=await app('renderExport')(p=>{const q=Math.floor(p*4)*25;if(q!==last){last=q;console.log('export',q+'%');}});
+      return await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b);});
+    },{W,H,quality:process.env.QUALITY}):await page.evaluate(({W,H,SAMPLES,markers})=>{
       const app=window.__app,r=app('renderer'),view=app('view');
       r.setPixelRatio(1);r.setSize(W,H,false);view.aspect=W/H;app('applyTransform')();
       if(!markers)app('LRT').forEach(o=>o.marker.visible=false);
