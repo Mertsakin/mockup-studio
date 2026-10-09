@@ -29,12 +29,31 @@ function drawPlaceholder(g,x,y,w,h){
   g.fillStyle='rgba(255,255,255,.72)';g.font='400 '+(s*.042)+'px "Instrument Sans", system-ui, sans-serif';
   g.fillText('Görsel seç ya da sürükle bırak',x+w/2,y+h/2+s*.05);
 }
-function drawFit(g,img,x,y,w,h,fit){
+// scroll (0..1): for an image taller than the screen ("Doldur"), how far down the visible window sits
+function drawFit(g,img,x,y,w,h,fit,scroll=0){
   const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
   g.save();g.beginPath();g.rect(x,y,w,h);g.clip();g.imageSmoothingQuality='high';
   if(fit==='stretch')g.drawImage(img,x,y,w,h);
-  else{const s=fit==='cover'?Math.max(w/iw,h/ih):Math.min(w/iw,h/ih),dw=iw*s,dh=ih*s,dy=dh>h?0:(h-dh)/2;g.drawImage(img,x+(w-dw)/2,y+dy,dw,dh);}
+  else{const s=fit==='cover'?Math.max(w/iw,h/ih):Math.min(w/iw,h/ih),dw=iw*s,dh=ih*s,dy=dh>h?-(dh-h)*scroll:(h-dh)/2;g.drawImage(img,x+(w-dw)/2,y+dy,dw,dh);}
   g.restore();
+}
+// Display size of the device's screen canvas (landscape phones / tablets swap it)
+function screenSize(o,d){
+  const geomA=o.sw/o.sh,land=o.rotatable&&d.landscape,dispA=land?1/geomA:geomA,long=2560;
+  return dispA>=1?[long,Math.round(long/dispA)]:[Math.round(long*dispA),long];
+}
+// How many screens tall the screenshot is (0 when it cannot scroll: no image, not "Doldur", or not taller)
+function scrollScreens(d){
+  const o=RT.get(d.id);if(!o||!d.img||d.fit!=='cover')return 0;
+  const iw=d.img.naturalWidth||d.img.width,ih=d.img.naturalHeight||d.img.height;
+  let w,h;if(o.custom){if(!d.screenRect||!d.frameImg)return 0;w=d.screenRect.w*d.frameImg.naturalWidth;h=d.screenRect.h*d.frameImg.naturalHeight;}else[w,h]=screenSize(o,d);
+  const n=(ih/iw)/(h/w);return n>1.01?n:0;
+}
+// Redraws scrolled screens at most once per frame
+const pending=new Set();let raf=0;
+function scrollScreen(d,frac){
+  d.scroll=Math.min(1,Math.max(0,frac));pending.add(d);
+  if(!raf)raf=requestAnimationFrame(()=>{raf=0;pending.forEach(setScreenTexture);pending.clear();});
 }
 function customCanvas(d){
   const fi=d.frameImg;
@@ -50,7 +69,7 @@ function customCanvas(d){
   const iw=fi.naturalWidth,ih=fi.naturalHeight,s=Math.min(1,3072/Math.max(iw,ih)),cw=Math.round(iw*s),ch=Math.round(ih*s);
   const c=mkCanvas(cw,ch),g=c.getContext('2d'),r=d.screenRect;
   if(r){const x=r.x*cw,y=r.y*ch,w=r.w*cw,h=r.h*ch;g.fillStyle=d.screenBg;g.fillRect(x,y,w,h);
-    if(d.img)drawFit(g,d.img,x,y,w,h,d.fit);else drawPlaceholder(g,x,y,w,h);}
+    if(d.img)drawFit(g,d.img,x,y,w,h,d.fit,d.scroll);else drawPlaceholder(g,x,y,w,h);}
   g.drawImage(fi,0,0,cw,ch);return c;
 }
 function setScreenTexture(d){
@@ -61,13 +80,15 @@ function setScreenTexture(d){
     o.mats.custom.map=t;o.mats.custom.needsUpdate=true;
     o.screen.customDepthMaterial.map=t;o.screen.customDepthMaterial.needsUpdate=true;req();return;
   }
-  const geomA=o.sw/o.sh,land=o.rotatable&&d.landscape,dispA=land?1/geomA:geomA,long=2560;
-  let cw,ch;if(dispA>=1){cw=long;ch=Math.round(long/dispA);}else{ch=long;cw=Math.round(long*dispA);}
-  const c=mkCanvas(cw,ch),g=c.getContext('2d');
-  if(d.img){g.fillStyle=d.screenBg;g.fillRect(0,0,cw,ch);drawFit(g,d.img,0,0,cw,ch,d.fit);}
+  const land=o.rotatable&&d.landscape,[cw,ch]=screenSize(o,d),old=o.mats.screen.map;
+  // same size as before (e.g. scrolling): redraw into the existing canvas and texture instead of reallocating
+  const reuse=old&&old.image&&old.image.width===cw&&old.image.height===ch&&old.userData.land===land;
+  const c=reuse?old.image:mkCanvas(cw,ch),g=c.getContext('2d');
+  if(d.img){g.fillStyle=d.screenBg;g.fillRect(0,0,cw,ch);drawFit(g,d.img,0,0,cw,ch,d.fit,d.scroll);}
   else drawPlaceholder(g,0,0,cw,ch);
-  const t=tex(c);t.center.set(.5,.5);t.rotation=land?-Math.PI/2:0;
-  if(o.mats.screen.map)o.mats.screen.map.dispose();
+  if(reuse){old.needsUpdate=true;req();return;}
+  const t=tex(c);t.center.set(.5,.5);t.rotation=land?-Math.PI/2:0;t.userData.land=land;
+  if(old)old.dispose();
   o.mats.screen.map=t;o.mats.screen.needsUpdate=true;req();
 }
 function detectScreen(img){
@@ -90,4 +111,4 @@ function detectScreen(img){
   return {x:x0,y:y0,w:Math.min(1-x0,(maxX-minX+3)/w),h:Math.min(1-y0,(maxY-minY+3)/h)};
 }
 
-export {detectScreen,setScreenTexture,updateChrome};
+export {detectScreen,scrollScreen,scrollScreens,setScreenTexture,updateChrome};

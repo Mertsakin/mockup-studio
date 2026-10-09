@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {RT} from '../devices/rt.js';
+import {scrollScreen,scrollScreens} from '../devices/screen.js';
 import {LRT} from '../lights/runtime.js';
 import {camera,canvas} from '../render/renderer.js';
 import {pivot} from '../render/stage.js';
@@ -92,6 +93,10 @@ const endPtr=e=>{
 };
 canvas.addEventListener('pointermove',e=>{if(pointers.size||gizmoDrag||e.pointerType!=='mouse')return;gizmoMove(e);canvas.style.cursor=gizmoHot()||pickLight(e.clientX,e.clientY)?'grab':'';});
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
-canvas.addEventListener('wheel',e=>{e.preventDefault();const S=state.scene;S.zoom=clamp(S.zoom*Math.exp(-e.deltaY*.0015),.3,3);applyTransform();syncSliders();},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();
+  // over a scrollable screen the wheel scrolls it (~one screen per 500 px of wheel); Ctrl/⌘ or a pinch still zooms
+  if(!e.ctrlKey&&!e.metaKey){const id=pick(e.clientX,e.clientY),d=id&&state.devices.find(x=>x.id===id),n=d&&scrollScreens(d);
+    if(n){scrollScreen(d,d.scroll+e.deltaY/(500*(n-1)));if(d.id===state.selected)syncSliders();return;}}
+  const S=state.scene;S.zoom=clamp(S.zoom*Math.exp(-e.deltaY*.0015),.3,3);applyTransform();syncSliders();},{passive:false});
 
 export {dragLight3D,pickLight};

@@ -15,7 +15,7 @@ import {syncAll} from './sync.js';
    everything stays editable afterwards. Screenshots already loaded move to the new devices of the same type. */
 const DEVICE_KEYS=['type','px','py','pz','rx','ry','rz','scale','colorKey','custom','finish','lidAngle','backFinish','landscape','notch',
   'pageRatio','winRatio','theme','url','glare','fit'];
-const KEEP=['img','imgName','fit','screenBg','frameImg','frameName','screenRect'];
+const KEEP=['img','imgName','fit','screenBg','frameImg','frameName','screenRect','scroll'];
 
 // Moves devices vertically so their lowest points line up (they stand on one floor whatever the lid angle).
 function settleDevices(){

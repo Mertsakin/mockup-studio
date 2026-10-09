@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import {FINISHES,applyColorTo} from '../devices/materials.js';
 import {RT,setHolder} from '../devices/rt.js';
 import {buildRT,disposeRT,rebuild} from '../devices/runtime.js';
-import {setScreenTexture,updateChrome} from '../devices/screen.js';
+import {scrollScreen,scrollScreens,setScreenTexture,updateChrome} from '../devices/screen.js';
 import {camera,req} from '../render/renderer.js';
 import {applyTransform,autoRefit,compBox,refit} from '../render/transform.js';
 import {COLORS,COMPS,DEFAULT_SCENE,TYPES} from '../state/constants.js';
 import {newDevice,sel,state} from '../state/state.js';
 import {parseV} from './controls.js';
-import {syncSliders} from './sliders.js';
+import {fPct,makeSlider,syncSliders} from './sliders.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
 import {toast} from './toast.js';
 import {$,$$} from '../util.js';
@@ -56,6 +56,11 @@ $('#removeDevice').addEventListener('click',()=>{
   disposeRT(d.id);state.devices=state.devices.filter(x=>x.id!==d.id);state.selected=state.devices[0].id;
   autoRefit();applyTransform();syncAll();
 });
+// scrolling a long screenshot (shown only when the selected screen can scroll)
+makeSlider($('#scrollSlot'),{id:'d-scroll',k:'scroll',l:'Kaydırma',min:0,max:1,step:.001,reset:0,f:fPct,
+  note:'Uzun ekran görüntüsünde görünen bölüm. Ekranın üzerinde fare tekerleğiyle de kaydırabilirsin.',after:()=>scrollScreen(sel(),sel().scroll)},sel);
+$('#scrollSlot').appendChild($('#scrollAll'));
+$('#scrollAll').addEventListener('click',()=>{const f=sel().scroll;state.devices.forEach(d=>{if(scrollScreens(d))scrollScreen(d,f);});});
 $('#resetDevice').addEventListener('click',()=>{Object.assign(sel(),{px:0,py:0,pz:0,rx:0,ry:0,rz:0,scale:1});autoRefit();applyTransform();syncAll();});
 $('#fitBtn').addEventListener('click',()=>{refit();state.scene.zoom=1;state.scene.panX=0;state.scene.panY=0;applyTransform();syncSliders();});
 
@@ -70,7 +75,7 @@ function applyComp(c){
   const next=c.items.map(it=>{
     const r=(pool[it.type]||[]).shift();
     const nd=newDevice(it.type,{colorKey:base.colorKey,custom:base.custom});
-    if(r)['img','imgName','fit','screenBg','glare','finish','notch','url','theme','winRatio','frameImg','frameName','screenRect','colorKey','custom','lidAngle','backFinish','pageRatio'].forEach(k=>nd[k]=r[k]);
+    if(r)['img','imgName','fit','screenBg','glare','finish','notch','url','theme','winRatio','frameImg','frameName','screenRect','colorKey','custom','lidAngle','backFinish','pageRatio','scroll'].forEach(k=>nd[k]=r[k]);
     return Object.assign(nd,it);
   });
   [...RT.keys()].forEach(disposeRT);
@@ -122,6 +127,8 @@ onSyncUI(d=>{
   screenBgEl.value=d.screenBg;glareEl.checked=d.glare;if(document.activeElement!==urlEl)urlEl.value=d.url;
   $('#selTitle').textContent=devLabel(d);
   $('#removeDevice').disabled=state.devices.length<2;
+  $('#scrollSlot').hidden=!scrollScreens(d);
+  $('#scrollAll').hidden=state.devices.filter(x=>scrollScreens(x)).length<2;
   renderDevList();
 });
 

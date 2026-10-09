@@ -16,7 +16,7 @@ function readImage(file,cb){
 function loadShot(file){
   const d=sel();
   readImage(file,img=>{
-    d.img=img;d.imgName=file.name||'Yapıştırılan görsel';
+    d.img=img;d.imgName=file.name||'Yapıştırılan görsel';d.scroll=0;
     const o=RT.get(d.id),wide=img.naturalWidth>img.naturalHeight;
     if(o&&o.rotatable&&wide!==d.landscape){d.landscape=wide;setHolder(o,d);setScreenTexture(d);autoRefit();applyTransform();}
     else setScreenTexture(d);
