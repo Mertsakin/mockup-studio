@@ -20,7 +20,7 @@ function buildPhone(m){
   const fl=mesh(new THREE.CylinderGeometry(.17,.17,.04,32),M.flash);fl.rotation.x=Math.PI/2;fl.position.set(W/2-3.0,H/2-1.3,-D/2-.02);g.add(fl);
   const mic=mesh(new THREE.CircleGeometry(.05,12),M.hole);mic.rotation.y=Math.PI;mic.position.set(W/2-3.0,H/2-1.85,-D/2-.006);g.add(mic);
   // side buttons: 3.2 mm deep along x after the rotation, standing BTN_OUT proud of the wall (the rest sits inside)
-  const BTN_D=.32,BTN_OUT=.127,BTN_W=.06;  // BTN_W: front-to-back width
+  const BTN_D=.32,BTN_OUT=.06,BTN_W=.06;  // BTN_W: front-to-back width
   [[1,2.6,1.7],[-1,3.3,1.2],[-1,1.85,1.2]].forEach(([sx,y,l])=>{
     const k=mesh(slab(BTN_W,l,BTN_W/2,BTN_D,BTN_W*.3),m.frame);k.rotation.y=Math.PI/2;k.position.set(sx*(W/2+BTN_OUT-BTN_D/2),y,0);g.add(k);});
   phoneDetails(g,m,W,H,D,R);
