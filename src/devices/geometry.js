@@ -14,6 +14,12 @@ function rrShape(w,h,r,cx,cy){
   s.lineTo(cx-hw,cy-hh+bl);s.absarc(cx-hw+bl,cy-hh+bl,bl,Math.PI,Math.PI*1.5,false);
   return s;
 }
+// Concentric corners: an opening inset into a rounded outline gets radius = outer radius - wall thickness.
+// With unequal walls each corner subtracts the thicker of its two sides. Returns [tl,tr,br,bl] for rrShape.
+function innerRadii(r,top,right,bottom,left){
+  const f=(a,b)=>Math.max(0,r-Math.max(a,b));
+  return [f(top,left),f(top,right),f(bottom,right),f(bottom,left)];
+}
 function flatRR(w,h,r){
   const g=new THREE.ShapeGeometry(rrShape(w,h,r),24),p=g.attributes.position,uv=g.attributes.uv;
   for(let i=0;i<p.count;i++)uv.setXY(i,p.getX(i)/w+.5,p.getY(i)/h+.5);
@@ -49,4 +55,4 @@ function slotTexture(n,wpx,hpx,color){
 }
 function alphaMat(t){return new THREE.MeshStandardMaterial({color:lin(0x030304),roughness:1,metalness:0,alphaMap:t,transparent:true,alphaTest:.35,depthWrite:false});}
 
-export {alphaMat,dotTexture,flatRR,hole,lens,mesh,onSide,rrShape,slab,slotTexture};
+export {alphaMat,dotTexture,flatRR,hole,innerRadii,lens,mesh,onSide,rrShape,slab,slotTexture};

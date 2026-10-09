@@ -68,6 +68,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 - **Birim ≈ cm** (telefon 7.15 × 14.7). Kaynak boyutları ve ışık uzaklığı `view.fitRadius`'a göre göreli.
 - Işıklar **kameraya göre sabit** (stüdyo ışığı gibi): `az = 0` kamera tarafı, `90` sağ, `180` arka; `el` ufuktan yükseklik. Sahne döndürmek ürünü döner tabla üzerinde çevirmek gibidir.
 - Cihazlar `buildRT`'de sınır kutusuna göre ortalanır. Kompozisyonlarda cihazlar aynı zemine oturacak şekilde `py` verilir.
+- **Eş merkezli köşeler:** yuvarlak bir çerçevenin içindeki açıklığın (ekran, cam, kesik) köşe yarıçapı = dış yarıçap − et kalınlığı. Kenar kalınlıkları farklıysa her köşe iki komşu kenardan kalın olanı düşer: `innerRadii(r, üst, sağ, alt, sol)` (`devices/geometry.js`). Sabit yarıçap yazma.
 - Gölge düşürmemesi gereken ince yüzeyler (ızgara, havalandırma, tuş yazıları) `userData.decal = true` taşır.
 
 ## Kırılgan noktalar (değiştirmeden önce oku)

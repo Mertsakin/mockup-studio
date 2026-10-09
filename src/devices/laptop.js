@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {alphaMat,dotTexture,flatRR,hole,mesh,onSide,rrShape,slab,slotTexture} from './geometry.js';
+import {alphaMat,dotTexture,flatRR,hole,innerRadii,mesh,onSide,rrShape,slab,slotTexture} from './geometry.js';
 import {buildKeyboard} from './keyboard.js';
 import {M} from './materials.js';
 import {V3,mkCanvas} from '../util.js';
@@ -46,7 +46,7 @@ function buildLaptop(m){
   const rim=.1,gw=W-2*rim,gh=Hl-2*rim;
   const fg=mesh(flatRR(gw,gh,R-rim),M.glass);fg.position.set(0,Hl/2,.002);lid.add(fg);
   const sideB=.32,topB=.5,chin=.62,sw=gw-2*sideB,sh=gh-topB-chin,sy=rim+chin+sh/2;
-  const scr=mesh(flatRR(sw,sh,.12),m.screen);scr.position.set(0,sy,.004);lid.add(scr);
+  const scr=mesh(flatRR(sw,sh,innerRadii(R-rim,topB,sideB,chin,sideB)),m.screen);scr.position.set(0,sy,.004);lid.add(scr);
   const glare=mesh(flatRR(gw,gh,R-rim),M.glare);glare.position.set(0,Hl/2,.006);lid.add(glare);
   const camY=Hl-rim-topB/2,camR=mesh(new THREE.CircleGeometry(.11,32),M.port);camR.position.set(0,camY,.005);lid.add(camR);
   const camL=mesh(new THREE.CircleGeometry(.055,32),M.lensFace);camL.position.set(0,camY,.0055);lid.add(camL);

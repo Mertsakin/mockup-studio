@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {flatRR,hole,lens,mesh,onSide,slab} from './geometry.js';
+import {flatRR,hole,innerRadii,lens,mesh,onSide,slab} from './geometry.js';
 import {M} from './materials.js';
 import {V3} from '../util.js';
 
@@ -8,7 +8,7 @@ function buildTablet(m){
   g.add(mesh(slab(W,H,R,D,.12),m.frame));
   const gw=W-2*gi,gh=H-2*gi,gr=R-gi;
   const front=mesh(flatRR(gw,gh,gr),M.glass);front.position.z=D/2+.002;g.add(front);
-  const sw=gw-2*bz,sh=gh-2*bz,sr=.45;
+  const sw=gw-2*bz,sh=gh-2*bz,sr=innerRadii(gr,bz,bz,bz,bz);
   const scr=mesh(flatRR(sw,sh,sr),m.screen);scr.position.z=D/2+.004;g.add(scr);
   const glare=mesh(flatRR(sw,sh,sr),M.glare);glare.position.z=D/2+.006;g.add(glare);
   const cam=mesh(new THREE.CircleGeometry(.11,32),M.lensFace);cam.position.set(0,gh/2-bz/2,D/2+.005);g.add(cam);

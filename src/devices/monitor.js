@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {flatRR,mesh,slab} from './geometry.js';
+import {flatRR,innerRadii,mesh,slab} from './geometry.js';
 import {M} from './materials.js';
 import {V3} from '../util.js';
 
@@ -7,8 +7,9 @@ function buildMonitor(m){
   const g=new THREE.Group(),sw=52.8,sh=29.7,bz=.62,W=sw+2*bz,H=sh+2*bz,D=.9,R=.5;
   g.add(mesh(slab(W,H,R,D,.12),m.frame));
   const fg=mesh(flatRR(W-.1,H-.1,R-.05),M.glass);fg.position.z=D/2+.002;g.add(fg);
-  const scr=mesh(flatRR(sw,sh,.08),m.screen);scr.position.z=D/2+.004;g.add(scr);
-  const glare=mesh(flatRR(sw,sh,.08),M.glare);glare.position.z=D/2+.005;g.add(glare);
+  const sr=innerRadii(R-.05,bz-.05,bz-.05,bz-.05,bz-.05);  // bezel wider than the corner radius: square
+  const scr=mesh(flatRR(sw,sh,sr),m.screen);scr.position.z=D/2+.004;g.add(scr);
+  const glare=mesh(flatRR(sw,sh,sr),M.glare);glare.position.z=D/2+.005;g.add(glare);
   const back=mesh(flatRR(W-.1,H-.1,R-.05),m.back);back.rotation.y=Math.PI;back.position.z=-D/2-.002;g.add(back);
   const hump=mesh(slab(28,17,2.4,2.2,.45),m.frame);hump.position.set(0,-1.5,-D/2-1.0);g.add(hump);
   const baseY=-H/2-8.5;

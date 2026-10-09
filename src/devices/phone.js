@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {phoneDetails} from './details/phone.js';
-import {flatRR,lens,mesh,slab} from './geometry.js';
+import {flatRR,innerRadii,lens,mesh,slab} from './geometry.js';
 import {M} from './materials.js';
 
 function buildPhone(m){
@@ -8,7 +8,7 @@ function buildPhone(m){
   g.add(mesh(slab(W,H,R,D,.13),m.frame));
   const gw=W-2*gi,gh=H-2*gi,gr=R-gi;
   const front=mesh(flatRR(gw,gh,gr),M.glass);front.position.z=D/2+.002;g.add(front);
-  const sw=gw-2*bz,sh=gh-2*bz,sr=Math.max(.3,gr-bz+.1);
+  const sw=gw-2*bz,sh=gh-2*bz,sr=innerRadii(gr,bz,bz,bz,bz);
   const scr=mesh(flatRR(sw,sh,sr),m.screen);scr.position.z=D/2+.004;g.add(scr);
   const glare=mesh(flatRR(sw,sh,sr),M.glare);glare.position.z=D/2+.006;g.add(glare);
   const hole1=mesh(new THREE.CircleGeometry(.2,40),M.black);hole1.position.set(0,sh/2-.48,D/2+.005);g.add(hole1);
