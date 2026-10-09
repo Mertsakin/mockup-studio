@@ -36,6 +36,13 @@
 - [ ] Kullanıcının kendi sahnesini şablon olarak kaydetmesi (proje kaydet/aç ile birlikte).
 - [ ] Şablon kartında örnek ekran görüntüleri (şu an yer tutucu ekran).
 
+## Web sitesi yakalama
+
+- [x] Uzun ekran görüntüsü kaydırma (kaydırıcı, tekerlek, tümünü eşitle).
+- [x] URL ile tüm cihazlara yakalama (yerel dev sunucusu, Playwright).
+- [ ] Yayınlanmış sürüm için yakalama servisi (altyapı kararı bekliyor).
+- [ ] Kaydırma videosu (iş akışı bölümündeki video maddesiyle birlikte).
+
 ## Bilinen sorunlar
 
 - Fırçalanmış metal uzak mesafede hafif hare (moiré) oluşturabiliyor; mip seviyesine göre normal yoğunluğu azaltılabilir.

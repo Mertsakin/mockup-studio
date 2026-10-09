@@ -47,11 +47,12 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/devices/{phone,tablet,laptop,monitor,browser,page,custom}.js` | cihaz kurucuları; `details/phone.js` (anten bantları, portlar), `keyboard.js` (`KB_ROWS` Türkçe Q, `buildKeyboard` genişlik başına `InstancedMesh`), `index.js` (`BUILDERS`) |
 | `src/devices/rt.js` | `RT` Map (id → mesh grubu + materyaller), `setHolder` |
 | `src/devices/runtime.js` | `buildRT`, `disposeRT`, `rebuild` |
-| `src/devices/screen.js` | `setScreenTexture`, `drawFit`, `customCanvas`, `updateChrome`, `detectScreen` (çerçeve PNG'sinde şeffaf ekran alanını flood-fill ile bulur) |
+| `src/devices/screen.js` | `setScreenTexture` (aynı boyutta tuvali ve dokuyu yeniden kullanır), `scrollScreen` / `scrollScreens` (uzun ekran görüntüsünde kaydırma, kare başına bir çizim), `drawFit`, `customCanvas`, `updateChrome`, `detectScreen` (çerçeve PNG'sinde şeffaf ekran alanını flood-fill ile bulur) |
 | `src/lights/mods.js` | `MODS` (şekillendiriciler), `LIGHT_PRESETS`, `newLight`, `lightTan`, `shadowCharacter` |
 | `src/lights/runtime.js` | `LRT` Map, `buildLight`, `disposeLight`, `applyAmbient`, `updateLights` (gölge parametrelerini paketler), `onLightsUpdated` |
 | `src/lights/actions.js` | `rebuildLights`, `applyLightPreset` |
 | `src/ui/sync.js` | `syncUI` / `syncAll`: her panel kendi parçasını `onSyncUI(d => …)` ile kaydeder |
+| `src/ui/capture.js`, `tools/capture/vite-plugin.mjs` | "Tüm cihazlara yakala": URL'yi her cihazın kendi görüntü alanında (telefon 390 mobil, tablet 820 mobil, dizüstü/tarayıcı 1440, monitör 1920; yükseklik ekran oranından) Playwright ile tam sayfa yakalar (en fazla 8000 CSS px), aynı görüntü alanını isteyen cihazlar tek yakalamayı paylaşır. Uç nokta (`/api/capture`) yalnızca dev sunucusunda var; yayınlanmış sürüm için ayrı bir servis gerekir |
 | `src/ui/gizmo.js` | cihaz başına taşı/döndür gizmo'su (three `TransformControls`). Kanvasa bağlı değil: `pointer.js` olayları önce gizmo'ya iletir. Konum modunda gizmo, `comp` uzayındaki bir vekili (proxy) sürer: oklar zemine hizalıdır. Dönüş modunda tutucunun kendisini, yerel eksenlerde döndürür. Dışa aktarımda gizlenir |
 | `src/ui/*.js` | `layout` (kadraj, arka plan), `sliders`, `controls` (genel segmentler, anahtarlar), `devices-panel` (cihaz listesi, tip, kompozisyon, renk/yüzey), `lights-panel`, `angles` (hazır/kayıtlı açılar), `image-input`, `pointer` (sahne sürükleme, `pickLight`, `dragLight3D`), `dome` (ışık haritası, `renderDome`, `setFromDome`), `toast` |
 | `src/export/export.js` | `renderExport(onProgress)` (`state.quality`: `fast` raster / `photo` yol izleme), `offer` (`<a download>` ile indirme), ZIP toplu dışa aktarma (JSZip dinamik import) |

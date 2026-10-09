@@ -35,6 +35,10 @@
       <div class="typegrid" id="typeGrid" role="group" aria-label="Cihaz tipi"></div>
 
       <span class="lbl block">Ekran görüntüsü</span>
+      <div class="capture" role="group" aria-label="Web sitesinden yakala">
+        <input type="url" id="captureUrl" placeholder="https://siteadi.com" aria-label="Web sitesi adresi" spellcheck="false" autocomplete="url">
+        <button class="btn" id="captureBtn" type="button" title="Her cihaz kendi ekran genişliğinde yakalanır">Tüm cihazlara yakala</button>
+      </div>
       <label class="drop" id="drop" tabindex="0">
         <input type="file" id="file" accept="image/*" hidden>
         <span class="drop-main" id="dropMain"></span>

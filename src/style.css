@@ -75,6 +75,10 @@ input[type=text]{font:inherit;font-size:13.5px;padding:7px 10px;border:1px solid
 .btn:hover{border-color:var(--muted)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.full{width:100%;text-align:center;margin-top:8px}
+/* website capture: url field + button above the drop zone */
+.capture{display:flex;gap:8px;margin:0 0 10px}
+.capture input{font:inherit;font-size:13.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);min-width:0;flex:1}
+.capture input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 /* custom artboard size (px) */
 .artboard{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:13px}
 .artboard input{font:inherit;font-size:13px;width:74px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);text-align:right}

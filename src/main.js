@@ -15,6 +15,7 @@ import './ui/controls.js';
 import './ui/devices-panel.js';
 import './ui/lights-panel.js';
 import './ui/image-input.js';
+import './ui/capture.js';
 import './ui/pointer.js';
 import './ui/dome.js';
 import './export/export.js';
