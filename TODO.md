@@ -5,7 +5,7 @@
 ## 1. Temel (önce bunlar)
 
 - [x] **Yerel indirme:** `offer()` içindeki `window.claude.use('downloads')` yolunu `<a download>` tabanlı indirmeyle değiştir; ZIP toplu indirme de aynı yoldan.
-- [x] **Modüllere ayırma:** Vite + ES modülleri (`src/state`, `render`, `devices`, `lights`, `ui`, `export`). Test düzeneği `src/main.js`'i esbuild ile paketliyor; ESLint eklendi.
+- [x] **Modüllere ayırma:** Vite + ES modülleri (`src/state`, `render`, `devices`, `lights`, `ui`, `export`). ESLint eklendi. (Test düzeneği sonradan Playwright + Vite dev sunucusuna taşındı.)
 - [x] **three.js yükseltmesi (r128 → r186):** renk uzayı API'leri, renk yönetimi (`lin()`), ışık birimleri (`LIGHT_SCALE`, `decay = 0`), `BasicShadowMap` üzerinde yeniden yazılmış PCSS (nokta ışıkta küp derinlik haritası), MSAA hedefi. Test düzeneği WebGL1 desteği kalktığı için Playwright'a taşındı. Önce/sonra farkı yansımalarda ve yazı kenarlarında küçük (PMREM ve donanım sRGB çözme).
 
 ## 2. Gerçekçilik
@@ -24,9 +24,13 @@
 
 ## 3. İş akışı
 
+**Sıradaki öncelik (önerilen):** geri al / yinele → proje kaydet/aç + otomatik kayıt → hizalama ve yapışma. Gizmo, katman ve şablonlarla sahne hızlı değiştiği için bunlar iş kaybını önler.
+
 - [ ] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP).
-- [ ] **Proje kaydet/aç:** sahne + ışıklar + açılar + görseller tek dosyada (JSON + görseller, ZIP).
-- [ ] **Geri al / yinele.**
+- [ ] **Proje kaydet/aç:** sahne + ışıklar + açılar + görseller + site adresleri tek dosyada (JSON + görseller, ZIP). Ayrıca otomatik kayıt (sayfa yenilenince sahne kaybolmasın) ve "kendi sahneni şablon olarak kaydet".
+- [ ] **Geri al / yinele** (⌘Z / ⇧⌘Z): gizmo, katman, odaklanma, şablon ve kaydırıcı değişiklikleri.
+- [ ] **Hizalama ve yapışma:** gizmo'da Shift ile 1 cm / 15° adım; "Zemine oturt" düğmesi (şablonlardaki `settleDevices` mantığı); seçili cihazları eşit aralıkla dağıtma.
+- [ ] **Çoklu seçim:** Shift ile birden fazla cihaz seçip birlikte taşıma / döndürme / katman komutu.
 - [ ] **Video:** döner tabla animasyonu ve uzun ekran görüntüsünün kaydırılması, MP4/WebM (MediaRecorder veya WebCodecs).
 - [ ] **Mağaza görseli üretici:** başlık/metin katmanları, App Store ve Play Store ölçülerinde toplu çıktı.
 
@@ -42,13 +46,14 @@
 - [x] URL ile tüm cihazlara yakalama (yerel dev sunucusu, Playwright).
 - [ ] Yayınlanmış sürüm için yakalama servisi (altyapı kararı bekliyor).
 - [ ] Kaydırma videosu (iş akışı bölümündeki video maddesiyle birlikte).
+- [ ] Yakalama seçenekleri: yakalamadan önce bekleme süresi, belirli bir bölüme (CSS seçici) kaydırarak başlama, koyu tema tercihi (`prefers-color-scheme`).
 
 ## Bilinen sorunlar
 
 - Fırçalanmış metal uzak mesafede hafif hare (moiré) oluşturabiliyor; mip seviyesine göre normal yoğunluğu azaltılabilir.
 - Çok geniş açılı spotlarda gölge haritası çözünürlüğü düşüyor (gölge kamerası fov = 2 × açı).
 - Işık küreleri genelde kadraj dışında kalıyor; asıl kontrol ışık haritası.
-- Küçük ekranlarda ışık haritası sahnenin bir köşesini örtüyor.
+- Küçük ekranlarda ışık haritası ve eksen göstergesi sahnenin köşelerini örtüyor; daraltılabilir olmalı.
 - 3840 px dışa aktarım mobil tarayıcılarda bellek sınırına takılabilir (render hedefleri büyük).
 - Işık küresi bazı sahnelerde kadraja giriyor.
 - Spot/nokta ışıkta mesafeyle zayıflama yok (`decay = 0`, r128 davranışı). Fiziksel `decay = 2` daha gerçekçi olur ama preset'lerin yeniden ayarlanmasını gerektirir.
