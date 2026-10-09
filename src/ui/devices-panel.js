@@ -75,7 +75,7 @@ function applyComp(c){
   const next=c.items.map(it=>{
     const r=(pool[it.type]||[]).shift();
     const nd=newDevice(it.type,{colorKey:base.colorKey,custom:base.custom});
-    if(r)['img','imgName','fit','screenBg','glare','finish','notch','url','theme','winRatio','frameImg','frameName','screenRect','colorKey','custom','lidAngle','backFinish','pageRatio','scroll'].forEach(k=>nd[k]=r[k]);
+    if(r)['img','imgName','fit','screenBg','glare','finish','notch','url','theme','winRatio','frameImg','frameName','screenRect','colorKey','custom','lidAngle','backFinish','pageRatio','scroll','siteUrl'].forEach(k=>nd[k]=r[k]);
     return Object.assign(nd,it);
   });
   [...RT.keys()].forEach(disposeRT);

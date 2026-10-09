@@ -26,6 +26,11 @@
         <button class="btn" id="addDevice" type="button">Ekle</button>
         <button class="btn" id="removeDevice" type="button">Seçiliyi kaldır</button>
       </div>
+      <div class="row"><span class="lbl">Katman</span>
+        <div class="seg" id="layerBtns" role="group" aria-label="Seçili cihazın katman sırası">
+          <button type="button" data-layer="front" title="En öne getir (⌘/Ctrl + Shift + ])">En öne</button><button type="button" data-layer="forward" title="Bir öne (⌘/Ctrl + ])">Öne</button><button type="button" data-layer="backward" title="Bir arkaya (⌘/Ctrl + [)">Arkaya</button><button type="button" data-layer="back" title="En arkaya gönder (⌘/Ctrl + Shift + [)">En arkaya</button>
+        </div>
+      </div>
       <span class="lbl block">Hazır kompozisyonlar</span>
       <div class="presets" id="comps"></div>
     </section>
@@ -36,8 +41,11 @@
 
       <span class="lbl block">Ekran görüntüsü</span>
       <div class="capture" role="group" aria-label="Web sitesinden yakala">
-        <input type="url" id="captureUrl" placeholder="https://siteadi.com" aria-label="Web sitesi adresi" spellcheck="false" autocomplete="url">
-        <button class="btn" id="captureBtn" type="button" title="Her cihaz kendi ekran genişliğinde yakalanır">Tüm cihazlara yakala</button>
+        <input type="url" id="captureUrl" placeholder="https://siteadi.com" aria-label="Bu cihazın web sitesi adresi" spellcheck="false" autocomplete="url">
+        <div class="capture-actions">
+          <button class="btn" id="captureBtn" type="button" title="Adresi yalnızca seçili cihazın ekran genişliğinde yakalar">Bu cihaza yakala</button>
+          <button class="btn" id="captureAllBtn" type="button" title="Aynı adresi her cihaza, kendi ekran genişliğinde yakalar">Tüm cihazlara</button>
+        </div>
       </div>
       <label class="drop" id="drop" tabindex="0">
         <input type="file" id="file" accept="image/*" hidden>

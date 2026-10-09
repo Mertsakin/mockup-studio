@@ -38,6 +38,7 @@ h2{font-size:15px;font-weight:600;margin:0 0 12px;letter-spacing:-.005em}
   padding:6px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
 .seg button:hover,.typegrid button:hover{color:var(--ink)}
 .seg button[aria-pressed="true"],.typegrid button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(15,20,30,.12),0 0 0 1px var(--line)}
+.seg button:disabled{opacity:.45;cursor:not-allowed}
 .seg-wide{display:flex}.seg-wide button{flex:1}
 .typegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--field);border-radius:9px;padding:3px}
 .drop{display:flex;flex-direction:column;gap:4px;padding:16px;border:1.5px dashed var(--line);border-radius:12px;cursor:pointer;background:var(--field)}
@@ -76,7 +77,8 @@ input[type=text]{font:inherit;font-size:13.5px;padding:7px 10px;border:1px solid
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.full{width:100%;text-align:center;margin-top:8px}
 /* website capture: url field + button above the drop zone */
-.capture{display:flex;gap:8px;margin:0 0 10px}
+.capture{display:flex;flex-direction:column;gap:8px;margin:0 0 10px}
+.capture-actions{display:flex;gap:8px}.capture-actions .btn{flex:1}
 .capture input{font:inherit;font-size:13.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);min-width:0;flex:1}
 .capture input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 /* custom artboard size (px) */
