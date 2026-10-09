@@ -99,4 +99,4 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();
     if(n){scrollScreen(d,d.scroll+e.deltaY/(500*(n-1)));if(d.id===state.selected)syncSliders();return;}}
   const S=state.scene;S.zoom=clamp(S.zoom*Math.exp(-e.deltaY*.0015),.3,3);applyTransform();syncSliders();},{passive:false});
 
-export {dragLight3D,pickLight};
+export {dragLight3D,pick,pickLight};

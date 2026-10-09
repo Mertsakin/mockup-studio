@@ -23,12 +23,14 @@ function refit(){
 // the user already placed. Edits re-frame only a lone device; "Kadraja sığdır", compositions and templates always do.
 function autoRefit(){if(state.devices.length<2)refit();}
 // Current bounding box of the devices in composition space (their real positions, not the last framing).
-function compBox(exceptId){
+// compBox(id) skips that device; deviceBox(id) measures only it.
+const compBox=exceptId=>boxOf(id=>id!==exceptId),deviceBox=onlyId=>boxOf(id=>id===onlyId);
+function boxOf(include){
   const pr=pivot.rotation.clone(),pp=pivot.position.clone(),cp=comp.position.clone();
   pivot.rotation.set(0,0,0);pivot.position.set(0,0,0);comp.position.set(0,0,0);
   RT.forEach((o,id)=>{const d=byId(id);if(d)setHolder(o,d);});scene.updateMatrixWorld(true);
   const box=new THREE.Box3();
-  RT.forEach((o,id)=>{if(id!==exceptId)o.holder.traverse(x=>{if(x.isMesh&&!x.userData.ao)box.expandByObject(x);});});
+  RT.forEach((o,id)=>{if(include(id))o.holder.traverse(x=>{if(x.isMesh&&!x.userData.ao)box.expandByObject(x);});});
   pivot.rotation.copy(pr);pivot.position.copy(pp);comp.position.copy(cp);scene.updateMatrixWorld(true);
   return box;
 }
@@ -64,4 +66,4 @@ function applyTransform(){
   req();
 }
 
-export {applyTransform,autoRefit,camDist,compBox,refit};
+export {applyTransform,autoRefit,camDist,compBox,deviceBox,refit};
