@@ -1,0 +1,18 @@
+{
+  "name": "mockup-studio",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Browser-based 3D device mockup builder (single-file prototype).",
+  "scripts": {
+    "serve": "npx --yes serve -l 5173 .",
+    "render": "node tools/render-harness/harness.js mockup-studio.html renders/out.png tools/render-harness/scenes/default.js",
+    "render:linux": "xvfb-run -a -s \"-screen 0 640x480x24\" node tools/render-harness/harness.js mockup-studio.html renders/out.png tools/render-harness/scenes/default.js",
+    "check": "node tools/check-syntax.js"
+  },
+  "devDependencies": {
+    "canvas": "^3.1.0",
+    "gl": "^8.1.6",
+    "pngjs": "^7.0.0",
+    "three": "0.128.0"
+  }
+}
