@@ -25,7 +25,8 @@ const W=+process.env.W||640,H=+process.env.H||800,SAMPLES=+process.env.SAMPLES||
       else if(t==='warning'){if(!/GPU stall|GL Driver Message/.test(s))console.warn('warn:',s);}
       else if(!s.startsWith('[vite]'))console.log(s);});
     await page.goto(url);
-    await page.waitForFunction(()=>window.__app,null,{timeout:60000});
+    await Promise.race([page.waitForFunction(()=>window.__app,null,{timeout:60000}),
+      new Promise((_,fail)=>page.on('pageerror',e=>fail(new Error('app failed to start: '+e.message))))]);
     await page.evaluate(()=>document.fonts.ready.then(()=>new Promise(r=>setTimeout(r,100))));
     if(scenePath){
       const scene=require(path.resolve(scenePath));

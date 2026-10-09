@@ -45,7 +45,7 @@ function applyTransform(){
   const ex=extents(),R=view.fitRadius;
   ground.position.set(pivot.position.x,ex.y-.004,0);ground.visible=state.floor;
   wall.position.set(pivot.position.x,ex.y-.004+2000,ex.z-state.wallGap*R);wall.visible=state.wall;
-  groundMat.opacity=state.shadowOpacity;groundMat.color.set(state.shadowColor).convertSRGBToLinear();
+  groundMat.opacity=state.shadowOpacity;groundMat.color.set(state.shadowColor);
   updateLights();
   req();
 }

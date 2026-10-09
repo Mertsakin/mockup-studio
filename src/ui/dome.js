@@ -21,7 +21,8 @@ svgEl('rect',{x:-15,y:-9,width:30,height:18,rx:3,fill:'var(--muted)',opacity:.45
 svgEl('line',{x1:-11,y1:9,x2:11,y2:9,stroke:'var(--accent)','stroke-width':2.5,'stroke-linecap':'round'},domeFoot);
 const domeLayer=svgEl('g',{},domeSvg),domeDots=new Map();
 function domePos(L){const r=(90-clamp(L.el,0,90))/90,a=L.az*D2R;return {x:Math.sin(a)*r*100,y:Math.cos(a)*r*100};}
-function lum(hex){const c=new THREE.Color(hex);return .2126*c.r+.7152*c.g+.0722*c.b;}
+// luma of the sRGB-encoded value (picks the label colour on a light dot)
+function lum(hex){const c=new THREE.Color().setStyle(hex,THREE.LinearSRGBColorSpace);return .2126*c.r+.7152*c.g+.0722*c.b;}
 function renderDome(){
   const show=state.showDome&&state.lights.length>0;domeEl.hidden=!show;if(!show)return;
   domeFoot.setAttribute('transform','rotate('+(-state.scene.ry).toFixed(1)+')');

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {alphaMat,dotTexture,flatRR,hole,mesh,onSide,rrShape,slab,slotTexture} from './geometry.js';
 import {buildKeyboard} from './keyboard.js';
-import {M} from './materials.js';
+import {M,lin} from './materials.js';
 import {V3} from '../util.js';
 
 const GRILLE_TEX=dotTexture(150,4,4096,128,7,'#fff');
@@ -30,7 +30,7 @@ function buildLaptop(m){
   const hdmi=new THREE.Shape();hdmi.moveTo(-.72,.22);hdmi.lineTo(.72,.22);hdmi.lineTo(.72,-.05);hdmi.lineTo(.55,-.22);hdmi.lineTo(-.55,-.22);hdmi.lineTo(-.72,-.05);hdmi.lineTo(-.72,.22);
   side(1,mesh(new THREE.ShapeGeometry(hdmi),M.port),-3.6);
   side(1,mesh(new THREE.CircleGeometry(.17,24),M.port),2.4);
-  const led=mesh(new THREE.CircleGeometry(.05,12),new THREE.MeshBasicMaterial({color:0xd8f5df}));side(1,led,3.3);
+  const led=mesh(new THREE.CircleGeometry(.05,12),new THREE.MeshBasicMaterial({color:lin(0xd8f5df)}));side(1,led,3.3);
   // rear vents and rubber feet
   const vent=mesh(new THREE.PlaneGeometry(W*.55,.3),alphaMat(VENT_TEX));vent.rotation.y=Math.PI;vent.position.set(0,py,-Dp/2-.006);vent.userData.decal=true;g.add(vent);
   [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{const f=mesh(slab(4.6,.9,.45,.16,.05),M.rubber);f.geometry.rotateX(-Math.PI/2);

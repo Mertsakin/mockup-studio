@@ -2,7 +2,7 @@
 
 Tarayıcıda çalışan 3B cihaz mockup aracı. Kullanıcı ekran görüntüsünü yükler, cihaz(lar)ı sahneye dizer, ışık kurar, istediği açıdan yüksek çözünürlüklü PNG/JPG alır. Öncelik **gerçekçilik**: malzeme, ışık, gölge ve detay kalitesi her özellikten önce gelir.
 
-Proje Vite + ES modülleri yapısında (`src/`), three **r128** npm'den geliyor. İlk sürüm claude.ai'de tek dosyalık bir artifact olarak geliştirildi; r128 ve bazı kararlar o ortamın kısıtlarından kalma (aşağıda "Geçmişten kalanlar").
+Proje Vite + ES modülleri yapısında (`src/`), three **r186** npm'den geliyor. İlk sürüm claude.ai'de tek dosyalık bir artifact olarak r128 ile geliştirildi; bazı kararlar oradan kalma (aşağıda "Geçmişten kalanlar").
 
 ## Çalıştırma ve test
 
@@ -33,8 +33,8 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/util.js` | `$`, `$$`, `D2R`, `V3`, `clamp`, `wrap`, `mkCanvas`, `roundRect`, `rng` |
 | `src/state/constants.js` | `TYPES`, `DEFAULT_SCENE`, `COLORS`, `THEMES`, `PRESETS` (sahne açıları), `COMPS` (hazır kompozisyonlar), `DEFAULT_FINISH` |
 | `src/state/state.js` | `state`, `newDevice()`, `byId`, `sel`, `view` (`fitRadius`, `fitBox`, `aspect`) |
-| `src/render/pcss.js` | `patchShadows`: `THREE.ShaderChunk.shadowmap_pars_fragment` yaması, PCSS yumuşak gölge (aşağıya bak) |
-| `src/render/renderer.js` | renderer (ACES, sRGB çıkış, PCF gölge), sahne, kamera, `req()` (render kirli bayrağı) |
+| `src/render/pcss.js` | `patchShadows`: `THREE.ShaderChunk.shadowmap_pars_fragment` yaması; `BasicShadowMap`'in `getShadow` / `getPointShadow`'unu PCSS sürümleriyle değiştirir (aşağıya bak) |
+| `src/render/renderer.js` | renderer (ACES, sRGB çıkış, `BasicShadowMap`), sahne, kamera, `LIGHT_SCALE`, `req()` (render kirli bayrağı) |
 | `src/render/stage.js` | ortam ışığı, `SHADOW_CHUNK` (zemin gölgesi maskesi), zemin + duvar gölge yakalayıcıları, `lightRoot`, `pivot` > `comp` |
 | `src/render/transform.js` | `refit` (kadraj), `extents`, `camDist`, `applyTransform` (her değişiklikte çağrılan ana güncelleme) |
 | `src/render/environment.js` | ışıklara göre üretilen PMREM ortamı: `rebuildEnv`, `scheduleEnv` (debounce + imza) |
@@ -76,16 +76,17 @@ tools/render-harness/compare.sh renders/once renders/sonra
    - `< 0` spot: `Q * 1000`, `Q = S / (near * 2 * tan(açı))`; shader **far = 10 × near** varsayar (`pcssLin`). Spot gölge kamerasının near/far oranını değiştirme.
    - nokta ışık: `S * 100` (dünya birimiyle kaynak boyutu)
    Formüller `updateLights` içinde (`lights/runtime.js`); shader `patchShadows` içinde (`render/pcss.js`). Biri değişirse diğeri de değişmeli.
+   Gölge tipi **`BasicShadowMap` olmalı**: PCF'de harita `sampler2DShadow` olur ve engelleyici araması ham derinlik okuyamaz. Yama, chunk'taki fonksiyonları gövdelerindeki tekil satırlardan bulur (npm build'i shader yorumlarını siler); three yükseltilip bulamazsa açık bir hatayla durur. Nokta ışık küp haritası yüz eksenine göre perspektif derinlik saklar; `pcssCubeDist` bunu radyal mesafeye çevirir.
 2. **Zemin gölgesi** (`SHADOW_CHUNK`) her ışığın gölgesini o ışığın renk/şiddet payıyla ağırlıklandırır. three, gölge düşüren ışıkları dizilerin başına sıralar; döngüler buna dayanır.
-3. **İlerlemeli render.** `renderer.shadowMap.autoUpdate = false`; gölge haritaları yalnızca `renderSample(0)`'da yenilenir. Sahnede bir şey değişip `req()` çağrılmazsa gölgeler eski kalır. Gürültü tohumu her materyale `hookSeed` ile `onBeforeCompile` üzerinden enjekte edilir. Yeni materyal türleri otomatik yakalanır, `ShaderMaterial` hariç.
-4. **Derinlik hassasiyeti.** Örnek render hedefi `stencilBuffer: true` ile oluşturulur. Bunu kaldırırsan 16 bit derinliğe düşer ve ekran camı ile çerçeve gibi 0.002 aralıklı katmanlar titreşir.
+3. **İlerlemeli render.** Örnek hedefi (`ACC.frame`) `isXRRenderTarget = true` taşır: three ton eşlemesini ve çıktı renk uzayını yalnızca ekrana ya da bu bayrağı taşıyan hedeflere uygular. Böylece her örnek ekrandaki gibi (malzeme başına `toneMapped`, sRGB kodlu, `RGBA8`) yazılır ve ortalama görüntü uzayında alınır. Bayrağı kaldırırsan ekran dokuları ton eşlemesinden geçer ve renkler bozulur. `renderer.shadowMap.autoUpdate = false`; gölge haritaları yalnızca `renderSample(0)`'da yenilenir. Sahnede bir şey değişip `req()` çağrılmazsa gölgeler eski kalır. Gürültü tohumu her materyale `hookSeed` ile `onBeforeCompile` üzerinden enjekte edilir. Yeni materyal türleri otomatik yakalanır, `ShaderMaterial` hariç.
+4. **Derinlik hassasiyeti.** Örnek render hedefi `stencilBuffer: true` ile oluşturulur (24 bit derinlik + stencil). Ekran camı ile çerçeve gibi 0.002 aralıklı katmanlar buna dayanır.
 5. **Ortam yansımaları** ışıklardan türetilir (`rebuildEnv`): softbox dikdörtgen, oktabox sekizgen, güneş parlak nokta. Sürükleme sırasında debounce edilir; gölgeler anlık, yansımalar 140 ms sonra güncellenir.
-6. **Renk yönetimi.** Materyal renkleri `convertSRGBToLinear()` ile verilir. Ekran dokuları `toneMapped: false` olduğu için görsel renkleri doğru kalır.
+6. **Renk yönetimi ve ışık birimleri.** three'nin renk yönetimi açık: CSS/hex renkler (`color.set('#…')`) otomatik lineere çevrilir, `convertSRGBToLinear()` çağırma. r128'de lineer olarak ayarlanmış sabitler `lin(0x…)` ile verilir (`devices/materials.js`). Doku canvas'ları `colorSpace = SRGBColorSpace`. Ekran dokuları `toneMapped: false`. Işık şiddetleri durumda r128 anlamını korur; three'ye geçerken `LIGHT_SCALE` (π) ile çarpılır (doğrudan ışıklar, ortam ışığı ve zemin gölgesinin `uAmbientW` ağırlığı birlikte). Spot ve nokta ışık `decay = 0` (mesafeyle zayıflama yok).
 7. Tuş yazıları yazı tipi yüklendikten sonra yeniden çizilmek için dizüstü yeniden kurulur (`document.fonts.ready`).
 
 ## Geçmişten kalanlar
 
-- **three r128.** claude.ai'nin CSP'si yalnızca cdnjs/jsdelivr'a izin verdiği için seçilmişti. Artık npm'den geliyor; yükseltme `TODO.md`'de.
+- **r128 kalibrasyonu.** Işık şiddetleri, preset'ler ve lineer renk sabitleri r128'de göz kararı ayarlandı; r186'ya taşınırken görünüm korunacak şekilde çevrildi (bkz. kırılgan nokta 6).
 - **İndirme** yerel: `offer(name, blob)` geçici bir `<a download>` + `URL.createObjectURL` kullanır. JSZip yüklenemezse toplu dışa aktarım her açıyı ayrı dosya olarak indirir.
 - `localStorage` erişimleri try/catch içinde; öyle kalsın.
 

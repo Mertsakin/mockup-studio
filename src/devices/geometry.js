@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {M} from './materials.js';
+import {M,lin} from './materials.js';
 import {ANISO} from '../render/renderer.js';
 import {mkCanvas,roundRect} from '../util.js';
 
@@ -47,6 +47,6 @@ function slotTexture(n,wpx,hpx,color){
   for(let i=0;i<n;i++){roundRect(g,i*sw+sw*.25,hpx*.08,sw*.5,hpx*.84,sw*.25);g.fill();}
   const t=new THREE.CanvasTexture(c);t.anisotropy=ANISO;return t;
 }
-function alphaMat(t){return new THREE.MeshStandardMaterial({color:0x030304,roughness:1,metalness:0,alphaMap:t,transparent:true,alphaTest:.35,depthWrite:false});}
+function alphaMat(t){return new THREE.MeshStandardMaterial({color:lin(0x030304),roughness:1,metalness:0,alphaMap:t,transparent:true,alphaTest:.35,depthWrite:false});}
 
 export {alphaMat,dotTexture,flatRR,hole,lens,mesh,onSide,rrShape,slab,slotTexture};

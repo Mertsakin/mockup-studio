@@ -4,20 +4,22 @@ import {COLORS,THEMES} from '../state/constants.js';
 import {mkCanvas,rng} from '../util.js';
 
 /* ---------- shared materials & textures ---------- */
+// Constants below were tuned in r128 as linear values; lin() keeps them linear under color management.
+const lin=hex=>new THREE.Color().setHex(hex,THREE.LinearSRGBColorSpace);
 const M={
-  glass:new THREE.MeshPhysicalMaterial({color:0x030405,roughness:.18,metalness:0,clearcoat:1,clearcoatRoughness:.04}),
+  glass:new THREE.MeshPhysicalMaterial({color:lin(0x030405),roughness:.18,metalness:0,clearcoat:1,clearcoatRoughness:.04}),
   black:new THREE.MeshBasicMaterial({color:0x000000}),
-  lens:new THREE.MeshStandardMaterial({color:0x07080a,roughness:.04,metalness:.6}),
-  flash:new THREE.MeshStandardMaterial({color:0xf1ead8,roughness:.3,metalness:0}),
+  lens:new THREE.MeshStandardMaterial({color:lin(0x07080a),roughness:.04,metalness:.6}),
+  flash:new THREE.MeshStandardMaterial({color:lin(0xf1ead8),roughness:.3,metalness:0}),
   glare:new THREE.MeshPhysicalMaterial({color:0x000000,metalness:0,roughness:.035,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,envMapIntensity:.45}),
-  keycap:new THREE.MeshPhysicalMaterial({color:0x08090a,roughness:.72,metalness:0,clearcoat:.08,clearcoatRoughness:.6}),
-  well:new THREE.MeshStandardMaterial({color:0x0b0c0e,roughness:.9,metalness:0}),
-  port:new THREE.MeshStandardMaterial({color:0x040405,roughness:.95,metalness:0}),
-  portIn:new THREE.MeshStandardMaterial({color:0x6c7078,roughness:.5,metalness:.6}),
-  rubber:new THREE.MeshStandardMaterial({color:0x1b1c1f,roughness:.95,metalness:0}),
-  hole:new THREE.MeshBasicMaterial({color:0x020203})
+  keycap:new THREE.MeshPhysicalMaterial({color:lin(0x08090a),roughness:.72,metalness:0,clearcoat:.08,clearcoatRoughness:.6}),
+  well:new THREE.MeshStandardMaterial({color:lin(0x0b0c0e),roughness:.9,metalness:0}),
+  port:new THREE.MeshStandardMaterial({color:lin(0x040405),roughness:.95,metalness:0}),
+  portIn:new THREE.MeshStandardMaterial({color:lin(0x6c7078),roughness:.5,metalness:.6}),
+  rubber:new THREE.MeshStandardMaterial({color:lin(0x1b1c1f),roughness:.95,metalness:0}),
+  hole:new THREE.MeshBasicMaterial({color:lin(0x020203)})
 };
-function tex(c){const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=ANISO;return t;}
+function tex(c){const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=ANISO;return t;}
 /* ---------- procedural surface maps (brushed / bead-blasted metal) ---------- */
 function heightToNormal(h,w,hh,k){
   const c=mkCanvas(w,hh),g=c.getContext('2d'),img=g.createImageData(w,hh),d=img.data;
@@ -63,7 +65,7 @@ function surfTex(kind,rep){
 }
 function applyFinish(mat,fk,colorHex,opts){
   const f=FINISHES[fk]||FINISHES.brushed;opts=opts||{};
-  mat.color.set(colorHex).convertSRGBToLinear();
+  mat.color.set(colorHex);
   mat.metalness=opts.metal!==undefined?opts.metal:f.metal;mat.roughness=opts.rough!==undefined?opts.rough:f.rough;
   mat.clearcoat=f.clear||0;mat.clearcoatRoughness=.05;
   if(f.n2){const t=surfTex(f.n2,f.rep);mat.normalMap=t.normal;mat.normalScale.set(f.ns,f.ns);mat.roughnessMap=t.rough;}
@@ -92,8 +94,8 @@ const LENS_TEX=(function(){
   rings.forEach(([rad,col])=>{g.beginPath();g.arc(128,128,rad,0,Math.PI*2);g.fillStyle=col;g.fill();});
   const gr=g.createRadialGradient(108,104,2,118,112,60);gr.addColorStop(0,'rgba(120,90,200,.55)');gr.addColorStop(.5,'rgba(40,90,160,.25)');gr.addColorStop(1,'rgba(0,0,0,0)');
   g.fillStyle=gr;g.beginPath();g.arc(128,128,60,0,Math.PI*2);g.fill();
-  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
 })();
 M.lensFace=new THREE.MeshPhysicalMaterial({map:LENS_TEX,roughness:.08,metalness:0,clearcoat:1,clearcoatRoughness:.02});
 
-export {FINISHES,M,applyColorTo,makeMats,tex};
+export {FINISHES,M,applyColorTo,lin,makeMats,tex};

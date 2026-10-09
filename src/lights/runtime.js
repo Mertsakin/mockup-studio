@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {lightTan} from './mods.js';
 import {scheduleEnv} from '../render/environment.js';
-import {req} from '../render/renderer.js';
+import {LIGHT_SCALE,req} from '../render/renderer.js';
 import {ambU,hemi,lightRoot,pivot} from '../render/stage.js';
 import {state,view} from '../state/state.js';
 import {D2R,V3} from '../util.js';
@@ -10,8 +10,9 @@ const LRT=new Map();
 const selLight=()=>state.lights.find(l=>l.id===state.selLight)||state.lights[0]||null;
 function buildLight(L){
   let l;
-  if(L.type==='spot'){l=new THREE.SpotLight();l.distance=0;}
-  else if(L.type==='point'){l=new THREE.PointLight();l.distance=0;}
+  // decay 0: no distance falloff, as r128 did with distance=0
+  if(L.type==='spot'){l=new THREE.SpotLight();l.distance=0;l.decay=0;}
+  else if(L.type==='point'){l=new THREE.PointLight();l.distance=0;l.decay=0;}
   else l=new THREE.DirectionalLight();
   lightRoot.add(l);if(l.target)lightRoot.add(l.target);
   const marker=new THREE.Mesh(new THREE.SphereGeometry(1,18,12),new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false}));
@@ -26,7 +27,7 @@ function disposeLight(id){
   o.marker.geometry.dispose();o.marker.material.dispose();LRT.delete(id);
 }
 function applyAmbient(){
-  hemi.intensity=.2*state.ambient;ambU.value=.6*state.ambient;scheduleEnv();req();
+  hemi.intensity=.2*state.ambient*LIGHT_SCALE;ambU.value=.6*state.ambient*LIGHT_SCALE;scheduleEnv();req();
 }
 // UI (light map, shadow description) refreshes after every light update
 const uiHooks=[];
@@ -39,7 +40,7 @@ function updateLights(){
     const az=L.az*D2R,el=L.el*D2R,d=R*L.dist;
     l.position.set(c.x+d*Math.cos(el)*Math.sin(az),c.y+d*Math.sin(el),c.z+d*Math.cos(el)*Math.cos(az));
     if(l.target){l.target.position.copy(c);l.target.updateMatrixWorld();}
-    l.color.set(L.color).convertSRGBToLinear();l.intensity=L.intensity;
+    l.color.set(L.color);l.intensity=L.intensity*LIGHT_SCALE;
     if(L.type==='spot'){l.angle=L.angle*D2R;l.penumbra=L.penumbra;}
     l.castShadow=L.shadow;
     if(L.shadow){

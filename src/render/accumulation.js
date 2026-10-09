@@ -22,19 +22,20 @@ const quadScene=new THREE.Scene(),quadCam=new THREE.OrthographicCamera(-1,1,1,-1
 quad.frustumCulled=false;quadScene.add(quad);
 const ACC={frame:null,acc:null,w:0,h:0,type:null,n:0,max:64};
 (function(){
-  const ex=renderer.extensions,caps=renderer.capabilities;
-  if(window.__accType)ACC.type=window.__accType;
-  else if(caps.isWebGL2&&ex.has('EXT_color_buffer_float'))ACC.type=THREE.HalfFloatType;
-  else if(!caps.isWebGL2&&ex.has('OES_texture_half_float')&&ex.has('EXT_color_buffer_half_float'))ACC.type=THREE.HalfFloatType;
-  else if(!caps.isWebGL2&&ex.has('OES_texture_float')&&ex.has('WEBGL_color_buffer_float'))ACC.type=THREE.FloatType;
+  if(renderer.extensions.has('EXT_color_buffer_float'))ACC.type=THREE.HalfFloatType;
 })();
 function accEnsure(w,h){
   if(!ACC.type)return false;
   if(ACC.frame&&ACC.w===w&&ACC.h===h)return true;
   if(ACC.frame){ACC.frame.dispose();ACC.acc.dispose();}
   try{
-    const opts={minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,encoding:THREE.sRGBEncoding,depthBuffer:true,stencilBuffer:true};
-    ACC.frame=(renderer.capabilities.isWebGL2&&THREE.WebGLMultisampleRenderTarget)?new THREE.WebGLMultisampleRenderTarget(w,h,Object.assign({samples:4},opts)):new THREE.WebGLRenderTarget(w,h,opts);
+    // Each sample is rendered like the screen: per-material tone mapping and sRGB encoding in the shader, stored
+    // as plain 8-bit (RGBA8, not SRGB8). three applies tone mapping / output colour space only to the canvas or
+    // to targets flagged isXRRenderTarget; in WebGLRenderer the flag has no other effect. Averaging then happens
+    // in display space, as in r128.
+    ACC.frame=new THREE.WebGLRenderTarget(w,h,{samples:4,minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,
+      colorSpace:THREE.SRGBColorSpace,internalFormat:'RGBA8',depthBuffer:true,stencilBuffer:true});
+    ACC.frame.isXRRenderTarget=true;
     ACC.acc=new THREE.WebGLRenderTarget(w,h,{minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,type:ACC.type,depthBuffer:false,stencilBuffer:false});
     ACC.w=w;ACC.h=h;return true;
   }catch(e){ACC.type=null;ACC.frame=null;return false;}

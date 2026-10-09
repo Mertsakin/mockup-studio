@@ -10,7 +10,7 @@ const envScene=new THREE.Scene();
 const roomMat=new THREE.MeshBasicMaterial({side:THREE.BackSide});
 roomMat.map=(function(){const c=mkCanvas(4,256),g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,256);
   gr.addColorStop(0,'#e6e8ec');gr.addColorStop(.42,'#aeb3ba');gr.addColorStop(.5,'#7d828a');gr.addColorStop(.56,'#4c5058');gr.addColorStop(1,'#2a2c31');
-  g.fillStyle=gr;g.fillRect(0,0,4,256);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;})();
+  g.fillStyle=gr;g.fillRect(0,0,4,256);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
 envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10,48,24),roomMat));
 const envLights=new THREE.Group();envScene.add(envLights);
 function panelTex(kind){
@@ -21,7 +21,7 @@ function panelTex(kind){
     if(rad){gr.addColorStop(0,'#ffffff');gr.addColorStop(.7,'#e8e8e8');gr.addColorStop(.92,'#bdbdbd');gr.addColorStop(1,'#000');}
     else{gr.addColorStop(0,'#fff');gr.addColorStop(.5,'#fff');gr.addColorStop(1,'#000');}
     g.fillStyle=gr;g.fillRect(0,0,256,256);}
-  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
 }
 const PANEL_TEX={soft:panelTex('soft'),hot:panelTex('hot'),window:panelTex('window')};
 let envSig='',envTimer=null,envRT=null;
@@ -45,7 +45,7 @@ function rebuildEnv(){
       default:geo=new THREE.PlaneGeometry(w,w);
     }
     const mat=new THREE.MeshBasicMaterial({map:PANEL_TEX[kind],side:THREE.DoubleSide});
-    mat.color.set(L.color).convertSRGBToLinear().multiplyScalar(val);
+    mat.color.set(L.color).multiplyScalar(val);
     const p=new THREE.Mesh(geo,mat);p.position.copy(dir.multiplyScalar(dist));p.lookAt(0,0,0);envLights.add(p);
   });
   const old=envRT;envRT=pmrem.fromScene(envScene,0.02,.1,50);scene.environment=envRT.texture;if(old)old.dispose();

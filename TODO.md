@@ -6,13 +6,7 @@
 
 - [x] **Yerel indirme:** `offer()` içindeki `window.claude.use('downloads')` yolunu `<a download>` tabanlı indirmeyle değiştir; ZIP toplu indirme de aynı yoldan.
 - [x] **Modüllere ayırma:** Vite + ES modülleri (`src/state`, `render`, `devices`, `lights`, `ui`, `export`). Test düzeneği `src/main.js`'i esbuild ile paketliyor; ESLint eklendi.
-- [ ] **three.js yükseltmesi (r128 → güncel):** dikkat edilecekler:
-  - `outputEncoding`/`encoding` → `outputColorSpace`/`colorSpace`
-  - fiziksel ışık birimleri varsayılan; şiddetler yeniden kalibre edilmeli (yaklaşık ×π)
-  - `WebGLMultisampleRenderTarget` → `WebGLRenderTarget({ samples })`
-  - `shadowmap_pars_fragment` ve `getShadow` imzası değişti (yeni sürümlerde `shadowIntensity` parametresi var); PCSS yaması ve `SHADOW_CHUNK` yeniden yazılmalı
-  - `Quaternion.invert`, `Box3.setFromObject` davranışları kontrol edilmeli
-  - yükseltmeden önce ve sonra aynı sahnelerden render alıp karşılaştır
+- [x] **three.js yükseltmesi (r128 → r186):** renk uzayı API'leri, renk yönetimi (`lin()`), ışık birimleri (`LIGHT_SCALE`, `decay = 0`), `BasicShadowMap` üzerinde yeniden yazılmış PCSS (nokta ışıkta küp derinlik haritası), MSAA hedefi. Test düzeneği WebGL1 desteği kalktığı için Playwright'a taşındı. Önce/sonra farkı yansımalarda ve yazı kenarlarında küçük (PMREM ve donanım sRGB çözme).
 
 ## 2. Gerçekçilik
 
@@ -38,4 +32,6 @@
 - Işık küreleri genelde kadraj dışında kalıyor; asıl kontrol ışık haritası.
 - Küçük ekranlarda ışık haritası sahnenin bir köşesini örtüyor.
 - 3840 px dışa aktarım mobil tarayıcılarda bellek sınırına takılabilir (render hedefleri büyük).
-- Dizüstü sahnesinde (`PRESET=1`) cihazın sağında keskin kenarlı bir gölge alanı görünüyor; ışık küresi kadraja giriyor. İncelenmeli.
+- **Gölge hataları (r128'den beri var):** nokta ışıkta (`light-type.js MOD=bulb`) gölge kamerasının `far` düzleminin ötesindeki zemin tamamen gölgede kalıyor (keskin kenarlı gri dikdörtgen). Spot ışıkta (Stüdyo preset'i, `laptop.js PRESET=1`) zemin gölgesi düz bir çizgiyle kesiliyor; muhtemelen gölge kamerasının `far`/frustum sınırı.
+- Işık küresi bazı sahnelerde kadraja giriyor.
+- Spot/nokta ışıkta mesafeyle zayıflama yok (`decay = 0`, r128 davranışı). Fiziksel `decay = 2` daha gerçekçi olur ama preset'lerin yeniden ayarlanmasını gerektirir.
