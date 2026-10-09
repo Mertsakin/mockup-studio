@@ -13,10 +13,24 @@ function refit(){
   pivot.rotation.set(0,0,0);pivot.position.set(0,0,0);comp.position.set(0,0,0);
   RT.forEach((o,id)=>setHolder(o,byId(id)));scene.updateMatrixWorld(true);
   const box=new THREE.Box3();RT.forEach(o=>box.expandByObject(o.holder));
-  if(box.isEmpty())return;
-  view.fitBox=box.clone();comp.position.copy(box.getCenter(new V3())).negate();
-  view.fitRadius=Math.max(1,box.getSize(new V3()).length()/2);
+  if(!box.isEmpty()){
+    view.fitBox=box.clone();comp.position.copy(box.getCenter(new V3())).negate();
+    view.fitRadius=Math.max(1,box.getSize(new V3()).length()/2);
+  }
   pivot.rotation.copy(pr);pivot.position.copy(pp);
+}
+// Re-framing recentres and rescales the whole composition, so with several devices it would visibly move the ones
+// the user already placed. Edits re-frame only a lone device; "Kadraja sığdır", compositions and templates always do.
+function autoRefit(){if(state.devices.length<2)refit();}
+// Current bounding box of the devices in composition space (their real positions, not the last framing).
+function compBox(exceptId){
+  const pr=pivot.rotation.clone(),pp=pivot.position.clone(),cp=comp.position.clone();
+  pivot.rotation.set(0,0,0);pivot.position.set(0,0,0);comp.position.set(0,0,0);
+  RT.forEach((o,id)=>{const d=byId(id);if(d)setHolder(o,d);});scene.updateMatrixWorld(true);
+  const box=new THREE.Box3();
+  RT.forEach((o,id)=>{if(id!==exceptId)o.holder.traverse(x=>{if(x.isMesh&&!x.userData.ao)box.expandByObject(x);});});
+  pivot.rotation.copy(pr);pivot.position.copy(pp);comp.position.copy(cp);scene.updateMatrixWorld(true);
+  return box;
 }
 const tmpV=new V3();
 function extents(){
@@ -50,4 +64,4 @@ function applyTransform(){
   req();
 }
 
-export {applyTransform,camDist,refit};
+export {applyTransform,autoRefit,camDist,compBox,refit};

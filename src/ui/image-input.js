@@ -1,8 +1,8 @@
 import {RT,setHolder} from '../devices/rt.js';
 import {rebuild} from '../devices/runtime.js';
 import {detectScreen,setScreenTexture} from '../devices/screen.js';
-import {applyTransform,refit} from '../render/transform.js';
-import {sel} from '../state/state.js';
+import {applyTransform,autoRefit} from '../render/transform.js';
+import {sel,state} from '../state/state.js';
 import {onSyncUI,syncUI} from './sync.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
@@ -18,7 +18,7 @@ function loadShot(file){
   readImage(file,img=>{
     d.img=img;d.imgName=file.name||'Yapıştırılan görsel';
     const o=RT.get(d.id),wide=img.naturalWidth>img.naturalHeight;
-    if(o&&o.rotatable&&wide!==d.landscape){d.landscape=wide;setHolder(o,d);setScreenTexture(d);refit();applyTransform();}
+    if(o&&o.rotatable&&wide!==d.landscape){d.landscape=wide;setHolder(o,d);setScreenTexture(d);autoRefit();applyTransform();}
     else setScreenTexture(d);
     syncUI();
   });
@@ -28,7 +28,7 @@ function loadFrame(file){
   readImage(file,img=>{
     const r=detectScreen(img);
     if(!r){toast('Ekran alanı bulunamadı. Ortası şeffaf ve kenarları kapalı bir çerçeve PNG\u2019si kullan.');return;}
-    d.frameImg=img;d.frameName=file.name||'Çerçeve';d.screenRect=r;rebuild(d,true);syncUI();
+    d.frameImg=img;d.frameName=file.name||'Çerçeve';d.screenRect=r;rebuild(d,state.devices.length<2);syncUI();
   });
 }
 fileEl.addEventListener('change',()=>{loadShot(fileEl.files[0]);fileEl.value='';});

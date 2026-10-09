@@ -1,11 +1,12 @@
+import * as THREE from 'three';
 import {FINISHES,applyColorTo} from '../devices/materials.js';
 import {RT,setHolder} from '../devices/rt.js';
 import {buildRT,disposeRT,rebuild} from '../devices/runtime.js';
 import {setScreenTexture,updateChrome} from '../devices/screen.js';
-import {req} from '../render/renderer.js';
-import {applyTransform,refit} from '../render/transform.js';
+import {camera,req} from '../render/renderer.js';
+import {applyTransform,autoRefit,compBox,refit} from '../render/transform.js';
 import {COLORS,COMPS,DEFAULT_SCENE,TYPES} from '../state/constants.js';
-import {newDevice,sel,state,view} from '../state/state.js';
+import {newDevice,sel,state} from '../state/state.js';
 import {parseV} from './controls.js';
 import {syncSliders} from './sliders.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
@@ -34,23 +35,28 @@ Object.entries(TYPES).forEach(([k,n])=>{
   b.addEventListener('click',()=>{const d=sel();if(d.type===k)return;
     const solo=state.devices.length===1;d.type=k;
     if(solo){Object.assign(state.scene,DEFAULT_SCENE[k],{zoom:1,panX:0,panY:0});}
-    rebuild(d,true);syncAll();});
+    rebuild(d,solo);syncAll();});
   typeGrid.appendChild(b);
 });
 $('#addDevice').addEventListener('click',()=>{
   const base=sel(),d=newDevice(addSel.value,{colorKey:base.colorKey,custom:base.custom});
   state.devices.push(d);const o=buildRT(d);
-  d.px=+(view.fitBox.max.x+o.size.x*.55+1.5).toFixed(1);
-  d.py=+(view.fitBox.min.y+o.size.y/2).toFixed(1);
-  state.selected=d.id;refit();applyTransform();
-  $('#placeDetails').open=true;syncAll();toast(TYPES[d.type]+' eklendi');
+  // beside the others (right, or left if the right side is off-screen), on the same floor, at their depth.
+  // The framing stays put so devices already placed do not move on screen.
+  const box=compBox(d.id),c=box.getCenter(new THREE.Vector3()),p=new THREE.Vector3();
+  d.py=+(box.min.y+o.size.y/2).toFixed(1);d.pz=+c.z.toFixed(1);state.selected=d.id;
+  const onScreen=x=>{d.px=+x.toFixed(1);autoRefit();applyTransform();o.holder.getWorldPosition(p).project(camera);return Math.abs(p.x)<.95&&Math.abs(p.y)<.95;};
+  const right=box.max.x+o.size.x/2+1.5,visible=onScreen(right)||onScreen(box.min.x-o.size.x/2-1.5);
+  if(!visible)onScreen(right);
+  $('#placeDetails').open=true;syncAll();
+  toast(TYPES[d.type]+' eklendi'+(visible?'':'. Kadraj dışında kaldı: görmek için Kadraja sığdır.'));
 });
 $('#removeDevice').addEventListener('click',()=>{
   if(state.devices.length<2)return;const d=sel();
   disposeRT(d.id);state.devices=state.devices.filter(x=>x.id!==d.id);state.selected=state.devices[0].id;
-  refit();applyTransform();syncAll();
+  autoRefit();applyTransform();syncAll();
 });
-$('#resetDevice').addEventListener('click',()=>{Object.assign(sel(),{px:0,py:0,pz:0,rx:0,ry:0,rz:0,scale:1});refit();applyTransform();syncAll();});
+$('#resetDevice').addEventListener('click',()=>{Object.assign(sel(),{px:0,py:0,pz:0,rx:0,ry:0,rz:0,scale:1});autoRefit();applyTransform();syncAll();});
 $('#fitBtn').addEventListener('click',()=>{refit();state.scene.zoom=1;state.scene.panX=0;state.scene.panY=0;applyTransform();syncSliders();});
 
 const compWrap=$('#comps');
@@ -93,12 +99,12 @@ $$('.seg[data-dkey]').forEach(seg=>{const key=seg.dataset.dkey;
   seg.querySelectorAll('button').forEach(b=>{b.type='button';b.addEventListener('click',()=>{const d=sel();d[key]=parseV(b.dataset.v);onDevice(key,d);});});});
 function onDevice(key,d){
   const o=RT.get(d.id);
-  if(key==='landscape'){setHolder(o,d);setScreenTexture(d);refit();applyTransform();}
+  if(key==='landscape'){setHolder(o,d);setScreenTexture(d);autoRefit();applyTransform();}
   else if(key==='backFinish'){applyColorTo(o.mats,d);req();}
   else if(key==='notch'){if(o.hole)o.hole.visible=d.notch==='hole';req();}
   else if(key==='fit')setScreenTexture(d);
   else if(key==='theme'){applyColorTo(o.mats,d);updateChrome(d);req();}
-  else if(key==='winRatio'||key==='pageRatio')rebuild(d,true);
+  else if(key==='winRatio'||key==='pageRatio')rebuild(d,state.devices.length<2);
   syncUI();
 }
 const screenBgEl=$('#screenBg');screenBgEl.addEventListener('input',()=>{const d=sel();d.screenBg=screenBgEl.value;setScreenTexture(d);});
