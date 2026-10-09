@@ -10,4 +10,4 @@ function applyLightPreset(p){
   state.selLight=state.lights.length?state.lights[0].id:null;rebuildLights();
 }
 
-export {applyLightPreset};
+export {applyLightPreset,rebuildLights};

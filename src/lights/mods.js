@@ -2,6 +2,7 @@
 const MAX_LIGHTS=8;
 const LTYPES={directional:'Yönlü',point:'Nokta',spot:'Spot'};
 let lid=0;
+const reserveLightIds=max=>{lid=Math.max(lid,max);};
 /* Light sources & modifiers. size = source width relative to the scene radius; sun uses its real angular size. */
 const MODS=[
   {k:'sun',n:'Güneş',type:'directional',tan:.0093},
@@ -42,4 +43,4 @@ function shadowCharacter(L){
   return '<b>Gölge: '+c+'.</b> '+tip;
 }
 
-export {LIGHT_PRESETS,LTYPES,MAX_LIGHTS,MODS,lightTan,modOf,newLight,shadowCharacter};
+export {LIGHT_PRESETS,LTYPES,MAX_LIGHTS,MODS,lightTan,modOf,newLight,reserveLightIds,shadowCharacter};

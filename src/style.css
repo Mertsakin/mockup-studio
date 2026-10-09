@@ -25,6 +25,7 @@ body{height:100%;margin:0;background:var(--bg);color:var(--ink);
 .brand h1{font-size:23px;line-height:1.15;letter-spacing:-.015em;margin:0 0 6px;font-weight:700}
 .brand-link{display:inline-block;margin:0 0 8px;color:var(--accent);font-size:14px;font-weight:600;text-decoration:none}
 .brand-link:hover{text-decoration:underline}
+.project-row{display:flex;gap:8px;margin:0 0 12px}.project-row .btn{flex:1}
 .brand p{margin:0;color:var(--muted);font-size:14px;max-width:34ch}
 section{padding:20px 0 4px;border-top:1px solid var(--line)}
 section+section{margin-top:16px}

@@ -53,6 +53,9 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/lights/actions.js` | `rebuildLights`, `applyLightPreset` |
 | `src/ui/sync.js` | `syncUI` / `syncAll`: her panel kendi parçasını `onSyncUI(d => …)` ile kaydeder |
 | `src/ui/capture.js`, `tools/capture/vite-plugin.mjs` | her cihazın kendi adresi (`siteUrl`): "Bu cihaza yakala" / "Tüm cihazlara": URL'yi her cihazın kendi görüntü alanında (telefon 390 mobil, tablet 820 mobil, dizüstü/tarayıcı 1440, monitör 1920; yükseklik ekran oranından) Playwright ile tam sayfa yakalar (en fazla 8000 CSS px), aynı görüntü alanını isteyen cihazlar tek yakalamayı paylaşır. Uç nokta (`/api/capture`) yalnızca dev sunucusunda var; yayınlanmış sürüm için ayrı bir servis gerekir |
+| `src/io/project.js` | sahnenin tam anlık görüntüsü (`snapshot` / `restore` / `signature`): durum + cihazlar + ışıklar + kadraj; görseller anahtarla, bellekte. Proje dosyası (`.mockup.json`, görseller gömülü) ve IndexedDB otomatik kaydı (görseller blob olarak, tek bağlantı, tek transaction, sıralı) |
+| `src/ui/history.js` | geri al / yinele: durumu her 150 ms yoklar, değişip bir yoklama sabit kalınca (sürükleme bittiğinde) adım kaydeder; yeni bir işlem (fareye ya da tuşa basma) bekleyen değişikliği hemen kaydeder. Her adımdan sonra otomatik kayıt, sekme gizlenince/kapanınca anında kayıt. Açılışta şablon yoksa son çalışmayı geri yükler. Proje kaydet/aç düğmeleri |
+| `src/ui/arrange.js` | "Zemine oturt" (şablonlardaki `settleDevices`) ve "Eşit dağıt" (soldan sağa eşit aralık, uçtakiler sabit). Gizmo'da Shift: 1 cm / 15° adım (`gizmo.js`) |
 | `src/ui/navigator.js` | sahnenin sağ üstündeki eksen göstergesi (bir eksen ucuna tıkla: o yönden görünüm; sürükle: yörünge) ve odaklanma ("Odakla", F, çift tıklama): `comp` seçili cihaza göre ortalanır ve kadraj ona göre ayarlanır, sahne o cihazın etrafında döner; "Kadraja sığdır" tüm kompozisyona döner. Geçişler animasyonlu; sahneye basmak ya da tekerlek iptal eder |
 | `src/ui/layers.js` | katman sırası (En öne / Öne / Arkaya / En arkaya, ⌘/Ctrl + [ ]). 3B'de "önde" kameraya yakın demek: komut cihazı diğerlerini geçene kadar derinlikte taşır (zemin açıksa zemin boyunca), ölçeği mesafe oranıyla telafi eder; ekrandaki yeri ve boyutu korunur. Sıra kameraya göredir |
 | `src/ui/gizmo.js` | cihaz başına taşı/döndür gizmo'su (three `TransformControls`). Kanvasa bağlı değil: `pointer.js` olayları önce gizmo'ya iletir. Konum modunda gizmo, `comp` uzayındaki bir vekili (proxy) sürer: oklar zemine hizalıdır. Dönüş modunda tutucunun kendisini, yerel eksenlerde döndürür. Dışa aktarımda gizlenir |
@@ -61,7 +64,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `index.html`, `src/style.css` | stüdyo arayüzü ve stiller |
 | `showcases.html`, `src/showcases.js`, `src/showcases.css` | şablon galerisi (3B motoru yüklemez). Önizlemeler `public/showcases/<id>.jpg`: şablon ya da cihaz görünümü değişince `tools/showcases/thumbs.sh [id…]` ile yeniden üret |
 
-**Bağımlılık yönü:** `state` → `render`/`devices`/`lights` → `ui` → `main`. Döngüsel import yok, öyle kalsın. Alt katman UI'a ihtiyaç duyarsa kanca kullan (ör. `onLightsUpdated`, `onSyncUI`). Başka modülden yeniden atanması gereken değerler `export let` yerine bir nesnede tutulur (`view`, `redraw`).
+**Bağımlılık yönü:** `state` → `render`/`devices`/`lights` → `io` → `ui` → `main`. Döngüsel import yok, öyle kalsın. Alt katman UI'a ihtiyaç duyarsa kanca kullan (ör. `onLightsUpdated`, `onSyncUI`). Başka modülden yeniden atanması gereken değerler `export let` yerine bir nesnede tutulur (`view`, `redraw`).
 
 ## Durum modeli
 

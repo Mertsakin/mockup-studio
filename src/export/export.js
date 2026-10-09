@@ -71,4 +71,4 @@ exportAllBtn.addEventListener('click',async()=>{
   finally{exportAllBtn.disabled=false;exportAllBtn.textContent='Kayıtlı açıların hepsini ZIP olarak indir';}
 });
 
-export {renderExport};
+export {offer,renderExport};

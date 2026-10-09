@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import {V3} from '../util.js';
 
 let uid=0;
+// restored projects carry their own ids: new devices must continue after them
+const reserveDeviceIds=max=>{uid=Math.max(uid,max);};
 function newDevice(type,o){
   return Object.assign({id:++uid,type,landscape:false,notch:'hole',backFinish:'matte',lidAngle:112,colorKey:'graphite',custom:'#7a5cff',
     fit:'cover',screenBg:'#000000',glare:true,finish:null,px:0,py:0,pz:0,rx:0,ry:0,rz:0,scale:1,
@@ -20,4 +22,4 @@ const sel=()=>byId(state.selected)||state.devices[0];
 // Framing shared by transforms, lights, layout and export (reassigned, so kept on an object).
 const view={fitRadius:10,fitBox:new THREE.Box3(new V3(-5,-5,-5),new V3(5,5,5)),aspect:1};
 
-export {byId,newDevice,sel,state,view};
+export {byId,newDevice,reserveDeviceIds,sel,state,view};

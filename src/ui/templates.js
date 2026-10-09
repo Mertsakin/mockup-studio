@@ -51,4 +51,4 @@ function templateFromUrl(){
   const t=id&&TEMPLATES.find(x=>x.id===id);if(t)applyTemplate(t);return t||null;
 }
 
-export {applyTemplate,templateFromUrl};
+export {applyTemplate,settleDevices,templateFromUrl};

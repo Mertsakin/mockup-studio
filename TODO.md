@@ -24,12 +24,12 @@
 
 ## 3. İş akışı
 
-**Sıradaki öncelik (önerilen):** geri al / yinele → proje kaydet/aç + otomatik kayıt → hizalama ve yapışma. Gizmo, katman ve şablonlarla sahne hızlı değiştiği için bunlar iş kaybını önler.
+**Sıradaki öncelik (önerilen):** çoklu seçim → kendi sahneni şablon olarak kaydet → telefon/tablet/monitörü dizüstü seviyesine getirme.
 
 - [ ] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP).
-- [ ] **Proje kaydet/aç:** sahne + ışıklar + açılar + görseller + site adresleri tek dosyada (JSON + görseller, ZIP). Ayrıca otomatik kayıt (sayfa yenilenince sahne kaybolmasın) ve "kendi sahneni şablon olarak kaydet".
-- [ ] **Geri al / yinele** (⌘Z / ⇧⌘Z): gizmo, katman, odaklanma, şablon ve kaydırıcı değişiklikleri.
-- [ ] **Hizalama ve yapışma:** gizmo'da Shift ile 1 cm / 15° adım; "Zemine oturt" düğmesi (şablonlardaki `settleDevices` mantığı); seçili cihazları eşit aralıkla dağıtma.
+- [x] **Proje kaydet/aç:** sahne + ışıklar + açılar + görseller + site adresleri tek dosyada (JSON + görseller, ZIP). Otomatik kayıt IndexedDB'de. Kalan: "kendi sahneni şablon olarak kaydet".
+- [x] **Geri al / yinele** (⌘Z / ⇧⌘Z): gizmo, katman, odaklanma, şablon ve kaydırıcı değişiklikleri.
+- [x] **Hizalama ve yapışma:** gizmo'da Shift ile 1 cm / 15° adım; "Zemine oturt" düğmesi (şablonlardaki `settleDevices` mantığı); seçili cihazları eşit aralıkla dağıtma.
 - [ ] **Çoklu seçim:** Shift ile birden fazla cihaz seçip birlikte taşıma / döndürme / katman komutu.
 - [ ] **Video:** döner tabla animasyonu ve uzun ekran görüntüsünün kaydırılması, MP4/WebM (MediaRecorder veya WebCodecs).
 - [ ] **Mağaza görseli üretici:** başlık/metin katmanları, App Store ve Play Store ölçülerinde toplu çıktı.

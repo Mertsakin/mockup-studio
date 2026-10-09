@@ -15,6 +15,7 @@
     <header class="brand">
       <h1>Mockup stüdyosu</h1>
       <a class="brand-link" href="showcases.html">Hazır şablonlar →</a>
+      <div class="project-row"><button class="btn" id="saveProject" type="button" title="Sahne, ışıklar, açılar ve görseller tek dosyada">Projeyi kaydet</button><button class="btn" id="openProjectBtn" type="button">Proje aç</button><input type="file" id="openProject" accept=".json,application/json" hidden></div>
       <p>Ekran görüntülerini cihazlara yerleştir, sahneyi kur, istediğin açılardan yüksek çözünürlükte indir.</p>
     </header>
 
@@ -29,6 +30,11 @@
       <div class="row"><span class="lbl">Katman</span>
         <div class="seg" id="layerBtns" role="group" aria-label="Seçili cihazın katman sırası">
           <button type="button" data-layer="front" title="En öne getir (⌘/Ctrl + Shift + ])">En öne</button><button type="button" data-layer="forward" title="Bir öne (⌘/Ctrl + ])">Öne</button><button type="button" data-layer="backward" title="Bir arkaya (⌘/Ctrl + [)">Arkaya</button><button type="button" data-layer="back" title="En arkaya gönder (⌘/Ctrl + Shift + [)">En arkaya</button>
+        </div>
+      </div>
+      <div class="row"><span class="lbl">Hizala</span>
+        <div class="seg" id="arrangeBtns" role="group" aria-label="Cihazları hizala">
+          <button type="button" id="settleBtn" title="Tüm cihazların altını aynı zemine hizala">Zemine oturt</button><button type="button" id="distributeBtn" title="Cihazları soldan sağa eşit aralıkla diz (en uçtakiler yerinde kalır)">Eşit dağıt</button>
         </div>
       </div>
       <span class="lbl block">Hazır kompozisyonlar</span>
@@ -152,6 +158,7 @@
   <main class="stagewrap">
     <div class="toolbar">
       <div class="tb-left">
+        <div class="seg" role="group" aria-label="Geçmiş"><button type="button" id="undoBtn" aria-label="Geri al" title="Geri al (⌘/Ctrl + Z)">↶</button><button type="button" id="redoBtn" aria-label="Yinele" title="Yinele (⌘/Ctrl + Shift + Z)">↷</button></div>
         <div class="seg" data-key="mode" role="group" aria-label="Sürükleme davranışı"><button data-v="rotate">Döndür</button><button data-v="move">Taşı</button></div>
         <div class="seg" data-key="gizmo" role="group" aria-label="Seçili cihazın ekseni"><button data-v="translate" title="Eksen oklarıyla taşı (W)">Konum</button><button data-v="rotate" title="Eksen halkalarıyla döndür (E)">Dönüş</button></div>
         <div class="seg" data-key="ratio" role="group" aria-label="Görsel oranı">

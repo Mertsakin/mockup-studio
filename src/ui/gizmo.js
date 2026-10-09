@@ -47,6 +47,9 @@ function gizmoUp(e){if(!tc.dragging)return false;tc.pointerUp(ptr(e));return tru
 const gizmoHot=()=>tc.axis!==null;
 onSyncUI(()=>{if(tc.mode!==state.gizmo)tc.setMode(state.gizmo);attach();});
 function setGizmoMode(m){state.gizmo=m;tc.setMode(m);if(!shown)shown=true;attach();}
+// Shift held: 1 cm / 15° steps
+const snapKeys=e=>{const on=e.shiftKey;tc.setTranslationSnap(on?1:null);tc.setRotationSnap(on?Math.PI/12:null);};
+window.addEventListener('keydown',snapKeys);window.addEventListener('keyup',snapKeys);
 // W: move, E: rotate, Esc: hide (ignored while typing in a field or steering the light map)
 window.addEventListener('keydown',e=>{
   const t=e.target;if(e.metaKey||e.ctrlKey||e.altKey||(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.id==='domeSvg')))return;
