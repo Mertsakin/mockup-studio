@@ -1,7 +1,7 @@
 import {Object3D} from 'three';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {RT} from '../devices/rt.js';
-import {camera,canvas,req,scene} from '../render/renderer.js';
+import {camera,canvas,overlays,req,scene} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
 import {sel,state} from '../state/state.js';
@@ -21,7 +21,7 @@ tc.setSize(1.1);tc.setSpace('local');tc.setMode(state.gizmo);
 // follows the selected holder's position (sliders, templates) except while the gizmo itself is moving it
 class Follower extends Object3D{updateMatrixWorld(force){if(this.target&&!tc.dragging)this.position.copy(this.target.position);super.updateMatrixWorld(force);}}
 const proxy=new Follower();comp.add(proxy);
-const helper=tc.getHelper();scene.add(helper);
+const helper=tc.getHelper();scene.add(helper);overlays.add(helper);
 let shown=false;
 
 function attach(){

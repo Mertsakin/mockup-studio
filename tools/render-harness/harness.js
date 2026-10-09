@@ -20,6 +20,7 @@ const W=+process.env.W||640,H=+process.env.H||800,SAMPLES=+process.env.SAMPLES||
   let failed=false;
   try{
     const page=await browser.newPage({viewport:{width:1400,height:900}});
+    await page.addInitScript(()=>{window.__noPhotoPreview=true;});  // keep renders deterministic
     page.on('pageerror',e=>{failed=true;console.error('page error:',e.message);});
     page.on('console',m=>{const t=m.type(),s=m.text();
       if(t==='error'){failed=true;console.error('console error:',s);}

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {camera,redraw,renderer,scene} from './renderer.js';
+import {camera,onIdle,redraw,renderer,scene} from './renderer.js';
 
 /* ---------- progressive rendering: jittered samples are averaged while the view is still (anti-aliasing + grain-free soft shadows) ---------- */
 const seedU={value:0};
@@ -66,7 +66,7 @@ renderer.shadowMap.autoUpdate=false;
 function startLoop(){(function loop(){
   requestAnimationFrame(loop);
   if(redraw.dirty){redraw.dirty=false;ACC.n=0;}
-  if(ACC.n>=ACC.max)return;
+  if(ACC.n>=ACC.max){onIdle.forEach(f=>f());return;}
   renderer.getDrawingBufferSize(dbs);
   if(!accEnsure(dbs.x,dbs.y)){hookAll();renderer.shadowMap.needsUpdate=true;renderer.setRenderTarget(null);renderer.render(scene,camera);ACC.n=ACC.max;return;}
   const per=ACC.n===0?1:2;

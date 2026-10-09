@@ -1,10 +1,9 @@
 import {LRT} from '../lights/runtime.js';
 import {renderNow} from '../render/accumulation.js';
-import {canvas,renderer,req} from '../render/renderer.js';
+import {canvas,overlays,renderer,req} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
 import {applySaved,saved} from '../ui/angles.js';
-import {gizmoHelper} from '../ui/gizmo.js';
 import {layout,paintBg,ratioNums} from '../ui/layout.js';
 import {syncSliders} from '../ui/sliders.js';
 import {toast} from '../ui/toast.js';
@@ -19,12 +18,12 @@ async function renderExport(onProgress){
   else if(rw>=rh){W=L;H=Math.round(L*rh/rw);}else{H=L;W=Math.round(L*rw/rh);}
   const pr=renderer.getPixelRatio();
   renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
-  LRT.forEach(o=>o.marker.visible=false);const gz=gizmoHelper.visible;gizmoHelper.visible=false;
+  LRT.forEach(o=>o.marker.visible=false);const ov=[...overlays].map(o=>[o,o.visible]);ov.forEach(([o])=>{o.visible=false;});
   try{
     // the path tracer (~260 kB) loads on first use
     if(state.quality==='photo')await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress);
     else renderNow(state.size>=3000?32:48);
-  }finally{LRT.forEach(o=>o.marker.visible=state.markers);gizmoHelper.visible=gz;}
+  }finally{LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});}
   const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);g.drawImage(canvas,0,0,W,H);
   renderer.setPixelRatio(pr);layout();req();
   return new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('blob')),state.format==='jpg'?'image/jpeg':'image/png',.93));

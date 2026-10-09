@@ -20,6 +20,7 @@ import './ui/capture.js';
 import './ui/layers.js';
 import './ui/navigator.js';
 import './ui/arrange.js';
+import './render/photo-preview.js';
 import './ui/pointer.js';
 import './ui/dome.js';
 import './export/export.js';

@@ -1,0 +1,1 @@
+photo_studio_01_1k.hdr — "Photo Studio 01" by Poly Haven (polyhaven.com), CC0 1.0. Used as the path tracer's environment (src/render/pathtrace.js).

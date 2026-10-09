@@ -17,6 +17,10 @@ const camera=new THREE.PerspectiveCamera(28,1,0.1,1000);
 // r128 scaled direct light by PI in the shader ("legacy lights"). Light intensities in state and presets
 // keep their r128 meaning; this factor is applied where they reach three.
 const LIGHT_SCALE=Math.PI;
-const redraw={dirty:true};function req(){redraw.dirty=true;}
+const redraw={dirty:true};
+// Helpers that must never appear in photos or exports (gizmo); and callbacks run on every change (the photo preview
+// restores the scene it prepared, synchronously, so nothing ever sees a scene in "photo set-up" state).
+const overlays=new Set(),onChange=new Set(),onIdle=new Set();  // onIdle: every frame once the raster render has converged
+function req(){redraw.dirty=true;onChange.forEach(f=>f());}
 
-export {ANISO,LIGHT_SCALE,camera,canvas,redraw,renderer,req,scene};
+export {ANISO,LIGHT_SCALE,camera,canvas,onChange,onIdle,overlays,redraw,renderer,req,scene};

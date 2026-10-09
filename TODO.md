@@ -11,6 +11,8 @@
 ## 2. Gerçekçilik
 
 - [ ] **Alan ışıkları:** `RectAreaLight` ile softbox/strip/pencere aydınlatması; parlak yüzeylerde doğru şekilli vurgu (yükseltme sonrası).
+- [x] **Fotoğraf önizlemesi:** "Fotoğraf" kalitesinde kamera durunca önizleme yol izlemeye geçer (stüdyo HDRI'ı, cila katmanı düzeltmesi, uyarlanabilir gürültü giderme). Varsayılan kalite artık "Fotoğraf".
+- [ ] Blender ile cihaz modelleri (`tools/blender/phone.py` deneysel): yol izlemede kazanç küçük; ancak yakın çekimler için değerlendirilebilir.
 - [x] **Yol izleme (path tracing) modu:** dışa aktarımda "Fotoğraf" kalitesi (three-gpu-pathtracer, 128 örnek + gürültü giderme, ilerleme göstergesi). Devamı:
   - şeffaf arka planda zemin gölgesi (iki geçişli gölge yakalayıcı)
   - hız: 2160 px'de birkaç dakika; WebGPU sürümü (`WebGPUPathTracer`) ve uyarlanabilir örnek sayısı denenmeli
