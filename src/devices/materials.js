@@ -85,7 +85,13 @@ function applyColorTo(m,d){
   const c=colorPreset(d).c;
   applyFinish(m.frame,d.finish,c);
   // back panel: frosted glass on phones/tablets, same metal elsewhere
-  if(d.type==='phone'||d.type==='tablet'){applyFinish(m.back,'matte',c,{metal:.15,rough:.42});m.back.clearcoat=.35;m.back.clearcoatRoughness=.25;}
+  if(d.type==='phone'||d.type==='tablet'){
+    // glass back, smooth: frosted (matte) comes from roughness alone; a normal map at this scale reads as orange peel
+    const glossy=d.backFinish==='glossy';
+    applyFinish(m.back,'matte',c,{metal:.15,rough:glossy?.06:.45});
+    m.back.normalMap=null;m.back.roughnessMap=null;
+    m.back.clearcoat=glossy?1:.15;m.back.clearcoatRoughness=glossy?.02:.4;m.back.needsUpdate=true;
+  }
   else applyFinish(m.back,d.finish,c);
   // trackpad: glass-like, slightly darker than the body (no clearcoat: with the normal map it renders black when path traced)
   applyFinish(m.pad,'matte',c,{metal:.3,rough:.2});m.pad.color.multiplyScalar(.88);

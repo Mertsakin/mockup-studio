@@ -3,7 +3,7 @@ import {V3} from '../util.js';
 
 let uid=0;
 function newDevice(type,o){
-  return Object.assign({id:++uid,type,landscape:false,notch:'hole',lidAngle:112,colorKey:'graphite',custom:'#7a5cff',
+  return Object.assign({id:++uid,type,landscape:false,notch:'hole',backFinish:'matte',lidAngle:112,colorKey:'graphite',custom:'#7a5cff',
     fit:'cover',screenBg:'#000000',glare:true,finish:null,px:0,py:0,pz:0,rx:0,ry:0,rz:0,scale:1,
     img:null,imgName:'',frameImg:null,frameName:'',screenRect:null,url:'siteadi.com',theme:'light',winRatio:'16:10'},o||{});
 }

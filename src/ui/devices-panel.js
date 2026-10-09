@@ -64,7 +64,7 @@ function applyComp(c){
   const next=c.items.map(it=>{
     const r=(pool[it.type]||[]).shift();
     const nd=newDevice(it.type,{colorKey:base.colorKey,custom:base.custom});
-    if(r)['img','imgName','fit','screenBg','glare','finish','notch','url','theme','winRatio','frameImg','frameName','screenRect','colorKey','custom','lidAngle'].forEach(k=>nd[k]=r[k]);
+    if(r)['img','imgName','fit','screenBg','glare','finish','notch','url','theme','winRatio','frameImg','frameName','screenRect','colorKey','custom','lidAngle','backFinish'].forEach(k=>nd[k]=r[k]);
     return Object.assign(nd,it);
   });
   [...RT.keys()].forEach(disposeRT);
@@ -94,6 +94,7 @@ $$('.seg[data-dkey]').forEach(seg=>{const key=seg.dataset.dkey;
 function onDevice(key,d){
   const o=RT.get(d.id);
   if(key==='landscape'){setHolder(o,d);setScreenTexture(d);refit();applyTransform();}
+  else if(key==='backFinish'){applyColorTo(o.mats,d);req();}
   else if(key==='notch'){if(o.hole)o.hole.visible=d.notch==='hole';req();}
   else if(key==='fit')setScreenTexture(d);
   else if(key==='theme'){applyColorTo(o.mats,d);updateChrome(d);req();}
