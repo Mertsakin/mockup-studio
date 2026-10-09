@@ -9,9 +9,13 @@ const pmrem=new THREE.PMREMGenerator(renderer);
 const envScene=new THREE.Scene();
 const roomMat=new THREE.MeshBasicMaterial({side:THREE.BackSide});
 roomMat.map=(function(){const c=mkCanvas(4,256),g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,256);
-  gr.addColorStop(0,'#e6e8ec');gr.addColorStop(.42,'#aeb3ba');gr.addColorStop(.5,'#7d828a');gr.addColorStop(.56,'#4c5058');gr.addColorStop(1,'#2a2c31');
+  // light grey seamless sweep, like a product-photo studio: metal sides reflect a bright floor instead of going black
+  gr.addColorStop(0,'#d6d8dc');gr.addColorStop(.45,'#bcc0c5');gr.addColorStop(.52,'#9fa3a9');gr.addColorStop(1,'#8a8e94');
   g.fillStyle=gr;g.fillRect(0,0,4,256);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
 envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10,48,24),roomMat));
+// black flag on the right: a dark reflection that gives metal edges contrast
+const flag=new THREE.Mesh(new THREE.PlaneGeometry(6,9),new THREE.MeshBasicMaterial({color:0x111111,side:THREE.DoubleSide}));
+flag.position.set(8.4,1,-1.5);flag.lookAt(0,0,0);envScene.add(flag);
 const envLights=new THREE.Group();envScene.add(envLights);
 function panelTex(kind){
   const c=mkCanvas(256,256),g=c.getContext('2d');
