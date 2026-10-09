@@ -82,6 +82,9 @@ input[type=text]{font:inherit;font-size:13.5px;padding:7px 10px;border:1px solid
 .capture-actions{display:flex;gap:8px}.capture-actions .btn{flex:1}
 .capture input{font:inherit;font-size:13.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);min-width:0;flex:1}
 .capture input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* toolbar switch (live photo preview) */
+.tb-switch{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.tb-switch input{accent-color:var(--accent);margin:0}
 /* custom artboard size (px) */
 .artboard{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:13px}
 .artboard input{font:inherit;font-size:13px;width:74px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);text-align:right}

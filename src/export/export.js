@@ -10,7 +10,7 @@ import {toast} from '../ui/toast.js';
 import {$,mkCanvas} from '../util.js';
 
 /* ---------- export ---------- */
-const PHOTO_SAMPLES=128;
+const PHOTO_SAMPLES=64,PHOTO_BUDGET_MS=30000;  // OIDN cleans the rest
 // onProgress(0..1) is called while a photo-quality (path traced) render runs
 async function renderExport(onProgress){
   const [rw,rh]=ratioNums(),L=state.size;let W,H;
@@ -18,13 +18,14 @@ async function renderExport(onProgress){
   else if(rw>=rh){W=L;H=Math.round(L*rh/rw);}else{H=L;W=Math.round(L*rw/rh);}
   const pr=renderer.getPixelRatio();
   renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
+  let src=canvas;
   LRT.forEach(o=>o.marker.visible=false);const ov=[...overlays].map(o=>[o,o.visible]);ov.forEach(([o])=>{o.visible=false;});
   try{
     // the path tracer (~260 kB) loads on first use
-    if(state.quality==='photo')await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress);
+    if(state.quality==='photo')src=await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress,PHOTO_BUDGET_MS);
     else renderNow(state.size>=3000?32:48);
   }finally{LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});}
-  const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);g.drawImage(canvas,0,0,W,H);
+  const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);g.drawImage(src,0,0,W,H);
   renderer.setPixelRatio(pr);layout();req();
   return new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('blob')),state.format==='jpg'?'image/jpeg':'image/png',.93));
 }

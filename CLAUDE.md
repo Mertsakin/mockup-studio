@@ -100,6 +100,13 @@ tools/render-harness/compare.sh renders/once renders/sonra
 7. Tuş yazıları yazı tipi yüklendikten sonra yeniden çizilmek için dizüstü yeniden kurulur (`document.fonts.ready`).
 8. **Yol izleme (fotoğraf kalitesi).** Önizleme canlı sahneyi değiştirir: `req()` çağrılmadan sahneyi okuyan ya da değiştiren yeni bir kod yolu eklersen önce `onChange` ile önizlemenin kapandığından emin ol. Yol izleyici `InstancedMesh`'i okuyamaz (klavye düz mesh'lerle kurulur) ve `MeshBasicMaterial` ışık yaymaz (ekranlar render süresince ışık yayan malzemeye geçirilir). Sahneye yeni bir şey eklersen `renderPathTraced` içindeki geçici değişiklik/geri alma listesine bak. Zemin gölgesi yalnızca stüdyo fonu ile (zemin açık + opak arka plan) vardır; şeffaf arka planda gölge yakalanmaz. İlerleme gerçek: her örnekten sonra hedeften bir piksel okunur (yoksa GPU kuyruğu şişer ve bağlam düşer). Hız: 1080 px / 128 örnek ≈ 85 sn (M1 Pro, headless).
 
+## Fotoğraf kalitesi (yol izleme)
+
+- Dışa aktarım: `renderPathTraced(PHOTO_SAMPLES, onProgress, PHOTO_BUDGET_MS)` (`src/export/export.js`, 64 örnek / 30 sn). Ham görüntü `present(1e-3)` ile alınır (0 eşik filtrede NaN üretir), sonra OIDN (`denoiser` paketi, WebGL, `useTiling`, `tileSize 256`, `srgb = true`; ağırlıklar `public/oidn/`). OIDN çıktısı boşsa ya da boyutu tutmuyorsa ham görüntüye düşülür.
+- Test düzeneğinde `NO_OIDN=1` OIDN'i kapatır, `OIDN_SRGB=0/1` srgb ayarını zorlar.
+- Canlı önizleme isteğe bağlı (`state.photoPreview`, "Canlı fotoğraf" anahtarı); varsayılan kalite "Hızlı".
+- Tuş yazısı dokusu 4096 px genişliğinde (yakın çekimde keskinlik).
+
 ## Geçmişten kalanlar
 
 - **r128 kalibrasyonu.** Işık şiddetleri, preset'ler ve lineer renk sabitleri r128'de göz kararı ayarlandı; r186'ya taşınırken görünüm korunacak şekilde çevrildi (bkz. kırılgan nokta 6).

@@ -21,7 +21,7 @@ import {D2R,V3} from '../util.js';
 const SHAPES={softbox:[1.25,.85],strip:[.3,1.5],window:[1,1.3],octa:[1,1,true],umbrella:[1,1,true],dish:[1,1,true],
   flash:[1,1,true],reflector:[1,1,true],bulb:[1,1,true],overcast:[1,1,true]};
 const ENV_SCALE=.5,SCREEN_GLOW=.9,HDRI='hdri/photo_studio_01_1k.hdr',ENV_MEAN=.45;  // ENV_MEAN: average radiance of the former gradient
-const PREVIEW_SAMPLES=128,PREVIEW_SCALE=.5,SWEEP_GLOW=.45;
+const PREVIEW_SAMPLES=64,PREVIEW_SCALE=.5,SWEEP_GLOW=.45;
 let pt=null,denoise=null,hdri=null,hdriScale=1;
 const PX=new Float32Array(4);  // the path tracer's target is float
 
@@ -104,27 +104,54 @@ quad.frustumCulled=false;qs.add(quad);
 // test / tuning hook: denoise strength (sigma, kSigma, threshold)
 const setDenoise=o=>{ensurePT();Object.keys(o).forEach(k=>{denoise.uniforms[k].value=o[k];});};
 // denoise strength follows the sample count: strong while noisy, lighter as the image converges (keeps text sharp)
-function present(){
-  denoise.uniforms.threshold.value=Math.max(.08,.5/Math.sqrt(Math.max(1,pt.samples)));
+// a tiny threshold = practically no filtering (exports, where OIDN runs afterwards)
+function present(threshold){
+  denoise.uniforms.threshold.value=threshold!==undefined?threshold:Math.max(.08,.5/Math.sqrt(Math.max(1,pt.samples)));
   denoise.map=pt.target.texture;denoise.transparent=scene.background===null;quad.material=denoise;
   renderer.setRenderTarget(null);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(qs,qc);
 }
 
-/* Export: `samples` path traced samples onto the canvas at its current size. onProgress(0..1). */
-async function renderPathTraced(samples,onProgress){
+/* Export: path traces at the canvas' current size until `samples` or `budgetMs`, then removes the remaining noise with
+   Intel Open Image Denoise (the "denoiser" package, weights self-hosted in public/oidn), keeping the alpha channel.
+   Returns a 2D canvas with the final image. onProgress(0..1): sampling up to .9, denoising the rest. */
+async function renderPathTraced(samples,onProgress,budgetMs=60000){
   stopPreview();
-  const env=await loadHdri().catch(()=>null)||gradientEnv(),undoStudio=setupStudio(env);
+  const env=await loadHdri().catch(()=>null)||gradientEnv(),undoStudio=setupStudio(env),t0=performance.now();
+  let raw;
   try{
     ensurePT();pt.renderScale=1;pt.setScene(scene,camera);
-    while(pt.samples<samples){
+    while(pt.samples<samples&&(pt.samples<8||performance.now()-t0<budgetMs)){
       pt.renderSample();
-      // waiting on a pixel read keeps the GPU queue short (no context loss) and makes progress real, not queued
+      // waiting on a pixel read keeps the GPU queue short (no context loss, the system stays responsive)
       renderer.readRenderTargetPixels(pt.target,0,0,1,1,PX);
-      if(onProgress)onProgress(Math.min(1,pt.samples/samples));
+      if(onProgress)onProgress(.9*Math.min(1,Math.max(pt.samples/samples,(performance.now()-t0)/budgetMs)));
       await new Promise(r=>setTimeout(r,0));
     }
-    present();
+    present(1e-3);  // practically unfiltered (0 would divide by zero in the filter)
+    raw=copyCanvas(renderer.domElement);
   }finally{undoStudio();req();}
+  const tn=performance.now();
+  if(!window.__noOidn)try{await oidn(raw);console.info('OIDN '+Math.round(performance.now()-tn)+' ms, '+Math.floor(pt.samples)+' örnek');}catch(e){console.warn('OIDN kullanılamadı, basit gürültü giderme ile devam:',e);}
+  if(onProgress)onProgress(1);
+  return raw;
+}
+function copyCanvas(src){const c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);return c;}
+let oidnP=null;
+async function oidn(c){
+  if(!oidnP)oidnP=import('denoiser').then(({Denoiser})=>{const d=new Denoiser('webgl');
+    d.weightsUrl=new URL('oidn',document.baseURI).href;d.quality='balanced';d.hdr=false;d.srgb=window.__oidnSrgb!==undefined?window.__oidnSrgb:true;d.outputMode='imgData';  // srgb: the canvas holds sRGB-encoded LDR pixels
+    d.useTiling=true;d.tileSize=256;if('batchSize' in d)d.batchSize=1;  // whole-image passes exceed WebGL's texture limit at export sizes
+    return d;});
+  const d=await oidnP,g=c.getContext('2d'),src=g.getImageData(0,0,c.width,c.height);
+  const out=await d.execute(src);
+  if(!out||!out.data||out.data.length!==src.data.length)throw new Error('OIDN çıktısı geçersiz');
+  // a failed GPU pass can come back blank without an error: keep the raw image unless the result has content
+  const a=src.data,b=out.data;let lit=0,ref=0;
+  for(let i=0;i<a.length;i+=4*97){lit+=b[i]+b[i+1]+b[i+2];ref+=a[i]+a[i+1]+a[i+2];}
+  if(ref>0&&lit<ref*.5)throw new Error('OIDN çıktısı boş');
+  // keep the original alpha (transparent backgrounds); OIDN only cleans the colour
+  for(let i=3;i<a.length;i+=4)b[i]=a[i];
+  g.putImageData(out,0,0);
 }
 let gradient=null;
 function gradientEnv(){if(!gradient){gradient=new GradientEquirectTexture(64);gradient.topColor.set('#d6d8dc');gradient.bottomColor.set('#8a8e94');gradient.update();}return gradient;}

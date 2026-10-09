@@ -1,6 +1,6 @@
 import {M} from '../devices/materials.js';
 import {RT} from '../devices/rt.js';
-import {canvas} from '../render/renderer.js';
+import {canvas,req} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {state} from '../state/state.js';
 import {renderDome} from './dome.js';
@@ -32,12 +32,13 @@ formatEl.value=state.format;formatEl.addEventListener('change',()=>{state.format
 const ART=['customW','customH'].map(k=>{const el=$('#'+k);el.value=state[k];
   const read=fix=>{const v=Math.round(+el.value);if(!isFinite(v)||v<1)return;state[k]=Math.min(8192,Math.max(64,v));if(fix)el.value=state[k];if(state.ratio==='custom')layout();};
   el.addEventListener('input',()=>read(false));el.addEventListener('change',()=>read(true));return el;});
+const previewEl=$('#photoPreview');previewEl.checked=state.photoPreview;previewEl.addEventListener('change',()=>{state.photoPreview=previewEl.checked;req();});
 const qualityEl=$('#quality');qualityEl.value=state.quality;qualityEl.addEventListener('change',()=>{state.quality=qualityEl.value;syncUI();});
 onSyncUI(()=>{
   // inputs bound once at start-up; templates change state underneath them
   ['solid','bg1','bg2','pbase','paccent','shadowColor'].forEach(k=>{const el=$('#'+k);if(el&&document.activeElement!==el)el.value=state[k];});
   ['floor','wall','markers','selfShadow','showDome'].forEach(k=>{const el=$('#'+k);if(el)el.checked=state[k];});
-  sizeEl.value=String(state.size);formatEl.value=state.format;qualityEl.value=state.quality;
+  sizeEl.value=String(state.size);formatEl.value=state.format;qualityEl.value=state.quality;previewEl.checked=state.photoPreview;
   const custom=state.ratio==='custom';$('#artboard').hidden=!custom;sizeEl.hidden=custom;
   ART.forEach(el=>{if(document.activeElement!==el)el.value=state[el.id];});
   $$('.seg[data-key]').forEach(seg=>{const v=String(state[seg.dataset.key]);seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));});

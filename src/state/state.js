@@ -14,7 +14,7 @@ const state={
   devices:[],selected:null,mode:'rotate',gizmo:'translate',
   bg:'gradient',solid:'#eef1f4',bg1:'#dfe6ff',bg2:'#f4dcea',pattern:'shards',pbase:'#0d0e11',paccent:'#c8202b',
   floor:true,wall:false,wallGap:.35,selfShadow:true,shadowColor:'#000000',shadowOpacity:.55,ambient:1,exposure:1,markers:true,showDome:true,lights:[],selLight:null,
-  ratio:'4:5',customW:1920,customH:1080,size:2160,format:'png',quality:'photo'
+  ratio:'4:5',customW:1920,customH:1080,size:2160,format:'png',quality:'fast',photoPreview:false
 };
 state.devices=[newDevice('phone')];state.selected=state.devices[0].id;
 const byId=id=>state.devices.find(d=>d.id===id);

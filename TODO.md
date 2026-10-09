@@ -11,11 +11,11 @@
 ## 2. Gerçekçilik
 
 - [ ] **Alan ışıkları:** `RectAreaLight` ile softbox/strip/pencere aydınlatması; parlak yüzeylerde doğru şekilli vurgu (yükseltme sonrası).
-- [x] **Fotoğraf önizlemesi:** "Fotoğraf" kalitesinde kamera durunca önizleme yol izlemeye geçer (stüdyo HDRI'ı, cila katmanı düzeltmesi, uyarlanabilir gürültü giderme). Varsayılan kalite artık "Fotoğraf".
+- [x] **Fotoğraf önizlemesi:** araç çubuğundaki "Canlı fotoğraf" anahtarıyla isteğe bağlı (varsayılan kapalı, varsayılan kalite "Hızlı"); kamera 700 ms durunca yol izlemeye geçer.
 - [ ] Blender ile cihaz modelleri (`tools/blender/phone.py` deneysel): yol izlemede kazanç küçük; ancak yakın çekimler için değerlendirilebilir.
 - [x] **Yol izleme (path tracing) modu:** dışa aktarımda "Fotoğraf" kalitesi (three-gpu-pathtracer, 128 örnek + gürültü giderme, ilerleme göstergesi). Devamı:
   - şeffaf arka planda zemin gölgesi (iki geçişli gölge yakalayıcı)
-  - hız: 2160 px'de birkaç dakika; WebGPU sürümü (`WebGPUPathTracer`) ve uyarlanabilir örnek sayısı denenmeli
+  - hız: 30 sn zaman bütçesi + en çok 64 örnek, ardından OIDN gürültü giderme (`denoiser`, ağırlıklar `public/oidn/`, döşemeli, srgb). 2160 px headless ~60 sn. WebGPU sürümü (`WebGPUPathTracer`) hâlâ denenebilir.
   - ekranın gövdeye yansıyan ışığı bazı sahnelerde güçlü; `SCREEN_GLOW` ve ışık/ortam kalibrasyonu sahne çeşitliliğiyle ince ayarlanmalı
 - [ ] **Telefon, tablet, monitör:** dizüstündeki detay ve malzeme diline (ince kasa, eloksal, temas gölgesi) getirilmeli.
 - [ ] Dizüstü hoparlör ızgarasında uzak mesafede hare (moiré).

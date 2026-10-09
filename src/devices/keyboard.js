@@ -27,12 +27,12 @@ function keyboardLayout(kbW){
   return {keys:rows,depth:total};
 }
 function legendTexture(keys,kbW,kbD){
-  const pxPer=2048/kbW,cw=2048,ch=Math.round(kbD*pxPer),c=mkCanvas(cw,ch),g=c.getContext('2d');
+  const pxPer=4096/kbW,cw=4096,ch=Math.round(kbD*pxPer),c=mkCanvas(cw,ch),g=c.getContext('2d');
   g.fillStyle='rgba(232,235,240,1)';g.textBaseline='middle';
   keys.forEach(k=>{if(!k.label)return;const x=(k.x+kbW/2)*pxPer,y=(k.z+kbD/2)*pxPer,w=k.w*pxPer,h=k.d*pxPer;
     const single=k.label.length===1;
     if(single){g.textAlign='center';g.font='500 '+Math.round(h*.36)+'px "Instrument Sans", system-ui, sans-serif';g.fillText(k.label,x,y+h*.02);}
-    else{g.textAlign='left';g.font='500 '+Math.round(Math.min(h,112)*.27)+'px "Instrument Sans", system-ui, sans-serif';g.fillText(k.label,x-w/2+h*.16,y+h*.22);}
+    else{g.textAlign='left';g.font='500 '+Math.round(Math.min(h,224)*.27)+'px "Instrument Sans", system-ui, sans-serif';g.fillText(k.label,x-w/2+h*.16,y+h*.22);}
   });
   const t=new THREE.CanvasTexture(c);t.anisotropy=ANISO;return t;
 }
