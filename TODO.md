@@ -32,6 +32,5 @@
 - Işık küreleri genelde kadraj dışında kalıyor; asıl kontrol ışık haritası.
 - Küçük ekranlarda ışık haritası sahnenin bir köşesini örtüyor.
 - 3840 px dışa aktarım mobil tarayıcılarda bellek sınırına takılabilir (render hedefleri büyük).
-- **Gölge hataları (r128'den beri var):** nokta ışıkta (`light-type.js MOD=bulb`) gölge kamerasının `far` düzleminin ötesindeki zemin tamamen gölgede kalıyor (keskin kenarlı gri dikdörtgen). Spot ışıkta (Stüdyo preset'i, `laptop.js PRESET=1`) zemin gölgesi düz bir çizgiyle kesiliyor; muhtemelen gölge kamerasının `far`/frustum sınırı.
 - Işık küresi bazı sahnelerde kadraja giriyor.
 - Spot/nokta ışıkta mesafeyle zayıflama yok (`decay = 0`, r128 davranışı). Fiziksel `decay = 2` daha gerçekçi olur ama preset'lerin yeniden ayarlanmasını gerektirir.

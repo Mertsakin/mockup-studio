@@ -5,12 +5,14 @@ import * as THREE from 'three';
    so the blocker search can read raw depths. The BASIC getShadow / getPointShadow are renamed *Hard and
    replaced by PCSS versions with the same signatures.
    shadow.radius carries the per-light size parameter: >0 parallel projection, <0 perspective (far = 10 x near),
-   point lights: source size * 100 (world units). Formulas live in updateLights (lights/runtime.js). */
+   point lights: source size * 100 (world units). Formulas live in updateLights (lights/runtime.js).
+   Depth 1.0 is a cleared texel (nothing between the light and its far plane) and never counts as a blocker;
+   receivers beyond the far plane are still shadowed by blockers in the map. */
 const HELPERS=`
 	uniform float pcssSeed;
 	float pcssNoise() { return fract( 52.9829189 * fract( dot( gl_FragCoord.xy + pcssSeed * vec2( 17.0, 59.0 ), vec2( 0.06711056, 0.00583715 ) ) ) ); }
 	vec2 pcssVogel( int i, float n, float phi ) { float r = sqrt( ( float( i ) + 0.5 ) / n ); float t = float( i ) * 2.39996323 + phi; return r * vec2( cos( t ), sin( t ) ); }
-	float pcssLin( float z ) { return 10.0 / ( 10.0 - z * 9.0 ); }
+	float pcssLin( float z ) { return 10.0 / ( 10.0 - z * 9.0 ); } // view depth / near for far = 10 near; valid for z < 10/9 (beyond far too)
 	float pcssShadow( sampler2D smap, vec2 mapSize, float pk, vec2 uv, float z ) {
 		vec2 texel = vec2( 1.0 ) / mapSize;
 		bool persp = pk < 0.0;
@@ -26,7 +28,7 @@ const HELPERS=`
 			float d = texture2D( smap, uv + o ).r;
 			float dv = persp ? pcssLin( d ) : d;
 			float zt = persp ? zr * ( 1.0 - length( o ) * 0.6 ) : z - length( o ) * 0.35;
-			if ( dv < zt ) { sum += dv; cnt += 1.0; }
+			if ( d < 1.0 && dv < zt ) { sum += dv; cnt += 1.0; }
 		}
 		if ( cnt < 0.5 ) return 1.0;
 		float zb = sum / cnt;
@@ -38,7 +40,7 @@ const HELPERS=`
 			float d = texture2D( smap, uv + o ).r;
 			float dv = persp ? pcssLin( d ) : d;
 			float zt = persp ? zr * ( 1.0 - length( o ) * 0.6 ) : z - length( o ) * 0.35;
-			lit += dv < zt ? 0.0 : 1.0;
+			lit += d < 1.0 && dv < zt ? 0.0 : 1.0;
 		}
 		return lit / 40.0;
 	}
@@ -47,7 +49,7 @@ const HELPERS=`
 		shadowCoord.xyz /= shadowCoord.w;
 		shadowCoord.z += shadowBias;
 		bool inFrustum = shadowCoord.x >= 0.0 && shadowCoord.x <= 1.0 && shadowCoord.y >= 0.0 && shadowCoord.y <= 1.0;
-		if ( inFrustum && shadowCoord.z <= 1.0 ) shadow = pcssShadow( shadowMap, shadowMapSize, shadowRadius, shadowCoord.xy, shadowCoord.z );
+		if ( inFrustum ) shadow = pcssShadow( shadowMap, shadowMapSize, shadowRadius, shadowCoord.xy, shadowCoord.z );
 		return mix( 1.0, shadow, shadowIntensity );
 	}
 `;
@@ -57,6 +59,7 @@ const POINT=`
 		vec3 a = abs( dir );
 		float axis = max( max( a.x, a.y ), a.z );
 		float dp = textureCube( smap, dir ).r;
+		if ( dp >= 1.0 ) return 1e10; // cleared texel: nothing within far
 		float z = far * near / ( far - dp * ( far - near ) );
 		return z * length( dir ) / axis;
 	}
