@@ -14,7 +14,7 @@ export default [
   },
   {
     files: ['tools/**/*.js', 'tools/**/*.cjs'],
-    languageOptions: {ecmaVersion: 2022, sourceType: 'commonjs', globals: {...globals.node, THREE: 'readonly'}},
+    languageOptions: {ecmaVersion: 2022, sourceType: 'commonjs', globals: {...globals.node, ...globals.browser}},  // harness callbacks and scenes run in the page
     rules: {'no-undef': 'error'}
   }
 ];

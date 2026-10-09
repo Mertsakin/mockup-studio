@@ -8,16 +8,14 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "eslint .",
-    "render": "node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/default.js",
-    "render:linux": "xvfb-run -a -s \"-screen 0 640x480x24\" node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/default.js"
+    "render": "node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/default.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "canvas": "^3.1.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.12.0",
-    "gl": "^8.1.6",
     "globals": "^17.13.0",
+    "playwright": "^1.64.0",
     "pngjs": "^7.0.0",
     "vite": "^8.3.4"
   },

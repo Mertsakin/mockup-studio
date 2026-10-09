@@ -39,4 +39,3 @@
 - Küçük ekranlarda ışık haritası sahnenin bir köşesini örtüyor.
 - 3840 px dışa aktarım mobil tarayıcılarda bellek sınırına takılabilir (render hedefleri büyük).
 - Dizüstü sahnesinde (`PRESET=1`) cihazın sağında keskin kenarlı bir gölge alanı görünüyor; ışık küresi kadraja giriyor. İncelenmeli.
-- Test düzeneği headless-gl (WebGL1) kullanıyor: PMREM çalışmadığı için yansımalar yaklaşık simüle ediliyor; MSAA yok. Son kontrolü gerçek tarayıcıda yap.

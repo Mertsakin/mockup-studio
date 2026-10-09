@@ -22,3 +22,4 @@ import './export/export.js';
 bgCss();state.devices.forEach(buildRT);refit();applyLightPreset(LIGHT_PRESETS[0]);renderSaved();syncAll();layout();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{state.devices.forEach(d=>{if(d.type==='laptop'){rebuild(d,false);return;}if(!d.img||d.type==='custom')setScreenTexture(d);if(d.type==='browser')updateChrome(d);});});
 startLoop();
+if(import.meta.env.DEV)import('./debug.js').then(m=>m.exposeModules());

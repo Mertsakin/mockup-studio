@@ -1,42 +1,47 @@
 # Headless render düzeneği
 
-Uygulamayı (`src/main.js`) tarayıcı olmadan çalıştırıp bir PNG üretir. Amaç: her görsel değişiklikten sonra sonucu gerçekten **görmek**.
+Uygulamayı headless Chromium'da (Playwright, WebGL2) çalıştırıp bir PNG üretir. Amaç: her görsel değişiklikten sonra sonucu gerçekten **görmek** ve önceki hâliyle karşılaştırmak.
 
 ## Kurulum
 
 ```bash
 npm install
+npx playwright install chromium     # bir kez (~100 MB)
 ```
 
-- `gl` (headless-gl) native olarak derlenir. Linux'ta gerekenler:
-  `build-essential python3 pkg-config libxi-dev libglu1-mesa-dev libglew-dev xvfb`
-  Derleme `uintptr_t` hatası verirse: `CXXFLAGS="-include cstdint" npm install`
-- `canvas` hazır binary ile gelir; gelmezse cairo geliştirme paketleri gerekir.
-- macOS'ta `xvfb` gerekmez; doğrudan `node ...` ile çalıştır.
+Linux'ta da aynı; ekran (xvfb) gerekmez. Chromium eksik sistem kütüphanesi isterse: `npx playwright install-deps chromium`.
 
 ## Kullanım
 
 ```bash
-# Linux
-W=800 H=1000 FRAMES=34 ACC=1 xvfb-run -a -s "-screen 0 640x480x24" \
+W=800 H=1000 COLOR=silver PRESET=1 \
   node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/laptop.js
 ```
+
+Düzenek bir Vite dev sunucusunu kendi başlatır, sayfayı açar, sahne dosyasını sayfa içinde çalıştırır, sonra dışa aktarım gibi `W × H` boyutunda render alıp açık gri zeminin üzerine yazar. Sayfada hata ya da `console.error` olursa çıkış kodu 1 olur.
 
 | Değişken | Anlamı |
 |---|---|
 | `W`, `H` | çıktı boyutu (px) |
-| `FRAMES` | çalıştırılacak animasyon karesi. İlerlemeli render 64 örneğe ~33 karede ulaşır. Tek geçişli hızlı önizleme için `2` |
-| `ACC=1` | float birikim hedeflerini zorla, böylece ilerlemeli render çalışır. Olmadan tek geçiş render alınır (gölgeler grenli) |
-| `REALPMREM=1` | three'nin PMREM'ini kullan (headless-gl'de siyah çıkar, yalnızca hata ayıklama için) |
-| sahneye özel | `COLOR`, `FIN`, `PRESET`, `RX`, `RY`, `ZOOM`, `C`… sahne dosyalarının başındaki açıklamalara bak |
+| `SAMPLES` | ilerlemeli render örnek sayısı. Varsayılan `64` (tam yakınsamış). Hızlı önizleme için `1` |
+| `MARKERS=0` | ışık kürelerini gizle |
+| `GPU=1` | SwiftShader yerine ANGLE/Metal. Daha hızlı ama sürücüye bağlı, bayt bayt kararlı değil. Karşılaştırma yaparken kullanma |
+| sahneye özel | `COLOR`, `FIN`, `PRESET`, `RX`, `RY`, `ZOOM`, `C`, `MOD`… sahne dosyalarının başındaki açıklamalara bak |
 
-Önce/sonra karşılaştırması:
+Varsayılan SwiftShader (CPU) render'ı **deterministiktir**: aynı kod aynı PNG'yi üretir. Bu yüzden piksel farkı anlamlıdır.
+
+## Önce/sonra karşılaştırması
 
 ```bash
-node tools/render-harness/diff.js renders/once.png renders/sonra.png renders/fark.png
+tools/render-harness/suite.sh renders/once     # referans sahne paketi (~6 dk)
+# … değişiklik …
+tools/render-harness/suite.sh renders/sonra
+tools/render-harness/compare.sh renders/once renders/sonra   # sonra/diff/*.png: 8× büyütülmüş fark
+node tools/render-harness/sheet.js renders/yanyana.png 2 500 renders/once/laptop.png renders/sonra/laptop.png
 ```
 
-En büyük kanal farkını ve 2/255'ten fazla değişen piksel sayısını yazar. Fark varsa çıkış kodu 1 olur; üçüncü argüman verilirse farkı 8 kat büyütülmüş bir görüntü olarak kaydeder.
+- `diff.js a.png b.png [fark.png]` en büyük kanal farkını ve 2/255'ten fazla değişen piksel sayısını yazar; fark varsa çıkış kodu 1.
+- `sheet.js çıktı.png sütun hücreYüksekliği a.png b.png …` görselleri tek sayfada yan yana dizer.
 
 ## Sahneler (`scenes/`)
 
@@ -45,15 +50,18 @@ En büyük kanal farkını ve 2/255'ten fazla değişen piksel sayısını yazar
 - `keyboard-closeup.js` — klavye yakın çekim (tuşlar, yazılar, ızgara, fırçalanmış yüzey)
 - `phone.js` — telefon; `RY=150` arka, `RX=-70 RY=-35 ZOOM=1.5` alt kenar
 - `composition.js` — hazır kompozisyonlar (`C=0..5`)
+- `light-type.js` — tek ışıklı telefon; `MOD=sun|flash|softbox|bulb…` ile yönlü / spot / nokta ışık ve gölgesi
 - `light-drag.js` — ışık sürükleme mantık testi (konsola değer yazar)
 - `spheres.js` — malzeme/yansıma kontrolü için metal küreler
 
-Sahne dosyası `async (app, {W, H, createCanvas, loadImage}) => {}` imzalı bir modüldür. `app('isim')`, `src/` altındaki herhangi bir modülün **dışa aktardığı** adı döndürür (ör. `app('state')`, `app('applyComp')`). Dışa aktarılmayan bir şeye sahneden erişmek gerekirse ilgili modülde `export` listesine ekle.
+Sahne dosyası `module.exports = async (app, {env, W, H}) => {}` biçimindedir ve **sayfanın içinde** çalışır: Node modüllerine, `process` ya da `require`'a erişemez; ortam değişkenleri `env` ile gelir. `app('isim')`, `src/` altındaki herhangi bir modülün dışa aktardığı adı döndürür (ör. `app('state')`, `app('applyComp')`, `app('THREE')`). Dışa aktarılmayan bir şeye erişmek gerekirse ilgili modülde `export` listesine ekle.
+
+## Nasıl bağlanıyor
+
+- `src/main.js`, yalnızca dev modunda (`import.meta.env.DEV`) `src/debug.js`'i yükler; o da tüm modülleri `window.__app` üzerinden açar. Production build'de bu kod yoktur.
+- Konsoldaki `console.log` çıktıları terminale aktarılır.
 
 ## Bilinen sınırlar
 
-- **WebGL1 (headless-gl).** Tarayıcıda WebGL2 kullanılır; MSAA render hedefleri test edilmez.
-- **PMREM çalışmıyor.** Düzenek ortam yansımalarını CPU'da kurulan bir küp dokuyla taklit eder. Metal/cam görünümü tarayıcıdakine yakın ama birebir değildir; pürüzlü yüzeylerde küp dikişleri görülebilir.
-- `requestAnimationFrame` bir kuyrukla taklit edilir; zamanlayıcıya bağlı davranışlar (ör. ortam yeniden kurma debounce'u) gecikebilir.
-- DOM büyük ölçüde stub'lanmıştır. UI etkileşimlerini değil render sonucunu test eder.
-- Uygulama esbuild ile tek bir IIFE'ye paketlenip çalıştırılır. `three` importu, düzeneğin yamaladığı global `THREE`'ye yönlendirilir (renderer ve PMREM taklidi bu yüzden çalışır). `jszip` paketlenmez; dışa aktarım düzenekte test edilmez.
+- SwiftShader yavaştır (800×1000, 64 örnek ≈ 20 sn). Hızlı bakış için `SAMPLES=1` ya da `GPU=1`.
+- Dışa aktarım (indirme) ve UI etkileşimleri test edilmez; bunları gerçek tarayıcıda dene.

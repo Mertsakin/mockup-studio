@@ -11,24 +11,25 @@ npm install
 npm run dev            # http://localhost:5173
 npm run build          # dist/ (göreli yollar, herhangi bir klasörden açılır)
 npm run check          # ESLint: tanımsız isim, kullanılmayan değişken, import hataları
-npm run render         # headless render -> renders/out.png  (Linux: npm run render:linux)
+npm run render         # headless Chromium render -> renders/out.png (ilk sefer: npx playwright install chromium)
 ```
 
 Her görsel değişiklikten sonra **render alıp PNG'ye bak**. Ayrıntılar ve sınırlar: `tools/render-harness/README.md`.
 
 Örnek ve önce/sonra karşılaştırması:
 ```bash
-W=800 H=1000 FRAMES=34 ACC=1 COLOR=silver PRESET=1 \
+W=800 H=1000 COLOR=silver PRESET=1 \
   node tools/render-harness/harness.js renders/lap.png tools/render-harness/scenes/laptop.js
-node tools/render-harness/diff.js renders/lap-before.png renders/lap.png renders/lap-diff.png
+tools/render-harness/suite.sh renders/once     # tüm referans sahneler; değişiklikten sonra renders/sonra
+tools/render-harness/compare.sh renders/once renders/sonra
 ```
-(Linux'ta `node` komutunun önüne `xvfb-run -a -s "-screen 0 640x480x24"` ekle.)
 
 ## Mimari haritası
 
 | Dosya | İçerik |
 |---|---|
 | `src/main.js` | giriş: UI panellerini içe aktarır, sahneyi kurar, render döngüsünü başlatır |
+| `src/debug.js` | yalnızca dev: modülleri test düzeneğine `window.__app` olarak açar |
 | `src/util.js` | `$`, `$$`, `D2R`, `V3`, `clamp`, `wrap`, `mkCanvas`, `roundRect`, `rng` |
 | `src/state/constants.js` | `TYPES`, `DEFAULT_SCENE`, `COLORS`, `THEMES`, `PRESETS` (sahne açıları), `COMPS` (hazır kompozisyonlar), `DEFAULT_FINISH` |
 | `src/state/state.js` | `state`, `newDevice()`, `byId`, `sel`, `view` (`fitRadius`, `fitBox`, `aspect`) |
