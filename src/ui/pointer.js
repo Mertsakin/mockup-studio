@@ -6,6 +6,7 @@ import {pivot} from '../render/stage.js';
 import {applyTransform,camDist} from '../render/transform.js';
 import {sel,state,view} from '../state/state.js';
 import {lightMoved} from './dome.js';
+import {gizmoDown,gizmoHot,gizmoMove,gizmoUp,showGizmo} from './gizmo.js';
 import {frame} from './layout.js';
 import {syncSliders} from './sliders.js';
 import {syncAll,syncUI} from './sync.js';
@@ -53,14 +54,18 @@ function moveSelected(dx,dy){
   const w=new V3(dx*upp,-dy*upp,0).applyQuaternion(pivot.quaternion.clone().invert());
   d.px=clamp(d.px+w.x,-60,60);d.py=clamp(d.py+w.y,-60,60);d.pz=clamp(d.pz+w.z,-60,60);
 }
+let gizmoDrag=false;
 canvas.addEventListener('pointerdown',e=>{
+  // gizmo first: grabbing an axis moves / rotates the selected device instead of the scene
+  if(!pointers.size&&gizmoDown(e)){gizmoDrag=true;canvas.setPointerCapture(e.pointerId);canvas.classList.add('dragging');return;}
   canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   canvas.classList.add('dragging');downAt={x:e.clientX,y:e.clientY};moved=false;
   if(pointers.size===1){const lidHit=pickLight(e.clientX,e.clientY);
     if(lidHit){lightDrag=lidHit;if(state.selLight!==lidHit){state.selLight=lidHit;syncAll();}return;}}
-  if(state.mode==='move'&&pointers.size===1){const id=pick(e.clientX,e.clientY);if(id&&id!==state.selected){state.selected=id;syncAll();}}
+  if(state.mode==='move'&&pointers.size===1){const id=pick(e.clientX,e.clientY);if(id){showGizmo(true);if(id!==state.selected){state.selected=id;syncAll();}}}
 });
 canvas.addEventListener('pointermove',e=>{
+  if(gizmoDrag){gizmoMove(e);return;}
   const p=pointers.get(e.pointerId);if(!p)return;
   if(lightDrag){dragLight3D(lightDrag,e.clientX,e.clientY);p.x=e.clientX;p.y=e.clientY;return;}
   const dx=e.clientX-p.x,dy=e.clientY-p.y;
@@ -78,12 +83,14 @@ canvas.addEventListener('pointermove',e=>{
   p.x=e.clientX;p.y=e.clientY;applyTransform();syncSliders();
 });
 const endPtr=e=>{
+  if(gizmoDrag){gizmoUp(e);gizmoDrag=false;canvas.classList.remove('dragging');return;}
   if(lightDrag){lightDrag=null;pointers.delete(e.pointerId);if(!pointers.size)canvas.classList.remove('dragging');syncUI();return;}
   const was=pointers.size;pointers.delete(e.pointerId);
   if(!pointers.size){canvas.classList.remove('dragging');
-    if(was===1&&!moved&&state.mode==='rotate'&&e.type==='pointerup'){const id=pick(e.clientX,e.clientY);if(id&&id!==state.selected){state.selected=id;syncAll();}}}
+    // a click (no drag) on a device selects it and shows its axes; on empty space hides them
+    if(was===1&&!moved&&state.mode==='rotate'&&e.type==='pointerup'){const id=pick(e.clientX,e.clientY);showGizmo(!!id);if(id&&id!==state.selected){state.selected=id;syncAll();}}}
 };
-canvas.addEventListener('pointermove',e=>{if(pointers.size||e.pointerType!=='mouse')return;canvas.style.cursor=pickLight(e.clientX,e.clientY)?'grab':'';});
+canvas.addEventListener('pointermove',e=>{if(pointers.size||gizmoDrag||e.pointerType!=='mouse')return;gizmoMove(e);canvas.style.cursor=gizmoHot()||pickLight(e.clientX,e.clientY)?'grab':'';});
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
 canvas.addEventListener('wheel',e=>{e.preventDefault();const S=state.scene;S.zoom=clamp(S.zoom*Math.exp(-e.deltaY*.0015),.3,3);applyTransform();syncSliders();},{passive:false});
 

@@ -4,6 +4,7 @@ import {canvas} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {state} from '../state/state.js';
 import {renderDome} from './dome.js';
+import {setGizmoMode} from './gizmo.js';
 import {bgCss,layout} from './layout.js';
 import {onSyncUI,syncUI} from './sync.js';
 import {$,$$} from '../util.js';
@@ -14,6 +15,7 @@ $$('.seg[data-key]').forEach(seg=>{const key=seg.dataset.key;
   seg.querySelectorAll('button').forEach(b=>{b.type='button';b.addEventListener('click',()=>{state[key]=parseV(b.dataset.v);onGlobal(key);});});});
 function onGlobal(key){
   if(key==='bg'||key==='pattern')bgCss();
+  else if(key==='gizmo')setGizmoMode(state.gizmo);
   else if(key==='ratio')layout();
   syncUI();
 }
@@ -46,7 +48,7 @@ onSyncUI(()=>{
   canvas.classList.toggle('move',state.mode==='move');
   $('#hint').textContent=state.mode==='move'
     ?'Bir cihazı sürükleyerek sahnede taşı. Döndürmek için üstten Döndür\u2019e geç.'
-    :'Sürükleyerek sahneyi döndür, cihaza dokunarak seç. Işıkları sağ alttaki haritadan ya da sahnedeki kürelerden sürükle.';
+    :'Sürükleyerek sahneyi döndür. Bir cihaza tıklayınca eksenleri çıkar: oklarla taşı, halkalarla döndür (W / E, Esc gizler). Işıkları haritadan ya da kürelerden sürükle.';
 });
 
 export {parseV};

@@ -9,7 +9,7 @@ function newDevice(type,o){
 }
 const state={
   scene:{rx:-6,ry:26,rz:0,zoom:1,fov:28,panX:0,panY:0},
-  devices:[],selected:null,mode:'rotate',
+  devices:[],selected:null,mode:'rotate',gizmo:'translate',
   bg:'gradient',solid:'#eef1f4',bg1:'#dfe6ff',bg2:'#f4dcea',pattern:'shards',pbase:'#0d0e11',paccent:'#c8202b',
   floor:true,wall:false,wallGap:.35,selfShadow:true,shadowColor:'#000000',shadowOpacity:.55,ambient:1,exposure:1,markers:true,showDome:true,lights:[],selLight:null,
   ratio:'4:5',customW:1920,customH:1080,size:2160,format:'png',quality:'fast'

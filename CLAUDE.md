@@ -52,6 +52,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 | `src/lights/runtime.js` | `LRT` Map, `buildLight`, `disposeLight`, `applyAmbient`, `updateLights` (gölge parametrelerini paketler), `onLightsUpdated` |
 | `src/lights/actions.js` | `rebuildLights`, `applyLightPreset` |
 | `src/ui/sync.js` | `syncUI` / `syncAll`: her panel kendi parçasını `onSyncUI(d => …)` ile kaydeder |
+| `src/ui/gizmo.js` | cihaz başına taşı/döndür gizmo'su (three `TransformControls`). Kanvasa bağlı değil: `pointer.js` olayları önce gizmo'ya iletir. Konum modunda gizmo, `comp` uzayındaki bir vekili (proxy) sürer: oklar zemine hizalıdır. Dönüş modunda tutucunun kendisini, yerel eksenlerde döndürür. Dışa aktarımda gizlenir |
 | `src/ui/*.js` | `layout` (kadraj, arka plan), `sliders`, `controls` (genel segmentler, anahtarlar), `devices-panel` (cihaz listesi, tip, kompozisyon, renk/yüzey), `lights-panel`, `angles` (hazır/kayıtlı açılar), `image-input`, `pointer` (sahne sürükleme, `pickLight`, `dragLight3D`), `dome` (ışık haritası, `renderDome`, `setFromDome`), `toast` |
 | `src/export/export.js` | `renderExport(onProgress)` (`state.quality`: `fast` raster / `photo` yol izleme), `offer` (`<a download>` ile indirme), ZIP toplu dışa aktarma (JSZip dinamik import) |
 | `index.html`, `src/style.css` | stüdyo arayüzü ve stiller |
@@ -64,6 +65,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 - `state.scene` — sahne açısı (rx/ry/rz, zoom, fov, pan). `pivot` bu açıyla döner; ışıklar dönmez.
 - `state.devices[]` — her cihaz: tip, renk, `finish`, konum/dönüş/ölçek, ekran görüntüsü, tipe özel alanlar. Çalışma zamanı nesneleri `RT` içinde.
 - `state.lights[]` — her ışık: `mod` (şekillendirici), `type`, `az`/`el`/`dist`, `size`, `intensity`, `color`, `shadow`, spot için `angle`/`penumbra`. Çalışma zamanı `LRT` içinde.
+- Etkileşim: sahne sürükleyince döner (pivot). Bir cihaza tıklayınca gizmo çıkar (W konum, E dönüş, Esc gizle); gizmo değerleri cihazın `px/py/pz/rx/ry/rz` alanlarına yazar.
 - UI → state → `applyTransform()` → `req()` (render kirli bayrağı). Yapısal değişiklikler `rebuild(d, refit)` ile.
 
 ## Koordinat ve birim kuralları
