@@ -12,7 +12,8 @@ const M={
   lens:new THREE.MeshStandardMaterial({color:lin(0x07080a),roughness:.04,metalness:.6}),
   flash:new THREE.MeshStandardMaterial({color:lin(0xf1ead8),roughness:.3,metalness:0}),
   glare:new THREE.MeshPhysicalMaterial({color:0x000000,metalness:0,roughness:.035,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,envMapIntensity:.45}),
-  keycap:new THREE.MeshPhysicalMaterial({color:lin(0x08090a),roughness:.72,metalness:0,clearcoat:.08,clearcoatRoughness:.6}),
+  // matte PBT caps; low env reflection keeps them charcoal under a bright studio environment
+  keycap:new THREE.MeshPhysicalMaterial({color:lin(0x0d0e10),roughness:.62,metalness:0,envMapIntensity:.35}),
   well:new THREE.MeshStandardMaterial({color:lin(0x0b0c0e),roughness:.9,metalness:0}),
   port:new THREE.MeshStandardMaterial({color:lin(0x040405),roughness:.95,metalness:0}),
   portIn:new THREE.MeshStandardMaterial({color:lin(0x6c7078),roughness:.5,metalness:.6}),
@@ -53,6 +54,7 @@ const SURF=(function(){
 const FINISHES={
   brushed:{n:'Fırçalanmış',metal:.93,rough:.36,n2:'brushed',ns:.38,rep:.09},
   blasted:{n:'Kumlanmış',metal:.9,rough:.48,n2:'blast',ns:.35,rep:.5},
+  anodized:{n:'Eloksal',metal:1,rough:.34,n2:'blast',ns:.1,rep:.5},  // fine bead-blast under anodising
   chrome:{n:'Krom',metal:1,rough:.07},
   glossy:{n:'Parlak boya',metal:0,rough:.32,clear:1},
   matte:{n:'Mat',metal:0,rough:.72,n2:'blast',ns:.2,rep:.5}
@@ -85,7 +87,8 @@ function applyColorTo(m,d){
   // back panel: frosted glass on phones/tablets, same metal elsewhere
   if(d.type==='phone'||d.type==='tablet'){applyFinish(m.back,'matte',c,{metal:.15,rough:.42});m.back.clearcoat=.35;m.back.clearcoatRoughness=.25;}
   else applyFinish(m.back,d.finish,c);
-  applyFinish(m.pad,'matte',c,{metal:Math.min(.6,(FINISHES[d.finish]||{}).metal||0),rough:.36});m.pad.color.multiplyScalar(.92);m.pad.clearcoat=.4;m.pad.clearcoatRoughness=.3;
+  // trackpad: glass-like, slightly darker than the body (no clearcoat: with the normal map it renders black when path traced)
+  applyFinish(m.pad,'matte',c,{metal:.3,rough:.2});m.pad.color.multiplyScalar(.88);
   applyFinish(m.band,'matte',c,{metal:0,rough:.6});m.band.color.multiplyScalar(.55).addScalar(.04);
 }
 const LENS_TEX=(function(){

@@ -35,7 +35,7 @@ function camDist(){
 function applyTransform(){
   const S=state.scene;
   pivot.rotation.set(S.rx*D2R,S.ry*D2R,S.rz*D2R,'YXZ');
-  RT.forEach((o,id)=>{const d=byId(id);if(d)setHolder(o,d);});
+  RT.forEach((o,id)=>{const d=byId(id);if(d)setHolder(o,d);o.holder.traverse(x=>{if(x.userData.ao)x.visible=state.floor;});});
   const v=S.fov*D2R,dist=camDist();
   camera.fov=S.fov;camera.aspect=view.aspect;camera.position.set(0,0,dist);
   camera.near=Math.max(.05,dist*.03);camera.far=dist*5+2000;camera.lookAt(0,0,0);camera.updateProjectionMatrix();

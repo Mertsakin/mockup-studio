@@ -21,12 +21,12 @@ const PRESETS=[
 ];
 const COMPS=[
   {n:'Tek telefon',items:[{type:'phone'}],scene:{rx:-6,ry:26,rz:0}},
-  {n:'Telefon + dizüstü',items:[{type:'laptop'},{type:'phone',px:17,py:-2.8,pz:7,ry:-16}],scene:{rx:12,ry:-18,rz:0}},
+  {n:'Telefon + dizüstü',items:[{type:'laptop'},{type:'phone',px:17,py:-2.45,pz:7,ry:-16}],scene:{rx:12,ry:-18,rz:0}},
   {n:'Telefon yelpazesi',items:[{type:'phone',px:-7.6,py:.23,pz:-1.5,ry:18,rz:6},{type:'phone',pz:2},{type:'phone',px:7.6,py:.23,pz:-1.5,ry:-18,rz:-6}],scene:{rx:-6,ry:0,rz:0}},
   {n:'Tablet + telefon',items:[{type:'tablet',px:-4,pz:-2,ry:12},{type:'phone',px:10.5,py:-5.05,pz:4,ry:-14}],scene:{rx:-6,ry:18,rz:0}},
-  {n:'Masaüstü seti',items:[{type:'monitor'},{type:'laptop',px:-31,py:-9.9,pz:8,ry:22},{type:'phone',px:27,py:-12.6,pz:10,ry:-22}],scene:{rx:8,ry:0,rz:0}},
+  {n:'Masaüstü seti',items:[{type:'monitor'},{type:'laptop',px:-31,py:-10.25,pz:8,ry:22},{type:'phone',px:27,py:-12.6,pz:10,ry:-22}],scene:{rx:8,ry:0,rz:0}},
   {n:'Tarayıcı + telefon',items:[{type:'browser',ry:6},{type:'phone',px:14.5,py:-3.6,pz:5,ry:-12}],scene:{rx:-6,ry:18,rz:0}}
 ];
-const DEFAULT_FINISH={phone:'blasted',tablet:'blasted',laptop:'brushed',monitor:'brushed',browser:'matte',custom:'matte'};
+const DEFAULT_FINISH={phone:'blasted',tablet:'blasted',laptop:'anodized',monitor:'brushed',browser:'matte',custom:'matte'};
 
 export {COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};

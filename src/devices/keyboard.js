@@ -36,15 +36,13 @@ function legendTexture(keys,kbW,kbD){
   });
   const t=new THREE.CanvasTexture(c);t.anisotropy=ANISO;return t;
 }
-function buildKeyboard(kbW){
+// capT: keycap thickness. Keys are plain meshes sharing one geometry per size (the path tracer cannot read InstancedMesh).
+function buildKeyboard(kbW,capT=.26){
   const grp=new THREE.Group(),{keys,depth}=keyboardLayout(kbW),byW={};
   keys.forEach(k=>{const key=k.w.toFixed(3)+'x'+k.d.toFixed(3);(byW[key]=byW[key]||[]).push(k);});
-  const capT=.26,tmp=new THREE.Object3D();
   Object.values(byW).forEach(list=>{
-    const k0=list[0],geo=slab(k0.w,k0.d,.16,capT,.075);geo.rotateX(-Math.PI/2);
-    const im=new THREE.InstancedMesh(geo,M.keycap,list.length);
-    list.forEach((k,i)=>{tmp.position.set(k.x,0,k.z);tmp.updateMatrix();im.setMatrixAt(i,tmp.matrix);});
-    im.instanceMatrix.needsUpdate=true;grp.add(im);
+    const k0=list[0],geo=slab(k0.w,k0.d,.16,capT,Math.min(.075,capT*.4));geo.rotateX(-Math.PI/2);
+    list.forEach(k=>{const key=mesh(geo,M.keycap);key.position.set(k.x,0,k.z);grp.add(key);});
   });
   const lt=legendTexture(keys,kbW,depth);
   const lm=new THREE.MeshStandardMaterial({color:0xffffff,map:lt,alphaMap:lt,transparent:true,alphaTest:.3,roughness:.55,metalness:0,depthWrite:false});
