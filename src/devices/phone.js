@@ -4,7 +4,7 @@ import {flatRR,innerRadii,lens,mesh,slab} from './geometry.js';
 import {M} from './materials.js';
 
 function buildPhone(m){
-  const g=new THREE.Group(),W=7.15,H=14.7,D=.8,R=1.05,gi=.09,bz=.3;
+  const g=new THREE.Group(),W=7.15,H=14.7,D=.8,R=1.05,gi=.09,bz=.18;
   g.add(mesh(slab(W,H,R,D,.13),m.frame));
   const gw=W-2*gi,gh=H-2*gi,gr=R-gi;
   const front=mesh(flatRR(gw,gh,gr),M.glass);front.position.z=D/2+.002;g.add(front);
@@ -19,8 +19,10 @@ function buildPhone(m){
   cm.position.set(W/2-1.55,H/2-2.2,-D/2-.07);g.add(cm);
   const fl=mesh(new THREE.CylinderGeometry(.17,.17,.04,32),M.flash);fl.rotation.x=Math.PI/2;fl.position.set(W/2-3.0,H/2-1.3,-D/2-.02);g.add(fl);
   const mic=mesh(new THREE.CircleGeometry(.05,12),M.hole);mic.rotation.y=Math.PI;mic.position.set(W/2-3.0,H/2-1.85,-D/2-.006);g.add(mic);
-  [[W/2+.03,2.6,1.7],[-W/2-.03,3.3,1.2],[-W/2-.03,1.85,1.2]].forEach(([x,y,l])=>{
-    const k=mesh(slab(.12,l,.06,.32,.04),m.frame);k.rotation.y=Math.PI/2;k.position.set(x,y,0);g.add(k);});
+  // side buttons: 3.2 mm deep along x after the rotation, standing BTN_OUT proud of the wall (the rest sits inside)
+  const BTN_D=.32,BTN_OUT=.127;
+  [[1,2.6,1.7],[-1,3.3,1.2],[-1,1.85,1.2]].forEach(([sx,y,l])=>{
+    const k=mesh(slab(.12,l,.06,BTN_D,.04),m.frame);k.rotation.y=Math.PI/2;k.position.set(sx*(W/2+BTN_OUT-BTN_D/2),y,0);g.add(k);});
   phoneDetails(g,m,W,H,D,R);
   return {group:g,screen:scr,glare,sw,sh,rotatable:true,hole:hole1};
 }

@@ -45,7 +45,8 @@ function buildLaptop(m){
   const lg=slab(W,Hl,R,Tl,Math.min(.14,Tl*.4));lg.translate(0,Hl/2,-Tl/2);lid.add(mesh(lg,m.frame));
   const rim=.1,gw=W-2*rim,gh=Hl-2*rim;
   const fg=mesh(flatRR(gw,gh,R-rim),M.glass);fg.position.set(0,Hl/2,.002);lid.add(fg);
-  const sideB=.32,topB=.5,chin=.62,sw=gw-2*sideB,sh=gh-topB-chin,sy=rim+chin+sh/2;
+  // equal bezels on all four sides
+  const sideB=.34,topB=.34,chin=.34,sw=gw-2*sideB,sh=gh-topB-chin,sy=rim+chin+sh/2;
   const scr=mesh(flatRR(sw,sh,innerRadii(R-rim,topB,sideB,chin,sideB)),m.screen);scr.position.set(0,sy,.004);lid.add(scr);
   const glare=mesh(flatRR(gw,gh,R-rim),M.glare);glare.position.set(0,Hl/2,.006);lid.add(glare);
   const camY=Hl-rim-topB/2,camR=mesh(new THREE.CircleGeometry(.11,32),M.port);camR.position.set(0,camY,.005);lid.add(camR);
