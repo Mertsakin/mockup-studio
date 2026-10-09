@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mockup stüdyosu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="panel" aria-label="Ayarlar">
+    <header class="brand">
+      <h1>Mockup stüdyosu</h1>
+      <p>Ekran görüntülerini cihazlara yerleştir, sahneyi kur, istediğin açılardan yüksek çözünürlükte indir.</p>
+    </header>
+
+    <section>
+      <h2>Cihazlar</h2>
+      <div class="devlist" id="devList" role="group" aria-label="Sahnedeki cihazlar"></div>
+      <div class="row start">
+        <select id="addType" aria-label="Eklenecek cihaz tipi"></select>
+        <button class="btn" id="addDevice" type="button">Ekle</button>
+        <button class="btn" id="removeDevice" type="button">Seçiliyi kaldır</button>
+      </div>
+      <span class="lbl block">Hazır kompozisyonlar</span>
+      <div class="presets" id="comps"></div>
+    </section>
+
+    <section>
+      <h2 id="selTitle">Telefon</h2>
+      <div class="typegrid" id="typeGrid" role="group" aria-label="Cihaz tipi"></div>
+
+      <span class="lbl block">Ekran görüntüsü</span>
+      <label class="drop" id="drop" tabindex="0">
+        <input type="file" id="file" accept="image/*" hidden>
+        <span class="drop-main" id="dropMain"></span>
+        <span class="drop-sub" id="dropSub"></span>
+      </label>
+      <label class="drop" id="frameDrop" tabindex="0" data-for="custom">
+        <input type="file" id="frameFile" accept="image/png,image/webp" hidden>
+        <span class="drop-main" id="frameMain"></span>
+        <span class="drop-sub" id="frameSub"></span>
+      </label>
+
+      <div class="row"><span class="lbl">Yerleşim</span>
+        <div class="seg" data-dkey="fit"><button data-v="cover">Doldur</button><button data-v="contain">Sığdır</button><button data-v="stretch">Esnet</button></div>
+      </div>
+      <div class="row" id="screenBgRow"><label class="lbl" for="screenBg">Boşluk rengi</label><input type="color" id="screenBg"></div>
+      <div class="row" data-for="phone tablet laptop monitor browser"><span class="lbl">Ekran camı yansıması</span><label class="switch"><input type="checkbox" id="glare" aria-label="Ekran camı yansıması"><span></span></label></div>
+      <div class="row" data-for="phone tablet"><span class="lbl">Yön</span>
+        <div class="seg" data-dkey="landscape"><button data-v="false">Dikey</button><button data-v="true">Yatay</button></div>
+      </div>
+      <div class="row" data-for="phone"><span class="lbl">Ön kamera</span>
+        <div class="seg" data-dkey="notch"><button data-v="hole">Delik</button><button data-v="none">Yok</button></div>
+      </div>
+      <div id="lidSlot" data-for="laptop"></div>
+      <div class="row" data-for="browser"><span class="lbl">Tema</span>
+        <div class="seg" data-dkey="theme"><button data-v="light">Açık</button><button data-v="dark">Koyu</button></div>
+      </div>
+      <div class="row" data-for="browser"><span class="lbl">Pencere oranı</span>
+        <div class="seg" data-dkey="winRatio"><button data-v="16:9">16:9</button><button data-v="16:10">16:10</button><button data-v="4:3">4:3</button></div>
+      </div>
+      <div class="row" data-for="browser"><label class="lbl" for="url">Adres</label><input type="text" id="url" spellcheck="false" autocomplete="off"></div>
+      <div data-for="phone tablet laptop monitor">
+        <span class="lbl block">Gövde rengi</span>
+        <div class="swatches" id="swatches"></div>
+        <span class="lbl block">Yüzey</span>
+        <div class="typegrid" id="finishGrid" role="group" aria-label="Gövde yüzeyi"></div>
+      </div>
+      <details id="placeDetails">
+        <summary>Konum ve duruş</summary>
+        <div id="devSliders"></div>
+        <button class="btn full" id="resetDevice" type="button">Konumu sıfırla</button>
+      </details>
+    </section>
+
+    <section>
+      <h2>Sahne açısı</h2>
+      <div class="presets" id="presets"></div>
+      <div id="angleSliders"></div>
+      <div class="saved">
+        <button class="btn" id="saveAngle" type="button">Bu açıyı kaydet</button>
+        <div class="saved-list" id="savedList"></div>
+        <button class="btn full" id="exportAll" type="button">Kayıtlı açıların hepsini ZIP olarak indir</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Işık ve gölge</h2>
+      <span class="lbl block" style="margin-top:0">Hazır kurulumlar</span>
+      <div class="presets" id="lightPresets"></div>
+      <span class="lbl block">Işıklar</span>
+      <div class="devlist" id="lightList" role="group" aria-label="Sahnedeki ışıklar"></div>
+      <div class="row start"><button class="btn" id="addLight" type="button">Işık ekle</button><button class="btn" id="removeLight" type="button">Seçiliyi kaldır</button></div>
+      <div class="lightbox" id="lightBox">
+        <span class="lbl block" style="margin-top:12px">Işık kaynağı</span>
+        <div class="typegrid" id="modGrid" role="group" aria-label="Işık kaynağı ve şekillendirici"></div>
+        <span class="lbl block">Işık tipi</span>
+        <div class="seg seg-wide" data-lkey="type" style="margin-top:0"><button data-v="directional">Yönlü</button><button data-v="point">Nokta</button><button data-v="spot">Spot</button></div>
+        <div class="row"><label class="lbl" for="lightColor">Renk</label><input type="color" id="lightColor"></div>
+        <div id="lightSliders"></div>
+        <div class="row"><span class="lbl">Gölge düşür</span><label class="switch"><input type="checkbox" id="lightShadow" aria-label="Bu ışık gölge düşürsün"><span></span></label></div>
+        <div id="lightShadowSlot"><p class="charnote" id="lightChar"></p></div>
+      </div>
+      <div id="ambientSlot"></div>
+      <div class="row"><span class="lbl">Işık haritasını göster</span><label class="switch"><input type="checkbox" id="showDome" aria-label="Işık haritasını göster"><span></span></label></div>
+      <div class="row"><span class="lbl">Işık konumlarını göster</span><label class="switch"><input type="checkbox" id="markers" aria-label="Işık konumlarını göster"><span></span></label></div>
+      <span class="lbl block">Gölge düşen yüzeyler</span>
+      <div class="row" style="margin-top:0"><span class="lbl">Zemin</span><label class="switch"><input type="checkbox" id="floor" aria-label="Zemine gölge"><span></span></label></div>
+      <div class="row"><span class="lbl">Arka duvar</span><label class="switch"><input type="checkbox" id="wall" aria-label="Arka duvara gölge"><span></span></label></div>
+      <div id="wallSlot"></div>
+      <div class="row"><span class="lbl">Cihazlar birbirine gölge düşürsün</span><label class="switch"><input type="checkbox" id="selfShadow" aria-label="Cihazlar birbirine gölge düşürsün"><span></span></label></div>
+      <div class="row"><label class="lbl" for="shadowColor">Gölge rengi</label><input type="color" id="shadowColor"></div>
+      <div id="shadowSlot"></div>
+    </section>
+
+    <section>
+      <h2>Arka plan</h2>
+      <div class="seg seg-wide" data-key="bg"><button data-v="transparent">Şeffaf</button><button data-v="solid">Düz</button><button data-v="gradient">Geçişli</button></div>
+      <div class="row" data-bg="solid"><label class="lbl" for="solid">Renk</label><input type="color" id="solid"></div>
+      <div class="row" data-bg="gradient"><span class="lbl">Renkler</span><span class="pair"><input type="color" id="bg1" aria-label="Başlangıç rengi"><input type="color" id="bg2" aria-label="Bitiş rengi"></span></div>
+    </section>
+  </aside>
+
+  <main class="stagewrap">
+    <div class="toolbar">
+      <div class="tb-left">
+        <div class="seg" data-key="mode" role="group" aria-label="Sürükleme davranışı"><button data-v="rotate">Döndür</button><button data-v="move">Taşı</button></div>
+        <div class="seg" data-key="ratio" role="group" aria-label="Görsel oranı">
+          <button data-v="1:1">1:1</button><button data-v="4:5">4:5</button><button data-v="9:16">9:16</button><button data-v="16:9">16:9</button><button data-v="4:3">4:3</button>
+        </div>
+      </div>
+      <div class="tb-right">
+        <button class="btn" id="fitBtn" type="button">Kadraja sığdır</button>
+        <select id="size" aria-label="Çözünürlük (uzun kenar)"><option value="1080">1080 px</option><option value="2160">2160 px</option><option value="3840">3840 px</option></select>
+        <select id="format" aria-label="Dosya biçimi"><option value="png">PNG</option><option value="jpg">JPG</option></select>
+        <button class="primary" id="export" type="button">PNG indir</button>
+      </div>
+    </div>
+    <div class="stagearea" id="stagearea">
+      <div class="frame" id="frame"><canvas id="gl" aria-label="Sahne önizlemesi"></canvas></div>
+      <div class="dome" id="dome">
+        <div class="dome-head"><span>Işık haritası</span><button type="button" id="domeClose" aria-label="Işık haritasını gizle" title="Gizle">×</button></div>
+        <svg id="domeSvg" viewBox="-112 -112 224 224" tabindex="0" role="application" aria-label="Işık haritası. Işıkları sürükleyerek konumlandır; ok tuşları seçili ışığı taşır."></svg>
+        <div class="dome-cap" id="domeCap"></div>
+      </div>
+      <p class="hint" id="hint"></p>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

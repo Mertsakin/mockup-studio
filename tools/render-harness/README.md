@@ -1,6 +1,6 @@
 # Headless render düzeneği
 
-`mockup-studio.html` içindeki uygulamayı tarayıcı olmadan çalıştırıp bir PNG üretir. Amaç: her görsel değişiklikten sonra sonucu gerçekten **görmek**.
+Uygulamayı (`src/main.js`) tarayıcı olmadan çalıştırıp bir PNG üretir. Amaç: her görsel değişiklikten sonra sonucu gerçekten **görmek**.
 
 ## Kurulum
 
@@ -19,7 +19,7 @@ npm install
 ```bash
 # Linux
 W=800 H=1000 FRAMES=34 ACC=1 xvfb-run -a -s "-screen 0 640x480x24" \
-  node tools/render-harness/harness.js mockup-studio.html renders/out.png tools/render-harness/scenes/laptop.js
+  node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/laptop.js
 ```
 
 | Değişken | Anlamı |
@@ -29,6 +29,14 @@ W=800 H=1000 FRAMES=34 ACC=1 xvfb-run -a -s "-screen 0 640x480x24" \
 | `ACC=1` | float birikim hedeflerini zorla, böylece ilerlemeli render çalışır. Olmadan tek geçiş render alınır (gölgeler grenli) |
 | `REALPMREM=1` | three'nin PMREM'ini kullan (headless-gl'de siyah çıkar, yalnızca hata ayıklama için) |
 | sahneye özel | `COLOR`, `FIN`, `PRESET`, `RX`, `RY`, `ZOOM`, `C`… sahne dosyalarının başındaki açıklamalara bak |
+
+Önce/sonra karşılaştırması:
+
+```bash
+node tools/render-harness/diff.js renders/once.png renders/sonra.png renders/fark.png
+```
+
+En büyük kanal farkını ve 2/255'ten fazla değişen piksel sayısını yazar. Fark varsa çıkış kodu 1 olur; üçüncü argüman verilirse farkı 8 kat büyütülmüş bir görüntü olarak kaydeder.
 
 ## Sahneler (`scenes/`)
 
@@ -40,7 +48,7 @@ W=800 H=1000 FRAMES=34 ACC=1 xvfb-run -a -s "-screen 0 640x480x24" \
 - `light-drag.js` — ışık sürükleme mantık testi (konsola değer yazar)
 - `spheres.js` — malzeme/yansıma kontrolü için metal küreler
 
-Sahne dosyası `async (app, {W, H, createCanvas, loadImage}) => {}` imzalı bir modüldür. `app('isim')` uygulama kapsamındaki herhangi bir değişken/fonksiyonu döndürür (ör. `app('state')`, `app('applyComp')`).
+Sahne dosyası `async (app, {W, H, createCanvas, loadImage}) => {}` imzalı bir modüldür. `app('isim')`, `src/` altındaki herhangi bir modülün **dışa aktardığı** adı döndürür (ör. `app('state')`, `app('applyComp')`). Dışa aktarılmayan bir şeye sahneden erişmek gerekirse ilgili modülde `export` listesine ekle.
 
 ## Bilinen sınırlar
 
@@ -48,4 +56,4 @@ Sahne dosyası `async (app, {W, H, createCanvas, loadImage}) => {}` imzalı bir 
 - **PMREM çalışmıyor.** Düzenek ortam yansımalarını CPU'da kurulan bir küp dokuyla taklit eder. Metal/cam görünümü tarayıcıdakine yakın ama birebir değildir; pürüzlü yüzeylerde küp dikişleri görülebilir.
 - `requestAnimationFrame` bir kuyrukla taklit edilir; zamanlayıcıya bağlı davranışlar (ör. ortam yeniden kurma debounce'u) gecikebilir.
 - DOM büyük ölçüde stub'lanmıştır. UI etkileşimlerini değil render sonucunu test eder.
-- Uygulama `/* ---------- init ---------- */` işaretine kanca atılarak yüklenir. Kod modüllere ayrılınca düzeneğin giriş noktası güncellenmeli.
+- Uygulama esbuild ile tek bir IIFE'ye paketlenip çalıştırılır. `three` importu, düzeneğin yamaladığı global `THREE`'ye yönlendirilir (renderer ve PMREM taklidi bu yüzden çalışır). `jszip` paketlenmez; dışa aktarım düzenekte test edilmez.

@@ -1,5 +1,5 @@
-// Headless render harness for mockup-studio.html.
-// Usage: node tools/render-harness/harness.js <html> <out.png> [scene.js]
+// Headless render harness: bundles src/main.js with esbuild and runs it against headless-gl.
+// Usage: node tools/render-harness/harness.js <out.png> [scene.js]
 // Env: W, H (pixels), FRAMES (animation frames to run, ~34 for a fully converged progressive render),
 //      ACC=1 (force float accumulation targets so the progressive renderer runs), REALPMREM=1 (use three's PMREM; renders black in headless-gl).
 // Linux needs a virtual display: xvfb-run -a -s "-screen 0 640x480x24" node ...
@@ -8,7 +8,8 @@ global.THREE=require(path+'three');
 const {createCanvas,Image:NImage,loadImage}=require(path+'canvas');
 const {PNG}=require(path+'pngjs');
 const fs=require('fs');
-const [,,htmlPath,outPath,setupPath]=process.argv;
+const [,,outPath,setupPath]=process.argv;
+if(!outPath||/\.html$/.test(outPath)){console.error('usage: harness.js <out.png> [scene.js]');process.exit(2);}
 const W=+process.env.W||640,H=+process.env.H||800;
 const gl=require(path+'gl')(W,H,{preserveDrawingBuffer:true,antialias:true,alpha:true,premultipliedAlpha:true});
 // texture upload shim: node-canvas -> typed array (honour flipY / premultiply)
@@ -44,7 +45,7 @@ const els={};
 global.document={querySelector:s=>s==='#gl'?glCanvas:(els[s]=els[s]||noopEl()),querySelectorAll:()=>[],
   createElement:t=>{if(t==='canvas'){const c=createCanvas(1,1);c.style={};c.addEventListener=()=>{};return c;}return noopEl();},
   activeElement:null,fonts:null,addEventListener(){},createElementNS:(ns,t)=>global.document.createElement(t)};
-global.window={devicePixelRatio:1,addEventListener(){},claude:null,__accType:process.env.ACC?THREE.FloatType:undefined};global.addEventListener=()=>{};
+global.window={devicePixelRatio:1,addEventListener(){},__accType:process.env.ACC?THREE.FloatType:undefined};global.addEventListener=()=>{};
 global.getComputedStyle=()=>({paddingLeft:'0',paddingRight:'0',paddingTop:'0',paddingBottom:'0'});
 global.ResizeObserver=class{observe(){}};
 let rafQ=[];global.requestAnimationFrame=cb=>{rafQ.push(cb);return rafQ.length;};global.cancelAnimationFrame=()=>{};
@@ -68,12 +69,23 @@ if(!process.env.REALPMREM){THREE.PMREMGenerator.prototype.fromScene=function(sc,
   const ct=new THREE.CubeTexture(faces);ct.encoding=THREE.sRGBEncoding;ct.generateMipmaps=true;ct.minFilter=THREE.LinearMipmapLinearFilter;ct.needsUpdate=true;ct.format=THREE.RGBAFormat;
   return {texture:ct,dispose(){}};};}
 THREE.WebGLRenderer=function(p){p=Object.assign({},p,{canvas:glCanvas,context:gl});const r=new RealRenderer(p);global.__renderer=r;return r;};
-const html=fs.readFileSync(htmlPath,'utf8');
-let js=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1])[0];
-js=js.replace('/* ---------- init ---------- */','globalThis.__app=(name)=>eval(name);\n/* ---------- init ---------- */');
-eval(js);
-const app=globalThis.__app;
+// Bundle the app. 'three' resolves to the global THREE patched above; every module's
+// namespace is collected so scenes can reach any exported name via app('name').
+const ROOT=require('path').resolve(__dirname,'..','..');
+const SRC=require('path').join(ROOT,'src');
+const mods=require('child_process').execSync('find . -name "*.js"',{cwd:SRC}).toString().trim().split('\n').sort();
+const entry="import './main.js';\n"+mods.map((m,i)=>'import * as m'+i+" from '"+m+"';").join('\n')+'\nglobalThis.__mods=['+mods.map((m,i)=>'m'+i).join(',')+'];';
+const threeShim={name:'three-global',setup(b){
+  b.onResolve({filter:/^three$/},()=>({path:'three',namespace:'three-global'}));
+  b.onLoad({filter:/.*/,namespace:'three-global'},()=>({contents:'module.exports=globalThis.THREE;',loader:'js'}));}};
+function app(name){
+  for(const m of globalThis.__mods)if(name in m)return m[name];
+  throw new Error('app(): no module exports '+name);
+}
 (async()=>{
+  const out=await require('esbuild').build({stdin:{contents:entry,resolveDir:SRC,sourcefile:'harness-entry.js'},bundle:true,format:'iife',
+    write:false,plugins:[threeShim],external:['jszip'],logLevel:'error'});
+  (0,eval)(out.outputFiles[0].text);
   if(setupPath){const setup=require(require('path').resolve(setupPath));await setup(app,{loadImage,createCanvas,W,H});}
   const frames=+process.env.FRAMES||1;
   for(let i=0;i<frames;i++){const q=rafQ;rafQ=[];q.forEach(c=>c());}

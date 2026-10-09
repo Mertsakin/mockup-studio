@@ -5,7 +5,7 @@
 ## 1. Temel (önce bunlar)
 
 - [x] **Yerel indirme:** `offer()` içindeki `window.claude.use('downloads')` yolunu `<a download>` tabanlı indirmeyle değiştir; ZIP toplu indirme de aynı yoldan.
-- [ ] **Modüllere ayırma:** Vite + ES modülleri. Önerilen yapı: `state/`, `render/` (renderer, pcss, accumulation, environment), `devices/` (her cihaz ayrı dosya, `details/`), `lights/`, `ui/`, `export/`. Test düzeneğini yeni giriş noktasına uyarla (şu an `/* ---------- init ---------- */` işaretine kanca atıyor).
+- [x] **Modüllere ayırma:** Vite + ES modülleri (`src/state`, `render`, `devices`, `lights`, `ui`, `export`). Test düzeneği `src/main.js`'i esbuild ile paketliyor; ESLint eklendi.
 - [ ] **three.js yükseltmesi (r128 → güncel):** dikkat edilecekler:
   - `outputEncoding`/`encoding` → `outputColorSpace`/`colorSpace`
   - fiziksel ışık birimleri varsayılan; şiddetler yeniden kalibre edilmeli (yaklaşık ×π)
@@ -38,4 +38,5 @@
 - Işık küreleri genelde kadraj dışında kalıyor; asıl kontrol ışık haritası.
 - Küçük ekranlarda ışık haritası sahnenin bir köşesini örtüyor.
 - 3840 px dışa aktarım mobil tarayıcılarda bellek sınırına takılabilir (render hedefleri büyük).
+- Dizüstü sahnesinde (`PRESET=1`) cihazın sağında keskin kenarlı bir gölge alanı görünüyor; ışık küresi kadraja giriyor. İncelenmeli.
 - Test düzeneği headless-gl (WebGL1) kullanıyor: PMREM çalışmadığı için yansımalar yaklaşık simüle ediliyor; MSAA yok. Son kontrolü gerçek tarayıcıda yap.

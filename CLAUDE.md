@@ -2,48 +2,57 @@
 
 Tarayıcıda çalışan 3B cihaz mockup aracı. Kullanıcı ekran görüntüsünü yükler, cihaz(lar)ı sahneye dizer, ışık kurar, istediği açıdan yüksek çözünürlüklü PNG/JPG alır. Öncelik **gerçekçilik**: malzeme, ışık, gölge ve detay kalitesi her özellikten önce gelir.
 
-Proje şu an **tek dosyalık bir prototip** (`mockup-studio.html`, ~1800 satır). claude.ai üzerinde yayınlanan bir artifact olarak geliştirildi; bu yüzden bazı kararlar o ortamın kısıtlarından geliyor (aşağıda "claude.ai'ye özel kısımlar").
+Proje Vite + ES modülleri yapısında (`src/`), three **r128** npm'den geliyor. İlk sürüm claude.ai'de tek dosyalık bir artifact olarak geliştirildi; r128 ve bazı kararlar o ortamın kısıtlarından kalma (aşağıda "Geçmişten kalanlar").
 
 ## Çalıştırma ve test
 
 ```bash
-npm install            # yalnızca test düzeneği için (three@0.128, gl, canvas, pngjs)
-npm run serve          # http://localhost:5173/mockup-studio.html
-npm run check          # satır içi script'in sözdizimi kontrolü
-npm run render:linux   # Linux'ta headless render -> renders/out.png  (macOS/Windows: npm run render)
+npm install
+npm run dev            # http://localhost:5173
+npm run build          # dist/ (göreli yollar, herhangi bir klasörden açılır)
+npm run check          # ESLint: tanımsız isim, kullanılmayan değişken, import hataları
+npm run render         # headless render -> renders/out.png  (Linux: npm run render:linux)
 ```
 
 Her görsel değişiklikten sonra **render alıp PNG'ye bak**. Ayrıntılar ve sınırlar: `tools/render-harness/README.md`.
 
-Örnek:
+Örnek ve önce/sonra karşılaştırması:
 ```bash
 W=800 H=1000 FRAMES=34 ACC=1 COLOR=silver PRESET=1 \
-  xvfb-run -a -s "-screen 0 640x480x24" \
-  node tools/render-harness/harness.js mockup-studio.html renders/lap.png tools/render-harness/scenes/laptop.js
+  node tools/render-harness/harness.js renders/lap.png tools/render-harness/scenes/laptop.js
+node tools/render-harness/diff.js renders/lap-before.png renders/lap.png renders/lap-diff.png
 ```
+(Linux'ta `node` komutunun önüne `xvfb-run -a -s "-screen 0 640x480x24"` ekle.)
 
-## Mimari haritası (dosya içindeki bölüm başlıkları sırasıyla)
+## Mimari haritası
 
-| Bölüm | İçerik |
+| Dosya | İçerik |
 |---|---|
-| sabitler | `TYPES`, `DEFAULT_SCENE`, `COLORS`, `THEMES`, `PRESETS` (sahne açıları), `COMPS` (hazır kompozisyonlar), `newDevice()`, `DEFAULT_FINISH`, `state` |
-| `patchShadows` | `THREE.ShaderChunk.shadowmap_pars_fragment` yaması: PCSS yumuşak gölge (aşağıya bak) |
-| three setup | renderer (ACES, sRGB çıkış, PCF gölge), sahne, kamera, `SHADOW_CHUNK` (zemin gölgesi maskesi), zemin + duvar gölge yakalayıcıları, `pivot` > `comp` hiyerarşisi |
-| shared materials | `M` (cam, lens, tuş, port, kauçuk, ekran camı yansıma katmanı `M.glare`) |
-| procedural surface maps | fırçalanmış / kumlanmış normal + roughness haritaları (canvas'ta üretilir), `FINISHES`, `applyFinish()` |
-| geometry helpers | `rrShape(w,h,r,cx,cy)` (köşe başına yarıçap destekler), `flatRR`, `slab` (pahlı ekstrüzyon), `lens`, `hole`, `onSide`, doku üreticiler |
-| device builders | `buildPhone`, `phoneDetails`, `buildTablet`, `buildLaptop`, `buildMonitor`, `buildBrowser`, `buildCustom` |
-| laptop keyboard | `KB_ROWS` (Türkçe Q), `keyboardLayout`, `legendTexture`, `buildKeyboard` (genişlik başına `InstancedMesh`) |
-| runtime per device | `RT` Map (id → mesh grubu + materyaller), `buildRT`, `disposeRT`, `rebuild`, `setHolder`, `updateChrome` |
-| screen textures | `setScreenTexture`, `drawFit`, `customCanvas`, `detectScreen` (çerçeve PNG'sinde şeffaf ekran alanını flood-fill ile bulur) |
-| transforms | `refit` (kadraj), `extents`, `camDist`, `applyTransform` (her değişiklikte çağrılan ana güncelleme) |
-| lights | `MODS` (şekillendiriciler), `LIGHT_PRESETS`, `newLight`, `lightTan`, `LRT` Map, `buildLight`, `updateLights` (gölge parametrelerini paketler) |
-| studio environment | ışıklara göre üretilen PMREM ortamı: `rebuildEnv`, `scheduleEnv` (debounce + imza) |
-| progressive rendering | `ACC`, `hookSeed`, `renderSample`, `present`, `renderNow`, ana `loop` |
-| UI bölümleri | sliders, device list, swatches, presets/saved angles, inputs, `syncUI` |
-| light map | `renderDome`, `setFromDome`, `pickLight`, `dragLight3D` |
-| export | `renderExport`, `offer` (`<a download>` ile indirme), ZIP toplu dışa aktarma |
-| init | dosyanın sonu. **`/* ---------- init ---------- */` işaretini silme**: test düzeneği buraya kanca atıyor |
+| `src/main.js` | giriş: UI panellerini içe aktarır, sahneyi kurar, render döngüsünü başlatır |
+| `src/util.js` | `$`, `$$`, `D2R`, `V3`, `clamp`, `wrap`, `mkCanvas`, `roundRect`, `rng` |
+| `src/state/constants.js` | `TYPES`, `DEFAULT_SCENE`, `COLORS`, `THEMES`, `PRESETS` (sahne açıları), `COMPS` (hazır kompozisyonlar), `DEFAULT_FINISH` |
+| `src/state/state.js` | `state`, `newDevice()`, `byId`, `sel`, `view` (`fitRadius`, `fitBox`, `aspect`) |
+| `src/render/pcss.js` | `patchShadows`: `THREE.ShaderChunk.shadowmap_pars_fragment` yaması, PCSS yumuşak gölge (aşağıya bak) |
+| `src/render/renderer.js` | renderer (ACES, sRGB çıkış, PCF gölge), sahne, kamera, `req()` (render kirli bayrağı) |
+| `src/render/stage.js` | ortam ışığı, `SHADOW_CHUNK` (zemin gölgesi maskesi), zemin + duvar gölge yakalayıcıları, `lightRoot`, `pivot` > `comp` |
+| `src/render/transform.js` | `refit` (kadraj), `extents`, `camDist`, `applyTransform` (her değişiklikte çağrılan ana güncelleme) |
+| `src/render/environment.js` | ışıklara göre üretilen PMREM ortamı: `rebuildEnv`, `scheduleEnv` (debounce + imza) |
+| `src/render/accumulation.js` | ilerlemeli render: `ACC`, `hookSeed`, `renderSample`, `present`, `renderNow`, `startLoop` |
+| `src/devices/materials.js` | `M` (cam, lens, tuş, port, kauçuk, ekran camı yansıma katmanı `M.glare`), `tex`, prosedürel fırçalanmış/kumlanmış haritalar, `FINISHES`, `applyFinish`, `applyColorTo` |
+| `src/devices/geometry.js` | `rrShape(w,h,r,cx,cy)` (köşe başına yarıçap destekler), `flatRR`, `slab` (pahlı ekstrüzyon), `lens`, `hole`, `onSide`, doku üreticiler |
+| `src/devices/{phone,tablet,laptop,monitor,browser,custom}.js` | cihaz kurucuları; `details/phone.js` (anten bantları, portlar), `keyboard.js` (`KB_ROWS` Türkçe Q, `buildKeyboard` genişlik başına `InstancedMesh`), `index.js` (`BUILDERS`) |
+| `src/devices/rt.js` | `RT` Map (id → mesh grubu + materyaller), `setHolder` |
+| `src/devices/runtime.js` | `buildRT`, `disposeRT`, `rebuild` |
+| `src/devices/screen.js` | `setScreenTexture`, `drawFit`, `customCanvas`, `updateChrome`, `detectScreen` (çerçeve PNG'sinde şeffaf ekran alanını flood-fill ile bulur) |
+| `src/lights/mods.js` | `MODS` (şekillendiriciler), `LIGHT_PRESETS`, `newLight`, `lightTan`, `shadowCharacter` |
+| `src/lights/runtime.js` | `LRT` Map, `buildLight`, `disposeLight`, `applyAmbient`, `updateLights` (gölge parametrelerini paketler), `onLightsUpdated` |
+| `src/lights/actions.js` | `rebuildLights`, `applyLightPreset` |
+| `src/ui/sync.js` | `syncUI` / `syncAll`: her panel kendi parçasını `onSyncUI(d => …)` ile kaydeder |
+| `src/ui/*.js` | `layout` (kadraj, arka plan), `sliders`, `controls` (genel segmentler, anahtarlar), `devices-panel` (cihaz listesi, tip, kompozisyon, renk/yüzey), `lights-panel`, `angles` (hazır/kayıtlı açılar), `image-input`, `pointer` (sahne sürükleme, `pickLight`, `dragLight3D`), `dome` (ışık haritası, `renderDome`, `setFromDome`), `toast` |
+| `src/export/export.js` | `renderExport`, `offer` (`<a download>` ile indirme), ZIP toplu dışa aktarma (JSZip dinamik import) |
+| `index.html`, `src/style.css` | arayüz iskeleti ve stiller |
+
+**Bağımlılık yönü:** `state` → `render`/`devices`/`lights` → `ui` → `main`. Döngüsel import yok, öyle kalsın. Alt katman UI'a ihtiyaç duyarsa kanca kullan (ör. `onLightsUpdated`, `onSyncUI`). Başka modülden yeniden atanması gereken değerler `export let` yerine bir nesnede tutulur (`view`, `redraw`).
 
 ## Durum modeli
 
@@ -54,7 +63,7 @@ W=800 H=1000 FRAMES=34 ACC=1 COLOR=silver PRESET=1 \
 
 ## Koordinat ve birim kuralları
 
-- **Birim ≈ cm** (telefon 7.15 × 14.7). Kaynak boyutları ve ışık uzaklığı `fitRadius`'a göre göreli.
+- **Birim ≈ cm** (telefon 7.15 × 14.7). Kaynak boyutları ve ışık uzaklığı `view.fitRadius`'a göre göreli.
 - Işıklar **kameraya göre sabit** (stüdyo ışığı gibi): `az = 0` kamera tarafı, `90` sağ, `180` arka; `el` ufuktan yükseklik. Sahne döndürmek ürünü döner tabla üzerinde çevirmek gibidir.
 - Cihazlar `buildRT`'de sınır kutusuna göre ortalanır. Kompozisyonlarda cihazlar aynı zemine oturacak şekilde `py` verilir.
 - Gölge düşürmemesi gereken ince yüzeyler (ızgara, havalandırma, tuş yazıları) `userData.decal = true` taşır.
@@ -65,7 +74,7 @@ W=800 H=1000 FRAMES=34 ACC=1 COLOR=silver PRESET=1 \
    - `> 0` yönlü ışık: `P * 1000`, `P = (far - near) * tan / frustumGenişliği`
    - `< 0` spot: `Q * 1000`, `Q = S / (near * 2 * tan(açı))`; shader **far = 10 × near** varsayar (`pcssLin`). Spot gölge kamerasının near/far oranını değiştirme.
    - nokta ışık: `S * 100` (dünya birimiyle kaynak boyutu)
-   Formüller `updateLights` içinde; shader `patchShadows` içinde. Biri değişirse diğeri de değişmeli.
+   Formüller `updateLights` içinde (`lights/runtime.js`); shader `patchShadows` içinde (`render/pcss.js`). Biri değişirse diğeri de değişmeli.
 2. **Zemin gölgesi** (`SHADOW_CHUNK`) her ışığın gölgesini o ışığın renk/şiddet payıyla ağırlıklandırır. three, gölge düşüren ışıkları dizilerin başına sıralar; döngüler buna dayanır.
 3. **İlerlemeli render.** `renderer.shadowMap.autoUpdate = false`; gölge haritaları yalnızca `renderSample(0)`'da yenilenir. Sahnede bir şey değişip `req()` çağrılmazsa gölgeler eski kalır. Gürültü tohumu her materyale `hookSeed` ile `onBeforeCompile` üzerinden enjekte edilir. Yeni materyal türleri otomatik yakalanır, `ShaderMaterial` hariç.
 4. **Derinlik hassasiyeti.** Örnek render hedefi `stencilBuffer: true` ile oluşturulur. Bunu kaldırırsan 16 bit derinliğe düşer ve ekran camı ile çerçeve gibi 0.002 aralıklı katmanlar titreşir.
@@ -73,10 +82,10 @@ W=800 H=1000 FRAMES=34 ACC=1 COLOR=silver PRESET=1 \
 6. **Renk yönetimi.** Materyal renkleri `convertSRGBToLinear()` ile verilir. Ekran dokuları `toneMapped: false` olduğu için görsel renkleri doğru kalır.
 7. Tuş yazıları yazı tipi yüklendikten sonra yeniden çizilmek için dizüstü yeniden kurulur (`document.fonts.ready`).
 
-## claude.ai'ye özel kısımlar (yerelde uyarlanmalı)
+## Geçmişten kalanlar
 
-- **İndirme:** artık yerel: `offer(name, blob)` geçici bir `<a download>` + `URL.createObjectURL` kullanır. JSZip yüklenemezse toplu dışa aktarım her açıyı ayrı dosya olarak indirir. (Eski `window.claude.use('downloads')` yolu ve önizleme penceresi kaldırıldı.)
-- **CSP kısıtları:** Yayın ortamında script'ler yalnızca cdnjs/jsdelivr'dan yüklenebiliyordu, harici görsel yüklenemiyordu. three r128'in UMD build'i bu yüzden seçildi. Yerelde bu kısıt yok; npm + ES modül + güncel three'ye geçilebilir (bkz. `TODO.md`).
+- **three r128.** claude.ai'nin CSP'si yalnızca cdnjs/jsdelivr'a izin verdiği için seçilmişti. Artık npm'den geliyor; yükseltme `TODO.md`'de.
+- **İndirme** yerel: `offer(name, blob)` geçici bir `<a download>` + `URL.createObjectURL` kullanır. JSZip yüklenemezse toplu dışa aktarım her açıyı ayrı dosya olarak indirir.
 - `localStorage` erişimleri try/catch içinde; öyle kalsın.
 
 ## Tasarım ve hukuki kurallar
@@ -90,4 +99,4 @@ W=800 H=1000 FRAMES=34 ACC=1 COLOR=silver PRESET=1 \
 
 - Küçük, doğrulanabilir adımlar. Her görsel değişiklikten sonra ilgili sahneyle render al ve PNG'yi incele; önce/sonra karşılaştır.
 - Gerçekçilik kararlarında fotoğraf davranışını referans al (kaynak büyüdükçe/yaklaştıkça gölge yumuşar, temas noktasında gölge sertleşir vb.).
-- Büyük refaktörde (modüllere ayırma, three yükseltmesi) önce test düzeneğini yeni yapıya uyarla, sonra davranışı adım adım taşı.
+- Büyük refaktörde (ör. three yükseltmesi) önce bugünkü sahnelerden render al, sonra `diff.js` ile önce/sonra karşılaştır.
