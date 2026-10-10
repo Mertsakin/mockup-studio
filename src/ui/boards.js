@@ -1,0 +1,91 @@
+import {renderer} from '../render/renderer.js';
+import {asDoc,restore,signature,snapshot} from '../io/project.js';
+import {state} from '../state/state.js';
+import {bgCss,layout,paintBg} from './layout.js';
+import {syncAll} from './sync.js';
+import {mkCanvas} from '../util.js';
+
+/* Artboards. The document is a list of boards, each a full scene snapshot (devices, lights, camera, background, size)
+   with a position on the canvas. Only the active board is live: its data is the studio `state` and the WebGL canvas
+   draws it. The others show a thumbnail of their last render. Switching boards stores the live scene back into its
+   board (snapshot + thumbnail) and restores the target's snapshot, so every existing panel keeps working unchanged.
+   Board positions and sizes are in output pixels (1920 x 1080 board = 1920 x 1080 canvas units). */
+const GAP=160;
+const doc={boards:[],active:null};
+let uid=0,DEFAULT=null;
+const subs=[];
+function onBoards(fn){subs.push(fn);}
+const emit=()=>subs.forEach(f=>f());
+
+// output size of a board from its state (same rule as export)
+function sizeOf(st){
+  if(st.ratio==='custom')return [st.customW,st.customH];
+  const [a,b]=st.ratio.split(':').map(Number),L=st.size;
+  return a>=b?[L,Math.round(L*b/a)]:[Math.round(L*a/b),L];
+}
+const activeBoard=()=>doc.boards.find(b=>b.id===doc.active);
+const boardById=id=>doc.boards.find(b=>b.id===id);
+// live size for the active board, stored snapshot for the others
+const boardSize=b=>b.id===doc.active?sizeOf(state):sizeOf(b.snap.state);
+const nextName=()=>{let n=doc.boards.length+1;const used=new Set(doc.boards.map(b=>b.name));while(used.has('Artboard '+n))n++;return 'Artboard '+n;};
+
+// thumbnail of the live canvas (with the board background painted under it), long edge ~480 px
+function captureThumb(){
+  const src=renderer.domElement,sw=src.width,sh=src.height;if(!sw||!sh)return null;
+  const k=Math.min(1,480/Math.max(sw,sh)),w=Math.max(1,Math.round(sw*k)),h=Math.max(1,Math.round(sh*k));
+  const c=mkCanvas(w,h),g=c.getContext('2d');paintBg(g,w,h);g.drawImage(src,0,0,w,h);
+  try{return c.toDataURL(state.bg==='transparent'?'image/png':'image/jpeg',.85);}catch(e){return null;}
+}
+function store(){const b=activeBoard();if(!b)return;b.snap=snapshot();const t=captureThumb();if(t)b.thumb=t;}
+function show(b){doc.active=b.id;restore(b.snap);bgCss();layout();syncAll();emit();}
+
+// called once at start-up, after the initial scene is built
+function initBoards(){DEFAULT=snapshot();doc.boards=[{id:++uid,name:'Artboard 1',x:0,y:0,snap:DEFAULT,thumb:null}];doc.active=uid;emit();}
+function activate(id){if(id===doc.active){emit();return;}const t=boardById(id);if(!t)return;store();show(t);}
+// new board right of the rightmost one, top-aligned with it; from a snapshot (duplicate) or the default scene
+function addBoard(snap,name){
+  store();
+  const right=doc.boards.reduce((m,b)=>{const r=b.x+boardSize(b)[0];return r>m.r?{r,b}:m;},{r:-Infinity,b:null});
+  const b={id:++uid,name:name||nextName(),x:right.b?right.r+GAP:0,y:right.b?right.b.y:0,snap:JSON.parse(JSON.stringify(Object.assign({},snap||DEFAULT,{images:{}}))),thumb:null};
+  b.snap.images=(snap||DEFAULT).images;  // images are shared elements, not copied
+  doc.boards.push(b);show(b);return b;
+}
+function duplicateBoard(id){const src=boardById(id||doc.active);if(!src)return;if(src.id===doc.active)store();const b=addBoard(src.snap,src.name+' kopya');b.thumb=src.thumb;emit();}
+function removeBoard(id){
+  if(doc.boards.length<2)return false;const i=doc.boards.findIndex(b=>b.id===id);if(i<0)return false;
+  const wasActive=id===doc.active;doc.boards.splice(i,1);
+  if(wasActive)show(doc.boards[Math.min(i,doc.boards.length-1)]);else emit();
+  return true;
+}
+function renameBoard(id,name){const b=boardById(id);if(!b)return;const n=String(name||'').trim();if(n)b.name=n.slice(0,60);emit();}
+function moveBoard(id,x,y){const b=boardById(id);if(!b)return;b.x=Math.round(x);b.y=Math.round(y);}
+
+/* --- whole document, for undo / redo, autosave and project files */
+function docSnapshot(){
+  const a=activeBoard();if(a)a.snap=snapshot();
+  return {v:2,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb}))};
+}
+const docSignature=d=>JSON.stringify(d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]));
+// first board whose content differs between two documents (undo jumps there)
+function changedBoard(from,to){
+  const fm=new Map(from.boards.map(b=>[b.id,signature(b.snap)]));
+  const c=to.boards.find(b=>fm.get(b.id)!==signature(b.snap));return c?c.id:null;
+}
+// replaces the document; the active board is `prefer`, else the document's own. Thumbnails: the live ones of boards
+// that still exist (fresher), else the document's
+function applyDoc(d,prefer){
+  const thumbs=new Map(doc.boards.map(b=>[b.id,b.thumb]));
+  doc.boards=d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:thumbs.get(b.id)||b.thumb||null}));
+  uid=Math.max(uid,...doc.boards.map(b=>b.id));
+  const want=[prefer,d.active].find(id=>id!=null&&boardById(id));
+  show(boardById(want)||doc.boards[0]);
+}
+// renders boards that have no thumbnail yet (after loading a project), one at a time, then returns to the active one
+async function fillThumbs(){
+  const back=doc.active,todo=doc.boards.filter(b=>!b.thumb&&b.id!==back);if(!todo.length)return;
+  const frame=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  for(const b of todo){store();show(b);await frame();await frame();b.thumb=captureThumb();}
+  store();show(boardById(back));
+}
+
+export {activate,activeBoard,addBoard,applyDoc,asDoc,boardById,boardSize,changedBoard,doc,docSignature,docSnapshot,duplicateBoard,fillThumbs,initBoards,moveBoard,onBoards,removeBoard,renameBoard,sizeOf,store as storeActive};

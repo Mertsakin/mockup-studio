@@ -52,15 +52,31 @@ async function imageBlob(img){const r=await fetch(img.src);return r.blob();}
 const blobToDataUrl=b=>new Promise((res,rej)=>{const f=new FileReader();f.onload=()=>res(f.result);f.onerror=rej;f.readAsDataURL(b);});
 async function loadImage(src){const img=new Image();img.src=src;await img.decode();return img;}
 
+/* Documents: a list of artboards, each holding one scene snapshot (see ui/boards.js).
+   {v:2, active, boards:[{id,name,x,y,snap}]}. Snapshots of one document share one image map. */
+const docImages=d=>{const m={};d.boards.forEach(b=>Object.assign(m,b.snap.images||{}));return m;};
+const SNAP_KEYS=['v','state','devices','lights','selected','selLight','frame'];
+const plainSnap=s=>{const o={};SNAP_KEYS.forEach(k=>{o[k]=s[k];});return o;};
+// thumbnails (small data URLs) travel along, so a loaded document shows every board without re-rendering it
+const plainDoc=d=>({v:2,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null}))});
+// a single-scene snapshot (v1 files, old autosaves) becomes a one-board document
+function asDoc(s){
+  if(s&&s.v===2&&Array.isArray(s.boards))return s;
+  return {v:2,active:1,boards:[{id:1,name:'Artboard 1',x:0,y:0,snap:s}]};
+}
+function attachImages(d,images){d.boards.forEach(b=>{b.snap.images=images;});return d;}
+
 // project file: one JSON with the images inlined as data URLs
-async function toProjectFile(s){
-  const images={};for(const k in s.images)images[k]=await blobToDataUrl(await imageBlob(s.images[k]));
-  return JSON.stringify({app:'mockup-studio',v:1,state:s.state,devices:s.devices,lights:s.lights,selected:s.selected,selLight:s.selLight,frame:s.frame,images});
+async function toProjectFile(d){
+  const all=docImages(d),images={};for(const k in all)images[k]=await blobToDataUrl(await imageBlob(all[k]));
+  return JSON.stringify(Object.assign({app:'mockup-studio'},plainDoc(d),{images}));
 }
 async function fromProjectFile(text){
-  const p=JSON.parse(text);if(p.app!=='mockup-studio'||!Array.isArray(p.devices))throw new Error('Bu bir mockup stüdyosu proje dosyası değil.');
+  const p=JSON.parse(text);
+  if(p.app!=='mockup-studio'||!(Array.isArray(p.boards)||Array.isArray(p.devices)))throw new Error('Bu bir mockup stüdyosu proje dosyası değil.');
   const images={};for(const k in p.images||{})images[k]=adopt(await loadImage(p.images[k]),k);
-  return Object.assign(p,{images});
+  delete p.images;
+  return attachImages(asDoc(p),images);
 }
 
 // --- autosave in IndexedDB (localStorage is too small for screenshots); every call is best-effort
@@ -71,23 +87,24 @@ async function idb(mode,fn){const d=await db();return new Promise((res,rej)=>{co
 const stored=new Set();
 // saves run one after another (a timer save and a leave-page save can overlap otherwise)
 let chain=Promise.resolve();
-function autosave(s){chain=chain.then(()=>saveNow(s));return chain;}
-async function saveNow(s){
+function autosave(d){chain=chain.then(()=>saveNow(d));return chain;}
+async function saveNow(d){
   try{
     // blobs first (async work cannot run inside an IndexedDB transaction), then one transaction for everything
-    const add=[];for(const k in s.images)if(!stored.has(k))add.push([k,await imageBlob(s.images[k])]);
-    const drop=[...stored].filter(k=>!(k in s.images)),data=Object.assign({},s,{images:Object.keys(s.images)});
+    const all=docImages(d),add=[];for(const k in all)if(!stored.has(k))add.push([k,await imageBlob(all[k])]);
+    const drop=[...stored].filter(k=>!(k in all)),data=Object.assign(plainDoc(d),{images:Object.keys(all)});
     await idb('readwrite',st=>{add.forEach(([k,b])=>st.put(b,'img:'+k));drop.forEach(k=>st.delete('img:'+k));return st.put(data,'scene');});
     add.forEach(([k])=>stored.add(k));drop.forEach(k=>stored.delete(k));
   }catch(e){console.warn('Otomatik kayıt başarısız:',e);}
 }
 async function loadAutosave(){
   try{
-    const data=await idb('readonly',st=>st.get('scene'));if(!data||!Array.isArray(data.devices))return null;
+    const data=await idb('readonly',st=>st.get('scene'));if(!data||!(Array.isArray(data.boards)||Array.isArray(data.devices)))return null;
     const images={};
     for(const k of data.images||[]){const b=await idb('readonly',st=>st.get('img:'+k));if(b){images[k]=adopt(await loadImage(URL.createObjectURL(b)),k);stored.add(k);}}
-    return Object.assign(data,{images});
+    delete data.images;
+    return attachImages(asDoc(data),images);
   }catch(e){return null;}
 }
 
-export {autosave,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};
+export {asDoc,autosave,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};

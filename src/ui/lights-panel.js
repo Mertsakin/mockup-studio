@@ -13,9 +13,9 @@ const LS_DEFS=[
   {id:'l-az',k:'az',l:'Yön',min:-180,max:180,step:1,reset:0,f:fDeg,note:'0° kameranın olduğu taraf, 90° sağ, 180° arka.'},
   {id:'l-el',k:'el',l:'Yükseklik',min:2,max:90,step:1,reset:45,f:fDeg},
   {id:'l-dist',k:'dist',l:'Uzaklık',min:.6,max:5,step:.01,reset:2.5,f:fX,notmod:'sun'},
-  {id:'l-size',k:'size',l:'Kaynak boyutu',min:.01,max:4,step:.01,reset:1,f:v=>Math.round(v*100)+'%',notmod:'sun',after:()=>{const L=selLight();if(L&&L.mod!=='custom'){L.mod='custom';renderMods();}},note:'Sahne büyüklüğüne göre ışık kaynağının genişliği.'},
+  {id:'l-size',k:'size',l:'Boyut',min:.01,max:4,step:.01,reset:1,f:v=>Math.round(v*100)+'%',notmod:'sun',after:()=>{const L=selLight();if(L&&L.mod!=='custom'){L.mod='custom';renderMods();}},note:'Sahne büyüklüğüne göre ışık kaynağının genişliği.'},
   {id:'l-angle',k:'angle',l:'Huzme açısı',min:5,max:80,step:1,reset:35,f:fDeg,only:'spot'},
-  {id:'l-pen',k:'penumbra',l:'Huzme kenarı yumuşaklığı',min:0,max:1,step:.01,reset:.4,f:fPct,only:'spot'}
+  {id:'l-pen',k:'penumbra',l:'Huzme kenarı',min:0,max:1,step:.01,reset:.4,f:fPct,only:'spot'}
 ];
 LS_DEFS.forEach(d=>makeSlider($('#lightSliders'),d,()=>selLight()||{}));
 const lightCharEl=$('#lightChar');

@@ -1,9 +1,10 @@
 import {offer} from '../export/export.js';
-import {autosave,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile} from '../io/project.js';
+import {autosave,fromProjectFile,loadAutosave,toProjectFile} from '../io/project.js';
+import {applyDoc,changedBoard,doc,docSignature as signature,docSnapshot as snapshot,fillThumbs} from './boards.js';
+import {fitAll} from './workspace.js';
+const activeId=()=>doc.active;
 import {canvas} from '../render/renderer.js';
 import {gizmoHelper} from './gizmo.js';
-import {bgCss,layout} from './layout.js';
-import {syncAll} from './sync.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
 
@@ -12,7 +13,8 @@ import {$} from '../util.js';
    differs from the last recorded state and has stayed the same for one poll (a drag, slider or animation has
    finished), the previous state goes on the undo stack. So every kind of edit is covered, and dragging a slider is
    one step. A new action (pointer press or key) first records any change still waiting, so quick consecutive edits
-   stay separate steps. Each recorded change is also autosaved (IndexedDB) shortly after. */
+   stay separate steps. Each recorded change is also autosaved (IndexedDB) shortly after.
+   The recorded state is the whole document (every artboard); undo / redo jump to the board the step changed. */
 const POLL=150,MAX=100;
 let past=[],future=[],current=null,currentSig='',pending='',saveTimer=0;
 const undoBtn=$('#undoBtn'),redoBtn=$('#redoBtn');
@@ -41,9 +43,9 @@ function commitNow(){
 }
 document.addEventListener('pointerdown',commitNow,true);
 document.addEventListener('keydown',e=>{if(!/^(Shift|Control|Alt|Meta)$/.test(e.key))commitNow();},true);
-function apply(s){restore(s);current=s;currentSig=signature(s);pending='';bgCss();layout();syncAll();syncButtons();scheduleSave();}
-function undo(){commitNow();if(!past.length)return;future.push(current);apply(past.pop());}
-function redo(){if(!future.length)return;past.push(current);apply(future.pop());}
+function apply(s,from){applyDoc(s,from?changedBoard(from,s)||activeId():null);current=s;currentSig=signature(s);pending='';syncButtons();scheduleSave();}
+function undo(){commitNow();if(!past.length)return;const from=current;future.push(current);apply(past.pop(),from);}
+function redo(){if(!future.length)return;const from=current;past.push(current);apply(future.pop(),from);}
 undoBtn.addEventListener('click',undo);redoBtn.addEventListener('click',redo);
 window.addEventListener('keydown',e=>{
   if(!(e.metaKey||e.ctrlKey)||e.altKey)return;
@@ -63,18 +65,18 @@ const openEl=$('#openProject');
 $('#openProjectBtn').addEventListener('click',()=>openEl.click());
 openEl.addEventListener('change',async()=>{
   const f=openEl.files[0];openEl.value='';if(!f)return;
-  try{const s=await fromProjectFile(await f.text());if(current){past.push(current);future=[];}apply(s);toast('Proje açıldı');}
+  try{const s=await fromProjectFile(await f.text());if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();toast('Proje açıldı');}
   catch(e){toast('Proje açılamadı: '+(e.message||e));}
 });
 
 // Called once after start-up: restores the last session (unless a template was opened) and starts history.
 async function startHistory(templateOpened){
-  if(!templateOpened){const s=await loadAutosave();if(s&&s.devices.length){restore(s);bgCss();layout();syncAll();toast('Son çalışman geri yüklendi');}}
+  if(!templateOpened){const s=await loadAutosave();if(s&&s.boards.length&&s.boards.some(b=>b.snap&&b.snap.devices&&b.snap.devices.length)){applyDoc(s);fitAll();await fillThumbs();toast('Son çalışman geri yüklendi');}}
   current=snapshot();currentSig=signature(current);syncButtons();
   setInterval(poll,POLL);
 }
 
 // dev / tests: short description of the stacks (device positions)
-const historyInfo=()=>{const f=x=>x.devices.map(d=>d.py.toFixed(1)+'/'+d.px.toFixed(1)).join(' ');return {past:past.map(f),current:current&&f(current),future:future.map(f)};};
+const historyInfo=()=>{const f=x=>x.boards.map(b=>b.snap.devices.map(d=>d.py.toFixed(1)+'/'+d.px.toFixed(1)).join(' ')).join(' | ');return {past:past.map(f),current:current&&f(current),future:future.map(f)};};
 
 export {historyInfo,redo,startHistory,undo};

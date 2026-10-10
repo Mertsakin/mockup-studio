@@ -4,7 +4,7 @@ import {canvas,overlays,renderer,req} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
 import {applySaved,saved} from '../ui/angles.js';
-import {layout,paintBg,ratioNums} from '../ui/layout.js';
+import {invalidateLayout,layout,paintBg,ratioNums} from '../ui/layout.js';
 import {syncSliders} from '../ui/sliders.js';
 import {toast} from '../ui/toast.js';
 import {$,mkCanvas} from '../util.js';
@@ -26,7 +26,7 @@ async function renderExport(onProgress){
     else renderNow(state.size>=3000?32:48);
   }finally{LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});}
   const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);g.drawImage(src,0,0,W,H);
-  renderer.setPixelRatio(pr);layout();req();
+  renderer.setPixelRatio(pr);invalidateLayout();layout();req();
   return new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('blob')),state.format==='jpg'?'image/jpeg':'image/png',.93));
 }
 const ext=()=>state.format==='jpg'?'jpg':'png';

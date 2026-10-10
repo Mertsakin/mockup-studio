@@ -29,6 +29,7 @@ function renderSaved(){
     chip.append(a,x);el.appendChild(chip);
   });
   $('#exportAll').hidden=saved.length<1;
+  const empty=$('#savedEmpty');if(empty)empty.hidden=saved.length>0;
 }
 $('#saveAngle').addEventListener('click',()=>{
   const n=saved.reduce((m,s)=>{const k=parseInt(String(s.name||'').replace(/\D/g,''),10);return isNaN(k)?m:Math.max(m,k);},0)+1;

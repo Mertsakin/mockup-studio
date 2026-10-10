@@ -4,20 +4,29 @@ import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
 import {$,mkCanvas} from '../util.js';
 
-/* ---------- layout & background ---------- */
-const frame=$('#frame'),area=$('#stagearea');
+/* ---------- layout & background ----------
+   The live canvas (#frame) sits over the active artboard on the workspace. workspace.js registers the geometry
+   provider: it returns the board's on-screen rectangle (stage pixels) and positions the board elements. */
+const frame=$('#frame');
 // 'custom' = artboard of state.customW x state.customH px
 const ratioNums=()=>state.ratio==='custom'?[state.customW,state.customH]:state.ratio.split(':').map(Number);
+let geometry=null;
+function setStageGeometry(fn){geometry=fn;}
+const MAX_PX=2600;  // device pixels of the live canvas, whatever the zoom (beyond that the board is upscaled)
+let lastW=0,lastH=0,lastPr=0;
 function layout(){
-  const cs=getComputedStyle(area);
-  const aw=area.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
-  const ah=area.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
-  if(aw<=0||ah<=0)return;
-  const [rw,rh]=ratioNums(),r=rw/rh;let w=aw,h=aw/r;if(h>ah){h=ah;w=ah*r;}
-  w=Math.floor(w);h=Math.floor(h);frame.style.width=w+'px';frame.style.height=h+'px';
-  renderer.setSize(w,h,false);view.aspect=w/h;applyTransform();
-  if(state.bg==='pattern')bgCss();  // aspect may have changed
+  const r=geometry&&geometry();if(!r)return;
+  const w=Math.max(1,Math.round(r.w)),h=Math.max(1,Math.round(r.h));
+  frame.style.transform='translate('+Math.round(r.x)+'px,'+Math.round(r.y)+'px)';
+  const pr=Math.min(window.devicePixelRatio||1,2,MAX_PX/Math.max(w,h));
+  if(w!==lastW||h!==lastH||Math.abs(pr-lastPr)>1e-3){
+    frame.style.width=w+'px';frame.style.height=h+'px';
+    renderer.setPixelRatio(pr);renderer.setSize(w,h,false);view.aspect=w/h;lastW=w;lastH=h;lastPr=pr;applyTransform();
+    if(state.bg==='pattern')bgCss();  // aspect may have changed
+  }
 }
+// forces the next layout to resize the renderer (after an export changed it)
+function invalidateLayout(){lastW=lastH=lastPr=0;}
 // pattern preview: drawn once per pattern / colours / aspect and shown as a stretched CSS image
 let patternKey='',patternUrl='';
 function patternCss(){
@@ -39,6 +48,5 @@ function paintBg(g,W,H){
   } else if(state.bg==='pattern')drawPattern(g,W,H,state.pattern,state.pbase,state.paccent);
   else if(state.format==='jpg'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}
 }
-new ResizeObserver(layout).observe(area);
 
-export {bgCss,frame,layout,paintBg,ratioNums};
+export {bgCss,frame,invalidateLayout,layout,paintBg,ratioNums,setStageGeometry};

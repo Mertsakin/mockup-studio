@@ -10,6 +10,8 @@ import {bgCss,layout} from './ui/layout.js';
 import {syncAll} from './ui/sync.js';
 import {startHistory} from './ui/history.js';
 import {templateFromUrl} from './ui/templates.js';
+import {initBoards} from './ui/boards.js';
+import {fitAll} from './ui/workspace.js';
 
 // panels wire their DOM listeners and register their syncUI parts on import
 import './ui/controls.js';
@@ -24,9 +26,10 @@ import './render/photo-preview.js';
 import './ui/pointer.js';
 import './ui/dome.js';
 import './export/export.js';
+import './ui/shell.js';
 
 /* ---------- init ---------- */
-bgCss();state.devices.forEach(buildRT);refit();applyLightPreset(LIGHT_PRESETS[0]);renderSaved();syncAll();layout();
+bgCss();state.devices.forEach(buildRT);refit();applyLightPreset(LIGHT_PRESETS[0]);renderSaved();initBoards();syncAll();fitAll();layout();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{state.devices.forEach(d=>{if(d.type==='laptop'){rebuild(d,false);return;}if(!d.img||d.type==='custom')setScreenTexture(d);if(d.type==='browser')updateChrome(d);});});
 const fromTemplate=templateFromUrl();
 startLoop();

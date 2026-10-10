@@ -46,17 +46,10 @@ function gizmoMove(e){if(!tc.object)return false;const p=ptr(e);if(tc.dragging){
 function gizmoUp(e){if(!tc.dragging)return false;tc.pointerUp(ptr(e));return true;}
 const gizmoHot=()=>tc.axis!==null;
 onSyncUI(()=>{if(tc.mode!==state.gizmo)tc.setMode(state.gizmo);attach();});
-function setGizmoMode(m){state.gizmo=m;tc.setMode(m);if(!shown)shown=true;attach();}
+function setGizmoMode(m){state.gizmo=m;tc.setMode(m);attach();}
 // Shift held: 1 cm / 15° steps
 const snapKeys=e=>{const on=e.shiftKey;tc.setTranslationSnap(on?1:null);tc.setRotationSnap(on?Math.PI/12:null);};
 window.addEventListener('keydown',snapKeys);window.addEventListener('keyup',snapKeys);
-// W: move, E: rotate, Esc: hide (ignored while typing in a field or steering the light map)
-window.addEventListener('keydown',e=>{
-  const t=e.target;if(e.metaKey||e.ctrlKey||e.altKey||(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.id==='domeSvg')))return;
-  const k=e.key.toLowerCase();
-  if(k==='w'||k==='e'){setGizmoMode(k==='w'?'translate':'rotate');
-    document.querySelectorAll('.seg[data-key="gizmo"] button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===state.gizmo)));req();}
-  else if(e.key==='Escape'&&shown)showGizmo(false);
-});
+// tool keys (W / E / Esc) live in shell.js with the other tools
 
 export {gizmoDown,gizmoHot,gizmoMove,gizmoUp,helper as gizmoHelper,setGizmoMode,showGizmo};

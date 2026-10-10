@@ -11,6 +11,7 @@ import {gizmoDown,gizmoHot,gizmoMove,gizmoUp,showGizmo} from './gizmo.js';
 import {frame} from './layout.js';
 import {syncSliders} from './sliders.js';
 import {syncAll,syncUI} from './sync.js';
+import {panning,setUi,ui} from './ui-state.js';
 import {D2R,V3,clamp,wrap} from '../util.js';
 
 /* ---------- pointer interaction ---------- */
@@ -55,15 +56,21 @@ function moveSelected(dx,dy){
   const w=new V3(dx*upp,-dy*upp,0).applyQuaternion(pivot.quaternion.clone().invert());
   d.px=clamp(d.px+w.x,-60,60);d.py=clamp(d.py+w.y,-60,60);d.pz=clamp(d.pz+w.z,-60,60);
 }
-let gizmoDrag=false;
+/* Tools (ui-state.js): Select / Move / Rotate pick devices; dragging a device moves it across the screen, dragging
+   empty space orbits the scene. Move and Rotate also show the device's axes (gizmo). Orbit turns the scene wherever
+   you drag. Hand is handled by the workspace (the canvas never sees those presses). Shift+drag pans the camera. */
+let gizmoDrag=false,dragDevice=false;
+function selectDevice(id){if(id!==state.selected){state.selected=id;syncAll();}setUi({kind:'device'});showGizmo(ui.tool==='move'||ui.tool==='rotate');}
 canvas.addEventListener('pointerdown',e=>{
+  if(panning()||e.button!==0&&e.pointerType==='mouse')return;
   // gizmo first: grabbing an axis moves / rotates the selected device instead of the scene
   if(!pointers.size&&gizmoDown(e)){gizmoDrag=true;canvas.setPointerCapture(e.pointerId);canvas.classList.add('dragging');return;}
   canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  canvas.classList.add('dragging');downAt={x:e.clientX,y:e.clientY};moved=false;
-  if(pointers.size===1){const lidHit=pickLight(e.clientX,e.clientY);
-    if(lidHit){lightDrag=lidHit;if(state.selLight!==lidHit){state.selLight=lidHit;syncAll();}return;}}
-  if(state.mode==='move'&&pointers.size===1){const id=pick(e.clientX,e.clientY);if(id){showGizmo(true);if(id!==state.selected){state.selected=id;syncAll();}}}
+  canvas.classList.add('dragging');downAt={x:e.clientX,y:e.clientY};moved=false;dragDevice=false;
+  if(pointers.size!==1||ui.tool==='orbit')return;
+  const lidHit=pickLight(e.clientX,e.clientY);
+  if(lidHit){lightDrag=lidHit;if(state.selLight!==lidHit){state.selLight=lidHit;syncAll();}setUi({kind:'light'});return;}
+  const id=pick(e.clientX,e.clientY);if(id){dragDevice=true;selectDevice(id);}
 });
 canvas.addEventListener('pointermove',e=>{
   if(gizmoDrag){gizmoMove(e);return;}
@@ -74,7 +81,7 @@ canvas.addEventListener('pointermove',e=>{
   const S=state.scene;
   if(pointers.size===1){
     if(e.shiftKey)pan(dx,dy);
-    else if(state.mode==='move')moveSelected(dx,dy);
+    else if(dragDevice)moveSelected(dx,dy);
     else{S.ry=wrap(S.ry+dx*.45);S.rx=clamp(S.rx+dy*.45,-90,90);}
   } else if(pointers.size===2){
     let o=null;for(const [id,q] of pointers){if(id!==e.pointerId)o=q;}
@@ -88,15 +95,19 @@ const endPtr=e=>{
   if(lightDrag){lightDrag=null;pointers.delete(e.pointerId);if(!pointers.size)canvas.classList.remove('dragging');syncUI();return;}
   const was=pointers.size;pointers.delete(e.pointerId);
   if(!pointers.size){canvas.classList.remove('dragging');
-    // a click (no drag) on a device selects it and shows its axes; on empty space hides them
-    if(was===1&&!moved&&state.mode==='rotate'&&e.type==='pointerup'){const id=pick(e.clientX,e.clientY);showGizmo(!!id);if(id&&id!==state.selected){state.selected=id;syncAll();}}}
+    // a click (no drag) on empty space selects the board and hides the axes
+    if(was===1&&!moved&&!dragDevice&&ui.tool!=='orbit'&&e.type==='pointerup'){showGizmo(false);setUi({kind:'board'});}
+    dragDevice=false;}
 };
 canvas.addEventListener('pointermove',e=>{if(pointers.size||gizmoDrag||e.pointerType!=='mouse')return;gizmoMove(e);canvas.style.cursor=gizmoHot()||pickLight(e.clientX,e.clientY)?'grab':'';});
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
-canvas.addEventListener('wheel',e=>{e.preventDefault();
-  // over a scrollable screen the wheel scrolls it (~one screen per 500 px of wheel); Ctrl/⌘ or a pinch still zooms
-  if(!e.ctrlKey&&!e.metaKey){const id=pick(e.clientX,e.clientY),d=id&&state.devices.find(x=>x.id===id),n=d&&scrollScreens(d);
-    if(n){scrollScreen(d,d.scroll+e.deltaY/(500*(n-1)));if(d.id===state.selected)syncSliders();return;}}
-  const S=state.scene;S.zoom=clamp(S.zoom*Math.exp(-e.deltaY*.0015),.3,3);applyTransform();syncSliders();},{passive:false});
+// wheel over the live board: Alt zooms the camera; over the selected device's long screenshot it scrolls the screen
+// (~one screen per 500 px of wheel). Anything else bubbles to the workspace (pan / zoom the canvas).
+canvas.addEventListener('wheel',e=>{
+  if(e.altKey){e.preventDefault();e.stopPropagation();const S=state.scene;S.zoom=clamp(S.zoom*Math.exp(-e.deltaY*.0015),.3,3);applyTransform();syncSliders();return;}
+  if(e.ctrlKey||e.metaKey||ui.kind!=='device')return;
+  const id=pick(e.clientX,e.clientY),d=id===state.selected&&state.devices.find(x=>x.id===id),n=d&&scrollScreens(d);
+  if(n){e.preventDefault();e.stopPropagation();scrollScreen(d,d.scroll+e.deltaY/(500*(n-1)));syncSliders();}
+},{passive:false});
 
 export {dragLight3D,pick,pickLight};

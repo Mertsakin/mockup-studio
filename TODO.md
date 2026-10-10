@@ -26,7 +26,13 @@
 
 ## 3. İş akışı
 
-**Sıradaki öncelik (önerilen):** çoklu seçim → kendi sahneni şablon olarak kaydet → telefon/tablet/monitörü dizüstü seviyesine getirme.
+- [x] **Editör arayüzü:** Figma benzeri düzen (üst bar, katmanlar, tam ekran tuval, seçime göre sağ panel, alt araç çubuğu), Solar ikonları, açık/koyu tema.
+- [x] **Çoklu artboard:** sınırsız artboard, isimden sürükleme ve hizalama yapışması, şablon = yeni artboard, tüm artboard'ları ZIP indirme; geri al/otomatik kayıt/proje dosyası belge düzeyinde.
+- [ ] Artboard'lar arası cihaz kopyalama / taşıma (bağlam menüsü), artboard'u çoğaltırken yerleşimi seçme.
+- [ ] Sağ tık bağlam menüsü (kopyala, sil, katman sırası, odakla).
+- [ ] Mobil düzen: sol panel 820 px altında gizli; çekmece olarak açılmalı.
+
+**Sıradaki öncelik (önerilen):** çoklu seçim → kendi sahneni şablon olarak kaydet.
 
 - [ ] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP).
 - [x] **Proje kaydet/aç:** sahne + ışıklar + açılar + görseller + site adresleri tek dosyada (JSON + görseller, ZIP). Otomatik kayıt IndexedDB'de. Kalan: "kendi sahneni şablon olarak kaydet".
