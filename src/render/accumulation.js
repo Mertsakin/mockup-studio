@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {camera,onIdle,redraw,renderer,scene} from './renderer.js';
+import {camera,crop,onIdle,redraw,renderer,scene} from './renderer.js';
 
 /* ---------- progressive rendering: jittered samples are averaged while the view is still (anti-aliasing + grain-free soft shadows) ---------- */
 const seedU={value:0};
@@ -45,10 +45,12 @@ const dbs=new THREE.Vector2();
 function renderSample(i){
   renderer.getDrawingBufferSize(dbs);const w=dbs.x,h=dbs.y;
   if(i===0){hookAll();renderer.shadowMap.needsUpdate=true;}
-  if(i>0)camera.setViewOffset(w,h,halton(2,i)-.5,halton(3,i)-.5,w,h);
+  // sub-pixel jitter (one drawing-buffer pixel wide), combined with the live crop when there is one
+  const c=crop.c,jx=halton(2,i)-.5,jy=halton(3,i)-.5;
+  if(i>0){if(c)camera.setViewOffset(c.fw,c.fh,c.x+jx*c.w/w,c.y+jy*c.h/h,c.w,c.h);else camera.setViewOffset(w,h,jx,jy,w,h);}
   seedU.value=(i*0.618034)%1*97.0;
   renderer.setRenderTarget(ACC.frame);renderer.clear();renderer.render(scene,camera);
-  if(i>0)camera.clearViewOffset();
+  if(i>0){if(c)camera.setViewOffset(c.fw,c.fh,c.x,c.y,c.w,c.h);else camera.clearViewOffset();}
   quad.material=addMat;addMat.uniforms.tex.value=ACC.frame.texture;
   renderer.setRenderTarget(ACC.acc);if(i===0)renderer.clear();
   renderer.autoClear=false;renderer.render(quadScene,quadCam);renderer.autoClear=true;

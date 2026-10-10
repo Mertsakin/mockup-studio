@@ -10,7 +10,7 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.BasicShadowMap;  // raw depth maps; PCSS filtering in pcss.js
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-const ANISO=renderer.capabilities.getMaxAnisotropy();
+const ANISO=renderer.capabilities.getMaxAnisotropy(),MAX_TEX=renderer.capabilities.maxTextureSize;
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(28,1,0.1,1000);
 
@@ -22,5 +22,10 @@ const redraw={dirty:true};
 // restores the scene it prepared, synchronously, so nothing ever sees a scene in "photo set-up" state).
 const overlays=new Set(),onChange=new Set(),onIdle=new Set();  // onIdle: every frame once the raster render has converged
 function req(){redraw.dirty=true;onChange.forEach(f=>f());}
+/* Crop: when the live artboard is only partly on screen (or zoomed in past the stage), the canvas covers just the
+   visible part and the camera renders that slice of the full frame (view offset), so the live view is always drawn
+   at the screen's own pixel density. crop = {fw,fh,x,y,w,h} in CSS pixels of the full board, or null. */
+const crop={c:null};
+function setCrop(c){crop.c=c;if(c)camera.setViewOffset(c.fw,c.fh,c.x,c.y,c.w,c.h);else camera.clearViewOffset();}
 
-export {ANISO,LIGHT_SCALE,camera,canvas,onChange,onIdle,overlays,redraw,renderer,req,scene};
+export {ANISO,LIGHT_SCALE,MAX_TEX,camera,canvas,crop,onChange,onIdle,overlays,redraw,renderer,req,scene,setCrop};

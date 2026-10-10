@@ -33,7 +33,7 @@ setStageGeometry(()=>{
   const r=boardRect(a);
   const room=r.w>=220&&r.h>=180;nav.style.display=room?'':'none';
   if(room)nav.style.transform='translate('+Math.round(r.x+r.w-70)+'px,'+Math.round(r.y+6)+'px)';
-  return r;
+  return Object.assign(r,{sw:stage.clientWidth,sh:stage.clientHeight});
 });
 const relayout=()=>layout();
 

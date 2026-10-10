@@ -1,7 +1,10 @@
-import {renderer} from '../render/renderer.js';
+import {LRT} from '../lights/runtime.js';
+import {renderNow} from '../render/accumulation.js';
+import {overlays,renderer,req,setCrop} from '../render/renderer.js';
+import {applyTransform} from '../render/transform.js';
 import {asDoc,restore,signature,snapshot} from '../io/project.js';
-import {state} from '../state/state.js';
-import {bgCss,layout,paintBg} from './layout.js';
+import {state,view} from '../state/state.js';
+import {bgCss,invalidateLayout,layout,paintBg} from './layout.js';
 import {syncAll} from './sync.js';
 import {mkCanvas} from '../util.js';
 
@@ -29,12 +32,22 @@ const boardById=id=>doc.boards.find(b=>b.id===id);
 const boardSize=b=>b.id===doc.active?sizeOf(state):sizeOf(b.snap.state);
 const nextName=()=>{let n=doc.boards.length+1;const used=new Set(doc.boards.map(b=>b.name));while(used.has('Artboard '+n))n++;return 'Artboard '+n;};
 
-// thumbnail of the live canvas (with the board background painted under it), long edge ~480 px
+// thumbnail: the whole board rendered off-view at up to 1600 px on the long edge (the live canvas may show only part
+// of it), background painted under it, light spheres and gizmo hidden; then the live view is restored
+const THUMB=1600;
 function captureThumb(){
-  const src=renderer.domElement,sw=src.width,sh=src.height;if(!sw||!sh)return null;
-  const k=Math.min(1,480/Math.max(sw,sh)),w=Math.max(1,Math.round(sw*k)),h=Math.max(1,Math.round(sh*k));
-  const c=mkCanvas(w,h),g=c.getContext('2d');paintBg(g,w,h);g.drawImage(src,0,0,w,h);
-  try{return c.toDataURL(state.bg==='transparent'?'image/png':'image/jpeg',.85);}catch(e){return null;}
+  const [bw,bh]=sizeOf(state),k=Math.min(1,THUMB/Math.max(bw,bh)),w=Math.max(1,Math.round(bw*k)),h=Math.max(1,Math.round(bh*k));
+  const pr=renderer.getPixelRatio(),hidden=[];
+  LRT.forEach(o=>{if(o.marker.visible){o.marker.visible=false;hidden.push(o.marker);}});
+  overlays.forEach(o=>{if(o.visible){o.visible=false;hidden.push(o);}});
+  let url;
+  try{
+    setCrop(null);renderer.setPixelRatio(1);renderer.setSize(w,h,false);view.aspect=w/h;applyTransform();renderNow(16);
+    const c=mkCanvas(w,h),g=c.getContext('2d');paintBg(g,w,h);g.drawImage(renderer.domElement,0,0,w,h);
+    url=c.toDataURL(state.bg==='transparent'?'image/png':'image/jpeg',.9);
+  }catch(e){url=null;}
+  finally{hidden.forEach(o=>{o.visible=true;});renderer.setPixelRatio(pr);invalidateLayout();layout();req();}
+  return url;
 }
 function store(){const b=activeBoard();if(!b)return;b.snap=snapshot();const t=captureThumb();if(t)b.thumb=t;}
 function show(b){doc.active=b.id;restore(b.snap);bgCss();layout();syncAll();emit();}

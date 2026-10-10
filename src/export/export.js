@@ -1,6 +1,6 @@
 import {LRT} from '../lights/runtime.js';
 import {renderNow} from '../render/accumulation.js';
-import {canvas,overlays,renderer,req} from '../render/renderer.js';
+import {canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
 import {applySaved,saved} from '../ui/angles.js';
@@ -17,7 +17,7 @@ async function renderExport(onProgress){
   if(state.ratio==='custom'){W=state.customW;H=state.customH;}  // exact artboard size
   else if(rw>=rh){W=L;H=Math.round(L*rh/rw);}else{H=L;W=Math.round(L*rw/rh);}
   const pr=renderer.getPixelRatio();
-  renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
+  setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();  // whole frame (layout() restores the live crop)
   let src=canvas;
   LRT.forEach(o=>o.marker.visible=false);const ov=[...overlays].map(o=>[o,o.visible]);ov.forEach(([o])=>{o.visible=false;});
   try{

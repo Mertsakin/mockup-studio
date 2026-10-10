@@ -1,6 +1,6 @@
 import {tex} from './materials.js';
 import {RT} from './rt.js';
-import {req} from '../render/renderer.js';
+import {MAX_TEX,req} from '../render/renderer.js';
 import {THEMES} from '../state/constants.js';
 import {mkCanvas,roundRect} from '../util.js';
 
@@ -39,7 +39,8 @@ function drawFit(g,img,x,y,w,h,fit,scroll=0){
 }
 // Display size of the device's screen canvas (landscape phones / tablets swap it)
 function screenSize(o,d){
-  const geomA=o.sw/o.sh,land=o.rotatable&&d.landscape,dispA=land?1/geomA:geomA,long=2560;
+  // 4096 px on the long edge (or the GPU's limit): sharp at 4K export, screenshots are rarely larger
+  const geomA=o.sw/o.sh,land=o.rotatable&&d.landscape,dispA=land?1/geomA:geomA,long=Math.min(4096,MAX_TEX);
   return dispA>=1?[long,Math.round(long/dispA)]:[Math.round(long*dispA),long];
 }
 // How many screens tall the screenshot is (0 when it cannot scroll: no image, not "Doldur", or not taller)
