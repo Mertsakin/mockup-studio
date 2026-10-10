@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {RT} from '../devices/rt.js';
 import {camera,canvas,onChange} from '../render/renderer.js';
 import {applyTransform,deviceBox} from '../render/transform.js';
+import {SCALE_MAX,SCALE_MIN} from '../state/constants.js';
 import {sel,state} from '../state/state.js';
 import {syncSliders} from './sliders.js';
 import {onSyncUI} from './sync.js';
@@ -13,8 +14,8 @@ import {$,clamp} from '../util.js';
    corner handle scales the device uniformly (3D: one scale for all axes) about its centre on screen, while its lowest
    point stays where it was, so a device standing on the floor keeps standing on it. Esc during a drag cancels.
    Shown with the Select tool (Move / Rotate show the axes instead). T, or Ctrl/⌘+T where the browser allows it,
-   switches to Select and shows the box. Scale range follows the inspector slider (0.3 – 2.5). */
-const MIN=.3,MAX=2.5;
+   switches to Select and shows the box. Scale range follows the inspector slider (SCALE_MIN – SCALE_MAX). */
+const MIN=SCALE_MIN,MAX=SCALE_MAX;
 const stage=$('#stagearea'),box=document.createElement('div');
 box.className='tbox';box.hidden=true;
 box.innerHTML='<svg class="tbox-line" aria-hidden="true"><polygon/></svg>'+

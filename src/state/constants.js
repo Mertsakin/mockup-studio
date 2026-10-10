@@ -29,4 +29,7 @@ const COMPS=[
 ];
 const DEFAULT_FINISH={phone:'anodized',tablet:'anodized',laptop:'anodized',monitor:'anodized',browser:'matte',page:'matte',custom:'matte'};
 
-export {COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};
+// device scale range (inspector slider, transform box, layer-order compensation)
+const SCALE_MIN=.1,SCALE_MAX=10;
+
+export {SCALE_MAX,SCALE_MIN,COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};
