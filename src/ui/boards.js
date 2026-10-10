@@ -122,4 +122,4 @@ async function fillThumbs(){
   store();show(boardById(back));
 }
 
-export {activate,activeBoard,addBoard,ensureBoard,hasBoard,applyDoc,asDoc,boardById,boardSize,changedBoard,doc,docSignature,docSnapshot,duplicateBoard,fillThumbs,initBoards,moveBoard,onBoards,removeBoard,renameBoard,sizeOf,store as storeActive};
+export {activate,activeBoard,addBoard,clearAll,ensureBoard,hasBoard,applyDoc,asDoc,boardById,boardSize,changedBoard,doc,docSignature,docSnapshot,duplicateBoard,fillThumbs,initBoards,moveBoard,onBoards,removeBoard,renameBoard,sizeOf,store as storeActive};

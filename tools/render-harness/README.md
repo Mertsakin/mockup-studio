@@ -18,7 +18,7 @@ W=800 H=1000 COLOR=silver PRESET=1 \
   node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/laptop.js
 ```
 
-Düzenek bir Vite dev sunucusunu kendi başlatır, sayfayı açar, sahne dosyasını sayfa içinde çalıştırır, sonra dışa aktarım gibi `W × H` boyutunda render alıp açık gri zeminin üzerine yazar. Sayfada hata ya da `console.error` olursa çıkış kodu 1 olur.
+Düzenek bir Vite dev sunucusunu kendi başlatır, sayfayı açar (uygulama boş belgeyle açılır; düzenek varsayılan sahneli bir artboard ekler), sahne dosyasını sayfa içinde çalıştırır, sonra dışa aktarım gibi `W × H` boyutunda render alıp açık gri zeminin üzerine yazar. Sayfada hata ya da `console.error` olursa çıkış kodu 1 olur.
 
 | Değişken | Anlamı |
 |---|---|

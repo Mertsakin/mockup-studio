@@ -1,6 +1,6 @@
 import {offer} from '../export/export.js';
 import {autosave,fromProjectFile,loadAutosave,toProjectFile} from '../io/project.js';
-import {applyDoc,changedBoard,doc,docSignature as signature,docSnapshot as snapshot,fillThumbs} from './boards.js';
+import {applyDoc,changedBoard,clearAll,doc,docSignature as signature,docSnapshot as snapshot,fillThumbs} from './boards.js';
 import {fitAll} from './workspace.js';
 const activeId=()=>doc.active;
 import {canvas} from '../render/renderer.js';
@@ -126,8 +126,16 @@ openEl.addEventListener('change',async()=>{
 });
 
 // Called once after start-up: restores the last session (unless a template was opened) and starts history.
+// Nothing saved (or the last session had no artboards): the document starts empty, with no artboard.
+// The page stays hidden (html.booting) until this is settled, so the default scene never flashes.
 async function startHistory(templateOpened){
-  if(!templateOpened){const s=await loadAutosave();if(s&&s.boards.length&&s.boards.some(b=>b.snap&&b.snap.devices)){applyDoc(s);fitAll();await fillThumbs();toast('Son çalışman geri yüklendi');}}
+  try{
+    if(!templateOpened){
+      const s=await loadAutosave();
+      if(s&&s.boards.length){applyDoc(s);fitAll();await fillThumbs();toast('Son çalışman geri yüklendi');}
+      else clearAll();
+    }
+  }finally{document.documentElement.classList.remove('booting');}
   current=snapshot();currentSig=signature(current);syncButtons();
   setInterval(poll,POLL);
 }

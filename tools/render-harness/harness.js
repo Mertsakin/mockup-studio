@@ -31,6 +31,10 @@ const W=+process.env.W||640,H=+process.env.H||800,SAMPLES=+process.env.SAMPLES||
     await page.goto(url);
     await Promise.race([page.waitForFunction(()=>window.__app,null,{timeout:60000}),
       new Promise((_,fail)=>page.on('pageerror',e=>fail(new Error('app failed to start: '+e.message))))]);
+    // the app starts with an empty document when nothing is saved: wait for start-up to settle, then open the default
+    // scene (one phone, default lights) on a board, as the scenes expect
+    await page.waitForFunction(()=>!document.documentElement.classList.contains('booting'),null,{timeout:60000});
+    await page.evaluate(()=>{const app=window.__app;if(!app('hasBoard')())app('addBoard')();});
     await page.evaluate(()=>document.fonts.ready.then(()=>new Promise(r=>setTimeout(r,100))));
     if(scenePath){
       const scene=require(path.resolve(scenePath));

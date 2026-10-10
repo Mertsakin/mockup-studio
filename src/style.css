@@ -438,3 +438,6 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .insp-empty{padding:32px 16px;text-align:center;color:var(--muted)}
 .insp-empty p{margin:0 0 12px}
 .insp-empty .hint-sm{margin-top:12px}
+
+/* start-up: hidden until the last session is restored (or found empty), so the default scene never flashes */
+html.booting #world,html.booting #frame,html.booting #navSvg,html.booting #tree,html.booting #inspector>*,html.booting #projName,html.booting #timeline{visibility:hidden}
