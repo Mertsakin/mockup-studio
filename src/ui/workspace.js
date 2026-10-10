@@ -1,5 +1,5 @@
 import {state} from '../state/state.js';
-import {activate,boardSize,doc,moveBoard,onBoards} from './boards.js';
+import {activate,boardSize,doc,moveBoard,onBoards,renameBoard} from './boards.js';
 import {layout,setStageGeometry} from './layout.js';
 import {onUi,panning,setUi,ui} from './ui-state.js';
 import {$,clamp} from '../util.js';
@@ -47,12 +47,14 @@ function renderBoards(){
       const el=document.createElement('div');el.className='ab';el.dataset.board=b.id;
       el.innerHTML='<span class="ab-label"></span><img alt=""><span class="ab-size"></span>';
       o={el,label:el.querySelector('.ab-label'),img:el.querySelector('img'),size:el.querySelector('.ab-size')};
-      o.label.addEventListener('pointerdown',e=>dragBoard(e,b.id));
+      o.label.addEventListener('pointerdown',e=>{if(!o.editing)dragBoard(e,b.id);});
+      o.label.addEventListener('dblclick',e=>{e.stopPropagation();editLabel(o,b);});
+      o.label.title='Taşımak için sürükle, yeniden adlandırmak için çift tıkla';
       el.addEventListener('pointerdown',e=>{if(e.button!==0||panning()||e.target===o.label)return;if(b.id!==doc.active){e.stopPropagation();pick(b.id);}});
       els.set(b.id,o);world.appendChild(el);
     }
     const live=b.id===doc.active,st=live?state:b.snap.state;
-    o.label.textContent=b.name;o.el.classList.toggle('live',live);o.el.classList.toggle('active',live);
+    if(!o.editing)o.label.textContent=b.name;o.el.classList.toggle('live',live);o.el.classList.toggle('active',live);
     o.el.classList.toggle('sel',live&&ui.kind==='board');o.size.hidden=!(live&&ui.kind==='board');
     o.el.classList.toggle('checker',st.bg==='transparent');
     if(b.thumb&&o.img.getAttribute('src')!==b.thumb)o.img.src=b.thumb;
@@ -63,6 +65,16 @@ function renderBoards(){
   relayout();
 }
 function pick(id){activate(id);setUi({kind:'board'});}
+// double-click on a board's name: rename it in place (Enter / leaving the field saves, Esc cancels)
+function editLabel(o,b){
+  if(o.editing)return;o.editing=true;
+  const inp=document.createElement('input');inp.className='ab-ren';inp.value=b.name;inp.setAttribute('aria-label','Artboard adı');inp.spellcheck=false;
+  o.label.textContent='';o.label.appendChild(inp);inp.focus();inp.select();
+  const end=ok=>{if(!o.editing)return;o.editing=false;const v=inp.value;inp.remove();o.label.textContent=b.name;if(ok)renameBoard(b.id,v);};
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')end(true);else if(e.key==='Escape')end(false);});
+  inp.addEventListener('pointerdown',e=>e.stopPropagation());
+  inp.addEventListener('blur',()=>end(true));
+}
 onBoards(renderBoards);
 onUi(()=>{renderBoards();stage.classList.toggle('hand',panning());stage.dataset.tool=ui.tool;});
 

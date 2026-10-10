@@ -274,6 +274,7 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .ab.live img{visibility:hidden}
 .ab-label{position:absolute;left:0;bottom:100%;padding:0 4px 6px 0;font-size:11px;line-height:14px;color:var(--muted);white-space:nowrap;cursor:default;user-select:none;transform-origin:0 100%}
 .ab-label:hover{color:var(--ink)}
+.ab-ren{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--accent);border-radius:3px;padding:0 3px;outline:none;width:20ch;min-width:8ch}
 .ab.sel{box-shadow:0 0 0 1px var(--accent)}
 .ab.active .ab-label,.ab.sel .ab-label{color:var(--accent-ink)}
 .ab-size{position:absolute;left:50%;top:100%;margin-top:6px;background:var(--accent);color:var(--on-accent);font-size:10px;line-height:16px;padding:0 5px;border-radius:3px;white-space:nowrap;transform-origin:50% 0}

@@ -46,6 +46,8 @@ function syncInspector(){
   renderDome();
 }
 $('#boardName').addEventListener('change',e=>renameBoard(doc.active,e.target.value));
+// rename the active artboard: its name field in the inspector (F2, the ⋯ menu)
+function renameActive(){if(!hasBoard())return;if(ui.kind!=='board')setUi({kind:'board'});const i=$('#boardName');i.focus();i.select();}
 $('#boardName').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Escape'){if(e.key==='Escape')e.target.value=activeBoard().name;e.target.blur();}});
 
 /* ---------- layer tree ---------- */
@@ -58,7 +60,7 @@ function node(o){
   el.querySelector('.nm').textContent=o.name;
   const act=el.querySelector('.act');
   (o.actions||[]).forEach(([ic,label,fn])=>{const b=document.createElement('button');b.type='button';b.tabIndex=-1;b.setAttribute('aria-label',label);b.title=label;b.innerHTML=icon(ic,14);
-    b.addEventListener('click',e=>{e.stopPropagation();fn();});act.appendChild(b);});
+    b.addEventListener('click',e=>{e.stopPropagation();fn(el);});act.appendChild(b);});
   el.addEventListener('click',e=>{if(e.target.closest('.tw')){o.toggle();return;}o.pick();});
   if(o.rename)el.querySelector('.nm').addEventListener('dblclick',e=>{e.stopPropagation();o.rename(el);});
   return el;
@@ -78,7 +80,7 @@ function renderTree(){
     tree.appendChild(node({name:b.name,icon:'frame',open,sel:live&&ui.kind==='board',
       toggle:()=>{if(live)return;expanded.has(b.id)?expanded.delete(b.id):expanded.add(b.id);renderTree();},
       pick:()=>{activate(b.id);setUi({kind:'board'});},rename:el=>startRename(el,b),
-      actions:[['copy','Kopyasını oluştur',()=>{duplicateBoard(b.id);fitAll();}],['trash-bin-minimalistic','Sil',()=>removeBoard(b.id)]]}));
+      actions:[['pen-2','Yeniden adlandır (F2)',el=>startRename(el,b)],['copy','Kopyasını oluştur',()=>{duplicateBoard(b.id);fitAll();}],['trash-bin-minimalistic','Sil',()=>removeBoard(b.id)]]}));
     if(!open)return;
     const devs=live?state.devices:b.snap.devices,lights=live?state.lights:b.snap.lights;
     const go=(fn)=>{if(!live)activate(b.id);fn();};
@@ -153,6 +155,7 @@ $('#exportMenuBtn').addEventListener('click',e=>{e.stopPropagation();syncExport(
 // the inspector menu needs a positioned parent
 const inspMenu=$('#addMenu').cloneNode(false);inspMenu.id='inspMenu';$('#inspector').style.position='relative';$('#inspector').appendChild(inspMenu);
 $('#boardMore').addEventListener('click',e=>{e.stopPropagation();openMenu($('#inspMenu'),e.currentTarget,[
+  ['pen-2','Yeniden adlandır',renameActive],
   ['copy','Kopyasını oluştur',()=>{duplicateBoard();fitAll();}],
   ['trash-bin-minimalistic','Artboardı sil',()=>removeBoard(doc.active)]],{under:true});});
 
@@ -224,6 +227,8 @@ addEventListener('keydown',e=>{
   if(mod||e.altKey)return;
   if(TOOL_KEYS[k]&&!e.repeat){setTool(TOOL_KEYS[k]);return;}
   if(k==='a'&&!e.repeat){newBoard();return;}
+  if(e.key==='F2'){e.preventDefault();const f=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#tree .node.board');
+    if(f){const b=doc.boards[[...tree.querySelectorAll('.node.board')].indexOf(f)];if(b){startRename(f,b);return;}}renameActive();return;}
   if(e.key==='Escape'){showGizmo(false);setUi({kind:'board'});return;}
   if(e.key==='Delete'||e.key==='Backspace'){
     if(ui.kind==='device'&&state.devices.length){e.preventDefault();$('#removeDevice').click();}

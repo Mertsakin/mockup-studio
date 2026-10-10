@@ -58,7 +58,8 @@ window.addEventListener('keydown',e=>{
 // --- project files
 const stamp=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes());};
 $('#saveProject').addEventListener('click',async()=>{
-  try{poll();const text=await toProjectFile(current||snapshot());offer('mockup-proje-'+stamp()+'.mockup.json',new Blob([text],{type:'application/json'}));toast('Proje kaydedildi');}
+  // a change made a moment ago may not be in the history yet: record it and save the document as it is now
+  try{commitNow();const text=await toProjectFile(snapshot());offer('mockup-proje-'+stamp()+'.mockup.json',new Blob([text],{type:'application/json'}));toast('Proje kaydedildi');}
   catch(e){toast('Proje kaydedilemedi: '+(e.message||e));}
 });
 const openEl=$('#openProject');

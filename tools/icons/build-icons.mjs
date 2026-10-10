@@ -10,7 +10,7 @@ sun-fog sun gallery-add gallery frame target maximize-square play hamburger-menu
 undo-right add-circle minus-circle eye eye-closed menu-dots refresh link trash-bin-minimalistic copy layers-minimalistic layers
 align-vertical-center align-horizontal-center align-bottom upload-minimalistic global camera settings folder-open diskette
 download-minimalistic close-circle magnifer export import moon double-alt-arrow-up double-alt-arrow-down arrow-up arrow-down
-info-circle magic-stick-3 lamp pallete-2 ruler keyboard close-square pause rewind-back repeat video-frame-play-horizontal`.split(/\s+/).filter(Boolean);
+info-circle magic-stick-3 lamp pallete-2 ruler keyboard close-square pause rewind-back repeat video-frame-play-horizontal pen-2`.split(/\s+/).filter(Boolean);
 const S='fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"';
 const HAND='<path '+S+' d="M8 13.5V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11m0-.5V6a1.5 1.5 0 0 1 3 0v5.5m0-2a1.5 1.5 0 0 1 3 0V14c0 4.14-3.13 7.5-7 7.5h-.7c-2.3 0-3.8-.8-5.3-2.5l-3.6-4.1a1.6 1.6 0 0 1 2.4-2.1L8 15"/>';
 const out={hand:HAND};
