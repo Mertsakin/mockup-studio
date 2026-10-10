@@ -20,7 +20,7 @@ import {D2R,V3} from '../util.js';
      shadow catcher (real contact shadows); otherwise the background stays transparent and is composited as usual. */
 const SHAPES={softbox:[1.25,.85],strip:[.3,1.5],window:[1,1.3],octa:[1,1,true],umbrella:[1,1,true],dish:[1,1,true],
   flash:[1,1,true],reflector:[1,1,true],bulb:[1,1,true],overcast:[1,1,true]};
-const ENV_SCALE=.5,SCREEN_GLOW=.9,HDRI='hdri/photo_studio_01_1k.hdr',ENV_MEAN=.45;  // ENV_MEAN: average radiance of the former gradient
+const ENV_SCALE=.5,SCREEN_GLOW=.9,SCREEN_SPEC=.35,PT_TEX_BUDGET=512*1024*1024,HDRI='hdri/photo_studio_01_1k.hdr',ENV_MEAN=.45;  // ENV_MEAN: average radiance of the former gradient
 const PREVIEW_SAMPLES=64,PREVIEW_SCALE=.5,SWEEP_GLOW=.45,TRACE_TILE_PX=1e6;
 let pt=null,denoise=null,hdri=null,hdriScale=1;
 const PX=new Float32Array(4);  // the path tracer's target is float
@@ -76,7 +76,7 @@ function setupStudio(env){
     o.holder.traverse(x=>{if(x.userData.ao||x===o.glare)set(x,'visible',false);});
     [[o.screen,o.custom?o.mats.custom:o.mats.screen],...(o.mats.chrome.map?[[null,o.mats.chrome]]:[])].forEach(([meshArg,src])=>{
       const glow=new THREE.MeshPhysicalMaterial({color:0x000000,emissive:0xffffff,emissiveMap:src.map,emissiveIntensity:SCREEN_GLOW,
-        roughness:.06,map:o.custom?src.map:null,transparent:!!o.custom,alphaTest:o.custom?.01:0,side:src.side});
+        roughness:.06,specularIntensity:SCREEN_SPEC,map:o.custom?src.map:null,transparent:!!o.custom,alphaTest:o.custom?.01:0,side:src.side});
       const targets=meshArg?[meshArg]:[];if(!meshArg)o.holder.traverse(x=>{if(x.material===src)targets.push(x);});
       targets.forEach(m=>set(m,'material',glow));added.push(glow);
     });
@@ -93,7 +93,9 @@ function setupStudio(env){
   if(sweepOn){
     // lit like a real backdrop, plus a little self-glow so it stays close to the chosen background colour
     const mat=new THREE.MeshStandardMaterial({roughness:.9,metalness:0,side:THREE.DoubleSide});
-    mat.color.set(state.bg==='solid'?state.solid:state.bg1);mat.emissive.copy(mat.color).multiplyScalar(SWEEP_GLOW);
+    // self-glow: nearly all of the colour on a dark backdrop (the lights add almost nothing there), less on a light one
+    mat.color.set(state.bg==='solid'?state.solid:state.bg1);const lum=mat.color.r*.2126+mat.color.g*.7152+mat.color.b*.0722;
+    mat.emissive.copy(mat.color).multiplyScalar(1-(1-SWEEP_GLOW)*Math.min(1,lum*1.25));
     const sweep=new THREE.Mesh(sweepGeometry(R,ground.position.y),mat);sweep.position.x=pivot.position.x;extra.add(sweep);added.push(mat,sweep.geometry);
   }
   studioLights().forEach(l=>extra.add(l));
@@ -109,7 +111,10 @@ const setDenoise=o=>{ensurePT();Object.keys(o).forEach(k=>{denoise.uniforms[k].v
 function present(threshold){
   denoise.uniforms.threshold.value=threshold!==undefined?threshold:Math.max(.08,.5/Math.sqrt(Math.max(1,pt.samples)));
   denoise.map=pt.target.texture;denoise.transparent=scene.background===null;quad.material=denoise;
-  renderer.setRenderTarget(null);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(qs,qc);
+  // Khronos Neutral instead of the live view's ACES: identity up to ~0.8, so dark UI backgrounds, the backdrop colour
+  // and screen colours come out as chosen instead of being crushed by the ACES toe; only highlights roll off
+  const tm=renderer.toneMapping;renderer.toneMapping=THREE.NeutralToneMapping;
+  renderer.setRenderTarget(null);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(qs,qc);renderer.toneMapping=tm;
 }
 
 /* Export: path traces at the canvas' current size until `samples` or `budgetMs`, then removes the remaining noise with
@@ -122,7 +127,7 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000){
   const env=await loadHdri().catch(()=>null)||gradientEnv(),undoStudio=setupStudio(env),t0=performance.now();
   let raw,aux=null;
   try{
-    ensurePT();pt.renderScale=1;pt.setScene(scene,camera);
+    ensurePT();pt.renderScale=1;{const s=textureSizeFor(scene);pt.textureSize.set(s,s);}pt.setScene(scene,camera);
     // one call per tile of about TRACE_TILE_PX pixels: the page keeps repainting at export sizes (a whole 3840 px
     // sample would block the tab for seconds); pt.samples advances by a fraction per tile
     const n=Math.max(1,Math.ceil(Math.sqrt(renderer.domElement.width*renderer.domElement.height/TRACE_TILE_PX)));pt.tiles.set(n,n);
@@ -144,6 +149,14 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000){
     catch(e){console.warn('OIDN kullanılamadı, basit gürültü giderme ile devam:',e);}
   if(onProgress)onProgress(1);
   return raw;
+}
+// The path tracer resamples every texture into one 2D array of a single size (1024 px by default, which blurs the
+// 4096 px screen texture): the largest power of two that keeps the array within PT_TEX_BUDGET bytes, at most 4096.
+const TEX_SLOTS=['map','emissiveMap','normalMap','bumpMap','roughnessMap','metalnessMap','alphaMap','clearcoatMap','clearcoatRoughnessMap','clearcoatNormalMap'];
+function textureSizeFor(sc){
+  const seen=new Set();
+  sc.traverseVisible(x=>{if(!x.isMesh)return;(Array.isArray(x.material)?x.material:[x.material]).forEach(m=>{m&&TEX_SLOTS.forEach(k=>{if(m[k])seen.add(m[k]);});});});
+  let s=4096;while(s>1024&&seen.size*s*s*4>PT_TEX_BUDGET)s/=2;return s;
 }
 function copyCanvas(src){const c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);return c;}
 
@@ -254,7 +267,7 @@ function gradientEnv(){if(!gradient){gradient=new GradientEquirectTexture(64);gr
 let preview=null;
 function previewTick(){
   if(!hdri){loadHdri().catch(()=>{hdri=null;});return;}  // first time: wait for the HDRI
-  if(!preview){ensurePT();preview={undo:setupStudio(hdri)};pt.renderScale=PREVIEW_SCALE;pt.tiles.set(1,1);pt.setScene(scene,camera);}
+  if(!preview){ensurePT();preview={undo:setupStudio(hdri)};pt.renderScale=PREVIEW_SCALE;pt.tiles.set(1,1);pt.textureSize.set(1024,1024);pt.setScene(scene,camera);}
   if(pt.samples>=PREVIEW_SAMPLES)return;
   pt.renderSample();
   if(pt.samples>=4)present();  // until then the raster image stays on the canvas (no blank flash)
