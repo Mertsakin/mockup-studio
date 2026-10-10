@@ -83,6 +83,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 - Cihazlar `buildRT`'de sınır kutusuna göre ortalanır. Kompozisyonlarda cihazlar aynı zemine oturacak şekilde `py` verilir.
 - **Eş merkezli köşeler:** yuvarlak bir çerçevenin içindeki açıklığın (ekran, cam, kesik) köşe yarıçapı = dış yarıçap − et kalınlığı. Kenar kalınlıkları farklıysa her köşe iki komşu kenardan kalın olanı düşer: `innerRadii(r, üst, sağ, alt, sol)` (`devices/geometry.js`). Sabit yarıçap yazma.
 - Gölge düşürmemesi gereken ince yüzeyler (ızgara, havalandırma, tuş yazıları) `userData.decal = true` taşır.
+- **Temas gölgesi:** `aoPlane(w, d, opaklık, y, yumuşaklık)` (`devices/geometry.js`) cihazın zemine değdiği yerin altına bulanık koyu bir düzlem koyar (`userData.ao`). `applyTransform` onu yalnızca zemin açıkken ve düzlem yukarı bakarken gösterir; yol izleyici gizler. Kadraj ve ortalama hesaplarına girmez; dizüstününki geçmişle uyum için girer (`userData.fit`).
 
 ## Kırılgan noktalar (değiştirmeden önce oku)
 
@@ -115,7 +116,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 
 ## Tasarım ve hukuki kurallar
 
-- **Dizüstü** ince, jenerik bir model (6,75 mm gövde, alçak profilli tuşlar). Diğer cihazlar henüz aynı detay seviyesinde değil.
+- **Dizüstü** ince, jenerik bir model (6,75 mm gövde, alçak profilli tuşlar). Telefon ve tablet: eloksal kasa (varsayılan), 2.5D ön cam (yuvarlak kenarlı ince slab), temas gölgesi. Monitör: 7,5 mm panel, yumuşak arka gövde, kablo delikli ayak, ince taban; arka plakanın UV'leri cm ölçeğinde.
 - **Cihazlar jenerik kalmalı.** Apple veya başka bir markanın ürün tasarımını, logosunu ya da imza niteliğindeki detaylarını (ör. belirli kamera adası düzeni, çentik/ada şekli, ayırt edici kasa formu) birebir modelleme. Gerçek ürün görünümü isteyen kullanıcı, lisanslı görselini "Kendi çerçeven" ile yükler.
 - **UI metinleri Türkçe**, cümle düzeninde (yalnızca ilk harf büyük). Kod yorumları İngilizce olabilir.
 - Erişilebilirlik korunmalı: segment butonlarında `aria-pressed`, form alanlarında `label`/`aria-label`, ışık haritasında klavye desteği.

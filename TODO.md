@@ -17,7 +17,7 @@
   - şeffaf arka planda zemin gölgesi (iki geçişli gölge yakalayıcı)
   - hız: 30 sn zaman bütçesi + en çok 64 örnek, ardından OIDN gürültü giderme (`denoiser`, ağırlıklar `public/oidn/`, döşemeli, srgb). 2160 px headless ~60 sn. WebGPU sürümü (`WebGPUPathTracer`) hâlâ denenebilir.
   - ekranın gövdeye yansıyan ışığı bazı sahnelerde güçlü; `SCREEN_GLOW` ve ışık/ortam kalibrasyonu sahne çeşitliliğiyle ince ayarlanmalı
-- [ ] **Telefon, tablet, monitör:** dizüstündeki detay ve malzeme diline (ince kasa, eloksal, temas gölgesi) getirilmeli.
+- [x] **Telefon, tablet, monitör:** eloksal kasa, 2.5D ön cam, temas gölgesi; monitörde yeni arka gövde, ayak ve taban. Devamı: kamera lensleri, monitör ayağı formu.
 - [ ] Dizüstü hoparlör ızgarasında uzak mesafede hare (moiré).
 - [ ] **Alan derinliği (bokeh)** ve odak noktası seçimi.
 - [ ] **Yansıtıcı / dokulu zemin:** parlak masa, mermer, ahşap, beton (prosedürel doku).

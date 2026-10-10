@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editör wireframe</title>
+<style>
+:root{--bg:#e9e9eb;--panel:#fff;--line:#d6d6da;--line2:#bdbdc3;--ink:#1d1d20;--mute:#6d6d75;--soft:#f3f3f5;--acc:#3b6cf6;--accbg:#e6edff;--board:#fafafa}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b1e;--panel:#252528;--line:#38383d;--line2:#4a4a50;--ink:#ececef;--mute:#9a9aa2;--soft:#2e2e32;--acc:#6b8ff8;--accbg:#2a3350;--board:#2f2f33}}
+*{box-sizing:border-box}
+body{margin:0;font:13px/1.4 system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);height:100vh;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:1px solid transparent;border-radius:6px;padding:4px 8px;cursor:pointer}
+button:hover{background:var(--soft)}
+.app{display:grid;grid-template-rows:44px 1fr;height:100vh}
+.top{display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+.top .sp{flex:1}
+.pill{border:1px solid var(--line);border-radius:6px;padding:3px 8px;color:var(--mute)}
+.primary{background:var(--acc);color:#fff}
+.primary:hover{background:var(--acc);opacity:.9}
+.main{display:grid;grid-template-columns:240px 1fr 280px;min-height:0}
+.side{background:var(--panel);border-right:1px solid var(--line);overflow:auto;min-height:0}
+.side.r{border-right:0;border-left:1px solid var(--line)}
+.tabs{display:flex;gap:2px;padding:6px;border-bottom:1px solid var(--line)}
+.tabs button{flex:1}
+.tabs .on{background:var(--soft);font-weight:600}
+.sec{padding:10px 12px;border-bottom:1px solid var(--line)}
+.sec h4{margin:0 0 8px;font-size:11px;font-weight:600;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
+.row{display:flex;align-items:center;gap:6px;margin:5px 0}
+.row label{width:78px;color:var(--mute);flex:none}
+.f{flex:1;height:24px;border:1px solid var(--line);border-radius:5px;background:var(--soft);display:flex;align-items:center;padding:0 6px;color:var(--mute);min-width:0;overflow:hidden;white-space:nowrap}
+.seg{flex:1;display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg span{flex:1;text-align:center;padding:3px 0;color:var(--mute)}
+.seg span.on{background:var(--soft);color:var(--ink);font-weight:600}
+.sw{width:18px;height:18px;border-radius:50%;border:1px solid var(--line2);flex:none}
+.slider{flex:1;height:4px;background:var(--line);border-radius:2px;position:relative}
+.slider:after{content:"";position:absolute;left:var(--v,50%);top:-5px;width:14px;height:14px;border-radius:50%;background:var(--panel);border:1px solid var(--line2);transform:translateX(-50%)}
+.tree div{padding:4px 6px;border-radius:5px;cursor:pointer;display:flex;gap:6px;align-items:center;white-space:nowrap}
+.tree div:hover{background:var(--soft)}
+.tree .sel{background:var(--accbg);color:var(--acc)}
+.tree .l1{padding-left:22px}
+.ic{width:14px;text-align:center;color:var(--mute);font-size:11px}
+.canvas{position:relative;overflow:hidden;background:var(--bg)}
+.boards{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform}
+.boards>.ab{position:absolute}
+.canvas.hand{cursor:grab}.canvas.hand *{cursor:grab!important}.canvas.panning,.canvas.panning *{cursor:grabbing!important}
+.ab{position:relative;background:var(--board);border:1px solid var(--line2);flex:none;cursor:pointer}
+.ab.sel{outline:2px solid var(--acc);outline-offset:-1px}
+.ab .nm{position:absolute;top:-22px;left:0;font-size:11px;color:var(--mute);padding:2px 4px;margin-left:-4px;border-radius:4px;cursor:move;user-select:none;white-space:nowrap}
+.ab .nm:hover{background:var(--soft);color:var(--ink)}
+.ab.dragging{opacity:.85}
+.guide{position:absolute;background:#f2465a;pointer-events:none;z-index:4}
+.gap{position:absolute;color:#f2465a;font-size:10px;pointer-events:none;z-index:4;white-space:nowrap}
+.ab.sel .nm{color:var(--acc)}
+.dev{position:absolute;border:1.5px solid var(--line2);border-radius:10px;background:var(--soft);display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:11px;cursor:pointer}
+.dev.sel{border-color:var(--acc);color:var(--acc);box-shadow:0 0 0 3px var(--accbg)}
+.gz{position:absolute;width:44px;height:44px;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none}
+.gz i{position:absolute;left:21px;top:21px;height:2px;transform-origin:0 50%}
+.axis{position:absolute;right:10px;top:10px;width:46px;height:46px;border-radius:50%;border:1px dashed var(--line2);font-size:10px;color:var(--mute);display:flex;align-items:center;justify-content:center}
+.lamp{position:absolute;width:20px;height:20px;border-radius:50%;border:1.5px dashed var(--line2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mute);cursor:pointer;background:var(--board)}
+.lamp.sel{border-color:var(--acc);color:var(--acc)}
+.dock{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.dock button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 8px;min-width:46px;font-size:10px;color:var(--mute)}
+.dock button b{font-size:15px;font-weight:500;color:var(--ink)}
+.dock .on{background:var(--accbg);color:var(--acc)}
+.dock .on b{color:var(--acc)}
+.dock .sep{width:1px;height:30px;background:var(--line);margin:0 4px}
+.zoom{position:absolute;left:12px;bottom:18px;display:flex;gap:4px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px 6px;color:var(--mute);font-size:12px}
+.pop{position:absolute;bottom:72px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 6px 24px rgba(0,0,0,.12);display:none;min-width:170px}
+.pop.open{display:block}
+.pop div{padding:5px 8px;border-radius:5px;cursor:pointer}
+.pop div:hover{background:var(--soft)}
+.note{position:absolute;left:12px;top:12px;max-width:240px;font-size:11px;color:var(--mute);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.ctx{position:absolute;display:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:5;min-width:170px}
+.ctx div{padding:4px 8px;border-radius:5px;display:flex;justify-content:space-between;gap:16px}
+.ctx div:hover{background:var(--soft)}
+.ctx div span{color:var(--mute)}
+.light-map{width:100%;aspect-ratio:1;border:1px dashed var(--line2);border-radius:50%;position:relative;margin:4px 0}
+.light-map i{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--acc);left:62%;top:30%}
+.btns{display:flex;flex-wrap:wrap;gap:4px}
+.btns span{border:1px solid var(--line);border-radius:5px;padding:2px 7px;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <button title="Menü: yeni proje, aç, kaydet, şablonlar, tercihler">☰ Mockup stüdyosu</button>
+    <span class="pill">Lansman görselleri ▾</span>
+    <button title="Geri al">↶</button><button title="Yinele">↷</button>
+    <span class="sp"></span>
+    <span class="pill" title="Fotoğraf kalitesinde canlı önizleme">◐ Canlı fotoğraf</span>
+    <button title="Paylaş / proje dosyası">Kaydet</button>
+    <button class="primary" id="exportBtn">Dışa aktar</button>
+  </div>
+  <div class="main">
+    <aside class="side">
+      <div class="tabs"><button class="on" data-tab="layers">Katmanlar</button><button data-tab="assets">Görseller</button><button data-tab="tpl">Şablonlar</button></div>
+      <div id="leftBody"></div>
+    </aside>
+    <section class="canvas" id="canvas">
+      <div class="boards" id="boards"></div>
+      <div class="zoom"><button id="zOut">−</button><span id="zVal">100%</span><button id="zIn">+</button><button id="zFit" title="Tümünü sığdır (⇧1)">⤢</button></div>
+      <div class="pop" id="addPop"></div>
+      <div class="dock" id="dock"></div>
+      <div class="note">Wireframe. Artboard'u adından tutup sürükle: kenar/merkez hizalarına ve eşit aralığa yapışır (Shift: tek eksen, ⌘/Ctrl: yapışma yok). Öğelere tıkla: sağ panel değişir. Sağ tık: bağlam menüsü. H ya da Boşluk basılı: tuvali sürükle. Tekerlek/iki parmak: kaydır, ⌘/Ctrl + tekerlek: yakınlaştır.</div>
+      <div class="ctx" id="ctx"></div>
+    </section>
+    <aside class="side r" id="inspector"></aside>
+  </div>
+</div>
+<script>
+const S={sel:{k:'board',id:0},tool:'select',tab:'layers',boards:[
+  {name:'Kapak 16:9',w:300,h:169,devs:[{id:'d1',t:'Dizüstü',x:.18,y:.2,w:.42,h:.62},{id:'d2',t:'Telefon',x:.66,y:.28,w:.14,h:.55}],lights:[{id:'l1',n:'Ana softbox',x:.12,y:.1},{id:'l2',n:'Dolgu',x:.86,y:.15}]},
+  {name:'Mağaza 9:16',w:150,h:267,devs:[{id:'d3',t:'Telefon',x:.25,y:.3,w:.5,h:.55}],lights:[{id:'l3',n:'Ana softbox',x:.2,y:.08}]},
+  {name:'Sosyal 1:1',w:220,h:220,devs:[{id:'d4',t:'Tablet',x:.22,y:.15,w:.56,h:.72}],lights:[{id:'l4',n:'Pencere',x:.15,y:.12}]}
+]};
+const $=s=>document.querySelector(s);
+const seg=(opts,on)=>'<div class="seg">'+opts.map((o,i)=>'<span class="'+(i===on?'on':'')+'">'+o+'</span>').join('')+'</div>';
+const row=(l,c)=>'<div class="row"><label>'+l+'</label>'+c+'</div>';
+const f=t=>'<div class="f">'+t+'</div>';
+const sl=v=>'<div class="slider" style="--v:'+v+'%"></div>';
+const sec=(t,body,extra)=>'<div class="sec"><h4>'+t+(extra||'')+'</h4>'+body+'</div>';
+S.boards.forEach((b,i,a)=>{b.x=i?a[i-1].x+a[i-1].w+48:0;b.y=-b.h/2;});
+/* Smart guides: while an artboard is dragged its left / centre / right and top / middle / bottom lines snap to the
+   same lines of the other artboards (within 6 screen px), and equal gaps to neighbours snap too. Snapped lines are
+   drawn in red across both boards, like Figma. */
+const SNAP=6;
+function clearGuides(){document.querySelectorAll('.guide,.gap').forEach(g=>g.remove());}
+function drawGuide(x,y,w,h){const g=document.createElement('div');g.className='guide';const t=1/V.z;
+  g.style.cssText='left:'+x+'px;top:'+y+'px;width:'+(w||t)+'px;height:'+(h||t)+'px';$('#boards').appendChild(g);}
+function gapLabel(x,y,txt){const g=document.createElement('div');g.className='gap';g.textContent=txt;g.style.cssText='left:'+x+'px;top:'+y+'px;transform:scale('+1/V.z+');transform-origin:0 0';$('#boards').appendChild(g);}
+function snapBoard(b,lockAxis){
+  const others=S.boards.filter(o=>o!==b),tol=SNAP/V.z;
+  const lines=(o,ax)=>ax==='x'?[o.x,o.x+o.w/2,o.x+o.w]:[o.y,o.y+o.h/2,o.y+o.h];
+  ['x','y'].forEach(ax=>{
+    if(lockAxis&&lockAxis!==ax)return;
+    const size=ax==='x'?'w':'h';let best=null;
+    others.forEach(o=>lines(o,ax).forEach(t=>lines(b,ax).forEach((m,k)=>{const d=t-m;if(Math.abs(d)<=tol&&(!best||Math.abs(d)<Math.abs(best.d)))best={d,t,o};})));
+    // equal spacing: same gap as between two other boards on this axis
+    const gaps=[];others.forEach(a=>others.forEach(c=>{if(a!==c){const g=(ax==='x'?c.x:c.y)-(ax==='x'?a.x+a.w:a.y+a.h);if(g>0)gaps.push(g);}}));
+    others.forEach(o=>gaps.forEach(g=>{
+      const after=(ax==='x'?o.x+o.w:o.y+o.h)+g,before=(ax==='x'?o.x:o.y)-g-b[size];
+      [[after,'a'],[before,'b']].forEach(([pos,side])=>{const d=pos-b[ax];if(Math.abs(d)<=tol&&(!best||Math.abs(d)<Math.abs(best.d)))best={d,gap:g,o,side};});}));
+    if(!best)return;
+    b[ax]+=best.d;
+    if(best.gap){  // equal-gap marker between the boards
+      const o=best.o,a=best.side==='a'?o:b,c=best.side==='a'?b:o;
+      if(ax==='x'){const y=Math.max(a.y,c.y)+Math.min(a.h,c.h)/2;drawGuide(a.x+a.w,y,best.gap,0);gapLabel(a.x+a.w+best.gap/2-8,y+4,Math.round(best.gap));}
+      else{const x=Math.max(a.x,c.x)+Math.min(a.w,c.w)/2;drawGuide(x,a.y+a.h,0,best.gap);gapLabel(x+4,a.y+a.h+best.gap/2-6,Math.round(best.gap));}
+    }else{  // alignment line spanning both boards
+      const o=best.o;
+      if(ax==='x'){const y0=Math.min(o.y,b.y),y1=Math.max(o.y+o.h,b.y+b.h);drawGuide(best.t,y0,0,y1-y0);}
+      else{const x0=Math.min(o.x,b.x),x1=Math.max(o.x+o.w,b.x+b.w);drawGuide(x0,best.t,x1-x0,0);}
+    }
+  });
+}
+function find(id){for(const b of S.boards){for(const d of b.devs)if(d.id===id)return {b,d};for(const l of b.lights)if(l.id===id)return {b,l};}}
+function curBoard(){if(S.sel.k==='board')return S.boards[S.sel.id];return find(S.sel.id).b;}
+function select(k,id){S.sel={k,id};render();}
+
+function renderLeft(){
+  let h='';
+  if(S.tab==='layers'){
+    h='<div class="sec tree">'+S.boards.map((b,i)=>{
+      let s='<div class="'+(S.sel.k==='board'&&S.sel.id===i?'sel':'')+'" data-k="board" data-id="'+i+'"><span class="ic">▾</span>▭ '+b.name+'</div>';
+      s+=b.devs.map(d=>'<div class="l1 '+(S.sel.id===d.id?'sel':'')+'" data-k="dev" data-id="'+d.id+'"><span class="ic">▯</span>'+d.t+'</div>').join('');
+      s+=b.lights.map(l=>'<div class="l1 '+(S.sel.id===l.id?'sel':'')+'" data-k="light" data-id="'+l.id+'"><span class="ic">☀</span>'+l.n+'</div>').join('');
+      return s;}).join('')+'</div>';
+    h+=sec('Kamera açıları',' <div class="btns"><span>Ön</span><span>¾ sol</span><span>¾ sağ</span><span>Üst</span><span>Kahraman</span><span>+ Kaydet</span></div>');
+  }else if(S.tab==='assets'){
+    h=sec('Ekran görüntüleri','<div class="btns"><span>ana-sayfa.png</span><span>ödeme.png</span><span>profil.png</span></div><div class="row" style="margin-top:8px">'+f('Sürükle bırak ya da yükle')+'</div>')+sec('Web sitesinden yakala',row('Adres',f('https://…'))+'<div class="btns"><span>Seçili cihaza</span><span>Tüm cihazlara</span></div>')+sec('Toplu görsel','<div style="color:var(--mute)">N görsel ver, her artboard için N çıktı al.</div>');
+  }else{
+    h=sec('Şablonlar','<div class="btns"><span>Lansman</span><span>App Store</span><span>Sosyal</span><span>Web sitesi</span><span>Tümü (20) →</span></div><div style="color:var(--mute);margin-top:6px">Tıklayınca yeni artboard olarak eklenir.</div>');
+  }
+  $('#leftBody').innerHTML=h;
+  document.querySelectorAll('.tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.tab===S.tab);b.onclick=()=>{S.tab=b.dataset.tab;renderLeft();};});
+  document.querySelectorAll('.tree [data-k]').forEach(el=>el.onclick=()=>select(el.dataset.k,el.dataset.k==='board'?+el.dataset.id:el.dataset.id));
+}
+
+function renderBoards(){
+  $('#boards').innerHTML=S.boards.map((b,i)=>{
+    const bs=S.sel.k==='board'&&S.sel.id===i;
+    return '<div class="ab '+(bs?'sel':'')+'" data-b="'+i+'" style="left:'+b.x+'px;top:'+b.y+'px;width:'+b.w+'px;height:'+b.h+'px"><span class="nm" data-nm="'+i+'" title="Sürükleyerek taşı">'+b.name+'</span>'+
+      b.devs.map(d=>{const s=S.sel.id===d.id;return '<div class="dev '+(s?'sel':'')+'" data-d="'+d.id+'" style="left:'+d.x*100+'%;top:'+d.y*100+'%;width:'+d.w*100+'%;height:'+d.h*100+'%">'+d.t+
+        (s&&S.tool!=='select'?'<div class="gz">'+(S.tool==='move'?'<i style="width:22px;background:#e5484d"></i><i style="width:22px;background:#30a46c;transform:rotate(-90deg)"></i><i style="width:16px;background:#3b6cf6;transform:rotate(145deg)"></i>':'<i style="width:0"></i><span style="position:absolute;inset:0;border:2px solid #e5484d;border-radius:50%"></span><span style="position:absolute;inset:6px;border:2px solid #30a46c;border-radius:50%"></span>')+'</div>':'')+'</div>';}).join('')+
+      (bs||curBoard()===b?b.lights.map(l=>'<div class="lamp '+(S.sel.id===l.id?'sel':'')+'" data-l="'+l.id+'" style="left:'+l.x*100+'%;top:'+l.y*100+'%">☀</div>').join(''):'')+
+      (curBoard()===b?'<div class="axis">xyz</div>':'')+'</div>';}).join('')+
+    (function(){const L=S.boards.reduce((m,b)=>b.x+b.w>m.x+m.w?b:m,S.boards[0]);return '<button class="ab" id="addBoard" style="left:'+(L.x+L.w+48)+'px;top:-60px;width:120px;height:120px;border-style:dashed;color:var(--mute)">+ Artboard</button>';})();
+  document.querySelectorAll('[data-b]').forEach(el=>el.onclick=e=>{if(e.target===el||e.target.classList.contains('nm'))select('board',+el.dataset.b);});
+  document.querySelectorAll('[data-d]').forEach(el=>{el.onclick=e=>{e.stopPropagation();select('dev',el.dataset.d);};el.oncontextmenu=e=>{e.preventDefault();select('dev',el.dataset.d);ctx(e);};});
+  document.querySelectorAll('[data-l]').forEach(el=>el.onclick=e=>{e.stopPropagation();select('light',el.dataset.l);});
+  document.querySelectorAll('[data-nm]').forEach(el=>el.onpointerdown=e=>{
+    if(S.tool==='hand'||spaceHeld||e.button!==0)return;e.stopPropagation();e.preventDefault();
+    const b=S.boards[+el.dataset.nm],ab=el.parentNode,st={x:e.clientX,y:e.clientY,bx:b.x,by:b.y};let moved=false;
+    if(!(S.sel.k==='board'&&S.sel.id===+el.dataset.nm)){S.sel={k:'board',id:+el.dataset.nm};renderLeft();renderInspector();document.querySelectorAll('.ab').forEach(a=>a.classList.toggle('sel',a===ab));}
+    ab.classList.add('dragging');
+    const mv=ev=>{moved=true;let dx=(ev.clientX-st.x)/V.z,dy=(ev.clientY-st.y)/V.z;
+      if(ev.shiftKey){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}  // Shift: move along one axis only
+      b.x=Math.round(st.bx+dx);b.y=Math.round(st.by+dy);
+      clearGuides();if(!(ev.metaKey||ev.ctrlKey))snapBoard(b,ev.shiftKey?(dx?'x':'y'):null);  // Cmd/Ctrl: no snapping
+      ab.style.left=b.x+'px';ab.style.top=b.y+'px';};
+    const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);ab.classList.remove('dragging');clearGuides();if(moved)renderBoards();};
+    addEventListener('pointermove',mv);addEventListener('pointerup',up);});
+  $('#addBoard').onclick=()=>{const L=S.boards.reduce((m,b)=>b.x+b.w>m.x+m.w?b:m,S.boards[0]);S.boards.push({x:L.x+L.w+48,y:-100,name:'Artboard '+(S.boards.length+1),w:200,h:200,devs:[],lights:[{id:'l'+Date.now(),n:'Ana softbox',x:.2,y:.1}]});select('board',S.boards.length-1);};
+}
+
+function ctx(e){
+  const c=$('#ctx'),r=$('#canvas').getBoundingClientRect();
+  c.innerHTML=[['Kopyala','⌘D'],['Odakla','F'],['Zemine oturt',''],['En öne','⌘]'],['En arkaya','⌘['],['Başka artboard\'a taşı',''],['Sil','⌫']].map(([a,b])=>'<div>'+a+'<span>'+b+'</span></div>').join('');
+  c.style.left=(e.clientX-r.left)+'px';c.style.top=(e.clientY-r.top)+'px';c.style.display='block';
+}
+document.addEventListener('click',()=>{$('#ctx').style.display='none';});
+
+const TOOLS=[['select','↖','Seç','V'],['move','✥','Taşı','W'],['rotate','⟳','Döndür','E'],['orbit','◎','Yörünge','O'],['hand','✋','Kaydır','H']];
+function renderDock(){
+  $('#dock').innerHTML=TOOLS.map(([k,i,n,key])=>'<button class="'+(S.tool===k?'on':'')+'" data-tool="'+k+'" title="'+n+' ('+key+')"><b>'+i+'</b>'+n+'</button>').join('')+
+    '<span class="sep"></span><button data-add="dev"><b>▯</b>Cihaz ▾</button><button data-add="light"><b>☀</b>Işık ▾</button><button data-add="img"><b>🖼</b>Görsel</button><button data-add="board"><b>▭</b>Artboard</button>'+
+    '<span class="sep"></span><button title="Seçiliye odaklan (F)"><b>⌖</b>Odakla</button><button title="Kadraja sığdır"><b>⤢</b>Sığdır</button><button title="Önizleme / sunum modu"><b>▶</b>Sunum</button>';
+  document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{S.tool=b.dataset.tool;render();});
+  document.querySelectorAll('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();const p=$('#addPop'),k=b.dataset.add;
+    if(k==='board'){$('#addBoard').click();return;}
+    const items=k==='dev'?['Telefon','Tablet','Dizüstü','Monitör','Tarayıcı','Sade ekran','Kendi çerçeven','— Hazır kompozisyonlar ›']:k==='light'?['Softbox','Şerit','Oktabox','Pencere','Güneş','— Işık düzenleri ›']:['Bilgisayardan yükle','Web sitesinden yakala'];
+    p.innerHTML=items.map(t=>'<div>'+t+'</div>').join('');const r=b.getBoundingClientRect(),cr=$('#canvas').getBoundingClientRect();p.style.left=(r.left-cr.left)+'px';p.classList.add('open');});
+  document.addEventListener('click',()=>$('#addPop').classList.remove('open'));
+}
+
+function renderInspector(){
+  let h='';const k=S.sel.k;
+  if(k==='board'){
+    const b=S.boards[S.sel.id];
+    h=sec('Artboard · '+b.name,row('Oran',seg(['1:1','4:5','9:16','16:9','21:9','Özel'],3))+row('Boyut',f('1920')+f('1080')+'<span style="color:var(--mute)">px</span>'))+
+      sec('Kamera',row('Açı',f('rx 18°')+f('ry −28°'))+row('Yakınlık',sl(55))+row('Lens (FOV)',sl(30))+row('',' <div class="btns"><span>Kaydet</span><span>Kayıtlılar ▾</span></div>'))+
+      sec('Arka plan',row('Tür',seg(['Şeffaf','Düz','Geçişli','Desen'],2))+row('Renkler','<span class="sw" style="background:#cfd8ff"></span><span class="sw" style="background:#f6e3ff"></span>'+f('Desen: yok')))+
+      sec('Zemin ve gölge',row('Zemin',seg(['Kapalı','Açık'],1))+row('Zemine gölge',seg(['Kapalı','Açık'],1))+row('Duvara gölge',seg(['Kapalı','Açık'],0))+row('Cihazlar arası',seg(['Kapalı','Açık'],1))+row('Gölge rengi','<span class="sw" style="background:#3a3550"></span>'))+
+      sec('Işık düzeni',row('Hazır',f('Stüdyo yumuşak ▾'))+'<div class="light-map"><i></i></div><div style="color:var(--mute);font-size:11px">Işık haritası: sürükle, ok tuşları taşır.</div>')+
+      sec('Dışa aktarım',row('Kalite',seg(['Hızlı','Fotoğraf'],0))+row('Biçim',seg(['PNG','JPG'],0))+row('Çözünürlük',f('2160 px ▾')));
+  }else if(k==='dev'){
+    const {d}=find(S.sel.id);
+    h=sec(d.t,row('Tip',f(d.t+' ▾'))+row('Renk','<span class="sw" style="background:#c9ccd2"></span><span class="sw" style="background:#3a3b40"></span><span class="sw" style="background:#e9d9c6"></span><span class="sw" style="background:#9fb3c8"></span><span class="sw" style="border-style:dashed"></span>')+row('Yüzey',f('Eloksal ▾'))+row('Arka yüz',seg(['Mat','Parlak'],0)))+
+      sec('Ekran',row('Görsel',f('ana-sayfa.png')+'<button>⇄</button>')+row('Yerleşim',seg(['Doldur','Sığdır','Esnet'],0))+row('Kaydırma',sl(20))+row('Web adresi',f('https://…'))+row('',' <div class="btns"><span>Yakala</span><span>Tüm cihazlara</span></div>')+row('Cam yansıması',sl(45))+row('Yön',seg(['Dikey','Yatay'],0))+row('Kamera deliği',seg(['Delik','Yok'],0)))+
+      sec('Dönüşüm',row('Konum',f('x 0')+f('y 0')+f('z 0'))+row('Dönüş',f('0°')+f('15°')+f('0°'))+row('Ölçek',sl(50))+row('',' <div class="btns"><span>Sıfırla</span><span>Zemine oturt</span><span>Odakla</span></div>'))+
+      sec('Katman ve hizalama','<div class="btns"><span>En öne</span><span>Öne</span><span>Arkaya</span><span>En arkaya</span><span>Eşit dağıt</span></div>');
+  }else{
+    const {l}=find(S.sel.id);
+    h=sec('Işık · '+l.n,row('Şekillendirici',f('Softbox ▾'))+row('Kaynak',seg(['Yönlü','Nokta','Spot'],0))+row('Renk','<span class="sw" style="background:#fff4e0"></span>'+f('5600 K')))+
+      sec('Konum','<div class="light-map"><i></i></div>'+row('Yatay açı',sl(60))+row('Yükseklik',sl(40))+row('Uzaklık',sl(50)))+
+      sec('Karakter',row('Şiddet',sl(65))+row('Boyut',sl(45))+row('Gölge',seg(['Kapalı','Açık'],1))+row('Spot açısı',sl(30)));
+  }
+  $('#inspector').innerHTML=h;
+}
+/* --- infinite canvas: pan with the hand tool (H), hold Space for a temporary hand, wheel / trackpad scrolls,
+   Cmd/Ctrl + wheel (or pinch) zooms around the cursor, Shift+1 fits everything */
+const V={x:0,y:0,z:1};let spaceHeld=false,pan=null;
+function applyView(){$('#boards').style.transform='translate('+V.x+'px,'+V.y+'px) scale('+V.z+')';$('#zVal').textContent=Math.round(V.z*100)+'%';
+  $('#canvas').classList.toggle('hand',S.tool==='hand'||spaceHeld);}
+function zoomAt(f,cx,cy){const z=Math.min(4,Math.max(.1,V.z*f));V.x=cx-(cx-V.x)*z/V.z;V.y=cy-(cy-V.y)*z/V.z;V.z=z;applyView();}
+function fitAll(){const c=$('#canvas').getBoundingClientRect();
+  const x0=Math.min(...S.boards.map(b=>b.x)),y0=Math.min(...S.boards.map(b=>b.y))-30,x1=Math.max(...S.boards.map(b=>b.x+b.w))+170,y1=Math.max(...S.boards.map(b=>b.y+b.h));
+  const w=x1-x0,h=y1-y0,z=Math.min(1,(c.width-60)/w,(c.height-140)/h);V.z=z;V.x=(c.width-w*z)/2-x0*z;V.y=(c.height-90-h*z)/2-y0*z;applyView();}
+const cv=$('#canvas');
+cv.addEventListener('pointerdown',e=>{if(!(S.tool==='hand'||spaceHeld||e.button===1))return;if(e.target.closest('.dock,.zoom,.pop,.ctx'))return;
+  e.preventDefault();e.stopPropagation();pan={x:e.clientX,y:e.clientY,vx:V.x,vy:V.y};cv.setPointerCapture(e.pointerId);cv.classList.add('panning');},true);
+cv.addEventListener('pointermove',e=>{if(!pan)return;V.x=pan.vx+e.clientX-pan.x;V.y=pan.vy+e.clientY-pan.y;applyView();});
+const endPan=()=>{pan=null;cv.classList.remove('panning');};cv.addEventListener('pointerup',endPan);cv.addEventListener('pointercancel',endPan);
+cv.addEventListener('click',e=>{if(S.tool==='hand'||spaceHeld){e.stopPropagation();e.preventDefault();}},true);  // the hand never selects
+cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();
+  if(e.ctrlKey||e.metaKey)zoomAt(Math.exp(-e.deltaY*.01),e.clientX-r.left,e.clientY-r.top);else{V.x-=e.deltaX;V.y-=e.deltaY;applyView();}},{passive:false});
+addEventListener('keydown',e=>{if(e.code==='Space'&&!spaceHeld){spaceHeld=true;e.preventDefault();applyView();}
+  if(e.shiftKey&&e.code==='Digit1')fitAll();});
+addEventListener('keyup',e=>{if(e.code==='Space'){spaceHeld=false;applyView();}});
+$('#zIn').onclick=()=>{const r=cv.getBoundingClientRect();zoomAt(1.25,r.width/2,r.height/2);};
+$('#zOut').onclick=()=>{const r=cv.getBoundingClientRect();zoomAt(.8,r.width/2,r.height/2);};
+$('#zFit').onclick=fitAll;
+function render(){renderLeft();renderBoards();renderDock();renderInspector();applyView();}
+$('#exportBtn').onclick=e=>{e.stopPropagation();const p=$('#addPop');p.innerHTML=['Seçili artboard','Tüm artboardlar (ZIP)','Kayıtlı açıların hepsi (ZIP)','— Kalite: Hızlı / Fotoğraf','— Biçim, çözünürlük'].map(t=>'<div>'+t+'</div>').join('');p.style.left='auto';p.style.right='12px';p.style.bottom='auto';p.style.top='8px';p.classList.add('open');};
+addEventListener('keydown',e=>{const m={v:'select',w:'move',e:'rotate',o:'orbit',h:'hand'}[e.key.toLowerCase()];if(m){S.tool=m;render();}});
+render();fitAll();
+</script>
+</body>
+</html>
