@@ -72,7 +72,7 @@ const docImages=d=>{const m={};d.boards.forEach(b=>Object.assign(m,b.snap.images
 const SNAP_KEYS=['v','state','devices','lights','selected','selLight','frame'];
 const plainSnap=s=>{const o={};SNAP_KEYS.forEach(k=>{o[k]=s[k];});return o;};
 // thumbnails (small data URLs) travel along, so a loaded document shows every board without re-rendering it
-const plainDoc=d=>({v:2,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null})),assets:d.assets||[]});
+const plainDoc=d=>({v:2,layout:d.layout,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null})),assets:d.assets||[]});
 /* The asset library (left panel) belongs to the document: assets [{img: key, name}] + assetImages {key: image}. */
 function packAssets(list){const assetImages={},assets=list.map(a=>{const k=imgKey(a.img);assetImages[k]=a.img;return {img:k,name:a.name};});return {assets,assetImages};}
 // a single-scene snapshot (v1 files, old autosaves) becomes a one-board document

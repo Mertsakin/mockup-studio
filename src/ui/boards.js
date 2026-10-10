@@ -20,10 +20,14 @@ const subs=[];
 function onBoards(fn){subs.push(fn);}
 const emit=()=>subs.forEach(f=>f());
 
-// output size of a board from its state (same rule as export)
+/* Size of a board on the canvas (its coordinate space): always the largest export size, BOARD_L on the long edge
+   (custom boards: their exact size). The export size (state.size, "Uzun kenar") only sets the output file, so
+   changing it never resizes or moves boards. Documents laid out before this (sizes followed state.size) are
+   rescaled once when opened (applyDoc, LAYOUT). */
+const BOARD_L=3840,LAYOUT='max';
 function sizeOf(st){
   if(st.ratio==='custom')return [st.customW,st.customH];
-  const [a,b]=st.ratio.split(':').map(Number),L=st.size;
+  const [a,b]=st.ratio.split(':').map(Number),L=BOARD_L;
   return a>=b?[L,Math.round(L*b/a)]:[Math.round(L*a/b),L];
 }
 const activeBoard=()=>doc.boards.find(b=>b.id===doc.active);
@@ -84,7 +88,7 @@ function moveBoard(id,x,y){const b=boardById(id);if(!b)return;b.x=Math.round(x);
 /* --- whole document, for undo / redo, autosave and project files */
 function docSnapshot(){
   const a=activeBoard();if(a)a.snap=snapshot();
-  return Object.assign({v:2,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb}))},packAssets(doc.assets));
+  return Object.assign({v:2,layout:LAYOUT,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb}))},packAssets(doc.assets));
 }
 const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[]]);
 // first board whose content differs between two documents (undo jumps there)
@@ -96,6 +100,13 @@ function changedBoard(from,to){
 // that still exist (fresher), else the document's
 function applyDoc(d,prefer){
   if(!d.boards.length){const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);clearAll();return;}
+  if(d.layout!==LAYOUT){
+    // older layout: positions were in the export size's pixels; scale them with each board's own growth
+    // (custom boards keep their size; they follow the document's first preset board)
+    const k=st=>BOARD_L/((st&&st.size)||2160),first=d.boards.find(b=>b.snap&&b.snap.state&&b.snap.state.ratio!=='custom'),k0=first?k(first.snap.state):1;
+    d.boards.forEach(b=>{const st=b.snap&&b.snap.state,f=st&&st.ratio!=='custom'?k(st):k0;b.x=Math.round(b.x*f);b.y=Math.round(b.y*f);});
+    d.layout=LAYOUT;
+  }
   const thumbs=new Map(doc.boards.map(b=>[b.id,b.thumb]));
   doc.boards=d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:thumbs.get(b.id)||b.thumb||null}));
   uid=Math.max(uid,...doc.boards.map(b=>b.id));

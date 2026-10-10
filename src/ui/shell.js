@@ -1,10 +1,10 @@
-import {offer,renderExport} from '../export/export.js';
+import {exportSize,offer,renderExport} from '../export/export.js';
 import {MODS,modOf} from '../lights/mods.js';
 import {TYPES} from '../state/constants.js';
 import {TEMPLATES} from '../state/templates.js';
 import {hasAnim} from '../state/anim.js';
 import {selItem,state} from '../state/state.js';
-import {activate,activeBoard,addBoard,boardSize,doc,duplicateBoard,ensureBoard,hasBoard,onBoards,removeBoard,renameBoard} from './boards.js';
+import {activate,activeBoard,addBoard,doc,duplicateBoard,ensureBoard,hasBoard,onBoards,removeBoard,renameBoard} from './boards.js';
 import {renderDome} from './dome.js';
 import {setGizmoMode,showGizmo} from './gizmo.js';
 import {hydrateIcons,icon} from './icons.js';
@@ -172,7 +172,7 @@ $('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEvent
 /* ---------- export popover ---------- */
 function syncExport(){
   const b=activeBoard();if(!b){$('#exportNote').textContent='Artboard yok';$('#exportBoards').hidden=true;return;}
-  const [w,h]=boardSize(b);
+  const [w,h]=exportSize(state.size);  // the output file (the board on the canvas is always the largest size)
   $('#exportNote').textContent=w+' × '+h+' px'+(state.quality==='photo'?' · fotoğraf kalitesi yarım dakika kadar sürer':'');
   $('#exportBoards').hidden=doc.boards.length<2;
 }
