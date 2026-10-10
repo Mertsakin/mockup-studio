@@ -1,4 +1,5 @@
 import {applyTransform,deviceBox} from '../render/transform.js';
+import {POS_MAX} from '../state/constants.js';
 import {state} from '../state/state.js';
 import {syncSliders} from './sliders.js';
 import {onSyncUI} from './sync.js';
@@ -16,7 +17,7 @@ distBtn.addEventListener('click',()=>{
   if(items.length<3)return;
   const span=items[items.length-1].b.max.x-items[0].b.min.x,widths=items.reduce((s,x)=>s+x.b.max.x-x.b.min.x,0),gap=(span-widths)/(items.length-1);
   let x=items[0].b.min.x;
-  items.forEach(it=>{it.d.px=clamp(+(it.d.px+x-it.b.min.x).toFixed(2),-60,60);x+=it.b.max.x-it.b.min.x+gap;});
+  items.forEach(it=>{it.d.px=clamp(+(it.d.px+x-it.b.min.x).toFixed(2),-POS_MAX,POS_MAX);x+=it.b.max.x-it.b.min.x+gap;});
   applyTransform();syncSliders();
   toast(gap<0?'Cihazlar sığmadığı için üst üste bindi: uçtakileri biraz açıp tekrar dene.':'Cihazlar eşit aralıkla dizildi');
 });

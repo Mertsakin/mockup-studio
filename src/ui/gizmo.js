@@ -4,6 +4,7 @@ import {RT} from '../devices/rt.js';
 import {camera,canvas,overlays,req,scene} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
+import {POS_MAX} from '../state/constants.js';
 import {sel,state} from '../state/state.js';
 import {syncSliders} from './sliders.js';
 import {onSyncUI} from './sync.js';
@@ -34,7 +35,7 @@ function showGizmo(on){shown=on;attach();}
 tc.addEventListener('change',req);
 tc.addEventListener('objectChange',()=>{
   const d=sel(),h=tc.object;if(!h||!d)return;
-  if(h===proxy){d.px=clamp(h.position.x,-60,60);d.py=clamp(h.position.y,-60,60);d.pz=clamp(h.position.z,-60,60);}
+  if(h===proxy){d.px=clamp(h.position.x,-POS_MAX,POS_MAX);d.py=clamp(h.position.y,-POS_MAX,POS_MAX);d.pz=clamp(h.position.z,-POS_MAX,POS_MAX);}
   // holder rotation order is YXZ, the same convention as the device sliders
   else{d.rx=clamp(h.rotation.x*R2D,-90,90);d.ry=wrap(h.rotation.y*R2D);d.rz=wrap(h.rotation.z*R2D);}
   applyTransform();syncSliders();

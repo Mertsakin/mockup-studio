@@ -5,6 +5,7 @@ import {LRT} from '../lights/runtime.js';
 import {camera,canvas} from '../render/renderer.js';
 import {pivot} from '../render/stage.js';
 import {applyTransform,camDist} from '../render/transform.js';
+import {POS_MAX} from '../state/constants.js';
 import {sel,state,view} from '../state/state.js';
 import {lightMoved} from './dome.js';
 import {gizmoDown,gizmoHot,gizmoMove,gizmoUp,showGizmo} from './gizmo.js';
@@ -55,7 +56,7 @@ function pan(dx,dy){const r=frame.getBoundingClientRect();const S=state.scene;S.
 function moveSelected(dx,dy){
   const d=sel(),r=frame.getBoundingClientRect(),dist=camDist(),vh=2*dist*Math.tan(state.scene.fov*D2R/2),upp=vh/r.height;
   const w=new V3(dx*upp,-dy*upp,0).applyQuaternion(pivot.quaternion.clone().invert());
-  d.px=clamp(d.px+w.x,-60,60);d.py=clamp(d.py+w.y,-60,60);d.pz=clamp(d.pz+w.z,-60,60);
+  d.px=clamp(d.px+w.x,-POS_MAX,POS_MAX);d.py=clamp(d.py+w.y,-POS_MAX,POS_MAX);d.pz=clamp(d.pz+w.z,-POS_MAX,POS_MAX);
 }
 /* Tools (ui-state.js): Select / Move / Rotate pick devices; dragging a device moves it across the screen, dragging
    empty space orbits the scene. Move and Rotate also show the device's axes (gizmo). Orbit turns the scene wherever

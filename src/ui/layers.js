@@ -8,7 +8,7 @@ import {syncSliders} from './sliders.js';
 import {onSyncUI} from './sync.js';
 import {toast} from './toast.js';
 import {$,clamp} from '../util.js';
-import {SCALE_MAX,SCALE_MIN} from '../state/constants.js';
+import {POS_MAX,SCALE_MAX,SCALE_MIN} from '../state/constants.js';
 
 /* Layer order ("En öne / Öne / Arkaya / En arkaya"). In a 3D scene "in front" means closer to the camera, so these
    commands move the device in depth until it clears the others (by GAP), instead of faking draw order (which would
@@ -40,7 +40,7 @@ function push(d,delta){
   else dir=C.clone().sub(camera.position).normalize();
   const k=dir.dot(F);if(Math.abs(k)<.05)return;
   V.copy(dir).multiplyScalar(delta/k).applyQuaternion(comp.getWorldQuaternion(Q).invert());
-  d.px=clamp(d.px+V.x,-60,60);d.py=clamp(d.py+V.y,-60,60);d.pz=clamp(d.pz+V.z,-60,60);
+  d.px=clamp(d.px+V.x,-POS_MAX,POS_MAX);d.py=clamp(d.py+V.y,-POS_MAX,POS_MAX);d.pz=clamp(d.pz+V.z,-POS_MAX,POS_MAX);
   d.scale=clamp(d.scale*(c0+delta)/c0,SCALE_MIN,SCALE_MAX);
   applyTransform();
 }

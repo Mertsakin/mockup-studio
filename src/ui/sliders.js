@@ -2,7 +2,7 @@ import {applyAmbient} from '../lights/runtime.js';
 import {renderer} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {SCALE_MAX,SCALE_MIN} from '../state/constants.js';
-import {sel,state} from '../state/state.js';
+import {sel,state,view} from '../state/state.js';
 import {$} from '../util.js';
 
 /* ---------- sliders ---------- */
@@ -11,6 +11,9 @@ const SLIDERS=[];
 const paint=input=>{const a=+input.min,b=+input.max;input.style.setProperty('--p',b>a?(input.value-a)/(b-a):0);};
 /* def.log: the slider moves on a logarithmic scale (wide ranges like 0.1–10×: 1× stays mid-track, small values
    keep their precision). The input then holds ln(value). */
+// def.span(value): half-width of a symmetric range that adapts to the scene (device position: never less than 60 cm,
+// about 2.5 scene radii, and always room for the current value); updated on sync, not while the slider is dragged
+const POS_SPAN=v=>Math.max(60,Math.ceil(view.fitRadius*2.5/10)*10,Math.ceil(Math.abs(v||0)*1.25/10)*10);
 const toIn=(def,v)=>def.log?Math.log(v):v,fromIn=(def,v)=>def.log?+Math.exp(v).toFixed(3):v;
 const fDeg=v=>Math.round(v)+'°',fX=v=>v.toFixed(2)+'×',fPct=v=>Math.round(v*100)+'%',fU=v=>v.toFixed(1);
 function makeSlider(parent,def,getObj){
@@ -34,9 +37,9 @@ const G=()=>state.scene;
   {id:'g-panY',k:'panY',l:'Dikey kayma',min:-.6,max:.6,step:.01,reset:0,f:fPct}
 ].forEach(d=>makeSlider($('#angleSliders'),d,G));
 [
-  {id:'d-px',k:'px',l:'Yatay',min:-60,max:60,step:.1,reset:0,f:fU},
-  {id:'d-py',k:'py',l:'Dikey',min:-60,max:60,step:.1,reset:0,f:fU},
-  {id:'d-pz',k:'pz',l:'Derinlik',min:-60,max:60,step:.1,reset:0,f:fU},
+  {id:'d-px',k:'px',l:'Yatay',min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
+  {id:'d-py',k:'py',l:'Dikey',min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
+  {id:'d-pz',k:'pz',l:'Derinlik',min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
   {id:'d-ry',k:'ry',l:'Dönüş',min:-180,max:180,step:1,reset:0,f:fDeg},
   {id:'d-rx',k:'rx',l:'Eğim',min:-90,max:90,step:1,reset:0,f:fDeg},
   {id:'d-rz',k:'rz',l:'Yatış',min:-180,max:180,step:1,reset:0,f:fDeg},
@@ -47,6 +50,8 @@ makeSlider($('#shadowSlot'),{id:'g-shadow',k:'shadowOpacity',l:'Yoğunluk',min:.
 makeSlider($('#wallSlot'),{id:'g-wall',k:'wallGap',l:'Duvar mesafesi',min:0,max:1.5,step:.01,reset:.35,f:fPct},()=>state);
 makeSlider($('#ambientSlot'),{id:'g-exp',k:'exposure',l:'Pozlama',min:.4,max:2.2,step:.01,reset:1,f:v=>v.toFixed(2),after:()=>{renderer.toneMappingExposure=state.exposure;}},()=>state);
 makeSlider($('#ambientSlot'),{id:'g-amb',k:'ambient',l:'Ortam ışığı',min:0,max:2,step:.01,reset:1,f:fPct,note:'Işıkların dışında kalan genel aydınlık. Azaldıkça gölgeler koyulaşır.',after:applyAmbient},()=>state);
-function syncSliders(){SLIDERS.forEach(s=>{const o=s.getObj();if(o[s.def.k]===undefined)return;s.input.value=toIn(s.def,o[s.def.k]);paint(s.input);s.out.textContent=s.def.f(o[s.def.k]);});}
+function syncSliders(){SLIDERS.forEach(s=>{const o=s.getObj();if(o[s.def.k]===undefined)return;
+  if(s.def.span&&document.activeElement!==s.input){const r=s.def.span(o[s.def.k]);s.input.min=String(-r);s.input.max=String(r);}
+  s.input.value=toIn(s.def,o[s.def.k]);paint(s.input);s.out.textContent=s.def.f(o[s.def.k]);});}
 
 export {fDeg,fPct,fX,makeSlider,syncSliders};
