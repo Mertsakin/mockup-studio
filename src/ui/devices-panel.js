@@ -4,8 +4,9 @@ import {RT,setHolder} from '../devices/rt.js';
 import {buildRT,disposeRT,rebuild} from '../devices/runtime.js';
 import {scrollScreen,scrollScreens,setScreenTexture,updateChrome} from '../devices/screen.js';
 import {camera,req} from '../render/renderer.js';
-import {applyTransform,autoRefit,compBox,refit} from '../render/transform.js';
-import {COLORS,COMPS,DEFAULT_SCENE,TYPES} from '../state/constants.js';
+import {comp} from '../render/stage.js';
+import {applyTransform,autoRefit,refit} from '../render/transform.js';
+import {COLORS,COMPS,DEFAULT_SCENE,SCALE_MIN,TYPES,ZOOM_MIN} from '../state/constants.js';
 import {newDevice,sel,state} from '../state/state.js';
 import {parseV} from './controls.js';
 import {fPct,makeSlider,syncSliders} from './sliders.js';
@@ -40,16 +41,30 @@ Object.entries(TYPES).forEach(([k,n])=>{
 });
 $('#addDevice').addEventListener('click',()=>{
   const base=sel(),d=newDevice(addSel.value,{colorKey:base.colorKey,custom:base.custom});
-  state.devices.push(d);const o=buildRT(d);
-  // beside the others (right, or left if the right side is off-screen), on the same floor, at their depth.
-  // The framing stays put so devices already placed do not move on screen.
-  const box=compBox(d.id),c=box.getCenter(new THREE.Vector3()),p=new THREE.Vector3();
-  d.py=+(box.min.y+o.size.y/2).toFixed(1);d.pz=+c.z.toFixed(1);state.selected=d.id;
-  const onScreen=x=>{d.px=+x.toFixed(1);autoRefit();applyTransform();o.holder.getWorldPosition(p).project(camera);return Math.abs(p.x)<.95&&Math.abs(p.y)<.95;};
-  const right=box.max.x+o.size.x/2+1.5,visible=onScreen(right)||onScreen(box.min.x-o.size.x/2-1.5);
-  if(!visible)onScreen(right);
+  state.devices.push(d);const o=buildRT(d);state.selected=d.id;
+  // Centred on the artboard: on the camera's axis (the full frame's centre, whatever the pan, Yakınlık or the part of
+  // the board on screen), just in front of the other devices. The framing stays put, so devices already
+  // placed keep their spot; a device too big for the view is fitted by pulling the camera back (Yakınlık, real
+  // proportions kept), and only scaled down if Yakınlık is already at its minimum.
+  autoRefit();applyTransform();
+  // in front of the others along the view (no interpenetration, the new one is on top and easy to grab)
+  // world boxes of the meshes, contact-shadow planes left out
+  const boxOf=h=>{const b=new THREE.Box3();h.updateWorldMatrix(true,true);h.traverse(x=>{if(x.isMesh&&!x.userData.ao)b.expandByObject(x);});return b;};
+  let z=0;
+  if(state.devices.length>1){const ob=new THREE.Box3();RT.forEach((r,id)=>{if(id!==d.id)ob.union(boxOf(r.holder));});
+    const nb=boxOf(o.holder);z=ob.max.z+(nb.max.z-nb.min.z)/2+1;}
+  const at=comp.worldToLocal(new THREE.Vector3(0,0,z));
+  d.px=+at.x.toFixed(1);d.py=+at.y.toFixed(1);d.pz=+at.z.toFixed(1);applyTransform();
+  // extent of the new device in the full frame (no live crop): 1 = the frame's edge
+  const extent=()=>{const cam=camera.clone();cam.clearViewOffset();cam.updateProjectionMatrix();
+    const b=boxOf(o.holder),q=new THREE.Vector3();let m=0;
+    for(const x of [b.min.x,b.max.x])for(const y of [b.min.y,b.max.y])for(const z of [b.min.z,b.max.z]){q.set(x,y,z).project(cam);m=Math.max(m,Math.abs(q.x),Math.abs(q.y));}
+    return m;};
+  const z0=state.scene.zoom;
+  for(let i=0;i<4;i++){const m=extent();if(m<=.85||state.scene.zoom<=ZOOM_MIN)break;state.scene.zoom=+Math.max(ZOOM_MIN,state.scene.zoom*.85/m).toFixed(3);applyTransform();}
+  const m=extent();if(m>.85){d.scale=+Math.max(SCALE_MIN,d.scale*.85/m).toFixed(3);applyTransform();}
   $('#placeDetails').open=true;syncAll();
-  toast(TYPES[d.type]+' eklendi'+(visible?'':'. Kadraj dışında kaldı: görmek için Kadraja sığdır.'));
+  toast(TYPES[d.type]+' eklendi'+(state.scene.zoom<z0-1e-3?'. Sığması için kamera geri çekildi.':''));
 });
 $('#removeDevice').addEventListener('click',()=>{
   if(state.devices.length<2)return;const d=sel();
