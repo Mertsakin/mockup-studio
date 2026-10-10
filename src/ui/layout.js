@@ -59,18 +59,29 @@ function applyBgFit(){if(!board||state.bg==='transparent'){frame.style.backgroun
 function invalidateLayout(){lastKey='';}
 function bgCss(){
   frame.classList.toggle('checker',state.bg==='transparent');
-  frame.style.background=state.bg==='solid'?state.solid:state.bg==='gradient'?'linear-gradient(to bottom right, '+state.bg1+', '+state.bg2+')':hasImg()?'url("'+state.bgImg.src+'"),repeating-conic-gradient(var(--chk1) 0 25%,var(--chk2) 0 50%)':'';
+  frame.style.background=state.bg==='solid'?state.solid:state.bg==='gradient'?gradCss(state):hasImg()?'url("'+state.bgImg.src+'"),repeating-conic-gradient(var(--chk1) 0 25%,var(--chk2) 0 50%)':'';
   applyBgFit();
   // the cover fit needs the image's size: lay out again once it has loaded
   if(hasImg()&&!state.bgImg.complete)state.bgImg.addEventListener('load',()=>{if(hasImg())applyBgFit();},{once:true});
 }
+/* Gradient background: CSS for the live board and the other boards on the canvas, a canvas gradient for the export
+   and thumbnails, with the same geometry. Linear: CSS angle (0 = upwards, clockwise), the gradient line through the
+   centre long enough for the corners (CSS's own rule). Radial: a circle from the centre to the farthest corner. */
+const gAngle=st=>st.gradAngle??135;
+function gradCss(st){
+  return st.gradType==='radial'?'radial-gradient(circle farthest-corner at 50% 50%, '+st.bg1+', '+st.bg2+')'
+    :'linear-gradient('+gAngle(st)+'deg, '+st.bg1+', '+st.bg2+')';
+}
+function paintGradient(g,W,H,st){
+  let gr;
+  if(st.gradType==='radial')gr=g.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.hypot(W,H)/2);
+  else{const a=gAngle(st)*Math.PI/180,dx=Math.sin(a),dy=-Math.cos(a),L=Math.abs(W*dx)+Math.abs(H*dy);
+    gr=g.createLinearGradient(W/2-dx*L/2,H/2-dy*L/2,W/2+dx*L/2,H/2+dy*L/2);}
+  gr.addColorStop(0,st.bg1);gr.addColorStop(1,st.bg2);g.fillStyle=gr;g.fillRect(0,0,W,H);
+}
 function paintBg(g,W,H){
   if(state.bg==='solid'){g.fillStyle=state.solid;g.fillRect(0,0,W,H);}
-  else if(state.bg==='gradient'){
-    const n=Math.hypot(W,H),ux=H/n,uy=W/n,hl=W*H/n,cx=W/2,cy=H/2;
-    const gr=g.createLinearGradient(cx-ux*hl,cy-uy*hl,cx+ux*hl,cy+uy*hl);
-    gr.addColorStop(0,state.bg1);gr.addColorStop(1,state.bg2);g.fillStyle=gr;g.fillRect(0,0,W,H);
-  } else if(hasImg()){if(state.format==='jpg'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}const c=bgRect(W,H);g.drawImage(state.bgImg,c.x,c.y,c.w,c.h);}
+  else if(state.bg==='gradient')paintGradient(g,W,H,state); else if(hasImg()){if(state.format==='jpg'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}const c=bgRect(W,H);g.drawImage(state.bgImg,c.x,c.y,c.w,c.h);}
   else if(state.format==='jpg'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}
 }
 
@@ -99,4 +110,4 @@ function paintItems(g,W,H,front){
     g.save();g.globalAlpha=it.opacity??1;g.translate(r.cx,r.cy);g.rotate(r.rot*Math.PI/180);g.drawImage(it.img,-r.w/2,-r.h/2,r.w,r.h);g.restore();});
 }
 
-export {bgCss,boardScreen,frame,imgSize,invalidateLayout,itemRect,layout,onLayout,paintBg,paintItems,ratioNums,renderItems,setStageGeometry};
+export {bgCss,gradCss,boardScreen,frame,imgSize,invalidateLayout,itemRect,layout,onLayout,paintBg,paintItems,ratioNums,renderItems,setStageGeometry};

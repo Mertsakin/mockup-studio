@@ -163,6 +163,8 @@
           <div class="seg seg-wide" data-key="bg"><button data-v="transparent">Yok</button><button data-v="solid">Düz</button><button data-v="gradient">Geçiş</button><button data-v="image">Görsel</button></div>
           <div class="row" data-bg="solid"><label class="lbl" for="solid">Renk</label><input type="color" id="solid"></div>
           <div class="row" data-bg="gradient"><span class="lbl">Renkler</span><span class="pair"><input type="color" id="bg1" aria-label="Başlangıç rengi"><input type="color" id="bg2" aria-label="Bitiş rengi"></span></div>
+          <div class="row" data-bg="gradient"><span class="lbl">Tür</span><div class="seg" data-key="gradType" role="group" aria-label="Geçiş türü"><button data-v="linear">Doğrusal</button><button data-v="radial">Dairesel</button></div></div>
+          <div id="gradAngleSlot" data-bg="gradient"></div>
           <label class="drop" id="bgDrop" tabindex="0" data-bg="image">
             <input type="file" id="bgFile" accept="image/*" hidden>
             <span class="drop-ic" data-icon="gallery-add"></span>

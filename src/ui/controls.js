@@ -6,6 +6,7 @@ import {state} from '../state/state.js';
 import {renderDome} from './dome.js';
 import {setGizmoMode} from './gizmo.js';
 import {bgCss,layout} from './layout.js';
+import {fDeg,makeSlider} from './sliders.js';
 import {onSyncUI,syncUI} from './sync.js';
 import {$,$$} from '../util.js';
 
@@ -14,7 +15,7 @@ function parseV(v){return v==='true'?true:v==='false'?false:v;}
 $$('.seg[data-key]').forEach(seg=>{const key=seg.dataset.key;
   seg.querySelectorAll('button').forEach(b=>{b.type='button';b.addEventListener('click',()=>{state[key]=parseV(b.dataset.v);onGlobal(key);});});});
 function onGlobal(key){
-  if(key==='bgFit')bgCss();
+  if(key==='bgFit'||key==='gradType')bgCss();
   else if(key==='bg'){bgCss();if(state.bg==='image'&&!state.bgImg)$('#bgFile').click();}  // no image yet: ask for one
   else if(key==='gizmo')setGizmoMode(state.gizmo);
   else if(key==='ratio')layout();
@@ -35,6 +36,8 @@ const ART=['customW','customH'].map(k=>{const el=$('#'+k);el.value=state[k];
   el.addEventListener('input',()=>read(false));el.addEventListener('change',()=>read(true));return el;});
 const previewEl=$('#photoPreview');previewEl.checked=state.photoPreview;previewEl.addEventListener('change',()=>{state.photoPreview=previewEl.checked;req();});
 const qualityEl=$('#quality');qualityEl.value=state.quality;qualityEl.addEventListener('change',()=>{state.quality=qualityEl.value;syncUI();});
+// gradient angle (linear only)
+makeSlider($('#gradAngleSlot'),{id:'g-gang',k:'gradAngle',l:'Açı',min:0,max:360,step:1,reset:135,f:fDeg,after:bgCss},()=>state);
 onSyncUI(()=>{
   // inputs bound once at start-up; templates change state underneath them
   ['solid','bg1','bg2','shadowColor'].forEach(k=>{const el=$('#'+k);if(el&&document.activeElement!==el)el.value=state[k];});
@@ -44,6 +47,7 @@ onSyncUI(()=>{
   ART.forEach(el=>{if(document.activeElement!==el)el.value=state[el.id];});
   $$('.seg[data-key]').forEach(seg=>{const v=String(state[seg.dataset.key]);seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));});
   $$('[data-bg]').forEach(el=>{el.hidden=el.dataset.bg!==state.bg;});
+  $('#gradAngleSlot').hidden=state.bg!=='gradient'||state.gradType==='radial';  // the angle is for linear gradients
   $('#shadowSlot').hidden=!(state.floor||state.wall);
   $('#wallSlot').hidden=!state.wall;
   $('#export').textContent=(state.format==='jpg'?'JPG':'PNG')+' indir';

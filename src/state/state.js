@@ -13,6 +13,7 @@ const state={
   scene:{rx:-6,ry:26,rz:0,zoom:1,fov:28,panX:0,panY:0},
   devices:[],selected:null,mode:'rotate',gizmo:'translate',
   bg:'gradient',solid:'#eef1f4',bg1:'#dfe6ff',bg2:'#f4dcea',
+  gradType:'linear',gradAngle:135,  // gradient: linear at gradAngle (CSS degrees: 0 = upwards, clockwise) or radial from the centre
   // bg 'image': bgImg (HTMLImageElement) placed by bgFit (cover | contain) x bgScale, shifted by bgX / bgY (fractions of the board)
   bgImg:null,bgImgName:'',bgFit:'cover',bgScale:1,bgX:0,bgY:0,
   // 2D items (PNG / SVG) over or under the 3D scene: {id,name,img,x,y (centre, fractions of the board),w (fraction of the

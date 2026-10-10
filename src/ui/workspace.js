@@ -1,6 +1,6 @@
 import {state} from '../state/state.js';
 import {activate,boardSize,doc,moveBoard,onBoards,renameBoard} from './boards.js';
-import {layout,setStageGeometry} from './layout.js';
+import {gradCss,layout,setStageGeometry} from './layout.js';
 import {onUi,panning,setUi,ui} from './ui-state.js';
 import {$,clamp} from '../util.js';
 
@@ -60,7 +60,7 @@ function renderBoards(){
     if(b.thumb&&o.img.getAttribute('src')!==b.thumb)o.img.src=b.thumb;
     o.img.hidden=!b.thumb;
     // the live board is drawn by #frame (layout.js); its own background would show through transparent parts
-    o.el.style.background=live||b.thumb||st.bg==='transparent'?'':st.bg==='solid'?st.solid:st.bg==='gradient'?'linear-gradient(to bottom right,'+st.bg1+','+st.bg2+')':st.bg==='image'&&b.snap.images&&b.snap.images[st.bgImg]?'center/cover no-repeat url("'+b.snap.images[st.bgImg].src+'")':st.bg==='pattern'?st.pbase:'';
+    o.el.style.background=live||b.thumb||st.bg==='transparent'?'':st.bg==='solid'?st.solid:st.bg==='gradient'?gradCss(st):st.bg==='image'&&b.snap.images&&b.snap.images[st.bgImg]?'center/cover no-repeat url("'+b.snap.images[st.bgImg].src+'")':st.bg==='pattern'?st.pbase:'';
   });
   relayout();
 }
