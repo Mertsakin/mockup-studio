@@ -43,6 +43,12 @@ function screenSize(o,d){
   const geomA=o.sw/o.sh,land=o.rotatable&&d.landscape,dispA=land?1/geomA:geomA,long=Math.min(4096,MAX_TEX);
   return dispA>=1?[long,Math.round(long/dispA)]:[Math.round(long*dispA),long];
 }
+// Width of the device's screen in texture pixels (what a screenshot needs to be to come out sharp)
+function screenPixelWidth(d){
+  const o=RT.get(d.id);if(!o)return 0;
+  if(o.custom){if(!d.screenRect||!d.frameImg)return 0;const fi=d.frameImg,s=Math.min(1,CUSTOM_MAX/Math.max(fi.naturalWidth,fi.naturalHeight));return Math.round(d.screenRect.w*fi.naturalWidth*s);}
+  return screenSize(o,d)[0];
+}
 // How many screens tall the screenshot is (0 when it cannot scroll: no image, not "Doldur", or not taller)
 function scrollScreens(d){
   const o=RT.get(d.id);if(!o||!d.img||d.fit!=='cover')return 0;
@@ -56,6 +62,7 @@ function scrollScreen(d,frac){
   d.scroll=Math.min(1,Math.max(0,frac));pending.add(d);
   if(!raf)raf=requestAnimationFrame(()=>{raf=0;pending.forEach(setScreenTexture);pending.clear();});
 }
+const CUSTOM_MAX=3072;  // long edge of a custom frame's canvas
 function customCanvas(d){
   const fi=d.frameImg;
   if(!fi){
@@ -67,7 +74,7 @@ function customCanvas(d){
     g.font='400 36px "Instrument Sans", system-ui, sans-serif';g.fillText('Ekran alanı şeffaf olmalı',450,840);
     return c;
   }
-  const iw=fi.naturalWidth,ih=fi.naturalHeight,s=Math.min(1,3072/Math.max(iw,ih)),cw=Math.round(iw*s),ch=Math.round(ih*s);
+  const iw=fi.naturalWidth,ih=fi.naturalHeight,s=Math.min(1,CUSTOM_MAX/Math.max(iw,ih)),cw=Math.round(iw*s),ch=Math.round(ih*s);
   const c=mkCanvas(cw,ch),g=c.getContext('2d'),r=d.screenRect;
   if(r){const x=r.x*cw,y=r.y*ch,w=r.w*cw,h=r.h*ch;g.fillStyle=d.screenBg;g.fillRect(x,y,w,h);
     if(d.img)drawFit(g,d.img,x,y,w,h,d.fit,d.scroll);else drawPlaceholder(g,x,y,w,h);}
@@ -112,4 +119,4 @@ function detectScreen(img){
   return {x:x0,y:y0,w:Math.min(1-x0,(maxX-minX+3)/w),h:Math.min(1-y0,(maxY-minY+3)/h)};
 }
 
-export {detectScreen,scrollScreen,scrollScreens,setScreenTexture,updateChrome};
+export {detectScreen,screenPixelWidth,scrollScreen,scrollScreens,setScreenTexture,updateChrome};

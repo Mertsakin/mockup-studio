@@ -1,11 +1,12 @@
 // Dev-server only: full-page website screenshots for the device screens.
 // POST /api/capture {url, targets:[{id, width, height, mobile, dpr}]} -> {shots:{id: dataURL}, finalUrl}
-// Each target is rendered at its own viewport (responsive layout), lazy content is scrolled into view, cookie /
-// consent overlays are removed, and the page is captured down to MAX_H CSS px. Not part of the production build:
-// a static deployment needs a separate capture service.
+// Each target is rendered at its own viewport (responsive layout) at its own device scale factor (dpr: the client
+// asks for enough pixels to fill the device's screen texture), lazy content is scrolled into view, cookie / consent
+// overlays are removed, and the page is captured down to MAX_H CSS px or MAX_PX_H device px, whichever comes first.
+// Not part of the production build: a static deployment needs a separate capture service.
 import {chromium} from 'playwright';
 
-const MAX_H=8000,MAX_TARGETS=12,NAV_TIMEOUT=30000;
+const MAX_H=8000,MAX_PX_H=16384,MAX_PX_W=16384,DPR_MAX=8,MAX_TARGETS=12,NAV_TIMEOUT=30000;
 const UA_PHONE='Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 const UA_TABLET='Mozilla/5.0 (Linux; Android 14; Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 let browserP=null;
@@ -22,7 +23,8 @@ const send=(res,code,obj)=>{res.statusCode=code;res.setHeader('Content-Type','ap
 
 async function capture(url,t){
   const b=await browser(),mobile=!!t.mobile;
-  const ctx=await b.newContext({viewport:{width:t.width,height:t.height},deviceScaleFactor:t.dpr||2,isMobile:mobile,hasTouch:mobile,
+  const dpr=Math.min(DPR_MAX,MAX_PX_W/t.width,Math.max(1,+t.dpr||2)),maxH=Math.min(MAX_H,Math.floor(MAX_PX_H/dpr));
+  const ctx=await b.newContext({viewport:{width:t.width,height:t.height},deviceScaleFactor:dpr,isMobile:mobile,hasTouch:mobile,
     userAgent:mobile?(t.width>600?UA_TABLET:UA_PHONE):undefined,locale:'tr-TR'});
   try{
     const page=await ctx.newPage();
@@ -30,7 +32,7 @@ async function capture(url,t){
     await page.waitForLoadState('networkidle',{timeout:8000}).catch(()=>{});
     // walk down the page so lazy images / sections load, then back to the top
     await page.evaluate(async max=>{const step=innerHeight*.8,end=Math.min(document.documentElement.scrollHeight,max);
-      for(let y=0;y<end;y+=step){scrollTo(0,y);await new Promise(r=>setTimeout(r,120));}scrollTo(0,0);},MAX_H);
+      for(let y=0;y<end;y+=step){scrollTo(0,y);await new Promise(r=>setTimeout(r,120));}scrollTo(0,0);},maxH);
     await page.waitForLoadState('networkidle',{timeout:4000}).catch(()=>{});
     // cookie / consent banners: fixed or sticky elements whose id / class / label says so
     await page.evaluate(()=>{const re=/cookie|consent|gdpr|çerez|kvkk/i;
@@ -39,7 +41,7 @@ async function capture(url,t){
         if(re.test((el.id||'')+' '+cls+' '+(el.getAttribute('aria-label')||'')))el.remove();}});
     await page.waitForTimeout(300);
     const h=await page.evaluate(()=>Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0));
-    const buf=await page.screenshot({type:'jpeg',quality:85,fullPage:true,clip:{x:0,y:0,width:t.width,height:Math.max(t.height,Math.min(h,MAX_H))}});
+    const buf=await page.screenshot({type:'jpeg',quality:85,fullPage:true,clip:{x:0,y:0,width:t.width,height:Math.max(t.height,Math.min(h,maxH))}});
     return {shot:'data:image/jpeg;base64,'+buf.toString('base64'),finalUrl:page.url()};
   }finally{await ctx.close();}
 }

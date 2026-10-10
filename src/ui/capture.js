@@ -1,5 +1,5 @@
 import {RT} from '../devices/rt.js';
-import {setScreenTexture,updateChrome} from '../devices/screen.js';
+import {screenPixelWidth,setScreenTexture,updateChrome} from '../devices/screen.js';
 import {state} from '../state/state.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {toast} from './toast.js';
@@ -8,8 +8,11 @@ import {$} from '../util.js';
 /* "Web sitesinden": captures a URL at a device's own viewport (responsive layout) through the dev server's
    /api/capture (tools/capture/vite-plugin.mjs) and puts the full-page shot on its screen, scrolled to the top.
    Each device keeps its own address (siteUrl); "Tüm cihazlara" uses one address for all of them, and devices that
-   need the same viewport share one capture. */
-const WIDTH={phone:390,tablet:820,laptop:1440,monitor:1920,browser:1440};
+   need the same viewport share one capture. The device scale factor is chosen so the shot is at least as wide as the
+   device's screen texture (4096 px long edge, i.e. sharp at the 3840 px export): a phone at 390 CSS px needs ~5×,
+   a laptop at 1440 ~3×. The server caps the page height in device pixels (MAX_PX_H), so a sharper shot reaches
+   fewer screens down the page. */
+const WIDTH={phone:390,tablet:820,laptop:1440,monitor:1920,browser:1440},DPR_MAX=8;
 function viewport(d){
   const o=RT.get(d.id);if(!o)return null;
   let a;  // screen width / height as displayed
@@ -18,7 +21,9 @@ function viewport(d){
   const portrait=a<1,mobile=d.type==='phone'||d.type==='tablet'||((d.type==='page'||d.type==='custom')&&portrait);
   let width=WIDTH[d.type]||(portrait?390:1440);
   if(d.type==='phone'&&!portrait)width=844;else if(d.type==='tablet'&&!portrait)width=1180;
-  return {width,height:Math.round(width/a),mobile,dpr:d.type==='monitor'?1.5:2};
+  // scale so the capture is at least as wide as the screen texture (quarter steps keep equal devices sharing one shot)
+  const dpr=Math.min(DPR_MAX,Math.max(1,Math.ceil(screenPixelWidth(d)/width*4)/4));
+  return {width,height:Math.round(width/a),mobile,dpr};
 }
 const input=$('#captureUrl'),one=$('#captureBtn'),all=$('#captureAllBtn');
 // The field shows the selected device's own address; typing stores it on that device.
