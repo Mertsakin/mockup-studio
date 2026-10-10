@@ -22,7 +22,7 @@ const state={
   // animation timing of this artboard (keys live on the devices: d.tracks, see state/anim.js)
   anim:{dur:5,fps:30,loop:true},
   floor:true,wall:false,wallGap:.35,selfShadow:true,shadowColor:'#000000',shadowOpacity:.55,ambient:1,exposure:1,markers:true,showDome:true,lights:[],selLight:null,
-  ratio:'4:5',customW:1920,customH:1080,size:2160,format:'png',quality:'fast',photoPreview:false
+  ratio:'4:5',customW:1920,customH:1080,size:3840,format:'png',quality:'fast',photoPreview:false
 };
 state.devices=[newDevice('phone')];state.selected=state.devices[0].id;
 let itemUid=0;

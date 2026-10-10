@@ -11,6 +11,7 @@ import {hydrateIcons,icon} from './icons.js';
 import {removeItem,selectItem} from './items.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {applyTemplate} from './templates.js';
+import {boardScreen} from './layout.js';
 import {toast} from './toast.js';
 import {onUi,setUi,ui} from './ui-state.js';
 import {fitAll} from './workspace.js';
@@ -173,7 +174,11 @@ $('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEvent
 function syncExport(){
   const b=activeBoard();if(!b){$('#exportNote').textContent='Artboard yok';$('#exportBoards').hidden=true;return;}
   const [w,h]=exportSize(state.size);  // the output file (the board on the canvas is always the largest size)
-  $('#exportNote').textContent=w+' × '+h+' px'+(state.quality==='photo'?' · fotoğraf kalitesi yarım dakika kadar sürer':'');
+  // the live view draws at the screen's real pixel density: when the board is shown larger than the export, the
+  // file looks softer than the canvas, so say so
+  const s=boardScreen(),live=s?Math.round(s.w*Math.min(window.devicePixelRatio||1,2)):0;
+  $('#exportNote').textContent=w+' × '+h+' px'+(state.quality==='photo'?' · fotoğraf kalitesi yarım dakika kadar sürer':'')+
+    (live>w*1.15&&state.ratio!=='custom'&&state.size<3840?' · Ekranda şu an yaklaşık '+live+' px genişlikte görünüyor; aynı netlik için uzun kenarı 3840 px seç.':'');
   $('#exportBoards').hidden=doc.boards.length<2;
 }
 ['quality','size','format'].forEach(id=>$('#'+id).addEventListener('change',syncExport));
