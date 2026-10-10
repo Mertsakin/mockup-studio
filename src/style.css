@@ -254,10 +254,15 @@ input[type=range]{width:100%;min-width:0;margin:0;accent-color:var(--accent);hei
 #gl.dragging{cursor:grabbing}
 .stage[data-tool="orbit"] #gl{cursor:grab}
 /* view axes widget (navigator.js), pinned to the live artboard's top-right corner */
-.nav{position:absolute;width:72px;height:72px;touch-action:none;cursor:grab;overflow:visible;z-index:3}
-.nav .nav-bg{fill:var(--panel);fill-opacity:.85;stroke:var(--line)}
-.nav .nav-end{cursor:pointer}
-.nav .nav-end:focus{outline:none}.nav .nav-end:focus-visible circle{stroke:var(--ink);stroke-width:3}
+.nav{position:absolute;width:64px;height:64px;touch-action:none;cursor:grab;overflow:visible;z-index:3;user-select:none}
+.nav .nav-bg{fill:var(--panel);fill-opacity:.7}
+.nav .nav-side{fill:var(--panel);stroke:var(--line-strong);stroke-width:.8;stroke-linejoin:round}
+.nav .nav-shade{fill:var(--ink);pointer-events:none}
+.nav .nav-hit{fill:var(--accent);fill-opacity:0;cursor:pointer;outline:none}
+.nav .nav-hit:hover,.nav .nav-hit:focus-visible{fill-opacity:.22}
+.nav .nav-label{fill:var(--ink-2);font-weight:500;pointer-events:none}
+.nav .nav-cap{fill:var(--muted);font-size:8.5px;opacity:0;transition:opacity .15s;pointer-events:none}
+.nav:hover .nav-cap{opacity:1}
 
 /* free transform box (transform-box.js): device outline + corner handles */
 .tbox{position:absolute;left:0;top:0;pointer-events:none;z-index:4}

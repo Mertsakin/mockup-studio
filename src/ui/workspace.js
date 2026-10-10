@@ -32,7 +32,7 @@ setStageGeometry(()=>{
   placeChrome();
   const r=boardRect(a);
   const room=r.w>=220&&r.h>=180;nav.style.display=room?'':'none';
-  if(room)nav.style.transform='translate('+Math.round(r.x+r.w-80)+'px,'+Math.round(r.y+8)+'px)';
+  if(room)nav.style.transform='translate('+Math.round(r.x+r.w-70)+'px,'+Math.round(r.y+6)+'px)';
   return r;
 });
 const relayout=()=>layout();
