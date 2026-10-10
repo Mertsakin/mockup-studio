@@ -36,7 +36,10 @@ async function capture(everyDevice){
   const btn=everyDevice?all:one,label=btn.textContent;
   one.disabled=all.disabled=true;btn.textContent='Yakalanıyor…'+(groups.size>1?' ('+groups.size+' görünüm)':'');
   try{
-    const r=await fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:raw,targets:[...groups.values()].map(g=>g.target)})});
+    let r;
+    try{r=await fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:raw,targets:[...groups.values()].map(g=>g.target)})});}
+    // no answer at all: the dev server has stopped (or the page was opened from the build / a file)
+    catch(e){toast('Yakalama sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.');return;}
     // a static deployment has no capture endpoint: 404, or an HTML fallback page instead of JSON
     if(r.status===404||!(r.headers.get('content-type')||'').includes('application/json')){toast('Web sitesinden yakalama yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).');return;}
     const res=await r.json();if(!r.ok)throw new Error(res.error||r.statusText);
