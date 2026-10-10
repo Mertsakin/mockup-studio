@@ -78,7 +78,7 @@ tools/render-harness/compare.sh renders/once renders/sonra
 - `state.scene` — sahne açısı (rx/ry/rz, zoom, fov, pan). `pivot` bu açıyla döner; ışıklar dönmez.
 - `state.devices[]` — her cihaz: tip, renk, `finish`, konum/dönüş/ölçek, ekran görüntüsü, tipe özel alanlar. Çalışma zamanı nesneleri `RT` içinde.
 - `state.lights[]` — her ışık: `mod` (şekillendirici), `type`, `az`/`el`/`dist`, `size`, `intensity`, `color`, `shadow`, spot için `angle`/`penumbra`. Çalışma zamanı `LRT` içinde.
-- Etkileşim (araçlar, `pointer.js`): Seç/Taşı/Döndür'de cihaza tıklamak onu seçer, cihazı sürüklemek ekranda taşır, boş alanı sürüklemek sahneyi döndürür; Taşı (W) ve Döndür (E) ayrıca gizmo'yu gösterir. Yörünge (O) her yerde döndürür. Kaydır (H) tuvali kaydırır. Alt + tekerlek kamera yakınlığı; seçili cihazın uzun ekran görüntüsünün üzerinde tekerlek ekranı kaydırır. Gizmo değerleri cihazın `px/py/pz/rx/ry/rz` alanlarına yazar.
+- Etkileşim (araçlar, `pointer.js`): Seç/Taşı/Döndür'de cihaza tıklamak onu seçer; cihazı sürüklemek yalnızca o cihazı döndürür (yatay: kendi ekseninde, dikey: eğim), Shift ile sürüklemek ekranda taşır; artboard kamerası değişmez. Boş alanı sürüklemek kamerayı döndürür (Shift: kaydırır); Taşı (W) ve Döndür (E) ayrıca gizmo'yu gösterir. Yörünge (O) her yerde döndürür. Kaydır (H) tuvali kaydırır. Alt + tekerlek kamera yakınlığı; seçili cihazın uzun ekran görüntüsünün üzerinde tekerlek ekranı kaydırır. Gizmo değerleri cihazın `px/py/pz/rx/ry/rz` alanlarına yazar.
 - Belge birden fazla artboard içerir (`ui/boards.js`); `state` her zaman **aktif** artboard'un sahnesidir.
 - UI → state → `applyTransform()` → `req()` (render kirli bayrağı). Yapısal değişiklikler `rebuild(d, refit)` ile.
 

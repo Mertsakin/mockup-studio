@@ -56,9 +56,12 @@ function moveSelected(dx,dy){
   const w=new V3(dx*upp,-dy*upp,0).applyQuaternion(pivot.quaternion.clone().invert());
   d.px=clamp(d.px+w.x,-60,60);d.py=clamp(d.py+w.y,-60,60);d.pz=clamp(d.pz+w.z,-60,60);
 }
-/* Tools (ui-state.js): Select / Move / Rotate pick devices; dragging a device moves it across the screen, dragging
-   empty space orbits the scene. Move and Rotate also show the device's axes (gizmo). Orbit turns the scene wherever
-   you drag. Hand is handled by the workspace (the canvas never sees those presses). Shift+drag pans the camera. */
+/* Tools (ui-state.js): Select / Move / Rotate pick devices. Dragging a device turns that device (turntable: left /
+   right spins it, up / down tilts it); with Shift it moves across the screen instead. The artboard's camera stays put
+   either way. Dragging empty space orbits the camera (Shift: pans it). Move and Rotate also show the device's axes
+   (gizmo). Orbit turns the camera wherever you drag. Hand is handled by the workspace. */
+// spins the selected device about its vertical axis and tilts it, like turning it in your hand
+function turnSelected(dx,dy){const d=sel();d.ry=wrap(d.ry+dx*.45);d.rx=clamp(d.rx+dy*.45,-90,90);}
 let gizmoDrag=false,dragDevice=false;
 function selectDevice(id){if(id!==state.selected){state.selected=id;syncAll();}setUi({kind:'device'});showGizmo(ui.tool==='move'||ui.tool==='rotate');}
 canvas.addEventListener('pointerdown',e=>{
@@ -80,8 +83,8 @@ canvas.addEventListener('pointermove',e=>{
   if(downAt&&Math.hypot(e.clientX-downAt.x,e.clientY-downAt.y)>4)moved=true;
   const S=state.scene;
   if(pointers.size===1){
-    if(e.shiftKey)pan(dx,dy);
-    else if(dragDevice)moveSelected(dx,dy);
+    if(dragDevice){if(e.shiftKey)moveSelected(dx,dy);else turnSelected(dx,dy);}
+    else if(e.shiftKey)pan(dx,dy);
     else{S.ry=wrap(S.ry+dx*.45);S.rx=clamp(S.rx+dy*.45,-90,90);}
   } else if(pointers.size===2){
     let o=null;for(const [id,q] of pointers){if(id!==e.pointerId)o=q;}
