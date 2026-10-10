@@ -21,7 +21,7 @@ import {D2R,V3} from '../util.js';
 const SHAPES={softbox:[1.25,.85],strip:[.3,1.5],window:[1,1.3],octa:[1,1,true],umbrella:[1,1,true],dish:[1,1,true],
   flash:[1,1,true],reflector:[1,1,true],bulb:[1,1,true],overcast:[1,1,true]};
 const ENV_SCALE=.5,SCREEN_GLOW=.9,HDRI='hdri/photo_studio_01_1k.hdr',ENV_MEAN=.45;  // ENV_MEAN: average radiance of the former gradient
-const PREVIEW_SAMPLES=64,PREVIEW_SCALE=.5,SWEEP_GLOW=.45;
+const PREVIEW_SAMPLES=64,PREVIEW_SCALE=.5,SWEEP_GLOW=.45,TRACE_TILE_PX=1e6;
 let pt=null,denoise=null,hdri=null,hdriScale=1;
 const PX=new Float32Array(4);  // the path tracer's target is float
 
@@ -123,6 +123,9 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000){
   let raw,aux=null;
   try{
     ensurePT();pt.renderScale=1;pt.setScene(scene,camera);
+    // one call per tile of about TRACE_TILE_PX pixels: the page keeps repainting at export sizes (a whole 3840 px
+    // sample would block the tab for seconds); pt.samples advances by a fraction per tile
+    const n=Math.max(1,Math.ceil(Math.sqrt(renderer.domElement.width*renderer.domElement.height/TRACE_TILE_PX)));pt.tiles.set(n,n);
     while(pt.samples<samples&&(pt.samples<8||performance.now()-t0<budgetMs)){
       pt.renderSample();
       // waiting on a pixel read keeps the GPU queue short (no context loss, the system stays responsive)
@@ -137,7 +140,7 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000){
   }finally{undoStudio();req();}
   if(window.__ptKeep)window.__ptLast={raw:copyCanvas(raw),aux};  // test hook: compare denoiser variants on the same samples
   const tn=performance.now();
-  if(!window.__noOidn)try{await denoiseCanvas(raw,aux);console.info('OIDN '+Math.round(performance.now()-tn)+' ms, '+Math.floor(pt.samples)+' örnek'+(aux?', albedo + normal':''));}
+  if(!window.__noOidn)try{await denoiseCanvas(raw,aux,p=>{if(onProgress)onProgress(.9+.1*p);});console.info('OIDN '+Math.round(performance.now()-tn)+' ms, '+Math.floor(pt.samples)+' örnek'+(aux?', albedo + normal':''));}
     catch(e){console.warn('OIDN kullanılamadı, basit gürültü giderme ile devam:',e);}
   if(onProgress)onProgress(1);
   return raw;
@@ -146,13 +149,18 @@ function copyCanvas(src){const c=document.createElement('canvas');c.width=src.wi
 
 /* OIDN's auxiliary inputs, rendered by the rasteriser from the same camera while the studio set-up is still applied
    (so screens are the emissive glass, hidden decals stay hidden, the sweep is there). Noise-free ("clean aux"), with
-   4x MSAA standing in for the path tracer's pixel jitter. Returns top-down RGB Float32Arrays:
-   - albedo: linear base colour (with its map); emissive surfaces (screens) their emissive image; nothing = black;
+   4x MSAA standing in for the path tracer's pixel jitter. Rendered in horizontal bands of at most AUX_BAND_PX pixels
+   (camera view offset), so the float MSAA target stays small at 3840 px. Returns top-down RGB Uint8Arrays (8 bits are
+   plenty for a guide image, and a third of the memory of floats at export sizes):
+   - albedo: linear base colour (with its map), sRGB-encoded (S2L decodes it per tile); emissive surfaces (screens)
+     their emissive image; nothing = black;
    - normal: view-space normals (with normal / bump maps) encoded 0..1; nothing = 0.5 (zero vector).
    Additive / transmissive surfaces are left out: OIDN wants the first diffuse-ish hit behind them. */
+const AUX_BAND_PX=2e6;
 function renderAux(w,h){
-  const rt=new THREE.WebGLRenderTarget(w,h,{type:THREE.FloatType,samples:4}),buf=new Float32Array(w*h*4);
-  const meshes=[],made=new Map(),out={};
+  const bh=Math.max(1,Math.min(h,Math.floor(AUX_BAND_PX/w)));
+  const rt=new THREE.WebGLRenderTarget(w,bh,{type:THREE.FloatType,samples:4}),buf=new Float32Array(w*bh*4);
+  const meshes=[],made=new Map(),out={albedo:new Uint8Array(w*h*3),normal:new Uint8Array(w*h*3)};
   scene.traverseVisible(x=>{if(x.isMesh&&x.material)meshes.push([x,x.material]);});
   const swap=(m,k)=>{
     if(!made.has(m)){
@@ -167,18 +175,24 @@ function renderAux(w,h){
     return made.get(m)[k];
   };
   const bg=scene.background,cc=renderer.getClearColor(new THREE.Color()),ca=renderer.getClearAlpha(),target=renderer.getRenderTarget();
+  const view=camera.view&&camera.view.enabled?Object.assign({},camera.view):null;
   try{
     scene.background=null;
-    for(const [k,clear] of [['albedo',0],['normal',.5]]){
+    for(const [k,clear,enc] of [['albedo',0,true],['normal',.5,false]]){
       meshes.forEach(([x,m])=>{x.material=Array.isArray(m)?m.map(q=>swap(q,k)):swap(m,k);});
-      renderer.setRenderTarget(rt);renderer.setClearColor(new THREE.Color(clear,clear,clear),1);renderer.clear();renderer.render(scene,camera);
-      renderer.readRenderTargetPixels(rt,0,0,w,h,buf);
-      const o=new Float32Array(w*h*3);  // flip to top-down rows, drop alpha
-      for(let y=0;y<h;y++){const s=(h-1-y)*w*4,d=y*w*3;for(let x=0;x<w;x++){o[d+x*3]=buf[s+x*4];o[d+x*3+1]=buf[s+x*4+1];o[d+x*3+2]=buf[s+x*4+2];}}
-      out[k]=o;
+      const o=out[k];
+      for(let y0=0;y0<h;y0+=bh){
+        y0=Math.min(y0,h-bh);  // the last band is shifted up rather than shrunk: same target, same view size
+        camera.setViewOffset(w,h,0,y0,w,bh);
+        renderer.setRenderTarget(rt);renderer.setClearColor(new THREE.Color(clear,clear,clear),1);renderer.clear();renderer.render(scene,camera);
+        renderer.readRenderTargetPixels(rt,0,0,w,bh,buf);
+        for(let r=0;r<bh;r++){const s=(bh-1-r)*w*4,d=(y0+r)*w*3;  // flip to top-down rows, drop alpha, quantise
+          for(let x=0;x<w;x++)for(let c=0;c<3;c++){const v=Math.min(1,Math.max(0,buf[s+x*4+c]));o[d+x*3+c]=enc?L2S8[Math.round(v*4095)]:Math.round(v*255);}}
+      }
     }
   }finally{
     meshes.forEach(([x,m])=>{x.material=m;});scene.background=bg;
+    if(view)camera.setViewOffset(view.fullWidth,view.fullHeight,view.offsetX,view.offsetY,view.width,view.height);else camera.clearViewOffset();
     renderer.setRenderTarget(target);renderer.setClearColor(cc,ca);rt.dispose();
     made.forEach(v=>{v.albedo.dispose();v.normal.dispose();});
   }
@@ -187,29 +201,49 @@ function renderAux(w,h){
 
 /* Runs OIDN on a 2D canvas in place. The canvas holds sRGB-encoded LDR pixels; the colour is linearised for the
    network and encoded back here (the package's own srgb switch would also bend the albedo and normal channels).
+   The image is cut into TILE-sized tiles here, not by the package: its tiler pads every processed tile to the whole
+   image while reassembling (quadratic in the tile count: minutes and a frozen tab at 3840 px). The network is built
+   once for one tile; neighbouring tiles overlap by OVERLAP px and are blended with a linear ramp. Tiles are
+   processed one per task so the page keeps repainting; onProgress(0..1) follows the tiles.
    window.__oidnSrgb = false feeds the sRGB values unchanged (test hook). */
 let oidnP=null;
+const TILE=512,OVERLAP=32;  // TILE: a multiple of 16 (the UNet's stride)
 const S2L=new Float32Array(256).map((_,i)=>{const v=i/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);});
 const L2S=v=>v<=.0031308?v*12.92:1.055*Math.pow(v,1/2.4)-.055;
-async function denoiseCanvas(c,aux){
-  if(!oidnP)oidnP=import('denoiser').then(({Denoiser})=>{const d=new Denoiser('webgl');
+const L2S8=new Uint8Array(4096).map((_,i)=>Math.round(255*L2S(i/4095)));  // 12-bit linear -> 8-bit sRGB
+async function denoiseCanvas(c,aux,onProgress){
+  if(!oidnP)oidnP=import('denoiser').then(({Denoiser})=>{// on its own WebGL context the package switches tfjs to half-float textures (about 30% faster, no visible change)
+    const d=new Denoiser('webgl',document.createElement('canvas'));
     d.weightsUrl=new URL('oidn',document.baseURI).href;d.quality='balanced';d.hdr=false;d.srgb=false;d.outputMode='float32';
-    d.useTiling=true;d.tileSize=256;if('batchSize' in d)d.batchSize=1;  // whole-image passes exceed WebGL's texture limit at export sizes
-    return d;});
+    d.useTiling=false;d.width=TILE;d.height=TILE;return d;});
   const d=await oidnP,W=c.width,H=c.height,n=W*H,g=c.getContext('2d'),img=g.getImageData(0,0,W,H),a=img.data;
-  const lin=window.__oidnSrgb!==false,col=new Float32Array(n*3);
-  for(let i=0;i<n;i++)for(let k=0;k<3;k++)col[i*3+k]=lin?S2L[a[i*4+k]]:a[i*4+k]/255;
-  d.resetInputs();d.width=W;d.height=H;  // model inputs (alb / nrm weights) follow what is set below
-  await d.setInputData('color',col,{channels:3});
-  if(aux){await d.setInputData('albedo',aux.albedo,{channels:3});await d.setInputData('normal',aux.normal,{channels:3});}
-  const out=await d.execute();
-  if(!out||out.length!==n*3)throw new Error('OIDN çıktısı geçersiz');
+  const lin=window.__oidnSrgb!==false,T=TILE*TILE;
+  const col=new Float32Array(T*3),alb=aux?new Float32Array(T*3):null,nrm=aux?new Float32Array(T*3):null;
+  const acc=new Float32Array(n*3),wt=new Float32Array(n);  // blended output and the weight each pixel has received
+  // tile origins: a stride of TILE - OVERLAP, the last tile pulled back to the edge (never past it)
+  const starts=L=>{if(L<=TILE)return [0];const s=[];for(let p=0;;p+=TILE-OVERLAP){if(p+TILE>=L){s.push(L-TILE);break;}s.push(p);}return s;};
+  const xs=starts(W),ys=starts(H),total=xs.length*ys.length;let done=0;
+  const ramp=(p,o,L)=>{let w=1;if(o>0)w=Math.min(w,(p+1)/OVERLAP);if(o+TILE<L)w=Math.min(w,(TILE-p)/OVERLAP);return w;};
+  for(const y0 of ys)for(const x0 of xs){
+    for(let ty=0;ty<TILE;ty++){const sy=Math.min(H-1,y0+ty);  // the source is clamped when the image is smaller than a tile
+      for(let tx=0;tx<TILE;tx++){const si=sy*W+Math.min(W-1,x0+tx),di=(ty*TILE+tx)*3;
+        for(let k=0;k<3;k++){col[di+k]=lin?S2L[a[si*4+k]]:a[si*4+k]/255;if(aux){alb[di+k]=S2L[aux.albedo[si*3+k]];nrm[di+k]=aux.normal[si*3+k]/255;}}}}
+    await d.setInputData('color',col,{channels:3});  // no resetInputs between tiles: it marks the network for a rebuild
+    if(aux){await d.setInputData('albedo',alb,{channels:3});await d.setInputData('normal',nrm,{channels:3});}
+    const out=await d.execute();
+    if(!out||out.length!==T*3)throw new Error('OIDN çıktısı geçersiz');
+    for(let ty=0;ty<TILE&&y0+ty<H;ty++){const wy=ramp(ty,y0,H);
+      for(let tx=0;tx<TILE&&x0+tx<W;tx++){const w=wy*ramp(tx,x0,W),si=(y0+ty)*W+x0+tx,di=(ty*TILE+tx)*3;
+        acc[si*3]+=out[di]*w;acc[si*3+1]+=out[di+1]*w;acc[si*3+2]+=out[di+2]*w;wt[si]+=w;}}
+    if(onProgress)onProgress(++done/total);
+    await new Promise(r=>setTimeout(r,0));
+  }
   // a failed GPU pass can come back blank without an error: keep the raw image unless the result has content
   let lit=0,ref=0;
-  for(let i=0;i<n;i+=97){lit+=out[i*3]+out[i*3+1]+out[i*3+2];ref+=col[i*3]+col[i*3+1]+col[i*3+2];}
+  for(let i=0;i<n;i+=97){lit+=(acc[i*3]+acc[i*3+1]+acc[i*3+2])/wt[i];for(let k=0;k<3;k++)ref+=lin?S2L[a[i*4+k]]:a[i*4+k]/255;}
   if(ref>0&&lit<ref*.5)throw new Error('OIDN çıktısı boş');
   // only the colour changes; the original alpha (transparent backgrounds) stays
-  for(let i=0;i<n;i++)for(let k=0;k<3;k++){const v=Math.min(1,Math.max(0,out[i*3+k]));a[i*4+k]=Math.round(255*(lin?L2S(v):v));}
+  for(let i=0;i<n;i++){const iw=1/wt[i];for(let k=0;k<3;k++){const v=acc[i*3+k]*iw;a[i*4+k]=lin?L2S8[v<=0?0:v>=1?4095:Math.round(v*4095)]:Math.round(255*Math.min(1,Math.max(0,v)));}}
   g.putImageData(img,0,0);
 }
 let gradient=null;
@@ -220,7 +254,7 @@ function gradientEnv(){if(!gradient){gradient=new GradientEquirectTexture(64);gr
 let preview=null;
 function previewTick(){
   if(!hdri){loadHdri().catch(()=>{hdri=null;});return;}  // first time: wait for the HDRI
-  if(!preview){ensurePT();preview={undo:setupStudio(hdri)};pt.renderScale=PREVIEW_SCALE;pt.setScene(scene,camera);}
+  if(!preview){ensurePT();preview={undo:setupStudio(hdri)};pt.renderScale=PREVIEW_SCALE;pt.tiles.set(1,1);pt.setScene(scene,camera);}
   if(pt.samples>=PREVIEW_SAMPLES)return;
   pt.renderSample();
   if(pt.samples>=4)present();  // until then the raster image stays on the canvas (no blank flash)
