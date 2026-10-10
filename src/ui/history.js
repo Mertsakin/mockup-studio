@@ -56,18 +56,73 @@ window.addEventListener('keydown',e=>{
 });
 
 // --- project files
+/* Chrome / Edge: the system save / open dialogs (File System Access API) pick the folder and the name, and the file
+   is remembered: ⌘S saves over it, "Farklı kaydet…" (⇧⌘S) asks again, "Proje aç…" makes the opened file the current
+   one. Elsewhere a small dialog asks for the name and the browser downloads the file. The top bar shows the name. */
+const FS=typeof window.showSaveFilePicker==='function';
+const FILE_TYPES=[{description:'Mockup stüdyosu projesi',accept:{'application/json':['.json']}}];
+const EXT=/\.mockup\.json$/i;
+let fileHandle=null,fileName='';
 const stamp=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes());};
-$('#saveProject').addEventListener('click',async()=>{
-  // a change made a moment ago may not be in the history yet: record it and save the document as it is now
-  try{commitNow();const text=await toProjectFile(snapshot());offer('mockup-proje-'+stamp()+'.mockup.json',new Blob([text],{type:'application/json'}));toast('Proje kaydedildi');}
-  catch(e){toast('Proje kaydedilemedi: '+(e.message||e));}
-});
+const withExt=n=>{n=String(n||'').trim().replace(/[\\/:*?"<>|]+/g,'-');if(!n)return '';return EXT.test(n)?n:n.replace(/\.json$/i,'')+'.mockup.json';};
+const suggested=()=>fileName||'mockup-proje-'+stamp()+'.mockup.json';
+function setFileName(n){
+  fileName=n||'';const el=$('#projName');
+  el.textContent=fileName?fileName.replace(EXT,'').replace(/\.json$/i,''):'Mockup stüdyosu';el.title=fileName?fileName+(fileHandle?'':' (indirildi)'):'';
+}
+async function projectText(){commitNow();return toProjectFile(snapshot());}  // a change made a moment ago is recorded first
+async function writable(h){
+  // a file opened for reading asks once for permission to write (needs the click / ⌘S that started the save)
+  if(h.queryPermission&&(await h.queryPermission({mode:'readwrite'}))!=='granted'&&(await h.requestPermission({mode:'readwrite'}))!=='granted')throw new Error('yazma izni verilmedi');
+  return h.createWritable();
+}
+async function save(as){
+  try{
+    if(FS){
+      if(as||!fileHandle){
+        let h;try{h=await window.showSaveFilePicker({suggestedName:suggested(),types:FILE_TYPES});}
+        catch(e){if(e&&e.name==='AbortError')return;throw e;}
+        fileHandle=h;
+      }
+      const text=await projectText(),w=await writable(fileHandle);await w.write(text);await w.close();
+      setFileName(fileHandle.name);toast(fileHandle.name+' kaydedildi');
+    } else {
+      const name=withExt(await askName(suggested()));if(!name)return;
+      const text=await projectText();offer(name,new Blob([text],{type:'application/json'}));
+      setFileName(name);toast(name+' indirildi');
+    }
+  }catch(e){toast('Proje kaydedilemedi: '+(e.message||e));}
+}
+// fallback name dialog (browsers without the save dialog API)
+function askName(def){
+  return new Promise(res=>{
+    const sc=document.createElement('div');sc.className='scrim';
+    sc.innerHTML='<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="saveTitle"><div class="dh"><span id="saveTitle">Projeyi kaydet</span></div>'+
+      '<div class="db"><label class="lbl block" for="saveName">Dosya adı</label><input type="text" id="saveName" spellcheck="false" style="width:100%">'+
+      '<p class="hint-sm">Dosya, tarayıcının indirme klasörüne kaydedilir.</p><div class="dfoot"><button class="btn" type="button" data-a="no">Vazgeç</button><button class="btn primary" type="button" data-a="ok">Kaydet</button></div></div></div>';
+    document.body.appendChild(sc);const inp=sc.querySelector('#saveName');inp.value=def;inp.focus();inp.setSelectionRange(0,def.replace(EXT,'').length);
+    const done=v=>{sc.remove();res(v);};
+    sc.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a)done(a.dataset.a==='ok'?inp.value:null);else if(e.target===sc)done(null);});
+    sc.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')done(inp.value);else if(e.key==='Escape')done(null);});
+  });
+}
+$('#saveProject').addEventListener('click',()=>save(false));
+$('#saveProjectAs').addEventListener('click',()=>save(true));
+async function openText(text,handle,name){
+  const s=await fromProjectFile(text);if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();
+  fileHandle=handle||null;setFileName(name);toast((name||'Proje')+' açıldı');
+}
 const openEl=$('#openProject');
-$('#openProjectBtn').addEventListener('click',()=>openEl.click());
+$('#openProjectBtn').addEventListener('click',async()=>{
+  if(typeof window.showOpenFilePicker!=='function'){openEl.click();return;}
+  try{
+    let h;try{[h]=await window.showOpenFilePicker({types:FILE_TYPES,multiple:false});}catch(e){if(e&&e.name==='AbortError')return;throw e;}
+    const f=await h.getFile();await openText(await f.text(),h,h.name);
+  }catch(e){toast('Proje açılamadı: '+(e.message||e));}
+});
 openEl.addEventListener('change',async()=>{
   const f=openEl.files[0];openEl.value='';if(!f)return;
-  try{const s=await fromProjectFile(await f.text());if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();toast('Proje açıldı');}
-  catch(e){toast('Proje açılamadı: '+(e.message||e));}
+  try{await openText(await f.text(),null,f.name);}catch(e){toast('Proje açılamadı: '+(e.message||e));}
 });
 
 // Called once after start-up: restores the last session (unless a template was opened) and starts history.

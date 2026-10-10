@@ -64,7 +64,7 @@ kbd{font:inherit;color:var(--muted)}
 /* ---------- top bar ---------- */
 .topbar{display:flex;align-items:center;gap:4px;padding:0 8px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:10}
 .mark{width:20px;height:20px;border-radius:5px;background:var(--ink);color:var(--panel);display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;margin:0 4px}
-.proj{font-weight:500;padding:0 6px;white-space:nowrap}
+.proj{font-weight:500;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:28ch}
 .tb-switch{display:inline-flex;align-items:center;gap:8px;height:var(--h);padding:0 8px;border-radius:var(--r);color:var(--ink-2);cursor:pointer;user-select:none;position:relative}
 .tb-switch:hover{background:var(--field)}
 .tb-switch input{position:absolute;opacity:0;pointer-events:none}

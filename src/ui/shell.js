@@ -222,7 +222,7 @@ addEventListener('keydown',e=>{
   if(e.key==='Escape'&&openEl){e.preventDefault();closeMenu(true);return;}
   if(typing(e.target)||e.target.id==='domeSvg')return;
   const k=e.key.toLowerCase(),mod=e.metaKey||e.ctrlKey;
-  if(mod&&k==='s'){e.preventDefault();$('#saveProject').click();return;}
+  if(mod&&k==='s'){e.preventDefault();$(e.shiftKey?'#saveProjectAs':'#saveProject').click();return;}
   if(mod&&k==='o'){e.preventDefault();$('#openProjectBtn').click();return;}
   if(mod||e.altKey)return;
   if(TOOL_KEYS[k]&&!e.repeat){setTool(TOOL_KEYS[k]);return;}
