@@ -4,7 +4,7 @@ import {canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
 import {applySaved,saved} from '../ui/angles.js';
-import {invalidateLayout,layout,paintBg,ratioNums} from '../ui/layout.js';
+import {invalidateLayout,layout,paintBg,paintItems,ratioNums} from '../ui/layout.js';
 import {syncSliders} from '../ui/sliders.js';
 import {toast} from '../ui/toast.js';
 import {$,mkCanvas} from '../util.js';
@@ -25,7 +25,7 @@ async function renderExport(onProgress){
     if(state.quality==='photo')src=await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress,PHOTO_BUDGET_MS);
     else renderNow(state.size>=3000?32:48);
   }finally{LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});}
-  const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);g.drawImage(src,0,0,W,H);
+  const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);paintItems(g,W,H,false);g.drawImage(src,0,0,W,H);paintItems(g,W,H,true);
   renderer.setPixelRatio(pr);invalidateLayout();layout();req();
   return new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('blob')),state.format==='jpg'?'image/jpeg':'image/png',.93));
 }

@@ -233,6 +233,22 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .drop-txt{display:flex;flex-direction:column;min-width:0}
 .drop-main{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .drop-sub{color:var(--muted);font-size:11px;line-height:15px}
+.drop-x{margin-left:auto;flex:none;color:var(--muted)}
+.drop-x:hover{color:var(--ink);background:var(--field-hover)}
+#bgAdjust{margin-top:4px}
+
+/* asset library (left panel) */
+.asset-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:2px 16px 4px}
+.asset-grid:empty{display:none}
+.asset{position:relative}
+.asset-btn{display:block;width:100%;aspect-ratio:1;padding:6px;border-radius:6px;cursor:grab;
+  background:repeating-conic-gradient(var(--chk1) 0 25%,var(--chk2) 0 50%) 0 0/10px 10px;box-shadow:inset 0 0 0 1px var(--line)}
+.asset-btn:hover{box-shadow:inset 0 0 0 2px var(--accent)}
+.asset-btn img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
+.asset-x{position:absolute;top:-5px;right:-5px;width:18px;height:18px;padding:0;border-radius:50%;display:none;align-items:center;justify-content:center;background:var(--panel);color:var(--muted);box-shadow:0 0 0 1px var(--line)}
+.asset-x:hover{color:var(--ink)}
+.asset:hover .asset-x,.asset-x:focus-visible{display:flex}
+#assetsGroup.over{background:var(--accent-soft)}
 .capture{display:flex;flex-direction:column;gap:4px;margin:8px 0 4px}
 .capture-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 
@@ -262,7 +278,10 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .ab.active .ab-label,.ab.sel .ab-label{color:var(--accent-ink)}
 .ab-size{position:absolute;left:50%;top:100%;margin-top:6px;background:var(--accent);color:var(--on-accent);font-size:10px;line-height:16px;padding:0 5px;border-radius:3px;white-space:nowrap;transform-origin:50% 0}
 .guide{position:absolute;background:var(--guide);pointer-events:none;z-index:2}
-.frame{position:absolute;left:0;top:0}
+.frame{position:absolute;left:0;top:0;overflow:hidden}
+/* 2D items: a layer under the WebGL canvas and one over it (layout.js); picking goes through pointer.js */
+.items{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
+.items img{position:absolute;left:0;top:0;display:block;max-width:none;user-select:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 #gl.dragging{cursor:grabbing}
 .stage[data-tool="orbit"] #gl{cursor:grab}
@@ -288,6 +307,14 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .tbox[data-small="true"] .th{width:8px;height:8px;margin:-4px 0 0 -4px}
 .tbox.active .th{background:var(--accent)}
 .tbox-val{position:absolute;left:50%;top:100%;margin-top:10px;transform:translateX(-50%);background:var(--accent);color:var(--on-accent);font-size:11px;line-height:18px;padding:0 6px;border-radius:4px;white-space:nowrap}
+/* 2D item selection (items.js): rotated with the item; corner handles reuse .th */
+.ibox{position:absolute;left:0;top:0;pointer-events:none;z-index:4;transform-origin:50% 50%}
+.ibox-line{position:absolute;inset:0;border:1.5px solid var(--accent)}
+.ibox-stem{position:absolute;left:50%;top:-20px;width:1.5px;height:20px;margin-left:-.75px;background:var(--accent)}
+.ibox-rot{position:absolute;left:50%;top:-27px;width:13px;height:13px;margin-left:-6.5px;padding:0;border-radius:50%;background:var(--panel);border:1.5px solid var(--accent);pointer-events:auto;cursor:grab}
+.ibox-rot::before{content:"";position:absolute;inset:-6px}
+.ibox[data-small="true"] .th{width:8px;height:8px;margin:-4px 0 0 -4px}
+.ibox.active .th,.ibox.active .ibox-rot{background:var(--accent)}
 
 /* floating chrome */
 .dock{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:4px;background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line),var(--shadow);z-index:5}

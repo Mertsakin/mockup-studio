@@ -65,6 +65,12 @@
           <div class="chips" id="savedList"></div>
           <p class="empty" id="savedEmpty">Beğendiğin açıyı + ile kaydet; dışa aktarırken hepsini birden indirebilirsin.</p>
         </div>
+        <div class="group" id="assetsGroup">
+          <div class="ghead">Varlıklar<button class="ib sm" type="button" id="addAssetBtn" aria-label="Varlık ekle (PNG, SVG)"><span data-icon="add-circle" data-size="14"></span></button></div>
+          <input type="file" id="assetFile" accept="image/png,image/svg+xml,image/webp,image/jpeg" multiple hidden>
+          <div class="asset-grid" id="assetGrid" role="list" aria-label="Varlıklar"></div>
+          <p class="empty" id="assetEmpty">PNG veya SVG görselleri + ile ekle ya da buraya sürükle. Tıklayınca ya da artboarda sürükleyince yerleşir.</p>
+        </div>
         <!-- lists kept for the panels that render them; the tree above replaces them visually -->
         <div hidden><div id="devList"></div><div id="lightList"></div></div>
       </div>
@@ -135,7 +141,13 @@
             <input type="file" id="bgFile" accept="image/*" hidden>
             <span class="drop-ic" data-icon="gallery-add"></span>
             <span class="drop-txt"><span class="drop-main" id="bgMain"></span><span class="drop-sub" id="bgSub"></span></span>
+            <button class="ib sm drop-x" type="button" id="bgRemove" aria-label="Arka plan görselini kaldır" title="Görseli kaldır"><span data-icon="trash-bin-minimalistic" data-size="14"></span></button>
           </label>
+          <div data-bg="image" id="bgAdjust">
+            <div class="row"><span class="lbl">Yerleşim</span><div class="seg" data-key="bgFit" role="group" aria-label="Görsel yerleşimi"><button data-v="cover">Kapla</button><button data-v="contain">Sığdır</button></div></div>
+            <div id="bgSliders"></div>
+            <div class="row"><span class="lbl"></span><button class="linkbtn" type="button" id="bgReset">Yerleşimi sıfırla</button></div>
+          </div>
         </section>
         <section class="sec">
           <h3 class="sh">Zemin ve gölge</h3>
@@ -229,6 +241,30 @@
           <div class="seg seg-wide" id="arrangeBtns" role="group" aria-label="Cihazları hizala">
             <button type="button" id="settleBtn" title="Tüm cihazların altını aynı zemine hizala">Zemine oturt</button><button type="button" id="distributeBtn" title="Cihazları soldan sağa eşit aralıkla diz (en uçtakiler yerinde kalır)">Eşit dağıt</button>
           </div>
+        </section>
+      </div>
+
+      <!-- 2D item -->
+      <div id="inspItem" hidden>
+        <div class="head"><span data-icon="gallery"></span><input class="title-in" id="itemName" aria-label="Öğe adı" spellcheck="false"><button class="ib sm" type="button" id="itemDelete" aria-label="Öğeyi sil" title="Sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
+        <section class="sec">
+          <h3 class="sh">Konum ve boyut</h3>
+          <div id="itemSliders"></div>
+          <div class="row"><span class="lbl">Hizala</span><span class="cells"><button class="btn" type="button" id="itemCenterX">Yatay ortala</button><button class="btn" type="button" id="itemCenterY">Dikey ortala</button></span></div>
+        </section>
+        <section class="sec">
+          <h3 class="sh">Görünüm</h3>
+          <div id="itemLook"></div>
+        </section>
+        <section class="sec">
+          <h3 class="sh">Katman</h3>
+          <div class="seg seg-wide" id="itemSide" role="group" aria-label="Cihazlara göre konum"><button type="button" data-front="true">Cihazların önünde</button><button type="button" data-front="false">Arkasında</button></div>
+          <div class="row"><span class="lbl">Sıra</span><span class="cells">
+            <button class="btn" type="button" data-order="top" aria-label="En öne getir" title="En öne"><span data-icon="double-alt-arrow-up"></span></button>
+            <button class="btn" type="button" data-order="up" aria-label="Bir öne getir" title="Bir öne"><span data-icon="alt-arrow-up"></span></button>
+            <button class="btn" type="button" data-order="down" aria-label="Bir geri gönder" title="Bir geri"><span data-icon="alt-arrow-down"></span></button>
+            <button class="btn" type="button" data-order="bottom" aria-label="En geriye gönder" title="En geriye"><span data-icon="double-alt-arrow-down"></span></button>
+          </span></div>
         </section>
       </div>
 

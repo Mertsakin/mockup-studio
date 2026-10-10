@@ -6,14 +6,14 @@ import {patternBg} from '../render/backgrounds.js';
 import {renderer} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
-import {reserveDeviceIds,state,view} from '../state/state.js';
+import {reserveDeviceIds,reserveItemIds,state,view} from '../state/state.js';
 
 /* Whole-scene snapshots, shared by undo/redo, autosave and project files.
    A snapshot is plain data: the studio state (devices, lights, scene angle, background, artboard…) plus the
    current framing (composition offset and radius, which "Odakla" / "Kadraja sığdır" change). Images are not copied:
    devices refer to them by key, and `images` maps key -> HTMLImageElement in memory. Project files and autosave
    store the images themselves (see packImages / unpackImages). */
-const SKIP_STATE=new Set(['devices','lights','selected','selLight','mode','gizmo','bgImg']);
+const SKIP_STATE=new Set(['devices','lights','selected','selLight','mode','gizmo','bgImg','items','selItem']);
 const SKIP_DEVICE=new Set(['img','frameImg']);
 const ids=new WeakMap();let nextImg=0;
 const imgKey=img=>{if(!img)return null;if(!ids.has(img))ids.set(img,'i'+(++nextImg));return ids.get(img);};
@@ -25,6 +25,7 @@ function snapshot(){
   const images={},st={};
   for(const k in state)if(!SKIP_STATE.has(k))st[k]=copy(state[k]);
   st.bgImg=imgKey(state.bgImg);if(state.bgImg)images[st.bgImg]=state.bgImg;
+  st.items=state.items.map(it=>{const o=Object.assign({},it,{img:imgKey(it.img)});images[o.img]=it.img;return copy(o);});
   const devices=state.devices.map(d=>{const o={};for(const k in d)if(!SKIP_DEVICE.has(k))o[k]=copy(d[k]);
     if(d.img){o.img=imgKey(d.img);images[o.img]=d.img;}if(d.frameImg){o.frameImg=imgKey(d.frameImg);images[o.frameImg]=d.frameImg;}return o;});
   return {v:1,state:st,devices,lights:copy(state.lights),selected:state.selected,selLight:state.selLight,
@@ -38,6 +39,8 @@ function restore(s){
   const cur=new Set(Object.keys(state));
   for(const k in s.state)if(cur.has(k)&&k!=='scene'&&k!=='bgImg')state[k]=copy(s.state[k]);
   state.bgImg=s.state.bgImg&&s.images[s.state.bgImg]||null;
+  state.items=(s.state.items||[]).map(o=>Object.assign(copy(o),{img:s.images[o.img]||null})).filter(o=>o.img);
+  reserveItemIds(Math.max(0,...state.items.map(i=>i.id)));if(!state.items.some(i=>i.id===state.selItem))state.selItem=null;
   // documents from when patterns were a background style: the pattern becomes the background image
   if(s.state.bg==='pattern'){Object.assign(state,patternBg(s.state));Object.assign(s.state,{bg:'image',bgImgName:state.bgImgName,bgImg:imgKey(state.bgImg)});s.images[s.state.bgImg]=state.bgImg;}
   Object.assign(state.scene,copy(s.state.scene));
@@ -59,17 +62,19 @@ async function loadImage(src){const img=new Image();img.src=src;await img.decode
 
 /* Documents: a list of artboards, each holding one scene snapshot (see ui/boards.js).
    {v:2, active, boards:[{id,name,x,y,snap}]}. Snapshots of one document share one image map. */
-const docImages=d=>{const m={};d.boards.forEach(b=>Object.assign(m,b.snap.images||{}));return m;};
+const docImages=d=>{const m={};d.boards.forEach(b=>Object.assign(m,b.snap.images||{}));return Object.assign(m,d.assetImages||{});};
 const SNAP_KEYS=['v','state','devices','lights','selected','selLight','frame'];
 const plainSnap=s=>{const o={};SNAP_KEYS.forEach(k=>{o[k]=s[k];});return o;};
 // thumbnails (small data URLs) travel along, so a loaded document shows every board without re-rendering it
-const plainDoc=d=>({v:2,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null}))});
+const plainDoc=d=>({v:2,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null})),assets:d.assets||[]});
+/* The asset library (left panel) belongs to the document: assets [{img: key, name}] + assetImages {key: image}. */
+function packAssets(list){const assetImages={},assets=list.map(a=>{const k=imgKey(a.img);assetImages[k]=a.img;return {img:k,name:a.name};});return {assets,assetImages};}
 // a single-scene snapshot (v1 files, old autosaves) becomes a one-board document
 function asDoc(s){
   if(s&&s.v===2&&Array.isArray(s.boards))return s;
   return {v:2,active:1,boards:[{id:1,name:'Artboard 1',x:0,y:0,snap:s}]};
 }
-function attachImages(d,images){d.boards.forEach(b=>{b.snap.images=images;});return d;}
+function attachImages(d,images){d.boards.forEach(b=>{b.snap.images=images;});d.assetImages=images;return d;}
 
 // project file: one JSON with the images inlined as data URLs
 async function toProjectFile(d){
@@ -112,4 +117,4 @@ async function loadAutosave(){
   }catch(e){return null;}
 }
 
-export {asDoc,autosave,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};
+export {asDoc,autosave,packAssets,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};

@@ -4,7 +4,8 @@ import {detectScreen,setScreenTexture} from '../devices/screen.js';
 import {applyTransform,autoRefit} from '../render/transform.js';
 import {sel,state} from '../state/state.js';
 import {bgCss} from './layout.js';
-import {onSyncUI,syncUI} from './sync.js';
+import {fPct,makeSlider} from './sliders.js';
+import {onSyncUI,syncAll,syncUI} from './sync.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
 
@@ -24,10 +25,18 @@ function loadShot(file){
     syncUI();
   });
 }
-// background image: covers the artboard (layout.js); kept when switching to another style and back
+// background image: placed by layout.js (cover / contain, scale, offset); kept when switching to another style and back
+const BG_FIT={bgFit:'cover',bgScale:1,bgX:0,bgY:0};
 function loadBg(file){
-  readImage(file,img=>{state.bgImg=img;state.bgImgName=file.name||'Arka plan';state.bg='image';bgCss();syncUI();});
+  readImage(file,img=>{Object.assign(state,BG_FIT,{bgImg:img,bgImgName:file.name||'Arka plan',bg:'image'});bgCss();syncAll();});
 }
+$('#bgRemove').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();Object.assign(state,{bgImg:null,bgImgName:'',bg:'transparent'});bgCss();syncAll();});
+$('#bgReset').addEventListener('click',()=>{Object.assign(state,BG_FIT);bgCss();syncAll();});
+[
+  {id:'bg-scale',k:'bgScale',l:'Ölçek',min:.25,max:4,step:.01,reset:1,f:fPct,after:bgCss},
+  {id:'bg-x',k:'bgX',l:'Yatay',min:-1,max:1,step:.001,reset:0,f:fPct,after:bgCss},
+  {id:'bg-y',k:'bgY',l:'Dikey',min:-1,max:1,step:.001,reset:0,f:fPct,after:bgCss}
+].forEach(d=>makeSlider($('#bgSliders'),d,()=>state));
 function loadFrame(file){
   const d=sel();
   readImage(file,img=>{
@@ -43,14 +52,16 @@ drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDe
 frameDrop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();frameFile.click();}});
 bgDrop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bgFile.click();}});
 let dragDepth=0;
-window.addEventListener('dragenter',e=>{e.preventDefault();dragDepth++;drop.classList.add('over');});
+window.addEventListener('dragenter',e=>{if(!dropTarget(e))return;e.preventDefault();dragDepth++;});
 window.addEventListener('dragleave',()=>{dragDepth=Math.max(0,dragDepth-1);if(!dragDepth){drop.classList.remove('over');frameDrop.classList.remove('over');bgDrop.classList.remove('over');}});
-const dropTarget=e=>e.target&&e.target.closest?e.target.closest('#frameDrop')?'frame':e.target.closest('#bgDrop')?'bg':'shot':'shot';
-window.addEventListener('dragover',e=>{e.preventDefault();const t=dropTarget(e);frameDrop.classList.toggle('over',t==='frame');bgDrop.classList.toggle('over',t==='bg');drop.classList.toggle('over',t==='shot');});
+// where a dragged file would go; the asset library (assets.js) handles drops on its own group, other drags are not files
+const dropTarget=e=>{if(!e.dataTransfer||!e.dataTransfer.types.includes('Files'))return null;const t=e.target&&e.target.closest?e.target:null;
+  return !t?'shot':t.closest('#frameDrop')?'frame':t.closest('#bgDrop')?'bg':t.closest('#assetsGroup')?'asset':'shot';};
+window.addEventListener('dragover',e=>{const t=dropTarget(e);if(!t)return;e.preventDefault();frameDrop.classList.toggle('over',t==='frame');bgDrop.classList.toggle('over',t==='bg');drop.classList.toggle('over',t==='shot');});
 window.addEventListener('drop',e=>{
   e.preventDefault();dragDepth=0;[drop,frameDrop,bgDrop].forEach(el=>el.classList.remove('over'));
   const f=e.dataTransfer&&e.dataTransfer.files[0];if(!f)return;
-  const t=dropTarget(e);if(t==='frame')loadFrame(f);else if(t==='bg')loadBg(f);else loadShot(f);
+  const t=dropTarget(e);if(t==='frame')loadFrame(f);else if(t==='bg')loadBg(f);else if(t==='shot')loadShot(f);
 });
 window.addEventListener('paste',e=>{
   if(e.target&&(e.target.tagName==='INPUT'&&e.target.type==='text'))return;

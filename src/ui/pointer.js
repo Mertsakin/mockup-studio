@@ -8,6 +8,7 @@ import {applyTransform,camDist} from '../render/transform.js';
 import {sel,state,view} from '../state/state.js';
 import {lightMoved} from './dome.js';
 import {gizmoDown,gizmoHot,gizmoMove,gizmoUp,showGizmo} from './gizmo.js';
+import {itemAt,startItemDrag} from './items.js';
 import {frame} from './layout.js';
 import {syncSliders} from './sliders.js';
 import {syncAll,syncUI} from './sync.js';
@@ -68,9 +69,13 @@ canvas.addEventListener('pointerdown',e=>{
   canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   canvas.classList.add('dragging');downAt={x:e.clientX,y:e.clientY};moved=false;dragDevice=false;
   if(pointers.size!==1||ui.tool==='orbit')return;
+  // 2D items: those in front of the devices first, those behind them only where no device is hit
+  const take=it=>{pointers.delete(e.pointerId);canvas.releasePointerCapture(e.pointerId);canvas.classList.remove('dragging');showGizmo(false);startItemDrag(e,it);};
+  const front=itemAt(e.clientX,e.clientY,true);if(front){take(front);return;}
   const lidHit=pickLight(e.clientX,e.clientY);
   if(lidHit){lightDrag=lidHit;if(state.selLight!==lidHit){state.selLight=lidHit;syncAll();}setUi({kind:'light'});return;}
   const id=pick(e.clientX,e.clientY);if(id){dragDevice=true;selectDevice(id);}
+  else{const back=itemAt(e.clientX,e.clientY,false);if(back)take(back);}
 });
 canvas.addEventListener('pointermove',e=>{
   if(gizmoDrag){gizmoMove(e);return;}
@@ -99,7 +104,7 @@ const endPtr=e=>{
     if(was===1&&!moved&&!dragDevice&&ui.tool!=='orbit'&&e.type==='pointerup'){showGizmo(false);setUi({kind:'board'});}
     dragDevice=false;}
 };
-canvas.addEventListener('pointermove',e=>{if(pointers.size||gizmoDrag||e.pointerType!=='mouse')return;gizmoMove(e);canvas.style.cursor=gizmoHot()||pickLight(e.clientX,e.clientY)?'grab':'';});
+canvas.addEventListener('pointermove',e=>{if(pointers.size||gizmoDrag||e.pointerType!=='mouse')return;gizmoMove(e);canvas.style.cursor=gizmoHot()||pickLight(e.clientX,e.clientY)?'grab':itemAt(e.clientX,e.clientY,true)||(state.items.length&&!pick(e.clientX,e.clientY)&&itemAt(e.clientX,e.clientY,false))?'move':'';});
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
 // wheel over the live board: Alt zooms the camera; over the selected device's long screenshot it scrolls the screen
 // (~one screen per 500 px of wheel). Anything else bubbles to the workspace (pan / zoom the canvas).

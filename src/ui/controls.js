@@ -14,7 +14,8 @@ function parseV(v){return v==='true'?true:v==='false'?false:v;}
 $$('.seg[data-key]').forEach(seg=>{const key=seg.dataset.key;
   seg.querySelectorAll('button').forEach(b=>{b.type='button';b.addEventListener('click',()=>{state[key]=parseV(b.dataset.v);onGlobal(key);});});});
 function onGlobal(key){
-  if(key==='bg'){bgCss();if(state.bg==='image'&&!state.bgImg)$('#bgFile').click();}  // no image yet: ask for one
+  if(key==='bgFit')bgCss();
+  else if(key==='bg'){bgCss();if(state.bg==='image'&&!state.bgImg)$('#bgFile').click();}  // no image yet: ask for one
   else if(key==='gizmo')setGizmoMode(state.gizmo);
   else if(key==='ratio')layout();
   syncUI();

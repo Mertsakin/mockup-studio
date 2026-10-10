@@ -2,9 +2,9 @@ import {LRT} from '../lights/runtime.js';
 import {renderNow} from '../render/accumulation.js';
 import {overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
-import {asDoc,restore,signature,snapshot} from '../io/project.js';
+import {asDoc,packAssets,restore,signature,snapshot} from '../io/project.js';
 import {state,view} from '../state/state.js';
-import {bgCss,invalidateLayout,layout,paintBg} from './layout.js';
+import {bgCss,invalidateLayout,layout,paintBg,paintItems} from './layout.js';
 import {syncAll} from './sync.js';
 import {mkCanvas} from '../util.js';
 
@@ -14,7 +14,7 @@ import {mkCanvas} from '../util.js';
    board (snapshot + thumbnail) and restores the target's snapshot, so every existing panel keeps working unchanged.
    Board positions and sizes are in output pixels (1920 x 1080 board = 1920 x 1080 canvas units). */
 const GAP=160;
-const doc={boards:[],active:null};
+const doc={boards:[],active:null,assets:[]};  // assets: the document's asset library [{img, name}] (ui/assets.js)
 let uid=0,DEFAULT=null;
 const subs=[];
 function onBoards(fn){subs.push(fn);}
@@ -43,7 +43,7 @@ function captureThumb(){
   let url;
   try{
     setCrop(null);renderer.setPixelRatio(1);renderer.setSize(w,h,false);view.aspect=w/h;applyTransform();renderNow(16);
-    const c=mkCanvas(w,h),g=c.getContext('2d');paintBg(g,w,h);g.drawImage(renderer.domElement,0,0,w,h);
+    const c=mkCanvas(w,h),g=c.getContext('2d');paintBg(g,w,h);paintItems(g,w,h,false);g.drawImage(renderer.domElement,0,0,w,h);paintItems(g,w,h,true);
     url=c.toDataURL(state.bg==='transparent'?'image/png':'image/jpeg',.9);
   }catch(e){url=null;}
   finally{hidden.forEach(o=>{o.visible=true;});renderer.setPixelRatio(pr);invalidateLayout();layout();req();}
@@ -76,9 +76,9 @@ function moveBoard(id,x,y){const b=boardById(id);if(!b)return;b.x=Math.round(x);
 /* --- whole document, for undo / redo, autosave and project files */
 function docSnapshot(){
   const a=activeBoard();if(a)a.snap=snapshot();
-  return {v:2,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb}))};
+  return Object.assign({v:2,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb}))},packAssets(doc.assets));
 }
-const docSignature=d=>JSON.stringify(d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]));
+const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[]]);
 // first board whose content differs between two documents (undo jumps there)
 function changedBoard(from,to){
   const fm=new Map(from.boards.map(b=>[b.id,signature(b.snap)]));
@@ -90,6 +90,7 @@ function applyDoc(d,prefer){
   const thumbs=new Map(doc.boards.map(b=>[b.id,b.thumb]));
   doc.boards=d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:thumbs.get(b.id)||b.thumb||null}));
   uid=Math.max(uid,...doc.boards.map(b=>b.id));
+  const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);
   const want=[prefer,d.active].find(id=>id!=null&&boardById(id));
   show(boardById(want)||doc.boards[0]);
 }

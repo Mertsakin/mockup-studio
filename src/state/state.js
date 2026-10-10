@@ -12,14 +12,23 @@ function newDevice(type,o){
 const state={
   scene:{rx:-6,ry:26,rz:0,zoom:1,fov:28,panX:0,panY:0},
   devices:[],selected:null,mode:'rotate',gizmo:'translate',
-  bg:'gradient',solid:'#eef1f4',bg1:'#dfe6ff',bg2:'#f4dcea',bgImg:null,bgImgName:'',  // bg: transparent | solid | gradient | image (bgImg: HTMLImageElement, covers the artboard)
+  bg:'gradient',solid:'#eef1f4',bg1:'#dfe6ff',bg2:'#f4dcea',
+  // bg 'image': bgImg (HTMLImageElement) placed by bgFit (cover | contain) x bgScale, shifted by bgX / bgY (fractions of the board)
+  bgImg:null,bgImgName:'',bgFit:'cover',bgScale:1,bgX:0,bgY:0,
+  // 2D items (PNG / SVG) over or under the 3D scene: {id,name,img,x,y (centre, fractions of the board),w (fraction of the
+  // board width; height from the image's aspect),rot (deg),opacity,front}. Paint order = array order within each layer.
+  items:[],selItem:null,
   floor:true,wall:false,wallGap:.35,selfShadow:true,shadowColor:'#000000',shadowOpacity:.55,ambient:1,exposure:1,markers:true,showDome:true,lights:[],selLight:null,
   ratio:'4:5',customW:1920,customH:1080,size:2160,format:'png',quality:'fast',photoPreview:false
 };
 state.devices=[newDevice('phone')];state.selected=state.devices[0].id;
+let itemUid=0;
+const reserveItemIds=max=>{itemUid=Math.max(itemUid,max);};
+const nextItemId=()=>++itemUid;
 const byId=id=>state.devices.find(d=>d.id===id);
+const selItem=()=>state.items.find(i=>i.id===state.selItem)||null;
 const sel=()=>byId(state.selected)||state.devices[0];
 // Framing shared by transforms, lights, layout and export (reassigned, so kept on an object).
 const view={fitRadius:10,fitBox:new THREE.Box3(new V3(-5,-5,-5),new V3(5,5,5)),aspect:1};
 
-export {byId,newDevice,reserveDeviceIds,sel,state,view};
+export {byId,newDevice,nextItemId,reserveDeviceIds,reserveItemIds,sel,selItem,state,view};

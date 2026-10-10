@@ -28,6 +28,8 @@ import './ui/dome.js';
 import './export/export.js';
 import './ui/shell.js';
 import './ui/transform-box.js';
+import './ui/items-panel.js';
+import './ui/assets.js';
 
 /* ---------- init ---------- */
 bgCss();state.devices.forEach(buildRT);refit();applyLightPreset(LIGHT_PRESETS[0]);renderSaved();initBoards();syncAll();fitAll();layout();

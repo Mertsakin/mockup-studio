@@ -2,11 +2,12 @@ import {offer,renderExport} from '../export/export.js';
 import {MODS,modOf} from '../lights/mods.js';
 import {TYPES} from '../state/constants.js';
 import {TEMPLATES} from '../state/templates.js';
-import {state} from '../state/state.js';
+import {selItem,state} from '../state/state.js';
 import {activate,activeBoard,addBoard,boardSize,doc,duplicateBoard,onBoards,removeBoard,renameBoard} from './boards.js';
 import {renderDome} from './dome.js';
 import {setGizmoMode,showGizmo} from './gizmo.js';
 import {hydrateIcons,icon} from './icons.js';
+import {removeItem,selectItem} from './items.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {applyTemplate} from './templates.js';
 import {toast} from './toast.js';
@@ -14,7 +15,7 @@ import {onUi,setUi,ui} from './ui-state.js';
 import {fitAll} from './workspace.js';
 import {$,$$} from '../util.js';
 
-/* Editor shell: inspector that follows the selection (board / device / light), layer tree, tools, menus, theme,
+/* Editor shell: inspector that follows the selection (board / device / light / 2D item), layer tree, tools, menus, theme,
    templates tab and "export all boards". The panels themselves (devices-panel, lights-panel, controls…) keep
    binding their controls by id; this module only arranges and switches them. */
 hydrateIcons();
@@ -29,10 +30,10 @@ const devNames=list=>labels(list,d=>TYPES[d.type]||'Cihaz');
 const lightNames=list=>labels(list,L=>L.mod==='custom'?'Işık':modOf(L.mod).n);
 
 /* ---------- inspector ---------- */
-const insp={board:$('#inspBoard'),device:$('#inspDevice'),light:$('#inspLight')};
+const insp={board:$('#inspBoard'),device:$('#inspDevice'),light:$('#inspLight'),item:$('#inspItem')};
 let lastDevIcon='';
 function syncInspector(){
-  if(ui.kind==='light'&&!state.lights.length){setUi({kind:'board'});return;}
+  if((ui.kind==='light'&&!state.lights.length)||(ui.kind==='item'&&!selItem())){setUi({kind:'board'});return;}
   for(const k in insp)insp[k].hidden=k!==ui.kind;
   const dome=$('#dome'),slot=ui.kind==='light'?$('#domeSlotLight'):$('#domeSlotBoard');if(dome.parentNode!==slot)slot.appendChild(dome);
   const b=activeBoard();if(b&&document.activeElement!==$('#boardName'))$('#boardName').value=b.name;
@@ -78,6 +79,11 @@ function renderTree(){
     if(!open)return;
     const devs=live?state.devices:b.snap.devices,lights=live?state.lights:b.snap.lights;
     const go=(fn)=>{if(!live)activate(b.id);fn();};
+    // 2D items in stacking order: those in front of the devices above them, those behind below the lights
+    const items=live?state.items:b.snap.state.items||[];
+    const itemNode=it=>tree.appendChild(node({child:true,name:it.name,icon:'gallery',sel:live&&ui.kind==='item'&&state.selItem===it.id,
+      pick:()=>go(()=>selectItem(it.id)),actions:live?[['trash-bin-minimalistic','Sil',()=>removeItem(it.id)]]:[]}));
+    items.filter(it=>it.front).reverse().forEach(itemNode);
     devNames(devs).forEach((n,i)=>{const d=devs[i];
       tree.appendChild(node({child:true,name:n,icon:DEV_ICON[d.type]||'smartphone',sel:live&&ui.kind==='device'&&state.selected===d.id,
         pick:()=>go(()=>{state.selected=d.id;syncAll();setUi({kind:'device'});syncTool();}),
@@ -86,6 +92,7 @@ function renderTree(){
       tree.appendChild(node({child:true,name:n,dot:L.color,sel:live&&ui.kind==='light'&&state.selLight===L.id,
         pick:()=>go(()=>{state.selLight=L.id;syncAll();setUi({kind:'light'});}),
         actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selLight=L.id;syncAll();$('#removeLight').click();}]]:[]}));});
+    items.filter(it=>!it.front).reverse().forEach(itemNode);
   });
   const items=[...tree.children];(items.find(x=>x.getAttribute('aria-selected')==='true')||items[0]).tabIndex=0;
   if(focusedIdx>=0&&items[focusedIdx])items[focusedIdx].focus();
