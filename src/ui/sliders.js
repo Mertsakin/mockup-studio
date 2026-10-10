@@ -6,6 +6,8 @@ import {$} from '../util.js';
 
 /* ---------- sliders ---------- */
 const SLIDERS=[];
+// the track's accent fill follows the value (CSS --p, 0..1)
+const paint=input=>{const a=+input.min,b=+input.max;input.style.setProperty('--p',b>a?(input.value-a)/(b-a):0);};
 const fDeg=v=>Math.round(v)+'°',fX=v=>v.toFixed(2)+'×',fPct=v=>Math.round(v*100)+'%',fU=v=>v.toFixed(1);
 function makeSlider(parent,def,getObj){
   const el=document.createElement('div');el.className='slider';const id='s-'+def.id;
@@ -13,9 +15,9 @@ function makeSlider(parent,def,getObj){
   const input=el.querySelector('input'),out=el.querySelector('output');
   if(def.only)el.dataset.only=def.only;
   if(def.notmod)el.dataset.notmod=def.notmod;
-  input.addEventListener('input',()=>{const o=getObj();o[def.k]=parseFloat(input.value);out.textContent=def.f(o[def.k]);if(def.after)def.after();applyTransform();});
+  input.addEventListener('input',()=>{const o=getObj();o[def.k]=parseFloat(input.value);paint(input);out.textContent=def.f(o[def.k]);if(def.after)def.after();applyTransform();});
   input.addEventListener('dblclick',()=>{const o=getObj();o[def.k]=def.reset;syncSliders();if(def.after)def.after();applyTransform();});
-  parent.appendChild(el);SLIDERS.push({def,input,out,getObj});
+  paint(input);parent.appendChild(el);SLIDERS.push({def,input,out,getObj});
 }
 const G=()=>state.scene;
 [
@@ -41,6 +43,6 @@ makeSlider($('#shadowSlot'),{id:'g-shadow',k:'shadowOpacity',l:'Yoğunluk',min:.
 makeSlider($('#wallSlot'),{id:'g-wall',k:'wallGap',l:'Duvar mesafesi',min:0,max:1.5,step:.01,reset:.35,f:fPct},()=>state);
 makeSlider($('#ambientSlot'),{id:'g-exp',k:'exposure',l:'Pozlama',min:.4,max:2.2,step:.01,reset:1,f:v=>v.toFixed(2),after:()=>{renderer.toneMappingExposure=state.exposure;}},()=>state);
 makeSlider($('#ambientSlot'),{id:'g-amb',k:'ambient',l:'Ortam ışığı',min:0,max:2,step:.01,reset:1,f:fPct,note:'Işıkların dışında kalan genel aydınlık. Azaldıkça gölgeler koyulaşır.',after:applyAmbient},()=>state);
-function syncSliders(){SLIDERS.forEach(s=>{const o=s.getObj();if(o[s.def.k]===undefined)return;s.input.value=o[s.def.k];s.out.textContent=s.def.f(o[s.def.k]);});}
+function syncSliders(){SLIDERS.forEach(s=>{const o=s.getObj();if(o[s.def.k]===undefined)return;s.input.value=o[s.def.k];paint(s.input);s.out.textContent=s.def.f(o[s.def.k]);});}
 
 export {fDeg,fPct,fX,makeSlider,syncSliders};

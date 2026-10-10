@@ -6,6 +6,7 @@
   --ink:#18181b;--ink-2:#52525b;--muted:#8a8a93;
   --accent:#0b68f5;--accent-hover:#0a5bd8;--accent-soft:#e8f0fe;--accent-ink:#0a56cc;--on-accent:#ffffff;
   --guide:#f2465a;--chk1:#e7e7ea;--chk2:#f6f6f7;
+  --range-track:#e4e4e7;--range-fill:#3d8bff;--range-thumb:#ffffff;--range-thumb-shadow:0 1px 2px rgba(0,0,0,.12),0 2px 6px rgba(0,0,0,.18);
   --axis-x:#e5484d;--axis-y:#30a46c;--axis-z:#3e63dd;
   --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);
   --r:6px;--h:28px;color-scheme:light;
@@ -13,11 +14,11 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
   --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-hover:#5a9cff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
-  --chk1:#2a2a2d;--chk2:#323235;--axis-x:#ff6369;--axis-y:#3dd68c;--axis-z:#7b93ff;--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}}
+  --chk1:#2a2a2d;--chk2:#323235;--range-track:#3e3e43;--range-fill:#3d8bff;--range-thumb:#f4f4f5;--range-thumb-shadow:0 1px 2px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.45);--axis-x:#ff6369;--axis-y:#3dd68c;--axis-z:#7b93ff;--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}}
 :root[data-theme="dark"]{
   --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
   --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-hover:#5a9cff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
-  --chk1:#2a2a2d;--chk2:#323235;--axis-x:#ff6369;--axis-y:#3dd68c;--axis-z:#7b93ff;--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}
+  --chk1:#2a2a2d;--chk2:#323235;--range-track:#3e3e43;--range-fill:#3d8bff;--range-thumb:#f4f4f5;--range-thumb-shadow:0 1px 2px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.45);--axis-x:#ff6369;--axis-y:#3dd68c;--axis-z:#7b93ff;--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}
 
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -202,7 +203,19 @@ input[type=color]::-moz-color-swatch{border:0;border-radius:3px}
 .slider input{grid-column:2;grid-row:1}
 .slider output{grid-column:3;grid-row:1;text-align:right;color:var(--ink-2)}
 .slider .note{display:none}
-input[type=range]{width:100%;min-width:0;margin:0;accent-color:var(--accent);height:16px;cursor:pointer}
+/* range: thick rounded track, accent fill up to the thumb's centre (--p 0..1, set by sliders.js), white thumb */
+input[type=range]{--p:.5;--th:20px;--tk:10px;appearance:none;-webkit-appearance:none;width:100%;min-width:0;margin:0;height:var(--th);background:none;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:var(--tk);border-radius:999px;
+  background:linear-gradient(to right,var(--range-fill) calc(var(--th)/2 + (100% - var(--th))*var(--p)),var(--range-track) 0)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:var(--th);height:var(--th);margin-top:calc((var(--tk) - var(--th))/2);
+  border-radius:50%;background:var(--range-thumb);box-shadow:var(--range-thumb-shadow);border:0;transition:transform .12s}
+input[type=range]::-moz-range-track{height:var(--tk);border-radius:999px;background:var(--range-track)}
+input[type=range]::-moz-range-progress{height:var(--tk);border-radius:999px;background:var(--range-fill)}
+input[type=range]::-moz-range-thumb{width:var(--th);height:var(--th);border-radius:50%;background:var(--range-thumb);box-shadow:var(--range-thumb-shadow);border:0}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.08)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:var(--range-thumb-shadow),0 0 0 3px var(--accent-soft),0 0 0 4.5px var(--accent)}
+input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-shadow),0 0 0 3px var(--accent-soft),0 0 0 4.5px var(--accent)}
 
 /* swatches */
 .swatches{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 2px 2px}
