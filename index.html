@@ -31,6 +31,7 @@
     <span class="vr"></span>
     <button class="ib" type="button" id="undoBtn" aria-label="Geri al"><span data-icon="undo-left"></span><span class="tip">Geri al <kbd>⌘Z</kbd></span></button>
     <button class="ib" type="button" id="redoBtn" aria-label="Yinele"><span data-icon="undo-right"></span><span class="tip">Yinele <kbd>⇧⌘Z</kbd></span></button>
+    <div class="seg modes" id="modeSeg" role="group" aria-label="Mod"><button type="button" data-mode="design">Tasarla</button><button type="button" data-mode="animate">Canlandır</button></div>
     <span class="grow"></span>
     <label class="tb-switch" title="Kamera durunca önizleme fotoğraf kalitesinde render edilir. GPU'yu yoğun kullanır."><input type="checkbox" id="photoPreview" role="switch"><span class="tg" aria-hidden="true"></span>Canlı fotoğraf</label>
     <span class="vr"></span>
@@ -86,7 +87,8 @@
       </div>
     </aside>
 
-    <!-- ============ stage ============ -->
+    <!-- ============ stage (+ timeline in Canlandır mode) ============ -->
+    <div class="center">
     <main class="stage" id="stagearea" aria-label="Tuval">
       <div class="world" id="world"></div>
       <div class="frame" id="frame"><canvas id="gl" aria-label="Sahne önizlemesi"></canvas></div>
@@ -113,6 +115,24 @@
       </div>
       <p class="hint" id="hint" hidden></p>
     </main>
+    <section class="tl" id="timeline" hidden aria-label="Zaman çizelgesi">
+      <div class="tl-resize" id="tlResize" aria-hidden="true"></div>
+      <div class="tl-bar">
+        <button class="ib" type="button" id="tlStart" aria-label="Başa dön"><span data-icon="rewind-back"></span><span class="tip">Başa dön <kbd>Home</kbd></span></button>
+        <button class="ib" type="button" id="tlPlay" aria-label="Oynat"><span data-icon="play"></span><span class="tip">Oynat / durdur <kbd>Boşluk</kbd></span></button>
+        <button class="ib" type="button" id="tlLoop" aria-label="Döngü" aria-pressed="true"><span data-icon="repeat"></span><span class="tip">Döngü</span></button>
+        <span class="tl-time" id="tlTime"></span>
+        <span class="grow"></span>
+        <button class="btn sm" type="button" id="tlPresetBtn" aria-haspopup="menu">Hazır hareket ekle</button>
+        <span class="tl-fps" id="tlFps"></span>
+      </div>
+      <div class="tl-body" id="tlBody">
+        <div class="tl-names" id="tlNames"></div>
+        <div class="tl-lanes" id="tlLanes"></div>
+        <p class="tl-empty" id="tlEmpty">Bir cihaz seç ve <b>◆ Anahtar kare</b> ile ilk kareyi ekle ya da <b>Hazır hareket ekle</b> ile başla. İmleç neredeyse yaptığın değişiklik o ana kaydedilir.</p>
+      </div>
+    </section>
+    </div>
 
     <!-- ============ right: inspector ============ -->
     <aside class="panel right" id="inspector" aria-label="Özellikler">
@@ -171,6 +191,12 @@
       <!-- device -->
       <div id="inspDevice" hidden>
         <div class="head"><span data-icon="smartphone" id="devIcon"></span><span class="t" id="selTitle">Telefon</span><button class="ib sm" type="button" id="removeDevice" aria-label="Cihazı sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
+        <section class="sec anim-only" id="keySec" hidden>
+          <h3 class="sh"><span id="keyTitle">Anahtar kare</span><button class="btn sm" type="button" id="keyDelete">Sil</button></h3>
+          <p class="hint-sm" id="keyWhat"></p>
+          <div id="keyEaseWrap"><span class="lbl block" id="keyEaseLbl">Sonraki kareye geçiş</span><div class="easegrid" id="easeGrid" role="group" aria-label="Geçiş"></div></div>
+          <p class="hint-sm" id="keyLast" hidden>Son kare: sonrasında değerler sabit kalır.</p>
+        </section>
         <section class="sec">
           <h3 class="sh">Model</h3>
           <div class="typegrid" id="typeGrid" role="group" aria-label="Cihaz tipi"></div>
@@ -229,9 +255,16 @@
           <div class="row" data-for="phone tablet laptop monitor browser page"><span class="lbl">Cam yansıması</span><label class="switch"><input type="checkbox" id="glare" aria-label="Ekran camı yansıması"><span></span></label></div>
         </section>
         <section class="sec">
-          <h3 class="sh">Dönüşüm<button class="ib sm" type="button" id="resetDevice" aria-label="Konumu sıfırla"><span data-icon="restart" data-size="14"></span><span class="tip">Konumu sıfırla</span></button></h3>
+          <h3 class="sh">Dönüşüm<span class="sh-acts"><button class="keybtn anim-only" type="button" id="poseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Tüm değerler için bu anda anahtar kare <kbd>K</kbd></span></button><button class="ib sm" type="button" id="resetDevice" aria-label="Konumu sıfırla"><span data-icon="restart" data-size="14"></span><span class="tip">Konumu sıfırla</span></button></span></h3>
           <div id="devSliders"></div>
+          <div id="animSlots" class="anim-only"></div>
+          <p class="hint-sm anim-only" id="animHint">◆ dolu: bu anda kare var · ◇: değer animasyonlu. Bir değeri değiştirmek yalnızca onu kaydeder.</p>
+          <p class="note design-only" id="animNote" hidden>Bu cihaz animasyonlu. Animasyonlu bir değeri burada değiştirirsen fark tüm karelerine eklenir: hareket korunur, bütünüyle kayar.</p>
           <details id="placeDetails" hidden></details>
+        </section>
+        <section class="sec anim-only">
+          <h3 class="sh">Hazır hareket</h3>
+          <div class="chips" id="presetChips"></div>
         </section>
         <section class="sec">
           <h3 class="sh">Yerleşim</h3>
@@ -305,5 +338,25 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module" src="/src/main.js"></script>
+<div class="scrim" id="videoScrim" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="videoTitle">
+    <div class="dh"><span id="videoTitle">Video dışa aktar</span><button class="ib sm" type="button" id="videoX" aria-label="Kapat"><span data-icon="close-circle"></span></button></div>
+    <div class="db" id="videoSetup">
+      <div class="row"><span class="lbl">Biçim</span><span>MP4 (H.264)</span></div>
+      <div class="row"><span class="lbl">Çözünürlük</span><div class="seg" id="vRes" role="group" aria-label="Uzun kenar"><button type="button" data-v="1080">1080 px</button><button type="button" data-v="2160">2160 px</button></div></div>
+      <div class="row"><span class="lbl">Kare hızı</span><div class="seg" id="vFps" role="group" aria-label="Kare hızı"><button type="button" data-v="30">30 fps</button><button type="button" data-v="60">60 fps</button></div></div>
+      <div class="row"><span class="lbl" title="Hareket eden cihazda gerçek kamera gibi bulanıklık">Hareket bulanıklığı</span><label class="switch"><input type="checkbox" id="vBlur" aria-label="Hareket bulanıklığı"><span></span></label></div>
+      <div class="row"><span class="lbl">Süre</span><span id="vDur"></span></div>
+      <div class="est"><div><b id="vFrames"></b><span>kare</span></div><div><b id="vSize"></b><span>boyut (px)</span></div><div><b id="vMb"></b><span>dosya</span></div></div>
+      <p class="hint-sm" id="vWarn" hidden></p>
+      <div class="dfoot"><button class="btn" type="button" id="vCancel">Vazgeç</button><button class="btn primary" type="button" id="vGo">Render et</button></div>
+    </div>
+    <div class="db" id="videoRun" hidden>
+      <div class="prog"><i id="vBar"></i></div>
+      <div class="row"><span class="lbl" id="vCount"></span><span class="lbl" id="vEta"></span></div>
+      <div class="dfoot"><button class="btn" type="button" id="vStop">İptal</button><button class="btn primary" type="button" id="vSave" hidden>MP4 indir</button></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -12,10 +12,14 @@ import {$,mkCanvas} from '../util.js';
 /* ---------- export ---------- */
 const PHOTO_SAMPLES=64,PHOTO_BUDGET_MS=30000;  // OIDN cleans the rest
 // onProgress(0..1) is called while a photo-quality (path traced) render runs
+// output size: the long edge L at the artboard's ratio, or the custom artboard's exact size
+function exportSize(L){
+  const [rw,rh]=ratioNums();
+  if(state.ratio==='custom')return [state.customW,state.customH];
+  return rw>=rh?[L,Math.round(L*rh/rw)]:[Math.round(L*rw/rh),L];
+}
 async function renderExport(onProgress){
-  const [rw,rh]=ratioNums(),L=state.size;let W,H;
-  if(state.ratio==='custom'){W=state.customW;H=state.customH;}  // exact artboard size
-  else if(rw>=rh){W=L;H=Math.round(L*rh/rw);}else{H=L;W=Math.round(L*rw/rh);}
+  const [W,H]=exportSize(state.size);
   const pr=renderer.getPixelRatio();
   setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();  // whole frame (layout() restores the live crop)
   let src=canvas;
@@ -71,4 +75,4 @@ exportAllBtn.addEventListener('click',async()=>{
   finally{exportAllBtn.disabled=false;exportAllBtn.textContent='Kayıtlı açıların hepsini ZIP olarak indir';}
 });
 
-export {offer,renderExport};
+export {exportSize,offer,renderExport};

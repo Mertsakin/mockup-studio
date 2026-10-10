@@ -7,7 +7,7 @@ const reserveDeviceIds=max=>{uid=Math.max(uid,max);};
 function newDevice(type,o){
   return Object.assign({id:++uid,type,landscape:false,notch:'hole',backFinish:'matte',lidAngle:112,colorKey:'graphite',custom:'#7a5cff',
     fit:'cover',screenBg:'#000000',glare:true,finish:null,px:0,py:0,pz:0,rx:0,ry:0,rz:0,scale:1,
-    img:null,imgName:'',scroll:0,siteUrl:'',frameImg:null,frameName:'',screenRect:null,url:'siteadi.com',theme:'light',winRatio:'16:10',pageRatio:'3:4'},o||{});
+    img:null,imgName:'',scroll:0,tracks:{},siteUrl:'',frameImg:null,frameName:'',screenRect:null,url:'siteadi.com',theme:'light',winRatio:'16:10',pageRatio:'3:4'},o||{});
 }
 const state={
   scene:{rx:-6,ry:26,rz:0,zoom:1,fov:28,panX:0,panY:0},
@@ -18,6 +18,8 @@ const state={
   // 2D items (PNG / SVG) over or under the 3D scene: {id,name,img,x,y (centre, fractions of the board),w (fraction of the
   // board width; height from the image's aspect),rot (deg),opacity,front}. Paint order = array order within each layer.
   items:[],selItem:null,
+  // animation timing of this artboard (keys live on the devices: d.tracks, see state/anim.js)
+  anim:{dur:5,fps:30,loop:true},
   floor:true,wall:false,wallGap:.35,selfShadow:true,shadowColor:'#000000',shadowOpacity:.55,ambient:1,exposure:1,markers:true,showDome:true,lights:[],selLight:null,
   ratio:'4:5',customW:1920,customH:1080,size:2160,format:'png',quality:'fast',photoPreview:false
 };

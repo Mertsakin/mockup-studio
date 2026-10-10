@@ -30,6 +30,8 @@ import './ui/shell.js';
 import './ui/transform-box.js';
 import './ui/items-panel.js';
 import './ui/assets.js';
+import './ui/timeline.js';
+import './export/video.js';
 
 /* ---------- init ---------- */
 bgCss();state.devices.forEach(buildRT);refit();applyLightPreset(LIGHT_PRESETS[0]);renderSaved();initBoards();syncAll();fitAll();layout();

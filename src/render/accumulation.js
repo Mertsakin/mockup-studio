@@ -20,7 +20,7 @@ const showMat=new THREE.ShaderMaterial({uniforms:{tex:{value:null},count:{value:
   blending:THREE.NoBlending,depthTest:false,depthWrite:false,toneMapped:false});
 const quadScene=new THREE.Scene(),quadCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1),quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),addMat);
 quad.frustumCulled=false;quadScene.add(quad);
-const ACC={frame:null,acc:null,w:0,h:0,type:null,n:0,max:64};
+const ACC={frame:null,acc:null,w:0,h:0,type:null,n:0,max:64,paused:false};  // paused: the live loop waits (video export renders)
 (function(){
   if(renderer.extensions.has('EXT_color_buffer_float'))ACC.type=THREE.HalfFloatType;
 })();
@@ -59,14 +59,17 @@ function present(n){
   quad.material=showMat;showMat.uniforms.tex.value=ACC.acc.texture;showMat.uniforms.count.value=n;
   renderer.setRenderTarget(null);renderer.clear();renderer.render(quadScene,quadCam);
 }
-function renderNow(samples){
+// beforeSample(i): called before each sample (video motion blur moves the scene between samples; shadows follow)
+function renderNow(samples,beforeSample){
   renderer.getDrawingBufferSize(dbs);
-  if(!accEnsure(dbs.x,dbs.y)){hookAll();renderer.shadowMap.needsUpdate=true;renderer.setRenderTarget(null);renderer.render(scene,camera);return;}
-  for(let i=0;i<samples;i++)renderSample(i);present(samples);
+  if(!accEnsure(dbs.x,dbs.y)){if(beforeSample)beforeSample(0);hookAll();renderer.shadowMap.needsUpdate=true;renderer.setRenderTarget(null);renderer.render(scene,camera);return;}
+  for(let i=0;i<samples;i++){if(beforeSample){beforeSample(i);renderer.shadowMap.needsUpdate=true;}renderSample(i);}
+  present(samples);
 }
 renderer.shadowMap.autoUpdate=false;
 function startLoop(){(function loop(){
   requestAnimationFrame(loop);
+  if(ACC.paused)return;
   if(redraw.dirty){redraw.dirty=false;ACC.n=0;}
   if(ACC.n>=ACC.max){onIdle.forEach(f=>f());return;}
   renderer.getDrawingBufferSize(dbs);
@@ -76,4 +79,5 @@ function startLoop(){(function loop(){
   present(ACC.n);
 })();}
 
-export {renderNow,startLoop};
+const pauseLive=on=>{ACC.paused=on;if(!on)redraw.dirty=true;};
+export {pauseLive,renderNow,startLoop};

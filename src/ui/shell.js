@@ -2,6 +2,7 @@ import {offer,renderExport} from '../export/export.js';
 import {MODS,modOf} from '../lights/mods.js';
 import {TYPES} from '../state/constants.js';
 import {TEMPLATES} from '../state/templates.js';
+import {hasAnim} from '../state/anim.js';
 import {selItem,state} from '../state/state.js';
 import {activate,activeBoard,addBoard,boardSize,doc,duplicateBoard,onBoards,removeBoard,renameBoard} from './boards.js';
 import {renderDome} from './dome.js';
@@ -51,7 +52,7 @@ function node(o){
   const el=document.createElement('div');el.className='node'+(o.child?' child':' board');el.setAttribute('role','treeitem');el.tabIndex=-1;
   el.setAttribute('aria-selected',String(!!o.sel));if(!o.child)el.setAttribute('aria-expanded',String(!!o.open));
   el.innerHTML=(o.child?'':'<button class="tw" type="button" tabindex="-1" aria-label="'+(o.open?'Daralt':'Genişlet')+'">'+icon(o.open?'alt-arrow-down':'alt-arrow-right',12)+'</button>')+
-    (o.dot?'<span class="dot" style="background:'+o.dot+'"></span>':icon(o.icon,14))+'<span class="nm"></span><span class="act"></span>';
+    (o.dot?'<span class="dot" style="background:'+o.dot+'"></span>':icon(o.icon,14))+'<span class="nm"></span>'+(o.anim?'<span class="anim-mark" title="Animasyonlu"></span>':'')+'<span class="act"></span>';
   el.querySelector('.nm').textContent=o.name;
   const act=el.querySelector('.act');
   (o.actions||[]).forEach(([ic,label,fn])=>{const b=document.createElement('button');b.type='button';b.tabIndex=-1;b.setAttribute('aria-label',label);b.title=label;b.innerHTML=icon(ic,14);
@@ -85,7 +86,7 @@ function renderTree(){
       pick:()=>go(()=>selectItem(it.id)),actions:live?[['trash-bin-minimalistic','Sil',()=>removeItem(it.id)]]:[]}));
     items.filter(it=>it.front).reverse().forEach(itemNode);
     devNames(devs).forEach((n,i)=>{const d=devs[i];
-      tree.appendChild(node({child:true,name:n,icon:DEV_ICON[d.type]||'smartphone',sel:live&&ui.kind==='device'&&state.selected===d.id,
+      tree.appendChild(node({child:true,name:n,icon:DEV_ICON[d.type]||'smartphone',anim:hasAnim(d),sel:live&&ui.kind==='device'&&state.selected===d.id,
         pick:()=>go(()=>{state.selected=d.id;syncAll();setUi({kind:'device'});syncTool();}),
         actions:live&&devs.length>1?[['trash-bin-minimalistic','Sil',()=>{state.selected=d.id;syncAll();$('#removeDevice').click();}]]:[]}));});
     lightNames(lights).forEach((n,i)=>{const L=lights[i];

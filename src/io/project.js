@@ -2,6 +2,7 @@ import {RT} from '../devices/rt.js';
 import {buildRT,disposeRT} from '../devices/runtime.js';
 import {rebuildLights} from '../lights/actions.js';
 import {reserveLightIds} from '../lights/mods.js';
+import {interp,tracked} from '../state/anim.js';
 import {patternBg} from '../render/backgrounds.js';
 import {renderer} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
@@ -27,6 +28,8 @@ function snapshot(){
   st.bgImg=imgKey(state.bgImg);if(state.bgImg)images[st.bgImg]=state.bgImg;
   st.items=state.items.map(it=>{const o=Object.assign({},it,{img:imgKey(it.img)});images[o.img]=it.img;return copy(o);});
   const devices=state.devices.map(d=>{const o={};for(const k in d)if(!SKIP_DEVICE.has(k))o[k]=copy(d[k]);
+    // animated values are stored at t = 0, not at the editor's playhead (moving the playhead is not an edit)
+    tracked(d).forEach(k=>{o[k]=interp(d.tracks[k],0);});
     if(d.img){o.img=imgKey(d.img);images[o.img]=d.img;}if(d.frameImg){o.frameImg=imgKey(d.frameImg);images[o.frameImg]=d.frameImg;}return o;});
   return {v:1,state:st,devices,lights:copy(state.lights),selected:state.selected,selLight:state.selLight,
     frame:{comp:comp.position.toArray(),fitRadius:view.fitRadius},images};
@@ -43,6 +46,9 @@ function restore(s){
   reserveItemIds(Math.max(0,...state.items.map(i=>i.id)));if(!state.items.some(i=>i.id===state.selItem))state.selItem=null;
   // documents from when patterns were a background style: the pattern becomes the background image
   if(s.state.bg==='pattern'){Object.assign(state,patternBg(s.state));Object.assign(s.state,{bg:'image',bgImgName:state.bgImgName,bgImg:imgKey(state.bgImg)});s.images[s.state.bgImg]=state.bgImg;}
+  // fields newer than the snapshot get their defaults (not the previous board's values)
+  const DEF={bgFit:'cover',bgScale:1,bgX:0,bgY:0,anim:{dur:5,fps:30,loop:true}};
+  for(const k in DEF)if(!(k in s.state))state[k]=copy(DEF[k]);
   Object.assign(state.scene,copy(s.state.scene));
   state.devices=s.devices.map(o=>Object.assign({},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null}));
   state.lights=copy(s.lights);
