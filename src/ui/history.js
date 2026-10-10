@@ -62,7 +62,7 @@ window.addEventListener('keydown',e=>{
 const FS=typeof window.showSaveFilePicker==='function';
 const FILE_TYPES=[{description:'Mockup stüdyosu projesi',accept:{'application/json':['.json']}}];
 const EXT=/\.mockup\.json$/i;
-let fileHandle=null,fileName='';
+let fileHandle=null,fileName='',savedSig=null;  // savedSig: the document as last saved to / opened from a file
 const stamp=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes());};
 const withExt=n=>{n=String(n||'').trim().replace(/[\\/:*?"<>|]+/g,'-');if(!n)return '';return EXT.test(n)?n:n.replace(/\.json$/i,'')+'.mockup.json';};
 const suggested=()=>fileName||'mockup-proje-'+stamp()+'.mockup.json';
@@ -81,17 +81,17 @@ async function save(as){
     if(FS){
       if(as||!fileHandle){
         let h;try{h=await window.showSaveFilePicker({suggestedName:suggested(),types:FILE_TYPES});}
-        catch(e){if(e&&e.name==='AbortError')return;throw e;}
+        catch(e){if(e&&e.name==='AbortError')return false;throw e;}
         fileHandle=h;
       }
       const text=await projectText(),w=await writable(fileHandle);await w.write(text);await w.close();
-      setFileName(fileHandle.name);toast(fileHandle.name+' kaydedildi');
+      setFileName(fileHandle.name);savedSig=currentSig;toast(fileHandle.name+' kaydedildi');return true;
     } else {
-      const name=withExt(await askName(suggested()));if(!name)return;
+      const name=withExt(await askName(suggested()));if(!name)return false;
       const text=await projectText();offer(name,new Blob([text],{type:'application/json'}));
-      setFileName(name);toast(name+' indirildi');
+      setFileName(name);savedSig=currentSig;toast(name+' indirildi');return true;
     }
-  }catch(e){toast('Proje kaydedilemedi: '+(e.message||e));}
+  }catch(e){toast('Proje kaydedilemedi: '+(e.message||e));return false;}
 }
 // fallback name dialog (browsers without the save dialog API)
 function askName(def){
@@ -110,7 +110,7 @@ $('#saveProject').addEventListener('click',()=>save(false));
 $('#saveProjectAs').addEventListener('click',()=>save(true));
 async function openText(text,handle,name){
   const s=await fromProjectFile(text);if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();
-  fileHandle=handle||null;setFileName(name);toast((name||'Proje')+' açıldı');
+  fileHandle=handle||null;setFileName(name);savedSig=currentSig;toast((name||'Proje')+' açıldı');
 }
 const openEl=$('#openProject');
 $('#openProjectBtn').addEventListener('click',async()=>{
@@ -124,6 +124,35 @@ openEl.addEventListener('change',async()=>{
   const f=openEl.files[0];openEl.value='';if(!f)return;
   try{await openText(await f.text(),null,f.name);}catch(e){toast('Proje açılamadı: '+(e.message||e));}
 });
+
+/* Close the project: an empty document (no artboards, no assets), no current file, the autosave emptied, history
+   reset. Unsaved changes (never saved, or changed since the last save / open) ask first: save, discard or cancel. */
+function askClose(){
+  return new Promise(res=>{
+    const sc=document.createElement('div');sc.className='scrim';
+    sc.innerHTML='<div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="closeTitle"><div class="dh"><span id="closeTitle">Projeyi kapat</span></div>'+
+      '<div class="db"><p style="margin:0">Kaydedilmemiş değişiklikler var. Kapatmadan önce kaydetmek ister misin?</p>'+
+      '<div class="dfoot"><button class="btn" type="button" data-a="cancel">Vazgeç</button><button class="btn" type="button" data-a="discard">Kaydetme</button><button class="btn primary" type="button" data-a="save">Kaydet</button></div></div></div>';
+    document.body.appendChild(sc);sc.querySelector('[data-a="save"]').focus();
+    const done=v=>{sc.remove();res(v);};
+    sc.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a)done(a.dataset.a);else if(e.target===sc)done('cancel');});
+    sc.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape')done('cancel');});
+  });
+}
+async function closeProject(){
+  commitNow();
+  const empty=!doc.boards.length&&!doc.assets.length;
+  if(!empty&&currentSig!==savedSig){
+    const a=await askClose();
+    if(a==='cancel')return;
+    if(a==='save'&&!(await save(false)))return;
+  }
+  doc.assets=[];clearAll();
+  past=[];future=[];current=snapshot();currentSig=signature(current);pending='';savedSig=currentSig;syncButtons();
+  fileHandle=null;setFileName('');clearTimeout(saveTimer);autosave(current);
+  toast('Proje kapatıldı');
+}
+$('#closeProject').addEventListener('click',closeProject);
 
 // Called once after start-up: restores the last session (unless a template was opened) and starts history.
 // Nothing saved (or the last session had no artboards): the document starts empty, with no artboard.
