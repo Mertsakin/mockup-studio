@@ -17,6 +17,7 @@ function readImage(file,cb){
 }
 function loadShot(file){
   const d=sel();
+  if(!d){toast('Ekran görüntüsü için önce bir cihaz ekle.');return;}
   readImage(file,img=>{
     d.img=img;d.imgName=file.name||'Yapıştırılan görsel';d.scroll=0;
     const o=RT.get(d.id),wide=img.naturalWidth>img.naturalHeight;
@@ -38,7 +39,7 @@ $('#bgReset').addEventListener('click',()=>{Object.assign(state,BG_FIT);bgCss();
   {id:'bg-y',k:'bgY',l:'Dikey',min:-1,max:1,step:.001,reset:0,f:fPct,after:bgCss}
 ].forEach(d=>makeSlider($('#bgSliders'),d,()=>state));
 function loadFrame(file){
-  const d=sel();
+  const d=sel();if(!d)return;
   readImage(file,img=>{
     const r=detectScreen(img);
     if(!r){toast('Ekran alanı bulunamadı. Ortası şeffaf ve kenarları kapalı bir çerçeve PNG\u2019si kullan.');return;}
@@ -72,6 +73,7 @@ onSyncUI(d=>{
   const b=state.bgImg;bgDrop.classList.toggle('has',!!b);
   $('#bgMain').textContent=b?state.bgImgName||'Arka plan':'Arka plan görseli seç';
   $('#bgSub').textContent=b?(b.naturalWidth||b.width)+' × '+(b.naturalHeight||b.height)+' px. Artboard\u2019u kaplar. Değiştirmek için tıkla ya da sürükle.':'PNG, JPG veya WebP. Artboard\u2019u kaplayacak şekilde yerleşir.';
+  if(!d)return;
   if(d.img){$('#dropMain').textContent=d.imgName||'Yapıştırılan görsel';$('#dropSub').textContent=d.img.naturalWidth+' × '+d.img.naturalHeight+' px. Değiştirmek için tıkla ya da yenisini sürükle.';drop.classList.add('has');}
   else{$('#dropMain').textContent='Görsel seç ya da buraya sürükle';$('#dropSub').textContent='PNG, JPG veya WebP. Panodan yapıştırmak için Ctrl/⌘ + V.';drop.classList.remove('has');}
   if(d.frameImg){$('#frameMain').textContent=d.frameName||'Çerçeve';$('#frameSub').textContent='Ekran alanı bulundu. Değiştirmek için tıkla.';frameDrop.classList.add('has');}

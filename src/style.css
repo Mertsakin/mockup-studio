@@ -432,3 +432,8 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .prog{height:8px;border-radius:99px;background:var(--range-track);overflow:hidden;margin:6px 0 8px}
 .prog i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px}
 .dfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+/* no artboard (the last one was deleted) */
+.insp-empty{padding:32px 16px;text-align:center;color:var(--muted)}
+.insp-empty p{margin:0 0 12px}
+.insp-empty .hint-sm{margin-top:12px}

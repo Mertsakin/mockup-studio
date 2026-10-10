@@ -21,7 +21,7 @@ const itemLayers={back:document.createElement('div'),front:document.createElemen
 itemLayers.back.className='items';itemLayers.front.className='items';
 frame.prepend(itemLayers.back);frame.append(itemLayers.front);
 function layout(){
-  const r=geometry&&geometry();if(!r)return;screen={x:r.x,y:r.y,w:r.w,h:r.h};
+  const r=geometry&&geometry();if(!r){frame.hidden=true;screen=null;layoutSubs.forEach(f=>f(null));return;}screen={x:r.x,y:r.y,w:r.w,h:r.h};
   // visible part of the board on the stage; the canvas covers only that, the camera renders that slice
   const x0=Math.max(r.x,0),y0=Math.max(r.y,0),x1=Math.min(r.x+r.w,r.sw),y1=Math.min(r.y+r.h,r.sh);
   const vx=Math.round(x0),vy=Math.round(y0),vw=Math.max(1,Math.round(x1-x0)),vh=Math.max(1,Math.round(y1-y0));

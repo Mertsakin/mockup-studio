@@ -53,6 +53,13 @@ function store(){const b=activeBoard();if(!b)return;b.snap=snapshot();const t=ca
 function show(b){doc.active=b.id;restore(b.snap);bgCss();layout();syncAll();emit();}
 
 // called once at start-up, after the initial scene is built
+// a board with nothing on it (the default scene's camera, lights and background, no devices or items)
+const emptySnap=()=>{const s=JSON.parse(JSON.stringify(Object.assign({},DEFAULT,{images:{}})));s.images={};s.devices=[];s.state.items=[];s.selected=null;return s;};
+// no board at all: the live scene is emptied and the stage shows nothing (layout hides the canvas)
+function clearAll(){doc.boards=[];doc.active=null;restore(emptySnap());layout();syncAll();emit();}
+const hasBoard=()=>!!activeBoard();
+// adding something with no board open first opens an empty one for it
+function ensureBoard(){if(!hasBoard()){addBoard(emptySnap());return true;}return false;}
 function initBoards(){DEFAULT=snapshot();doc.boards=[{id:++uid,name:'Artboard 1',x:0,y:0,snap:DEFAULT,thumb:null}];doc.active=uid;emit();}
 function activate(id){if(id===doc.active){emit();return;}const t=boardById(id);if(!t)return;store();show(t);}
 // new board right of the rightmost one, top-aligned with it; from a snapshot (duplicate) or the default scene
@@ -65,7 +72,8 @@ function addBoard(snap,name){
 }
 function duplicateBoard(id){const src=boardById(id||doc.active);if(!src)return;if(src.id===doc.active)store();const b=addBoard(src.snap,src.name+' kopya');b.thumb=src.thumb;emit();}
 function removeBoard(id){
-  if(doc.boards.length<2)return false;const i=doc.boards.findIndex(b=>b.id===id);if(i<0)return false;
+  const i=doc.boards.findIndex(b=>b.id===id);if(i<0)return false;
+  if(doc.boards.length===1){clearAll();return true;}
   const wasActive=id===doc.active;doc.boards.splice(i,1);
   if(wasActive)show(doc.boards[Math.min(i,doc.boards.length-1)]);else emit();
   return true;
@@ -87,6 +95,7 @@ function changedBoard(from,to){
 // replaces the document; the active board is `prefer`, else the document's own. Thumbnails: the live ones of boards
 // that still exist (fresher), else the document's
 function applyDoc(d,prefer){
+  if(!d.boards.length){const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);clearAll();return;}
   const thumbs=new Map(doc.boards.map(b=>[b.id,b.thumb]));
   doc.boards=d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:thumbs.get(b.id)||b.thumb||null}));
   uid=Math.max(uid,...doc.boards.map(b=>b.id));
@@ -102,4 +111,4 @@ async function fillThumbs(){
   store();show(boardById(back));
 }
 
-export {activate,activeBoard,addBoard,applyDoc,asDoc,boardById,boardSize,changedBoard,doc,docSignature,docSnapshot,duplicateBoard,fillThumbs,initBoards,moveBoard,onBoards,removeBoard,renameBoard,sizeOf,store as storeActive};
+export {activate,activeBoard,addBoard,ensureBoard,hasBoard,applyDoc,asDoc,boardById,boardSize,changedBoard,doc,docSignature,docSnapshot,duplicateBoard,fillThumbs,initBoards,moveBoard,onBoards,removeBoard,renameBoard,sizeOf,store as storeActive};

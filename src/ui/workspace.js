@@ -25,7 +25,7 @@ function placeChrome(){
 }
 // the live canvas follows the active board; the axis widget sits in its top-right corner when there is room
 setStageGeometry(()=>{
-  const a=doc.boards.find(b=>b.id===doc.active);if(!a)return null;
+  const a=doc.boards.find(b=>b.id===doc.active);if(!a){nav.style.display='none';placeChrome();return null;}
   world.style.transform='translate('+V.x+'px,'+V.y+'px) scale('+V.z+')';
   doc.boards.forEach(b=>{const o=els.get(b.id);if(!o)return;const [w,h]=boardSize(b);
     o.el.style.left=b.x+'px';o.el.style.top=b.y+'px';o.el.style.width=w+'px';o.el.style.height=h+'px';o.size.textContent=w+' × '+h;});
@@ -76,6 +76,7 @@ function bounds(list){
 }
 // fits boards into the stage, leaving room for labels (top) and the dock (bottom)
 function fitBoards(list){
+  if(!list||!list.length)return;
   const r=stage.getBoundingClientRect(),{x0,y0,x1,y1}=bounds(list||doc.boards),pad=40,top=36,bottom=72;
   const z=clamp(Math.min((r.width-2*pad)/(x1-x0),(r.height-top-bottom)/(y1-y0)),.02,1);
   setView((r.width-(x1-x0)*z)/2-x0*z,top+(r.height-top-bottom-(y1-y0)*z)/2-y0*z,z);

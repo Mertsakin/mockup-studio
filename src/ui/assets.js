@@ -1,4 +1,4 @@
-import {doc,onBoards} from './boards.js';
+import {doc,ensureBoard,onBoards} from './boards.js';
 import {addItem} from './items.js';
 import {icon} from './icons.js';
 import {toast} from './toast.js';
@@ -43,7 +43,7 @@ function renderAssets(){
     const t=document.createElement('div');t.className='asset';t.setAttribute('role','listitem');
     t.innerHTML='<button type="button" class="asset-btn" draggable="true"><img alt=""></button><button type="button" class="asset-x" aria-label="Kütüphaneden kaldır">'+icon('close-circle',14)+'</button>';
     const b=t.querySelector('.asset-btn');b.title=a.name+': artboarda ekle';b.setAttribute('aria-label',a.name+', artboarda ekle');t.querySelector('img').src=a.img.src;
-    b.addEventListener('click',()=>addItem(a.img,a.name));
+    b.addEventListener('click',()=>{ensureBoard();addItem(a.img,a.name);});
     b.addEventListener('dragstart',e=>{e.dataTransfer.setData(MIME,String(i));e.dataTransfer.effectAllowed='copy';});
     t.querySelector('.asset-x').addEventListener('click',()=>{doc.assets.splice(i,1);renderAssets();});
     grid.appendChild(t);
@@ -61,7 +61,8 @@ const stage=$('#stagearea');
 stage.addEventListener('dragover',e=>{if(e.dataTransfer.types.includes(MIME)){e.preventDefault();e.dataTransfer.dropEffect='copy';}});
 stage.addEventListener('drop',e=>{
   const i=e.dataTransfer.getData(MIME);if(i==='')return;e.preventDefault();e.stopPropagation();
-  const a=doc.assets[+i];if(a)addItem(a.img,a.name,{x:e.clientX,y:e.clientY});
+  const a=doc.assets[+i];if(!a)return;
+  if(ensureBoard())addItem(a.img,a.name);else addItem(a.img,a.name,{x:e.clientX,y:e.clientY});
 });
 onBoards(renderAssets);
 

@@ -23,7 +23,7 @@ function viewport(d){
 const input=$('#captureUrl'),one=$('#captureBtn'),all=$('#captureAllBtn');
 // The field shows the selected device's own address; typing stores it on that device.
 input.addEventListener('input',()=>{const d=state.devices.find(x=>x.id===state.selected);if(d)d.siteUrl=input.value.trim();});
-onSyncUI(d=>{if(document.activeElement!==input)input.value=d.siteUrl||'';});
+onSyncUI(d=>{if(d&&document.activeElement!==input)input.value=d.siteUrl||'';});
 // everyDevice=false: only the selected device; true: the same address on every device
 async function capture(everyDevice){
   let raw=input.value.trim();if(!raw){input.focus();return;}

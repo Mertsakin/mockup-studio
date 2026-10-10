@@ -12,6 +12,7 @@ import {parseV} from './controls.js';
 import {fPct,makeSlider,syncSliders} from './sliders.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
 import {toast} from './toast.js';
+import {setUi} from './ui-state.js';
 import {$,$$} from '../util.js';
 
 /* ---------- device list & type ---------- */
@@ -40,7 +41,7 @@ Object.entries(TYPES).forEach(([k,n])=>{
   typeGrid.appendChild(b);
 });
 $('#addDevice').addEventListener('click',()=>{
-  const base=sel(),d=newDevice(addSel.value,{colorKey:base.colorKey,custom:base.custom});
+  const base=sel()||{},d=newDevice(addSel.value,{colorKey:base.colorKey||'graphite',custom:base.custom||'#7a5cff'});
   state.devices.push(d);const o=buildRT(d);state.selected=d.id;
   // Centred on the artboard: on the camera's axis (the full frame's centre, whatever the pan, Yakınlık or the part of
   // the board on screen), just in front of the other devices. The framing stays put, so devices already
@@ -66,10 +67,12 @@ $('#addDevice').addEventListener('click',()=>{
   $('#placeDetails').open=true;syncAll();
   toast(TYPES[d.type]+' eklendi'+(state.scene.zoom<z0-1e-3?'. Sığması için kamera geri çekildi.':''));
 });
+// the last device can go too: the artboard is then empty (its background and 2D items stay)
 $('#removeDevice').addEventListener('click',()=>{
-  if(state.devices.length<2)return;const d=sel();
-  disposeRT(d.id);state.devices=state.devices.filter(x=>x.id!==d.id);state.selected=state.devices[0].id;
+  const d=sel();if(!d)return;
+  disposeRT(d.id);state.devices=state.devices.filter(x=>x.id!==d.id);state.selected=state.devices[0]?state.devices[0].id:null;
   autoRefit();applyTransform();syncAll();
+  if(!state.devices.length)setUi({kind:'board'});
 });
 // scrolling a long screenshot (shown only when the selected screen can scroll)
 makeSlider($('#scrollSlot'),{id:'d-scroll',k:'scroll',l:'Kaydırma',min:0,max:1,step:.001,reset:0,f:fPct,
@@ -86,7 +89,7 @@ COMPS.forEach(c=>{
 });
 function applyComp(c){
   const pool={};state.devices.forEach(d=>{(pool[d.type]=pool[d.type]||[]).push(d);});
-  const base=sel();
+  const base=sel()||{colorKey:'graphite',custom:'#7a5cff'};
   const next=c.items.map(it=>{
     const r=(pool[it.type]||[]).shift();
     const nd=newDevice(it.type,{colorKey:base.colorKey,custom:base.custom});
@@ -132,6 +135,7 @@ const glareEl=$('#glare');glareEl.addEventListener('change',()=>{const d=sel();d
 const urlEl=$('#url');let urlT=null;
 urlEl.addEventListener('input',()=>{const d=sel();d.url=urlEl.value;clearTimeout(urlT);urlT=setTimeout(()=>updateChrome(d),120);});
 onSyncUI(d=>{
+  renderDevList();if(!d)return;
   $$('.seg[data-dkey]').forEach(seg=>{const v=String(d[seg.dataset.dkey]);seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));});
   typeGrid.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.type===d.type)));
   $$('[data-for]').forEach(el=>{el.hidden=!el.dataset.for.split(' ').includes(d.type);});
@@ -141,10 +145,9 @@ onSyncUI(d=>{
   customInput.value=d.custom;custom.style.background=d.colorKey==='custom'?d.custom:'';
   screenBgEl.value=d.screenBg;glareEl.checked=d.glare;if(document.activeElement!==urlEl)urlEl.value=d.url;
   $('#selTitle').textContent=devLabel(d);
-  $('#removeDevice').disabled=state.devices.length<2;
+  $('#removeDevice').disabled=false;
   $('#scrollSlot').hidden=!scrollScreens(d);
   $('#scrollAll').hidden=state.devices.filter(x=>scrollScreens(x)).length<2;
-  renderDevList();
 });
 
 export {applyComp};

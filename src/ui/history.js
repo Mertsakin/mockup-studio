@@ -71,7 +71,7 @@ openEl.addEventListener('change',async()=>{
 
 // Called once after start-up: restores the last session (unless a template was opened) and starts history.
 async function startHistory(templateOpened){
-  if(!templateOpened){const s=await loadAutosave();if(s&&s.boards.length&&s.boards.some(b=>b.snap&&b.snap.devices&&b.snap.devices.length)){applyDoc(s);fitAll();await fillThumbs();toast('Son çalışman geri yüklendi');}}
+  if(!templateOpened){const s=await loadAutosave();if(s&&s.boards.length&&s.boards.some(b=>b.snap&&b.snap.devices)){applyDoc(s);fitAll();await fillThumbs();toast('Son çalışman geri yüklendi');}}
   current=snapshot();currentSig=signature(current);syncButtons();
   setInterval(poll,POLL);
 }

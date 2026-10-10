@@ -138,6 +138,11 @@
     <aside class="panel right" id="inspector" aria-label="Özellikler">
 
       <!-- artboard -->
+      <div id="inspEmpty" class="insp-empty" hidden>
+        <p>Artboard yok.</p>
+        <button class="btn primary" type="button" id="emptyAddBoard">Artboard ekle</button>
+        <p class="hint-sm">Cihaz, ışık ya da varlık eklersen yeni bir artboard kendiliğinden açılır.</p>
+      </div>
       <div id="inspBoard">
         <div class="head"><span data-icon="frame"></span><input class="title-in" id="boardName" aria-label="Artboard adı" spellcheck="false"><button class="ib sm" type="button" id="boardMore" aria-label="Artboard seçenekleri"><span data-icon="menu-dots"></span></button></div>
         <section class="sec">

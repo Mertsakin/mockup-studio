@@ -50,7 +50,7 @@ makeSlider($('#shadowSlot'),{id:'g-shadow',k:'shadowOpacity',l:'Yoğunluk',min:.
 makeSlider($('#wallSlot'),{id:'g-wall',k:'wallGap',l:'Duvar mesafesi',min:0,max:1.5,step:.01,reset:.35,f:fPct},()=>state);
 makeSlider($('#ambientSlot'),{id:'g-exp',k:'exposure',l:'Pozlama',min:.4,max:2.2,step:.01,reset:1,f:v=>v.toFixed(2),after:()=>{renderer.toneMappingExposure=state.exposure;}},()=>state);
 makeSlider($('#ambientSlot'),{id:'g-amb',k:'ambient',l:'Ortam ışığı',min:0,max:2,step:.01,reset:1,f:fPct,note:'Işıkların dışında kalan genel aydınlık. Azaldıkça gölgeler koyulaşır.',after:applyAmbient},()=>state);
-function syncSliders(){SLIDERS.forEach(s=>{const o=s.getObj();if(o[s.def.k]===undefined)return;
+function syncSliders(){SLIDERS.forEach(s=>{const o=s.getObj();if(!o||o[s.def.k]===undefined)return;
   if(s.def.span&&document.activeElement!==s.input){const r=s.def.span(o[s.def.k]);s.input.min=String(-r);s.input.max=String(r);}
   s.input.value=toIn(s.def,o[s.def.k]);paint(s.input);s.out.textContent=s.def.f(o[s.def.k]);});}
 

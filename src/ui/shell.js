@@ -4,7 +4,7 @@ import {TYPES} from '../state/constants.js';
 import {TEMPLATES} from '../state/templates.js';
 import {hasAnim} from '../state/anim.js';
 import {selItem,state} from '../state/state.js';
-import {activate,activeBoard,addBoard,boardSize,doc,duplicateBoard,onBoards,removeBoard,renameBoard} from './boards.js';
+import {activate,activeBoard,addBoard,boardSize,doc,duplicateBoard,ensureBoard,hasBoard,onBoards,removeBoard,renameBoard} from './boards.js';
 import {renderDome} from './dome.js';
 import {setGizmoMode,showGizmo} from './gizmo.js';
 import {hydrateIcons,icon} from './icons.js';
@@ -34,8 +34,10 @@ const lightNames=list=>labels(list,L=>L.mod==='custom'?'Işık':modOf(L.mod).n);
 const insp={board:$('#inspBoard'),device:$('#inspDevice'),light:$('#inspLight'),item:$('#inspItem')};
 let lastDevIcon='';
 function syncInspector(){
-  if((ui.kind==='light'&&!state.lights.length)||(ui.kind==='item'&&!selItem())){setUi({kind:'board'});return;}
-  for(const k in insp)insp[k].hidden=k!==ui.kind;
+  if((ui.kind==='light'&&!state.lights.length)||(ui.kind==='item'&&!selItem())||(ui.kind==='device'&&!state.devices.length)){setUi({kind:'board'});return;}
+  // no artboard: an empty state with a way to make one
+  const none=!hasBoard();$('#inspEmpty').hidden=!none;$('#exportMenuBtn').disabled=none;
+  for(const k in insp)insp[k].hidden=none||k!==ui.kind;
   const dome=$('#dome'),slot=ui.kind==='light'?$('#domeSlotLight'):$('#domeSlotBoard');if(dome.parentNode!==slot)slot.appendChild(dome);
   const b=activeBoard();if(b&&document.activeElement!==$('#boardName'))$('#boardName').value=b.name;
   const d=state.devices.find(x=>x.id===state.selected);
@@ -72,11 +74,11 @@ function renderTree(){
   const focusedIdx=[...tree.children].indexOf(document.activeElement);
   tree.innerHTML='';
   doc.boards.forEach(b=>{
-    const live=b.id===doc.active,open=live||expanded.has(b.id),many=doc.boards.length>1;
+    const live=b.id===doc.active,open=live||expanded.has(b.id);
     tree.appendChild(node({name:b.name,icon:'frame',open,sel:live&&ui.kind==='board',
       toggle:()=>{if(live)return;expanded.has(b.id)?expanded.delete(b.id):expanded.add(b.id);renderTree();},
       pick:()=>{activate(b.id);setUi({kind:'board'});},rename:el=>startRename(el,b),
-      actions:[['copy','Kopyasını oluştur',()=>{duplicateBoard(b.id);fitAll();}]].concat(many?[['trash-bin-minimalistic','Sil',()=>removeBoard(b.id)]]:[])}));
+      actions:[['copy','Kopyasını oluştur',()=>{duplicateBoard(b.id);fitAll();}],['trash-bin-minimalistic','Sil',()=>removeBoard(b.id)]]}));
     if(!open)return;
     const devs=live?state.devices:b.snap.devices,lights=live?state.lights:b.snap.lights;
     const go=(fn)=>{if(!live)activate(b.id);fn();};
@@ -88,13 +90,14 @@ function renderTree(){
     devNames(devs).forEach((n,i)=>{const d=devs[i];
       tree.appendChild(node({child:true,name:n,icon:DEV_ICON[d.type]||'smartphone',anim:hasAnim(d),sel:live&&ui.kind==='device'&&state.selected===d.id,
         pick:()=>go(()=>{state.selected=d.id;syncAll();setUi({kind:'device'});syncTool();}),
-        actions:live&&devs.length>1?[['trash-bin-minimalistic','Sil',()=>{state.selected=d.id;syncAll();$('#removeDevice').click();}]]:[]}));});
+        actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selected=d.id;syncAll();$('#removeDevice').click();}]]:[]}));});
     lightNames(lights).forEach((n,i)=>{const L=lights[i];
       tree.appendChild(node({child:true,name:n,dot:L.color,sel:live&&ui.kind==='light'&&state.selLight===L.id,
         pick:()=>go(()=>{state.selLight=L.id;syncAll();setUi({kind:'light'});}),
         actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selLight=L.id;syncAll();$('#removeLight').click();}]]:[]}));});
     items.filter(it=>!it.front).reverse().forEach(itemNode);
   });
+  if(!doc.boards.length){const p=document.createElement('p');p.className='empty';p.style.margin='4px 8px';p.textContent='Artboard yok. + ile ya da A tuşuyla yeni bir artboard ekle.';tree.appendChild(p);return;}
   const items=[...tree.children];(items.find(x=>x.getAttribute('aria-selected')==='true')||items[0]).tabIndex=0;
   if(focusedIdx>=0&&items[focusedIdx])items[focusedIdx].focus();
 }
@@ -151,21 +154,22 @@ $('#exportMenuBtn').addEventListener('click',e=>{e.stopPropagation();syncExport(
 const inspMenu=$('#addMenu').cloneNode(false);inspMenu.id='inspMenu';$('#inspector').style.position='relative';$('#inspector').appendChild(inspMenu);
 $('#boardMore').addEventListener('click',e=>{e.stopPropagation();openMenu($('#inspMenu'),e.currentTarget,[
   ['copy','Kopyasını oluştur',()=>{duplicateBoard();fitAll();}],
-  ['trash-bin-minimalistic','Artboardı sil',()=>{if(!removeBoard(doc.active))toast('Son artboard silinemez');}]],{under:true});});
+  ['trash-bin-minimalistic','Artboardı sil',()=>removeBoard(doc.active)]],{under:true});});
 
 // dock: add device / light
 $('#dock [data-add="device"]').addEventListener('click',e=>{e.stopPropagation();openMenu($('#addMenu'),e.currentTarget,
-  Object.entries(TYPES).map(([k,n])=>[DEV_ICON[k]||'smartphone',n,()=>{$('#addType').value=k;$('#addDevice').click();setUi({kind:'device'});syncTool();}])
+  Object.entries(TYPES).map(([k,n])=>[DEV_ICON[k]||'smartphone',n,()=>{ensureBoard();$('#addType').value=k;$('#addDevice').click();setUi({kind:'device'});syncTool();}])
     .concat([null,['widget','Hazır kompozisyonlar…',()=>{selectTab('tpl');}]]));});
 $('#dock [data-add="light"]').addEventListener('click',e=>{e.stopPropagation();openMenu($('#addMenu'),e.currentTarget,
-  MODS.filter(m=>m.k!=='custom').map(m=>[LIGHT_ICON[m.k]||'sun-2',m.n,()=>{const n=state.lights.length;$('#addLight').click();
+  MODS.filter(m=>m.k!=='custom').map(m=>[LIGHT_ICON[m.k]||'sun-2',m.n,()=>{ensureBoard();const n=state.lights.length;$('#addLight').click();
     if(state.lights.length>n){const b=$('#modGrid [data-mod="'+m.k+'"]');if(b)b.click();setUi({kind:'light'});}}]));});
 const newBoard=()=>{addBoard();setUi({kind:'board'});fitAll();};
-$('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEventListener('click',newBoard);
+$('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEventListener('click',newBoard);$('#emptyAddBoard').addEventListener('click',newBoard);
 
 /* ---------- export popover ---------- */
 function syncExport(){
-  const b=activeBoard(),[w,h]=boardSize(b);
+  const b=activeBoard();if(!b){$('#exportNote').textContent='Artboard yok';$('#exportBoards').hidden=true;return;}
+  const [w,h]=boardSize(b);
   $('#exportNote').textContent=w+' × '+h+' px'+(state.quality==='photo'?' · fotoğraf kalitesi yarım dakika kadar sürer':'');
   $('#exportBoards').hidden=doc.boards.length<2;
 }
@@ -222,8 +226,10 @@ addEventListener('keydown',e=>{
   if(k==='a'&&!e.repeat){newBoard();return;}
   if(e.key==='Escape'){showGizmo(false);setUi({kind:'board'});return;}
   if(e.key==='Delete'||e.key==='Backspace'){
-    if(ui.kind==='device'&&state.devices.length>1){e.preventDefault();$('#removeDevice').click();}
+    if(ui.kind==='device'&&state.devices.length){e.preventDefault();$('#removeDevice').click();}
     else if(ui.kind==='light'){e.preventDefault();$('#removeLight').click();}
+    // the artboard itself (the last one too: the canvas is then empty; undo brings it back)
+    else if(ui.kind==='board'&&hasBoard()){e.preventDefault();removeBoard(doc.active);}
   }
 });
 
