@@ -2,7 +2,7 @@ import {RT} from '../devices/rt.js';
 import {buildRT,disposeRT} from '../devices/runtime.js';
 import {rebuildLights} from '../lights/actions.js';
 import {reserveLightIds} from '../lights/mods.js';
-import {interp,tracked} from '../state/anim.js';
+import {designT,interp,tracked} from '../state/anim.js';
 import {patternBg} from '../render/backgrounds.js';
 import {renderer} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
@@ -28,8 +28,8 @@ function snapshot(){
   st.bgImg=imgKey(state.bgImg);if(state.bgImg)images[st.bgImg]=state.bgImg;
   st.items=state.items.map(it=>{const o=Object.assign({},it,{img:imgKey(it.img)});images[o.img]=it.img;return copy(o);});
   const devices=state.devices.map(d=>{const o={};for(const k in d)if(!SKIP_DEVICE.has(k))o[k]=copy(d[k]);
-    // animated values are stored at t = 0, not at the editor's playhead (moving the playhead is not an edit)
-    tracked(d).forEach(k=>{o[k]=interp(d.tracks[k],0);});
+    // animated values are stored at the design frame, not at the editor's playhead (moving the playhead is not an edit)
+    tracked(d).forEach(k=>{o[k]=interp(d.tracks[k],designT(d));});
     if(d.img){o.img=imgKey(d.img);images[o.img]=d.img;}if(d.frameImg){o.frameImg=imgKey(d.frameImg);images[o.frameImg]=d.frameImg;}return o;});
   return {v:1,state:st,devices,lights:copy(state.lights),selected:state.selected,selLight:state.selLight,
     frame:{comp:comp.position.toArray(),fitRadius:view.fitRadius},images};

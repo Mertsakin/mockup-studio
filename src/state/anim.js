@@ -3,7 +3,8 @@
    shapes the move from that key to the next. Values without a track keep the device's own field. The animatable
    values are the Dönüşüm set (position, rotation, scale), the laptop lid angle and the screenshot scroll.
    The artboard's timing is state.anim {dur (s, 1–30), fps, loop}. While a board has tracks, the devices' fields
-   hold the values at the editor's playhead (ui/animate.js writes them); snapshots store them at t = 0. */
+   hold the values the editor shows (ui/animate.js writes them). d.designT is the device's design frame (default 0 s):
+   what Tasarla, the still image and snapshots show; editing in Tasarla rewrites the keys at that time. */
 const ANIM_PROPS=['px','py','pz','ry','rx','rz','scale','lidAngle','scroll'];
 const MAX_DUR=30;
 const propsOf=d=>ANIM_PROPS.filter(k=>k!=='lidAngle'||d.type==='laptop');
@@ -28,7 +29,8 @@ function valuesAt(d,t){const o={};tracked(d).forEach(k=>{o[k]=interp(d.tracks[k]
 // summary times of a device: every time some value has a key
 const timesOf=d=>[...new Set(tracked(d).flatMap(k=>d.tracks[k].map(x=>+x.t.toFixed(4))))].sort((a,b)=>a-b);
 const halfFrame=fps=>.5/(fps||30);
+const designT=d=>d.designT||0;
 const keyIn=(tr,t,fps)=>tr?tr.find(k=>Math.abs(k.t-t)<halfFrame(fps)):undefined;
 const snapT=(t,fps)=>Math.round(t*(fps||30))/(fps||30);
 
-export {ANIM_PROPS,EASE,MAX_DUR,halfFrame,hasAnim,interp,keyIn,propsOf,snapT,sortKeys,timesOf,tracked,valuesAt};
+export {ANIM_PROPS,EASE,MAX_DUR,designT,halfFrame,hasAnim,interp,keyIn,propsOf,snapT,sortKeys,timesOf,tracked,valuesAt};

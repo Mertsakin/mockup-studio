@@ -196,6 +196,8 @@
           <p class="hint-sm" id="keyWhat"></p>
           <div id="keyEaseWrap"><span class="lbl block" id="keyEaseLbl">Sonraki kareye geçiş</span><div class="easegrid" id="easeGrid" role="group" aria-label="Geçiş"></div></div>
           <p class="hint-sm" id="keyLast" hidden>Son kare: sonrasında değerler sabit kalır.</p>
+          <p class="hint-sm" id="keyIsDesign" hidden>Tasarım karesi: Tasarla ve durağan görsel bu anı gösterir.</p>
+          <button class="btn full" type="button" id="keyDesign" title="Tasarla ve durağan görsel bu anı göstersin">Tasarım karesi yap</button>
         </section>
         <section class="sec">
           <h3 class="sh">Model</h3>
@@ -259,7 +261,7 @@
           <div id="devSliders"></div>
           <div id="animSlots" class="anim-only"></div>
           <p class="hint-sm anim-only" id="animHint">◆ dolu: bu anda kare var · ◇: değer animasyonlu. Bir değeri değiştirmek yalnızca onu kaydeder.</p>
-          <p class="note design-only" id="animNote" hidden>Bu cihaz animasyonlu. Animasyonlu bir değeri burada değiştirirsen fark tüm karelerine eklenir: hareket korunur, bütünüyle kayar.</p>
+          <p class="note design-only" id="animNote" hidden>Bu cihaz animasyonlu. Burada animasyonun tasarım karesini (<span id="animNoteT"></span> sn) görüyorsun; değişiklikler yalnızca o kareye yazılır, diğer kareler değişmez.</p>
           <details id="placeDetails" hidden></details>
         </section>
         <section class="sec anim-only">

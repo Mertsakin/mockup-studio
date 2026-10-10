@@ -5,7 +5,7 @@ import {canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {hasAnim} from '../state/anim.js';
 import {state,view} from '../state/state.js';
-import {A,applyAt,onAnim,stop} from '../ui/animate.js';
+import {applyAt,applyNow,onAnim,stop} from '../ui/animate.js';
 import {invalidateLayout,layout,paintBg,paintItems} from '../ui/layout.js';
 import {toast} from '../ui/toast.js';
 import {ui} from '../ui/ui-state.js';
@@ -42,7 +42,7 @@ async function renderVideo(onProgress){
   let failed=null;
   const enc=new VideoEncoder({output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta),error:e=>{failed=e;}});
   enc.configure(config);
-  const keepT=A.t,pr=renderer.getPixelRatio(),out=mkCanvas(W,H),g=out.getContext('2d');
+  const pr=renderer.getPixelRatio(),out=mkCanvas(W,H),g=out.getContext('2d');
   const hidden=[];LRT.forEach(o=>{if(o.marker.visible){o.marker.visible=false;hidden.push(o.marker);}});overlays.forEach(o=>{if(o.visible){o.visible=false;hidden.push(o);}});
   pauseLive(true);
   try{
@@ -72,7 +72,7 @@ async function renderVideo(onProgress){
     try{if(enc.state!=='closed')enc.close();}catch(e){/* closed */}
     hidden.forEach(o=>{o.visible=true;});
     pauseLive(false);renderer.setPixelRatio(pr);invalidateLayout();layout();
-    applyAt(keepT);req();
+    applyNow();req();
   }
 }
 

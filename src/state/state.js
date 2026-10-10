@@ -7,7 +7,7 @@ const reserveDeviceIds=max=>{uid=Math.max(uid,max);};
 function newDevice(type,o){
   return Object.assign({id:++uid,type,landscape:false,notch:'hole',backFinish:'matte',lidAngle:112,colorKey:'graphite',custom:'#7a5cff',
     fit:'cover',screenBg:'#000000',glare:true,finish:null,px:0,py:0,pz:0,rx:0,ry:0,rz:0,scale:1,
-    img:null,imgName:'',scroll:0,tracks:{},siteUrl:'',frameImg:null,frameName:'',screenRect:null,url:'siteadi.com',theme:'light',winRatio:'16:10',pageRatio:'3:4'},o||{});
+    img:null,imgName:'',scroll:0,tracks:{},designT:0,siteUrl:'',frameImg:null,frameName:'',screenRect:null,url:'siteadi.com',theme:'light',winRatio:'16:10',pageRatio:'3:4'},o||{});
 }
 const state={
   scene:{rx:-6,ry:26,rz:0,zoom:1,fov:28,panX:0,panY:0},

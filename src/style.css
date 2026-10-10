@@ -405,6 +405,7 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .lane.subl{height:26px;background:var(--panel)}
 .seg-bar{position:absolute;top:13px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--key) 35%,transparent)}
 .lane.subl .seg-bar{top:11px;height:4px}
+.dmark{position:absolute;top:6px;width:20px;height:20px;margin-left:-10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--accent);pointer-events:none}
 .kf{position:absolute;top:9px;width:14px;height:14px;margin-left:-7px;padding:0;cursor:ew-resize}
 .lane.subl .kf{top:6px}
 .kf::before{content:"";position:absolute;inset:2px;transform:rotate(45deg);background:var(--key);border-radius:2px;box-shadow:0 0 0 1.5px var(--panel)}

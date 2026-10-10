@@ -1,7 +1,7 @@
 import {TYPES} from '../state/constants.js';
-import {halfFrame,hasAnim,keyIn,propsOf,timesOf,tracked} from '../state/anim.js';
+import {designT,halfFrame,hasAnim,keyIn,propsOf,timesOf,tracked} from '../state/anim.js';
 import {sel,state} from '../state/state.js';
-import {A,PRESETS,addPoseKey,applyPreset,deleteSelected,keyProp,keysAt,moveSelected,onAnim,play,seek,selectKey,selectedKeys,setDuration,setEase,setMode,stop} from './animate.js';
+import {A,PRESETS,addPoseKey,applyPreset,deleteSelected,keyProp,keysAt,moveSelected,onAnim,play,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop} from './animate.js';
 import {icon} from './icons.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
 import {toast} from './toast.js';
@@ -30,7 +30,7 @@ const xOf=t=>12+t/state.anim.dur*W(),tOf=x=>Math.max(0,Math.min(state.anim.dur,(
 /* ---------- drawing: the structure is rebuilt only when it changes; the playhead moves every frame */
 let sig='';
 function structure(){
-  return JSON.stringify([state.anim.dur,state.selected,A.sel,[...open],devNames(),state.devices.map(d=>[d.id,d.tracks?tracked(d).map(k=>[k,d.tracks[k].map(x=>[x.t,x.ease])]):0])]);
+  return JSON.stringify([state.anim.dur,state.selected,A.sel,[...open],devNames(),state.devices.map(d=>[d.id,designT(d),d.tracks?tracked(d).map(k=>[k,d.tracks[k].map(x=>[x.t,x.ease])]):0])]);
 }
 function rows(){const r=[];state.devices.forEach((d,i)=>{r.push({d,i,prop:null});if(open.has(d.id))tracked(d).forEach(k=>r.push({d,i,prop:k}));});return r;}
 function build(){
@@ -59,6 +59,8 @@ function build(){
     const ts=prop?d.tracks[prop].map(k=>k.t):timesOf(d);
     let lh='';
     for(let j=0;j<ts.length-1;j++)lh+='<div class="seg-bar" style="left:'+xOf(ts[j])+'px;width:'+(xOf(ts[j+1])-xOf(ts[j]))+'px"></div>';
+    // the design frame (what Tasarla and the still image show) on the device's summary row
+    if(!prop&&hasAnim(d))lh+='<span class="dmark" style="left:'+xOf(designT(d))+'px" title="Tasarım karesi ('+fmtT(designT(d))+' sn): Tasarla bu anı gösterir, oradaki değişiklikler bu kareye yazılır"></span>';
     lane.innerHTML=lh;
     ts.forEach(t=>{
       const s=A.sel,on=s&&s.dev===d.id&&Math.abs(s.t-t)<halfFrame(fps())&&(s.prop===prop||(!s.prop&&!!prop));
@@ -155,6 +157,7 @@ const easeGrid=$('#easeGrid');
 EASES.forEach(([k,n,path])=>{const b=document.createElement('button');b.type='button';b.className='ease';b.dataset.ease=k;
   b.innerHTML='<svg viewBox="0 0 36 22" aria-hidden="true"><path d="'+path+'"/></svg><span></span>';b.lastChild.textContent=n;b.addEventListener('click',()=>setEase(k));easeGrid.appendChild(b);});
 $('#keyDelete').addEventListener('click',()=>deleteSelected());
+$('#keyDesign').addEventListener('click',()=>setDesignFrame());
 $('#poseKey').addEventListener('click',()=>addPoseKey(sel()));
 const dots={};
 function ensureDots(){
@@ -176,6 +179,7 @@ function syncInspector(){
   const d=sel(),animate=ui.mode==='animate';
   $('#animNote').hidden=!(d&&!animate&&hasAnim(d));
   if(!d)return;
+  $('#animNoteT').textContent=fmtT(designT(d));
   const t=Math.round(A.t*fps())/fps();
   for(const k in dots){const tr=d.tracks&&d.tracks[k],at=animate&&!!keyIn(tr,t,fps()),an=!!tr&&tr.length>1&&tr.some(x=>Math.abs(x.v-tr[0].v)>1e-9);
     dots[k].classList.toggle('at',at);dots[k].classList.toggle('anim',an&&!at);dots[k].hidden=!propsOf(d).includes(k);}
@@ -188,6 +192,8 @@ function syncInspector(){
     $('#keyWhat').textContent=p?LABEL[p]:ks.length+' değer (özet kare: birlikte taşınır ve silinir)';
     const last=(p?[p]:tracked(d)).every(k=>{const tr=d.tracks[k];return !tr||!tr.length||tr[tr.length-1].t<=A.sel.t+1e-6;});
     $('#keyEaseWrap').hidden=last;$('#keyLast').hidden=!last;
+    const isDesign=Math.abs(designT(d)-A.sel.t)<halfFrame(fps());
+    $('#keyDesign').hidden=isDesign;$('#keyIsDesign').hidden=!isDesign;
     const es=new Set(ks.map(k=>k.ease));$('#keyEaseLbl').textContent='Sonraki kareye geçiş'+(es.size>1?' (karışık)':'');
     easeGrid.querySelectorAll('.ease').forEach(b=>b.setAttribute('aria-pressed',String(es.size===1&&es.has(b.dataset.ease))));
   }
