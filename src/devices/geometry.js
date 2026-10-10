@@ -53,6 +53,20 @@ function slotTexture(n,wpx,hpx,color){
   for(let i=0;i<n;i++){roundRect(g,i*sw+sw*.25,hpx*.08,sw*.5,hpx*.84,sw*.25);g.fill();}
   const t=new THREE.CanvasTexture(c);t.anisotropy=ANISO;return t;
 }
+/* Contact shadow / ambient-occlusion stand-in for the raster renderer: a blurred dark rectangle on the floor plane
+   right under where a device touches it (w x d in cm, local XZ). Hidden by applyTransform unless the floor is on and
+   the plane faces up; skipped by the path tracer, which computes real contact shadows. */
+const AO_TEX={};
+function aoTexture(w,d,soft){
+  const key=(w/d).toFixed(2)+'/'+soft;if(AO_TEX[key])return AO_TEX[key];
+  const W=512,H=Math.max(48,Math.round(512*d/w)),c=mkCanvas(W,H),g=c.getContext('2d'),pad=soft*Math.min(W,H)*.22;
+  g.filter='blur('+(pad*.55).toFixed(1)+'px)';g.fillStyle='#000';g.fillRect(pad*1.1,pad*1.1,W-2.2*pad,H-2.2*pad);
+  return AO_TEX[key]=new THREE.CanvasTexture(c);
+}
+function aoPlane(w,d,opacity,y,soft){
+  const m=mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({color:0x000000,alphaMap:aoTexture(w,d,soft||1),transparent:true,opacity,depthWrite:false}));
+  m.rotation.x=-Math.PI/2;m.position.y=y;m.userData.decal=true;m.userData.ao=true;m.renderOrder=-1;return m;
+}
 function alphaMat(t){return new THREE.MeshStandardMaterial({color:lin(0x030304),roughness:1,metalness:0,alphaMap:t,transparent:true,alphaTest:.35,depthWrite:false});}
 
-export {alphaMat,dotTexture,flatRR,hole,innerRadii,lens,mesh,onSide,rrShape,slab,slotTexture};
+export {alphaMat,aoPlane,dotTexture,flatRR,hole,innerRadii,lens,mesh,onSide,rrShape,slab,slotTexture};

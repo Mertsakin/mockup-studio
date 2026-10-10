@@ -27,6 +27,6 @@ const COMPS=[
   {n:'Masaüstü seti',items:[{type:'monitor'},{type:'laptop',px:-31,py:-10.25,pz:8,ry:22},{type:'phone',px:27,py:-12.6,pz:10,ry:-22}],scene:{rx:8,ry:0,rz:0}},
   {n:'Tarayıcı + telefon',items:[{type:'browser',ry:6},{type:'phone',px:14.5,py:-3.6,pz:5,ry:-12}],scene:{rx:-6,ry:18,rz:0}}
 ];
-const DEFAULT_FINISH={phone:'blasted',tablet:'blasted',laptop:'anodized',monitor:'brushed',browser:'matte',page:'matte',custom:'matte'};
+const DEFAULT_FINISH={phone:'anodized',tablet:'anodized',laptop:'anodized',monitor:'anodized',browser:'matte',page:'matte',custom:'matte'};
 
 export {COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};

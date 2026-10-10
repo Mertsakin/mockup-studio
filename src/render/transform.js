@@ -12,7 +12,7 @@ function refit(){
   const pr=pivot.rotation.clone(),pp=pivot.position.clone();
   pivot.rotation.set(0,0,0);pivot.position.set(0,0,0);comp.position.set(0,0,0);
   RT.forEach((o,id)=>setHolder(o,byId(id)));scene.updateMatrixWorld(true);
-  const box=new THREE.Box3();RT.forEach(o=>box.expandByObject(o.holder));
+  const box=new THREE.Box3();RT.forEach(o=>o.holder.traverse(x=>{if(x.isMesh&&(!x.userData.ao||x.userData.fit))box.expandByObject(x);}));  // contact shadows don't count
   if(!box.isEmpty()){
     view.fitBox=box.clone();comp.position.copy(box.getCenter(new V3())).negate();
     view.fitRadius=Math.max(1,box.getSize(new V3()).length()/2);
@@ -38,7 +38,7 @@ const tmpV=new V3();
 function extents(){
   let minY=Infinity,minZ=Infinity;
   RT.forEach(o=>o.holder.traverse(x=>{
-    if(!x.isMesh||!x.visible||x.material===M.glare)return;
+    if(!x.isMesh||!x.visible||x.material===M.glare||x.userData.ao)return;
     const p=x.geometry.attributes.position,mw=x.matrixWorld;
     for(let i=0;i<p.count;i++){tmpV.fromBufferAttribute(p,i).applyMatrix4(mw);if(tmpV.y<minY)minY=tmpV.y;if(tmpV.z<minZ)minZ=tmpV.z;}
   }));
@@ -48,16 +48,20 @@ function camDist(){
   const S=state.scene,v=S.fov*D2R,h=2*Math.atan(Math.tan(v/2)*view.aspect),eff=Math.min(v,h);
   return view.fitRadius/Math.sin(eff/2)*.9/S.zoom;
 }
+const aoUp=new THREE.Vector3(),aoN=new THREE.Vector3();
 function applyTransform(){
   const S=state.scene;
   pivot.rotation.set(S.rx*D2R,S.ry*D2R,S.rz*D2R,'YXZ');
-  RT.forEach((o,id)=>{const d=byId(id);if(d)setHolder(o,d);o.holder.traverse(x=>{if(x.userData.ao)x.visible=state.floor;});});
+  RT.forEach((o,id)=>{const d=byId(id);if(d)setHolder(o,d);});
   const v=S.fov*D2R,dist=camDist();
   camera.fov=S.fov;camera.aspect=view.aspect;camera.position.set(0,0,dist);
   camera.near=Math.max(.05,dist*.03);camera.far=dist*5+2000;camera.lookAt(0,0,0);camera.updateProjectionMatrix();
   const vh=2*dist*Math.tan(v/2),vw=vh*view.aspect;
   pivot.position.set(S.panX*vw,S.panY*vh,0);
   scene.updateMatrixWorld(true);
+  // contact shadows: only while the floor is shown and the device stands on it the way the plane assumes (faces up)
+  aoUp.set(0,1,0).transformDirection(comp.matrixWorld);
+  RT.forEach(o=>o.holder.traverse(x=>{if(x.userData.ao)x.visible=state.floor&&aoN.set(0,0,1).transformDirection(x.matrixWorld).dot(aoUp)>.97;}));
   const ex=extents(),R=view.fitRadius;
   ground.position.set(pivot.position.x,ex.y-.004,0);ground.visible=state.floor;
   wall.position.set(pivot.position.x,ex.y-.004+2000,ex.z-state.wallGap*R);wall.visible=state.wall;

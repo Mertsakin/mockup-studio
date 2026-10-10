@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {alphaMat,dotTexture,flatRR,hole,innerRadii,mesh,onSide,rrShape,slab,slotTexture} from './geometry.js';
+import {alphaMat,aoPlane,dotTexture,flatRR,hole,innerRadii,mesh,onSide,rrShape,slab,slotTexture} from './geometry.js';
 import {buildKeyboard} from './keyboard.js';
 import {M} from './materials.js';
-import {V3,mkCanvas} from '../util.js';
+import {V3} from '../util.js';
 
 /* Thin generic laptop (cm). Unibody: a lower shell with a soft rounded bottom edge and a top deck with a crisp small
    chamfer; they meet on the vertical wall, leaving only a hairline parting seam. Low-profile keys stand KEY_UP above
@@ -11,8 +11,6 @@ const W=31.2,Dp=21.8,T=.675,R=1.15,Hl=20.4,Tl=.252;
 const CAP_T=.108,KEY_UP=.027,WELL=.135,FEET=.07;
 const SPEAKER_TEX=dotTexture(14,90,256,4096,5.2,'#fff');
 const VENT_TEX=slotTexture(36,2048,64,'#fff');
-// soft darkening right under the body: contact shadow / ambient occlusion stand-in for the raster renderer
-const AO_TEX=(function(){const c=mkCanvas(512,384),g=c.getContext('2d');g.filter='blur(22px)';g.fillStyle='#000';g.fillRect(70,60,372,264);return new THREE.CanvasTexture(c);})();
 function buildLaptop(m){
   const g=new THREE.Group(),H1=T-WELL,yU=T*.38;
   // lower shell
@@ -52,8 +50,9 @@ function buildLaptop(m){
   const camY=Hl-rim-topB/2,camR=mesh(new THREE.CircleGeometry(.11,32),M.port);camR.position.set(0,camY,.005);lid.add(camR);
   const camL=mesh(new THREE.CircleGeometry(.055,32),M.lensFace);camL.position.set(0,camY,.0055);lid.add(camL);
   g.add(lid);
-  const ao=mesh(new THREE.PlaneGeometry(W*1.25,Dp*1.25),new THREE.MeshBasicMaterial({color:0x000000,alphaMap:AO_TEX,transparent:true,opacity:.42,depthWrite:false}));
-  ao.rotation.x=-Math.PI/2;ao.position.y=.022-FEET;ao.userData.decal=true;ao.userData.ao=true;ao.renderOrder=-1;g.add(ao);
+  // soft darkening right under the body; it predates the shared helper and has always counted towards framing and
+  // centring, so it keeps doing so (fit: true) and existing laptop scenes and templates frame as before
+  const ao=aoPlane(W*1.25,Dp*1.25,.42,.022-FEET,.55);ao.userData.fit=true;g.add(ao);
   return {group:g,screen:scr,glare,sw,sh,rotatable:false,lid};
 }
 

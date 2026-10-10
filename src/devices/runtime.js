@@ -16,7 +16,7 @@ function buildRT(d){
   if(o.lid)o.lid.rotation.x=-(d.lidAngle-90)*D2R;
   o.group.traverse(x=>{if(x.isMesh){x.castShadow=x.material!==M.glare&&!x.userData.decal;x.receiveShadow=state.selfShadow&&x.material!==M.glare;}});
   o.group.updateMatrixWorld(true);
-  const box=new THREE.Box3().setFromObject(o.group);
+  const box=new THREE.Box3();o.group.traverse(x=>{if(x.isMesh&&(!x.userData.ao||x.userData.fit))box.expandByObject(x);});  // contact shadows don't count
   o.group.position.sub(box.getCenter(new V3()));o.size=box.getSize(new V3());
   o.orient=new THREE.Group();o.orient.add(o.group);
   o.holder=new THREE.Group();o.holder.add(o.orient);o.holder.userData.devId=d.id;
