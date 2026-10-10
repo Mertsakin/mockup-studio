@@ -5,7 +5,7 @@ import {LRT} from '../lights/runtime.js';
 import {camera,canvas} from '../render/renderer.js';
 import {pivot} from '../render/stage.js';
 import {applyTransform,camDist} from '../render/transform.js';
-import {POS_MAX} from '../state/constants.js';
+import {POS_MAX,ZOOM_MAX,ZOOM_MIN} from '../state/constants.js';
 import {sel,state,view} from '../state/state.js';
 import {lightMoved} from './dome.js';
 import {gizmoDown,gizmoHot,gizmoMove,gizmoUp,showGizmo} from './gizmo.js';
@@ -92,7 +92,7 @@ canvas.addEventListener('pointermove',e=>{
   } else if(pointers.size===2){
     let o=null;for(const [id,q] of pointers){if(id!==e.pointerId)o=q;}
     const od=Math.hypot(p.x-o.x,p.y-o.y),nd=Math.hypot(e.clientX-o.x,e.clientY-o.y);
-    if(od>0)S.zoom=clamp(S.zoom*nd/od,.3,3);pan(dx/2,dy/2);
+    if(od>0)S.zoom=clamp(S.zoom*nd/od,ZOOM_MIN,ZOOM_MAX);pan(dx/2,dy/2);
   }
   p.x=e.clientX;p.y=e.clientY;applyTransform();syncSliders();
 });
@@ -110,7 +110,7 @@ canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercanc
 // wheel over the live board: Alt zooms the camera; over the selected device's long screenshot it scrolls the screen
 // (~one screen per 500 px of wheel). Anything else bubbles to the workspace (pan / zoom the canvas).
 canvas.addEventListener('wheel',e=>{
-  if(e.altKey){e.preventDefault();e.stopPropagation();const S=state.scene;S.zoom=clamp(S.zoom*Math.exp(-e.deltaY*.0015),.3,3);applyTransform();syncSliders();return;}
+  if(e.altKey){e.preventDefault();e.stopPropagation();const S=state.scene;S.zoom=clamp(S.zoom*Math.exp(-e.deltaY*.0015),ZOOM_MIN,ZOOM_MAX);applyTransform();syncSliders();return;}
   if(e.ctrlKey||e.metaKey||ui.kind!=='device')return;
   const id=pick(e.clientX,e.clientY),d=id===state.selected&&state.devices.find(x=>x.id===id),n=d&&scrollScreens(d);
   if(n){e.preventDefault();e.stopPropagation();scrollScreen(d,d.scroll+e.deltaY/(500*(n-1)));syncSliders();}

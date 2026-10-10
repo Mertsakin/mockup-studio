@@ -1,7 +1,7 @@
 import {applyAmbient} from '../lights/runtime.js';
 import {renderer} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
-import {SCALE_MAX,SCALE_MIN} from '../state/constants.js';
+import {SCALE_MAX,SCALE_MIN,ZOOM_MAX,ZOOM_MIN} from '../state/constants.js';
 import {sel,state,view} from '../state/state.js';
 import {$} from '../util.js';
 
@@ -31,7 +31,7 @@ const G=()=>state.scene;
   {id:'g-ry',k:'ry',l:'Dönüş',min:-180,max:180,step:1,reset:0,f:fDeg},
   {id:'g-rx',k:'rx',l:'Eğim',min:-90,max:90,step:1,reset:0,f:fDeg},
   {id:'g-rz',k:'rz',l:'Yatış',min:-180,max:180,step:1,reset:0,f:fDeg},
-  {id:'g-zoom',k:'zoom',l:'Yakınlık',min:.3,max:3,step:.01,reset:1,f:fX},
+  {id:'g-zoom',k:'zoom',l:'Yakınlık',min:ZOOM_MIN,max:ZOOM_MAX,step:.01,reset:1,f:fX,log:true},
   {id:'g-fov',k:'fov',l:'Perspektif',min:6,max:60,step:1,reset:28,f:fDeg,note:'Düşük değer düz, yüksek değer derin bir görünüm verir.'},
   {id:'g-panX',k:'panX',l:'Yatay kayma',min:-.6,max:.6,step:.01,reset:0,f:fPct},
   {id:'g-panY',k:'panY',l:'Dikey kayma',min:-.6,max:.6,step:.01,reset:0,f:fPct}

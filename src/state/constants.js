@@ -33,5 +33,7 @@ const DEFAULT_FINISH={phone:'anodized',tablet:'anodized',laptop:'anodized',monit
 const SCALE_MIN=.1,SCALE_MAX=10;
 // device position limit (cm): practically free; the inspector sliders show a range that follows the scene
 const POS_MAX=1000;
+// camera closeness (Yakınlık) on top of the framing: slider, Alt + wheel, pinch
+const ZOOM_MIN=.3,ZOOM_MAX=10;
 
-export {POS_MAX,SCALE_MAX,SCALE_MIN,COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};
+export {POS_MAX,ZOOM_MAX,ZOOM_MIN,SCALE_MAX,SCALE_MIN,COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};

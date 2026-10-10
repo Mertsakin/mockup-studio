@@ -53,10 +53,12 @@ function applyTransform(){
   const S=state.scene;
   pivot.rotation.set(S.rx*D2R,S.ry*D2R,S.rz*D2R,'YXZ');
   RT.forEach((o,id)=>{const d=byId(id);if(d)setHolder(o,d);});
-  const v=S.fov*D2R,dist=camDist();
-  camera.fov=S.fov;camera.aspect=view.aspect;camera.position.set(0,0,dist);
+  // camDist() is the effective distance (framing / zoom). The camera itself stops short of the composition
+  // (1.2 radii) and a longer lens (camera.zoom) gives the rest, so high Yakınlık never puts it inside a device.
+  const v=S.fov*D2R,eff=camDist(),dist=Math.max(eff,view.fitRadius*1.2);
+  camera.fov=S.fov;camera.aspect=view.aspect;camera.zoom=dist/eff;camera.position.set(0,0,dist);
   camera.near=Math.max(.05,dist*.03);camera.far=dist*5+2000;camera.lookAt(0,0,0);camera.updateProjectionMatrix();
-  const vh=2*dist*Math.tan(v/2),vw=vh*view.aspect;
+  const vh=2*eff*Math.tan(v/2),vw=vh*view.aspect;  // visible size at the target plane
   pivot.position.set(S.panX*vw,S.panY*vh,0);
   scene.updateMatrixWorld(true);
   // contact shadows: only while the floor is shown and the device stands on it the way the plane assumes (faces up)
