@@ -113,11 +113,13 @@ function present(threshold){
 
 /* Export: path traces at the canvas' current size until `samples` or `budgetMs`, then removes the remaining noise with
    Intel Open Image Denoise (the "denoiser" package, weights self-hosted in public/oidn), keeping the alpha channel.
+   OIDN also gets noise-free albedo and normal passes of the same view (renderAux): with them it keeps texture detail
+   (key legends, screen text) instead of smoothing it as noise. Without them (aux failed) it denoises colour only.
    Returns a 2D canvas with the final image. onProgress(0..1): sampling up to .9, denoising the rest. */
 async function renderPathTraced(samples,onProgress,budgetMs=60000){
   stopPreview();
   const env=await loadHdri().catch(()=>null)||gradientEnv(),undoStudio=setupStudio(env),t0=performance.now();
-  let raw;
+  let raw,aux=null;
   try{
     ensurePT();pt.renderScale=1;pt.setScene(scene,camera);
     while(pt.samples<samples&&(pt.samples<8||performance.now()-t0<budgetMs)){
@@ -129,29 +131,85 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000){
     }
     present(1e-3);  // practically unfiltered (0 would divide by zero in the filter)
     raw=copyCanvas(renderer.domElement);
+    if(!window.__noOidn&&!window.__noAux)try{const ta=performance.now();aux=renderAux(raw.width,raw.height);console.info('Yardımcı geçişler '+Math.round(performance.now()-ta)+' ms');}
+      catch(e){console.warn('Albedo/normal geçişleri alınamadı, yalnızca renkle gürültü giderme:',e);}
   }finally{undoStudio();req();}
+  if(window.__ptKeep)window.__ptLast={raw:copyCanvas(raw),aux};  // test hook: compare denoiser variants on the same samples
   const tn=performance.now();
-  if(!window.__noOidn)try{await oidn(raw);console.info('OIDN '+Math.round(performance.now()-tn)+' ms, '+Math.floor(pt.samples)+' örnek');}catch(e){console.warn('OIDN kullanılamadı, basit gürültü giderme ile devam:',e);}
+  if(!window.__noOidn)try{await denoiseCanvas(raw,aux);console.info('OIDN '+Math.round(performance.now()-tn)+' ms, '+Math.floor(pt.samples)+' örnek'+(aux?', albedo + normal':''));}
+    catch(e){console.warn('OIDN kullanılamadı, basit gürültü giderme ile devam:',e);}
   if(onProgress)onProgress(1);
   return raw;
 }
 function copyCanvas(src){const c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);return c;}
+
+/* OIDN's auxiliary inputs, rendered by the rasteriser from the same camera while the studio set-up is still applied
+   (so screens are the emissive glass, hidden decals stay hidden, the sweep is there). Noise-free ("clean aux"), with
+   4x MSAA standing in for the path tracer's pixel jitter. Returns top-down RGB Float32Arrays:
+   - albedo: linear base colour (with its map); emissive surfaces (screens) their emissive image; nothing = black;
+   - normal: view-space normals (with normal / bump maps) encoded 0..1; nothing = 0.5 (zero vector).
+   Additive / transmissive surfaces are left out: OIDN wants the first diffuse-ish hit behind them. */
+function renderAux(w,h){
+  const rt=new THREE.WebGLRenderTarget(w,h,{type:THREE.FloatType,samples:4}),buf=new Float32Array(w*h*4);
+  const meshes=[],made=new Map(),out={};
+  scene.traverseVisible(x=>{if(x.isMesh&&x.material)meshes.push([x,x.material]);});
+  const swap=(m,k)=>{
+    if(!made.has(m)){
+      const skip=m.blending===THREE.AdditiveBlending||m.transmission>0,base={side:m.side,alphaTest:m.alphaTest,visible:m.visible&&!skip};
+      const emit=!!m.emissiveMap,a=new THREE.MeshBasicMaterial(Object.assign({map:emit?m.emissiveMap:m.map||null,alphaMap:m.alphaMap||null,toneMapped:false},base));
+      if(emit)a.color.copy(m.emissive);else if(m.color)a.color.copy(m.color);
+      ['r','g','b'].forEach(c=>{a.color[c]=Math.min(1,a.color[c]);});
+      const n=new THREE.MeshNormalMaterial(Object.assign({normalMap:m.normalMap||null,bumpMap:m.bumpMap||null},base));
+      if(m.normalScale)n.normalScale.copy(m.normalScale);if(m.bumpScale!==undefined)n.bumpScale=m.bumpScale;
+      made.set(m,{albedo:a,normal:n});
+    }
+    return made.get(m)[k];
+  };
+  const bg=scene.background,cc=renderer.getClearColor(new THREE.Color()),ca=renderer.getClearAlpha(),target=renderer.getRenderTarget();
+  try{
+    scene.background=null;
+    for(const [k,clear] of [['albedo',0],['normal',.5]]){
+      meshes.forEach(([x,m])=>{x.material=Array.isArray(m)?m.map(q=>swap(q,k)):swap(m,k);});
+      renderer.setRenderTarget(rt);renderer.setClearColor(new THREE.Color(clear,clear,clear),1);renderer.clear();renderer.render(scene,camera);
+      renderer.readRenderTargetPixels(rt,0,0,w,h,buf);
+      const o=new Float32Array(w*h*3);  // flip to top-down rows, drop alpha
+      for(let y=0;y<h;y++){const s=(h-1-y)*w*4,d=y*w*3;for(let x=0;x<w;x++){o[d+x*3]=buf[s+x*4];o[d+x*3+1]=buf[s+x*4+1];o[d+x*3+2]=buf[s+x*4+2];}}
+      out[k]=o;
+    }
+  }finally{
+    meshes.forEach(([x,m])=>{x.material=m;});scene.background=bg;
+    renderer.setRenderTarget(target);renderer.setClearColor(cc,ca);rt.dispose();
+    made.forEach(v=>{v.albedo.dispose();v.normal.dispose();});
+  }
+  return out;
+}
+
+/* Runs OIDN on a 2D canvas in place. The canvas holds sRGB-encoded LDR pixels; the colour is linearised for the
+   network and encoded back here (the package's own srgb switch would also bend the albedo and normal channels).
+   window.__oidnSrgb = false feeds the sRGB values unchanged (test hook). */
 let oidnP=null;
-async function oidn(c){
+const S2L=new Float32Array(256).map((_,i)=>{const v=i/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);});
+const L2S=v=>v<=.0031308?v*12.92:1.055*Math.pow(v,1/2.4)-.055;
+async function denoiseCanvas(c,aux){
   if(!oidnP)oidnP=import('denoiser').then(({Denoiser})=>{const d=new Denoiser('webgl');
-    d.weightsUrl=new URL('oidn',document.baseURI).href;d.quality='balanced';d.hdr=false;d.srgb=window.__oidnSrgb!==undefined?window.__oidnSrgb:true;d.outputMode='imgData';  // srgb: the canvas holds sRGB-encoded LDR pixels
+    d.weightsUrl=new URL('oidn',document.baseURI).href;d.quality='balanced';d.hdr=false;d.srgb=false;d.outputMode='float32';
     d.useTiling=true;d.tileSize=256;if('batchSize' in d)d.batchSize=1;  // whole-image passes exceed WebGL's texture limit at export sizes
     return d;});
-  const d=await oidnP,g=c.getContext('2d'),src=g.getImageData(0,0,c.width,c.height);
-  const out=await d.execute(src);
-  if(!out||!out.data||out.data.length!==src.data.length)throw new Error('OIDN çıktısı geçersiz');
+  const d=await oidnP,W=c.width,H=c.height,n=W*H,g=c.getContext('2d'),img=g.getImageData(0,0,W,H),a=img.data;
+  const lin=window.__oidnSrgb!==false,col=new Float32Array(n*3);
+  for(let i=0;i<n;i++)for(let k=0;k<3;k++)col[i*3+k]=lin?S2L[a[i*4+k]]:a[i*4+k]/255;
+  d.resetInputs();d.width=W;d.height=H;  // model inputs (alb / nrm weights) follow what is set below
+  await d.setInputData('color',col,{channels:3});
+  if(aux){await d.setInputData('albedo',aux.albedo,{channels:3});await d.setInputData('normal',aux.normal,{channels:3});}
+  const out=await d.execute();
+  if(!out||out.length!==n*3)throw new Error('OIDN çıktısı geçersiz');
   // a failed GPU pass can come back blank without an error: keep the raw image unless the result has content
-  const a=src.data,b=out.data;let lit=0,ref=0;
-  for(let i=0;i<a.length;i+=4*97){lit+=b[i]+b[i+1]+b[i+2];ref+=a[i]+a[i+1]+a[i+2];}
+  let lit=0,ref=0;
+  for(let i=0;i<n;i+=97){lit+=out[i*3]+out[i*3+1]+out[i*3+2];ref+=col[i*3]+col[i*3+1]+col[i*3+2];}
   if(ref>0&&lit<ref*.5)throw new Error('OIDN çıktısı boş');
-  // keep the original alpha (transparent backgrounds); OIDN only cleans the colour
-  for(let i=3;i<a.length;i+=4)b[i]=a[i];
-  g.putImageData(out,0,0);
+  // only the colour changes; the original alpha (transparent backgrounds) stays
+  for(let i=0;i<n;i++)for(let k=0;k<3;k++){const v=Math.min(1,Math.max(0,out[i*3+k]));a[i*4+k]=Math.round(255*(lin?L2S(v):v));}
+  g.putImageData(img,0,0);
 }
 let gradient=null;
 function gradientEnv(){if(!gradient){gradient=new GradientEquirectTexture(64);gradient.topColor.set('#d6d8dc');gradient.bottomColor.set('#8a8e94');gradient.update();}return gradient;}
@@ -169,4 +227,4 @@ function previewTick(){
 function stopPreview(){if(!preview)return;const p=preview;preview=null;p.undo();}
 const previewing=()=>!!preview,previewSamples=()=>preview&&pt?pt.samples:0;
 
-export {setDenoise,previewSamples,previewTick,previewing,renderPathTraced,stopPreview};
+export {denoiseCanvas,setDenoise,previewSamples,previewTick,previewing,renderPathTraced,stopPreview};
