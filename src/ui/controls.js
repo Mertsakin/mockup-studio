@@ -14,13 +14,13 @@ function parseV(v){return v==='true'?true:v==='false'?false:v;}
 $$('.seg[data-key]').forEach(seg=>{const key=seg.dataset.key;
   seg.querySelectorAll('button').forEach(b=>{b.type='button';b.addEventListener('click',()=>{state[key]=parseV(b.dataset.v);onGlobal(key);});});});
 function onGlobal(key){
-  if(key==='bg'||key==='pattern')bgCss();
+  if(key==='bg'){bgCss();if(state.bg==='image'&&!state.bgImg)$('#bgFile').click();}  // no image yet: ask for one
   else if(key==='gizmo')setGizmoMode(state.gizmo);
   else if(key==='ratio')layout();
   syncUI();
 }
 const bindColor=(id,key,fn)=>{const el=$('#'+id);el.value=state[key];el.addEventListener('input',()=>{state[key]=el.value;fn();});};
-bindColor('solid','solid',bgCss);bindColor('pbase','pbase',bgCss);bindColor('paccent','paccent',bgCss);bindColor('bg1','bg1',bgCss);bindColor('bg2','bg2',bgCss);
+bindColor('solid','solid',bgCss);bindColor('bg1','bg1',bgCss);bindColor('bg2','bg2',bgCss);
 const bindSwitch=(id,key,fn)=>{const el=$('#'+id);el.checked=state[key];el.addEventListener('change',()=>{state[key]=el.checked;if(fn)fn();applyTransform();syncUI();});};
 bindSwitch('showDome','showDome',()=>renderDome());bindSwitch('floor','floor');bindSwitch('wall','wall');bindSwitch('markers','markers');
 bindSwitch('selfShadow','selfShadow',()=>RT.forEach(o=>o.holder.traverse(x=>{if(x.isMesh)x.receiveShadow=state.selfShadow&&x.material!==M.glare;})));
@@ -36,7 +36,7 @@ const previewEl=$('#photoPreview');previewEl.checked=state.photoPreview;previewE
 const qualityEl=$('#quality');qualityEl.value=state.quality;qualityEl.addEventListener('change',()=>{state.quality=qualityEl.value;syncUI();});
 onSyncUI(()=>{
   // inputs bound once at start-up; templates change state underneath them
-  ['solid','bg1','bg2','pbase','paccent','shadowColor'].forEach(k=>{const el=$('#'+k);if(el&&document.activeElement!==el)el.value=state[k];});
+  ['solid','bg1','bg2','shadowColor'].forEach(k=>{const el=$('#'+k);if(el&&document.activeElement!==el)el.value=state[k];});
   ['floor','wall','markers','selfShadow','showDome'].forEach(k=>{const el=$('#'+k);if(el)el.checked=state[k];});
   sizeEl.value=String(state.size);formatEl.value=state.format;qualityEl.value=state.quality;previewEl.checked=state.photoPreview;
   const custom=state.ratio==='custom';$('#artboard').hidden=!custom;$('#sizeRow').hidden=custom;

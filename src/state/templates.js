@@ -1,7 +1,8 @@
 /* Ready-made showcase templates. Each is a plain scene description applied by ui/templates.js:
    ratio, scene (camera angle / zoom / pan), bg (background style and colours), floor, lights (preset name),
    settle (line device bottoms up on the floor), devices (newDevice fields). Positions in cm.
-   format groups them on the showcases page. Inspired by the user's Figma boards; generic artwork only. */
+   format groups them on the showcases page. A bg of {bg:'pattern', …} becomes an image background
+   drawn from that pattern when the template is applied (render/backgrounds.js patternBg). Inspired by the user's Figma boards; generic artwork only. */
 const DARK={bg:'pattern',pattern:'shards',pbase:'#0d0e11',paccent:'#c8202b'};
 
 const TEMPLATES=[

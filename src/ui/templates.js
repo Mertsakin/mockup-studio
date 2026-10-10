@@ -3,6 +3,7 @@ import {RT} from '../devices/rt.js';
 import {buildRT,disposeRT} from '../devices/runtime.js';
 import {applyLightPreset} from '../lights/actions.js';
 import {LIGHT_PRESETS} from '../lights/mods.js';
+import {patternBg} from '../render/backgrounds.js';
 import {renderer} from '../render/renderer.js';
 import {pivot} from '../render/stage.js';
 import {applyTransform,refit} from '../render/transform.js';
@@ -37,7 +38,8 @@ function applyTemplate(t){
   });
   [...RT.keys()].forEach(disposeRT);
   state.devices=next;state.selected=next[0].id;
-  Object.assign(state,{ratio:t.ratio,floor:!!t.floor,wall:false,shadowOpacity:t.shadowOpacity??.55,exposure:t.exposure??1},t.bg);
+  Object.assign(state,{ratio:t.ratio,floor:!!t.floor,wall:false,shadowOpacity:t.shadowOpacity??.55,exposure:t.exposure??1});
+  Object.assign(state,t.bg.bg==='pattern'?patternBg(Object.assign({},state,t.bg)):t.bg);
   renderer.toneMappingExposure=state.exposure;
   Object.assign(state.scene,{rx:0,ry:0,rz:0,zoom:1,fov:28,panX:0,panY:0},t.scene);
   const p=LIGHT_PRESETS.find(x=>x.n===t.lights)||LIGHT_PRESETS[0];applyLightPreset(t.ambient!==undefined?Object.assign({},p,{ambient:t.ambient}):p);

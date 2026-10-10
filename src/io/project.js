@@ -2,6 +2,7 @@ import {RT} from '../devices/rt.js';
 import {buildRT,disposeRT} from '../devices/runtime.js';
 import {rebuildLights} from '../lights/actions.js';
 import {reserveLightIds} from '../lights/mods.js';
+import {patternBg} from '../render/backgrounds.js';
 import {renderer} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
@@ -12,7 +13,7 @@ import {reserveDeviceIds,state,view} from '../state/state.js';
    current framing (composition offset and radius, which "Odakla" / "Kadraja sığdır" change). Images are not copied:
    devices refer to them by key, and `images` maps key -> HTMLImageElement in memory. Project files and autosave
    store the images themselves (see packImages / unpackImages). */
-const SKIP_STATE=new Set(['devices','lights','selected','selLight','mode','gizmo']);
+const SKIP_STATE=new Set(['devices','lights','selected','selLight','mode','gizmo','bgImg']);
 const SKIP_DEVICE=new Set(['img','frameImg']);
 const ids=new WeakMap();let nextImg=0;
 const imgKey=img=>{if(!img)return null;if(!ids.has(img))ids.set(img,'i'+(++nextImg));return ids.get(img);};
@@ -23,6 +24,7 @@ const copy=o=>JSON.parse(JSON.stringify(o));
 function snapshot(){
   const images={},st={};
   for(const k in state)if(!SKIP_STATE.has(k))st[k]=copy(state[k]);
+  st.bgImg=imgKey(state.bgImg);if(state.bgImg)images[st.bgImg]=state.bgImg;
   const devices=state.devices.map(d=>{const o={};for(const k in d)if(!SKIP_DEVICE.has(k))o[k]=copy(d[k]);
     if(d.img){o.img=imgKey(d.img);images[o.img]=d.img;}if(d.frameImg){o.frameImg=imgKey(d.frameImg);images[o.frameImg]=d.frameImg;}return o;});
   return {v:1,state:st,devices,lights:copy(state.lights),selected:state.selected,selLight:state.selLight,
@@ -34,7 +36,10 @@ const signature=s=>JSON.stringify([s.state,s.devices,s.lights,s.frame]);
 function restore(s){
   [...RT.keys()].forEach(disposeRT);
   const cur=new Set(Object.keys(state));
-  for(const k in s.state)if(cur.has(k)&&k!=='scene')state[k]=copy(s.state[k]);
+  for(const k in s.state)if(cur.has(k)&&k!=='scene'&&k!=='bgImg')state[k]=copy(s.state[k]);
+  state.bgImg=s.state.bgImg&&s.images[s.state.bgImg]||null;
+  // documents from when patterns were a background style: the pattern becomes the background image
+  if(s.state.bg==='pattern'){Object.assign(state,patternBg(s.state));Object.assign(s.state,{bg:'image',bgImgName:state.bgImgName,bgImg:imgKey(state.bgImg)});s.images[s.state.bgImg]=state.bgImg;}
   Object.assign(state.scene,copy(s.state.scene));
   state.devices=s.devices.map(o=>Object.assign({},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null}));
   state.lights=copy(s.lights);

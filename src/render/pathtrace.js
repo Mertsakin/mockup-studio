@@ -85,7 +85,7 @@ function setupStudio(env){
       if(!coatless.has(m)){const c=m.clone();c.clearcoat=0;c.roughness=m.roughness+(m.clearcoatRoughness-m.roughness)*Math.min(1,m.clearcoat)*.5;coatless.set(m,c);added.push(c);}
       set(x,'material',coatless.get(m));});
   });
-  const sweepOn=state.floor&&(state.bg==='solid'||state.bg==='gradient');  // patterns keep their artwork: composite instead
+  const sweepOn=state.floor&&(state.bg==='solid'||state.bg==='gradient');  // image backgrounds keep their artwork: composite instead
   set(scene,'environment',env);set(scene,'environmentIntensity',ENV_SCALE*(.25+.75*state.ambient)*(env===hdri?hdriScale:1));
   set(scene,'background',sweepOn?env:null);set(scene,'backgroundIntensity',scene.environmentIntensity);
   const extra=new THREE.Group();scene.add(extra);

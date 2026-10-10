@@ -1,4 +1,5 @@
-/* Pattern backgrounds drawn on a 2D canvas; used for the preview (as a CSS image) and for the export, so both match.
+/* Pattern artwork drawn on a 2D canvas. The editor no longer offers patterns as a background style: templates and
+   documents from before that keep their look by getting the pattern as a background image (patternBg).
    Everything is relative to the canvas size: the same composition at any resolution.
    base = ground colour, accent = light / line / shape colour. Generic geometric designs, no brand artwork. */
 const PATTERNS={shards:'Kırık ışık',grid:'Izgara',glow:'Parıltı',circle:'Daire'};
@@ -47,5 +48,15 @@ function circle(g,W,H,base,accent){
 }
 const DRAW={shards,grid,glow,circle};
 function drawPattern(g,W,H,kind,base,accent){(DRAW[kind]||shards)(g,W,H,base,accent);}
+/* A former pattern background ({pattern, pbase, paccent} on a scene state with ratio / customW / customH) as image
+   background fields: drawn once at the artboard's aspect, PATTERN_PX on the long edge (the largest export size). */
+const PATTERN_PX=3840;
+function patternBg(st){
+  const [rw,rh]=st.ratio==='custom'?[st.customW,st.customH]:String(st.ratio||'1:1').split(':').map(Number),k=PATTERN_PX/Math.max(rw,rh);
+  const c=document.createElement('canvas');c.width=Math.round(rw*k);c.height=Math.round(rh*k);
+  drawPattern(c.getContext('2d'),c.width,c.height,st.pattern,st.pbase||'#0d0e11',st.paccent||'#c8202b');
+  const img=new Image();img.src=c.toDataURL('image/jpeg',.92);
+  return {bg:'image',bgImg:img,bgImgName:PATTERNS[st.pattern]||PATTERNS.shards};
+}
 
-export {PATTERNS,drawPattern};
+export {PATTERNS,drawPattern,patternBg};

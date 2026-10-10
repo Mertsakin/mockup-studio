@@ -57,7 +57,7 @@ function renderBoards(){
     o.el.classList.toggle('checker',st.bg==='transparent');
     if(b.thumb&&o.img.getAttribute('src')!==b.thumb)o.img.src=b.thumb;
     o.img.hidden=!b.thumb;
-    o.el.style.background=b.thumb||st.bg==='transparent'?'':st.bg==='solid'?st.solid:st.bg==='gradient'?'linear-gradient(to bottom right,'+st.bg1+','+st.bg2+')':st.bg==='pattern'?st.pbase:'';
+    o.el.style.background=b.thumb||st.bg==='transparent'?'':st.bg==='solid'?st.solid:st.bg==='gradient'?'linear-gradient(to bottom right,'+st.bg1+','+st.bg2+')':st.bg==='image'&&b.snap.images&&b.snap.images[st.bgImg]?'center/cover no-repeat url("'+b.snap.images[st.bgImg].src+'")':st.bg==='pattern'?st.pbase:'';
   });
   relayout();
 }
