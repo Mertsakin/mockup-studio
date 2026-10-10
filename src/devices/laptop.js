@@ -22,7 +22,8 @@ function buildLaptop(m){
   top.holes.push(rrShape(tpW+.08,tpD+.08,.5,0,-tpZ));
   const dD=T-yU,tg=new THREE.ExtrudeGeometry(top,{depth:dD-2*b,bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:3,curveSegments:32});
   tg.translate(0,0,-(dD-2*b)/2);tg.rotateX(-Math.PI/2);tg.translate(0,yU+dD/2,0);g.add(mesh(tg,m.frame));
-  const floor=mesh(flatRR(kbW+.4,kbD+.4,.4),M.well);floor.rotation.x=-Math.PI/2;floor.position.set(0,H1+.002,kbZ);g.add(floor);
+  // keyboard well floor: body colour (slightly darker, it sits in shade between the keys); keys stay dark
+  const floor=mesh(flatRR(kbW+.4,kbD+.4,.4),m.well);floor.rotation.x=-Math.PI/2;floor.position.set(0,H1+.002,kbZ);g.add(floor);
   kb.position.set(0,T+KEY_UP-CAP_T/2,kbZ);g.add(kb);
   // glass-like trackpad flush with the deck, thin dark gap around it
   const tp=mesh(slab(tpW,tpD,.48,.1,.03),m.pad);tp.geometry.rotateX(-Math.PI/2);tp.position.set(0,T-.055,tpZ);g.add(tp);

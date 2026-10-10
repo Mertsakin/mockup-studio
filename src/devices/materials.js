@@ -75,7 +75,7 @@ function applyFinish(mat,fk,colorHex,opts){
   mat.needsUpdate=true;
 }
 function makeMats(){
-  return {frame:new THREE.MeshPhysicalMaterial(),back:new THREE.MeshPhysicalMaterial(),pad:new THREE.MeshPhysicalMaterial(),band:new THREE.MeshPhysicalMaterial(),
+  return {frame:new THREE.MeshPhysicalMaterial(),back:new THREE.MeshPhysicalMaterial(),well:new THREE.MeshPhysicalMaterial(),pad:new THREE.MeshPhysicalMaterial(),band:new THREE.MeshPhysicalMaterial(),
     screen:new THREE.MeshBasicMaterial({toneMapped:false}),chrome:new THREE.MeshBasicMaterial({toneMapped:false}),
     custom:new THREE.MeshBasicMaterial({transparent:true,alphaTest:.01,side:THREE.DoubleSide,toneMapped:false})};
 }
@@ -95,6 +95,9 @@ function applyColorTo(m,d){
   else applyFinish(m.back,d.finish,c);
   // trackpad: glass-like, slightly darker than the body (no clearcoat: with the normal map it renders black when path traced)
   applyFinish(m.pad,'matte',c,{metal:.3,rough:.2});m.pad.color.multiplyScalar(.88);
+  // laptop keyboard well: same finish as the body, a little darker (recessed, shaded by the keys)
+  // no surface texture: on this small flat (0..1 UVs) it would read as large waves; a bit rougher than the deck
+  applyFinish(m.well,d.finish,c,{rough:Math.max(.45,(FINISHES[d.finish]||FINISHES.brushed).rough)});m.well.normalMap=null;m.well.roughnessMap=null;m.well.color.multiplyScalar(.78);m.well.needsUpdate=true;
   applyFinish(m.band,'matte',c,{metal:0,rough:.6});m.band.color.multiplyScalar(.55).addScalar(.04);
 }
 const LENS_TEX=(function(){
