@@ -59,4 +59,20 @@ function patternBg(st){
   return {bg:'image',bgImg:img,bgImgName:PATTERNS[st.pattern]||PATTERNS.shards};
 }
 
-export {PATTERNS,drawPattern,patternBg};
+/* Gradient background: CSS for the live board and the other boards on the canvas, a canvas gradient for the export,
+   thumbnails and the path tracer's floor, with the same geometry. Linear: CSS angle (0 = upwards, clockwise), the
+   gradient line through the centre long enough for the corners (CSS's own rule). Radial: a circle from the centre to
+   the farthest corner. */
+const gAngle=st=>st.gradAngle??135;
+function gradCss(st){
+  return st.gradType==='radial'?'radial-gradient(circle farthest-corner at 50% 50%, '+st.bg1+', '+st.bg2+')'
+    :'linear-gradient('+gAngle(st)+'deg, '+st.bg1+', '+st.bg2+')';
+}
+function paintGradient(g,W,H,st){
+  let gr;
+  if(st.gradType==='radial')gr=g.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.hypot(W,H)/2);
+  else{const a=gAngle(st)*Math.PI/180,dx=Math.sin(a),dy=-Math.cos(a),L=Math.abs(W*dx)+Math.abs(H*dy);
+    gr=g.createLinearGradient(W/2-dx*L/2,H/2-dy*L/2,W/2+dx*L/2,H/2+dy*L/2);}
+  gr.addColorStop(0,st.bg1);gr.addColorStop(1,st.bg2);g.fillStyle=gr;g.fillRect(0,0,W,H);
+}
+export {PATTERNS,drawPattern,gradCss,paintGradient,patternBg};

@@ -27,6 +27,7 @@ Düzenek bir Vite dev sunucusunu kendi başlatır, sayfayı açar (uygulama boş
 | `MARKERS=0` | ışık kürelerini gizle |
 | `EXPORT=1` | ham render yerine gerçek dışa aktarım yolunu (`renderExport`) çalıştırır: arka plan ve kodlama dahil. `QUALITY=photo` ile yol izlemeli fotoğraf kalitesi (SwiftShader'da çok yavaş, `GPU=1` ile kullan) |
 | `GPU=1` | SwiftShader yerine ANGLE/Metal. Daha hızlı ama sürücüye bağlı, bayt bayt kararlı değil. Karşılaştırma yaparken kullanma |
+| `NO_OIDN=1`, `OIDN_SRGB=0`, `PT_DEBUG=1` | fotoğraf kalitesi: OIDN'i kapat; rengi lineerleştirmeden ver; zemin kalibrasyon değerlerini konsola yaz |
 | sahneye özel | `COLOR`, `FIN`, `PRESET`, `RX`, `RY`, `ZOOM`, `C`, `MOD`… sahne dosyalarının başındaki açıklamalara bak |
 
 Varsayılan SwiftShader (CPU) render'ı **deterministiktir**: aynı kod aynı PNG'yi üretir. Bu yüzden piksel farkı anlamlıdır.
@@ -47,7 +48,7 @@ node tools/render-harness/sheet.js renders/yanyana.png 2 500 renders/once/laptop
 ## Sahneler (`scenes/`)
 
 - `default.js` — açılış sahnesi
-- `laptop.js` — tek dizüstü
+- `laptop.js` — tek dizüstü; `BG='#2a2e35'` düz fon (`BG=transparent`), `FLOOR=1/0`, `RATIO=16:9`: koyu fonlu fotoğraf testi için `W=1600 H=2000 GPU=1 EXPORT=1 QUALITY=photo COLOR=silver PRESET=1 BG='#2a2e35' FLOOR=1`
 - `keyboard-closeup.js` — klavye yakın çekim (tuşlar, yazılar, ızgara, fırçalanmış yüzey)
 - `phone.js` — telefon; `RY=150` arka, `RX=-70 RY=-35 ZOOM=1.5` alt kenar
 - `composition.js` — hazır kompozisyonlar (`C=0..5`)
