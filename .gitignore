@@ -2,3 +2,4 @@ node_modules/
 renders/
 dist/
 .DS_Store
+tools/landing/src/

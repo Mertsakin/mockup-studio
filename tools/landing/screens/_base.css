@@ -1,0 +1,13 @@
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:390px;height:844px;overflow:hidden;font-family:-apple-system,"SF Pro Text","Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:#fff;color:#0b0b0f;position:relative}
+.status{display:flex;justify-content:space-between;align-items:center;padding:16px 28px 0;font-size:15px;font-weight:600}
+.status .ic{display:flex;gap:5px;align-items:center}
+.status .ic i{display:inline-block;background:currentColor;border-radius:1px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600}
+.btn{display:flex;align-items:center;justify-content:center;height:52px;border-radius:999px;background:#4b57e8;color:#fff;font-weight:600;font-size:16px}
+.tab{position:absolute;left:0;right:0;bottom:0;height:84px;display:flex;justify-content:space-around;align-items:flex-start;padding:14px 20px 0;border-top:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.92)}
+.tab div{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:#8a8f9c;font-weight:500}
+.tab div b{width:24px;height:24px;border-radius:7px;background:#d6d9e2;display:block}
+.tab div.on{color:#4b57e8}.tab div.on b{background:#4b57e8}
+.home{position:absolute;left:50%;bottom:9px;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:#0b0b0f;opacity:.9}
