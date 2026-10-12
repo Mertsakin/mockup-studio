@@ -15,6 +15,41 @@ Stüdyo uçtan uca kullanılabilir durumda: boş belgeyle açılır (ya da son �
 - **Pazarlama:** `landing/` örnek SaaS açılış sayfası; görselleri stüdyonun kendisiyle üretiliyor.
 - Açık dal / bekleyen iş yok; `main` temiz ve GitHub'a gönderilmiş.
 
+## Strateji
+
+**Konumlandırma:** "Tarayıcıdaki ürün fotoğraf stüdyosu." Hedef kitle önce SaaS ve web ürünü pazarlamacıları. Vaat: _siteni ver, açılış sayfan, mağaza görsellerin ve tanıtım videon fotoğraf kalitesinde hazır olsun ve güncel kalsın._
+
+**Rakipler ve boşluk** (genel bilgiye dayanır; fiyat ve özellikler ayrıca doğrulanmadı):
+
+| Rakip | Güçlü | Zayıf |
+|---|---|---|
+| Shots.so, Mockuuups | hızlı, çok şablon | 2B / sahte 3B, sığ ışık-gölge |
+| Rotato | gerçek 3B, animasyon | yalnızca Mac, web yakalama ve ekip yok |
+| Previewed, Artboard Studio | web'de 3B, şablon | oyun motoru kalitesi |
+| Placeit, Smartmockups (Canva) | fotoğraf tabanlı gerçek ortam | açı ve ışık sabit |
+| AppLaunchpad, screenshots.pro | mağaza görseli | düşük görsel kalite, 3B yok |
+
+Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otomatik yakalama + animasyon bir arada.
+
+**Farklılaştırıcılar (öncelik sırası):**
+
+1. [ ] **Yaşayan mockup:** URL ver, telefon/tablet/dizüstü yakalanıp seçili şablonlara yerleşsin, tüm varlıklar tek seferde çıksın. Site değişince yeniden üretim (API, GitHub Action: "her sürümde açılış görsellerini güncelle"). Ön koşul: üretimde yakalama servisi.
+2. [ ] **Mağaza görseli üretici + yerelleştirme:** metin katmanı, marka yazı tipleri, App Store / Play Store ölçüleri, dil başına toplu çıktı (10 dil × 8 ekran = 80 görsel tek seferde).
+3. [ ] **Gömülebilir etkileşimli 3B mockup:** açılış sayfasına PNG yerine döndürülebilen, kaydırılabilen hafif bir web bileşeni.
+4. [ ] **Yapay zekâ ile sahne:** 3B cihazı yapay zekâyla üretilmiş ortama ışığı ve gölgesi tutarlı oturtma (ortamdan HDRI / ışık yönü tahmini → yol izleyici); referans fotoğrafın ışığını taklit; istemden kompozisyon önerisi.
+5. [ ] **Ekranda video:** cihaz ekranında MP4 ekran kaydı; 9:16 ve 1:1 sosyal formatlar; artboard'lar arası kamera geçişleri; WebM/GIF.
+6. [ ] **Gerçekçilikte son mil:** alan derinliği, yansıtıcı/dokulu zemin, jenerik 3B eller (telefonu tutan el), dekor nesneleri, GLB içe aktarma.
+7. [ ] **Ekip ve bulut:** bulut proje, paylaşım linki, yorumlar, ekip kütüphanesi (marka kiti, ortak şablonlar); ücretli ekip planının dayanağı.
+
+İlk sırada 1, 2 ve 5 gelir (gelir getiren iş akışı); 3 ve 4 vitrin özellikleri.
+
+**Önce kapatılması gerekenler:**
+
+- [ ] Üretimde yakalama servisi (1 ve 2 buna bağlı).
+- [ ] Düşük donanımda akıcı canlı görüntü; uzun fotoğraf render'ı için bulutta render seçeneği.
+- [ ] İlk 60 saniye: boş tuval yerine "URL ver → hazır görsel" karşılama akışı.
+- [ ] Jenerik cihaz algısı: "Neden iPhone gibi değil?" sorusuna GLB içe aktarma ve "Kendi çerçeven" ile net cevap.
+
 ## Son eklenenler (9–11 Ekim 2026)
 
 - [x] Yol izleme: kalibre edilmiş gölge yakalayıcı zemin diski, parlak stüdyo ortamı, fon duvarı kaldırıldı; fon rengi birebir.
