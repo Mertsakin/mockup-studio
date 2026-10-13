@@ -112,6 +112,12 @@ function ensurePT(){
   const fs=denoise.fragmentShader,patched=fs.replace('centrPx.rgb *= centrPx.a;','').replace('walkPx.rgb *= walkPx.a;','');
   if(patched===fs)console.warn('DenoiseMaterial: premultiply lines not found, half-covered pixels will come out dark');
   denoise.fragmentShader=patched;denoise.needsUpdate=true;
+  // the package jitters camera rays with a tent filter one pixel in radius (two pixels wide): visibly softer than the
+  // raster's one-pixel box, worst at small export sizes where screen text is only a few pixels tall. Use the same box.
+  const ptm=pt._pathTracer.material,pfs=ptm.fragmentShader,
+    sharp=pfs.replace('tentFilter( ruv.x ) * ssd.x, tentFilter( ruv.y ) * ssd.y','( ruv.x - 0.5 ) * ssd.x, ( ruv.y - 0.5 ) * ssd.y');
+  if(sharp===pfs)console.warn('PhysicalPathTracingMaterial: pixel filter line not found, photo exports stay softer');
+  ptm.fragmentShader=sharp;ptm.needsUpdate=true;
   return pt;
 }
 // Prepares the live scene for path tracing; returns the function that undoes it.

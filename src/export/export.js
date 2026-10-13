@@ -22,9 +22,10 @@ function exportSize(L){
 }
 // Screens sampled without mipmaps for the export when the screen texture is not minified much (CRISP_MAX texels per
 // output pixel): the jittered samples average the texels themselves, which keeps screen text sharper than trilinear /
-// anisotropic filtering does at oblique angles. Tiny screens keep their mipmaps (too few samples per texel otherwise).
+// anisotropic filtering does at oblique angles (at 4 the mipmaps still blurred a laptop + phone at 1080 px, ~10 texels
+// per pixel; 32–48 jittered samples resolve 16 without visible grain). Tiny screens keep their mipmaps.
 // Returns the function that restores the live filtering.
-const CRISP_MAX=4,_c=new THREE.Vector3();
+const CRISP_MAX=16,_c=new THREE.Vector3();
 function crispScreens(W){
   const maps=[];
   state.devices.forEach(d=>{
