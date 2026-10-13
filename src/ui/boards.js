@@ -21,7 +21,7 @@ function onBoards(fn){subs.push(fn);}
 const emit=()=>subs.forEach(f=>f());
 
 /* Size of a board on the canvas (its coordinate space): always the largest export size, BOARD_L on the long edge
-   (custom boards: their exact size). The export size (state.size, "Uzun kenar") only sets the output file, so
+   (custom boards: their exact size). The export size (state.size, "Genişlik") only sets the output file, so
    changing it never resizes or moves boards. Documents laid out before this (sizes followed state.size) are
    rescaled once when opened (applyDoc, LAYOUT). */
 const BOARD_L=3840,LAYOUT='max';

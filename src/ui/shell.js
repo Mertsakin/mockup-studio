@@ -178,7 +178,7 @@ function syncExport(){
   // file looks softer than the canvas, so say so
   const s=boardScreen(),live=s?Math.round(s.w*Math.min(window.devicePixelRatio||1,2)):0;
   $('#exportNote').textContent=w+' × '+h+' px'+(state.quality==='photo'?' · fotoğraf kalitesi yarım dakika kadar sürer':'')+
-    (live>w*1.15&&state.ratio!=='custom'&&state.size<3840?' · Ekranda şu an yaklaşık '+live+' px genişlikte görünüyor; aynı netlik için uzun kenarı 3840 px seç.':'');
+    (live>w*1.15&&state.ratio!=='custom'&&state.size<3840?' · Ekranda şu an yaklaşık '+live+' px genişlikte görünüyor; aynı netlik için genişliği 3840 px seç.':'');
   $('#exportBoards').hidden=doc.boards.length<2;
 }
 ['quality','size','format'].forEach(id=>$('#'+id).addEventListener('change',syncExport));

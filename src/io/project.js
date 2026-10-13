@@ -49,6 +49,8 @@ function restore(s){
   // fields newer than the snapshot get their defaults (not the previous board's values)
   const DEF={gradType:'linear',gradAngle:135,bgFit:'cover',bgScale:1,bgX:0,bgY:0,anim:{dur:5,fps:30,loop:true}};
   for(const k in DEF)if(!(k in s.state))state[k]=copy(DEF[k]);
+  // the export size used to be the long edge (1080 / 2160 / 3840); now it is the width (the #size options in index.html)
+  if(![1080,1920,3840].includes(state.size))state.size=1920;
   Object.assign(state.scene,copy(s.state.scene));
   state.devices=s.devices.map(o=>Object.assign({},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null}));
   state.lights=copy(s.lights);

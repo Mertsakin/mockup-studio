@@ -14,11 +14,14 @@ import {$,mkCanvas} from '../util.js';
 /* ---------- export ---------- */
 const PHOTO_SAMPLES=64,PHOTO_BUDGET_MS=30000;  // OIDN cleans the rest
 // onProgress(0..1) is called while a photo-quality (path traced) render runs
-// output size: the long edge L at the artboard's ratio, or the custom artboard's exact size
-function exportSize(L){
+// output size: width Wd at the artboard's ratio, the long edge at most cap (portrait boards: 3840 px wide would be
+// 6827 px tall at 9:16), or the custom artboard's exact size
+const MAX_EDGE=3840;
+function exportSize(Wd,cap=MAX_EDGE){
   const [rw,rh]=ratioNums();
   if(state.ratio==='custom')return [state.customW,state.customH];
-  return rw>=rh?[L,Math.round(L*rh/rw)]:[Math.round(L*rw/rh),L];
+  const k=Math.min(1,cap/Math.max(Wd,Wd*rh/rw));
+  return [Math.round(Wd*k),Math.round(Wd*rh/rw*k)];
 }
 // Screens sampled without mipmaps for the export when the screen texture is not minified much (CRISP_MAX texels per
 // output pixel): the jittered samples average the texels themselves, which keeps screen text sharper than trilinear /

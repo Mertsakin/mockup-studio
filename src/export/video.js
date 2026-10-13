@@ -18,9 +18,9 @@ import {exportSize,offer} from './export.js';
    Motion blur: the frame's samples are spread over half a frame interval around t (a 180° shutter), so only what
    moves blurs, like a real camera. The screenshot scroll is set once per frame (redrawing it per sample is costly). */
 const SAMPLES=16,SHUTTER=.5,BPP=.16;  // bits per pixel per frame
-const X={res:1080,fps:30,blur:true};
+const X={res:1920,fps:30,blur:true};
 const scrim=$('#videoScrim');
-const size=()=>{const [w,h]=exportSize(X.res);return [w-w%2,h-h%2];};  // H.264 wants even sizes
+const size=()=>{const [w,h]=exportSize(X.res,X.res);return [w-w%2,h-h%2];};  // H.264 wants even sizes
 const frames=()=>Math.round(state.anim.dur*X.fps);
 const bitrate=(w,h)=>Math.round(w*h*X.fps*BPP);
 

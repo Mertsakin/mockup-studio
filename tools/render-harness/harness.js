@@ -44,8 +44,8 @@ const W=+process.env.W||640,H=+process.env.H||800,SAMPLES=+process.env.SAMPLES||
     // let debounced work (environment rebuild, chrome redraw) settle, then render like an export
     await page.evaluate(()=>new Promise(r=>setTimeout(r,400)));
     const data=process.env.EXPORT?await page.evaluate(async({W,H,quality,format})=>{
-      // the real export path (renderExport): background, photo quality, encoding; size from W (long edge) and ratio
-      const app=window.__app,st=app('state');st.size=Math.max(W,H);st.format=format;if(quality)st.quality=quality;
+      // the real export path (renderExport): background, photo quality, encoding; size from W (width) and ratio
+      const app=window.__app,st=app('state');st.size=W;st.format=format;if(quality)st.quality=quality;
       let last=-1;const b=await app('renderExport')(p=>{const q=Math.floor(p*4)*25;if(q!==last){last=q;console.log('export',q+'%');}});
       return await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b);});
     },{W,H,quality:process.env.QUALITY,format:/\.jpe?g$/i.test(outPath)?'jpg':'png'}):await page.evaluate(({W,H,SAMPLES,markers})=>{
