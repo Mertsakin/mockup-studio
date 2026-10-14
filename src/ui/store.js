@@ -2,13 +2,14 @@ import {buildRT,disposeRT} from '../devices/runtime.js';
 import {RT} from '../devices/rt.js';
 import {applyLightPreset} from '../lights/actions.js';
 import {LIGHT_PRESETS} from '../lights/mods.js';
-import {FONTS,textBox} from '../render/text.js';
+import {FONTS} from '../render/text.js';
 import {comp} from '../render/stage.js';
 import {applyTransform,deviceBox,refit} from '../render/transform.js';
 import {STORE_SIZES,ZOOM_MAX,ZOOM_MIN} from '../state/constants.js';
 import {newDevice,state,view} from '../state/state.js';
 import {activate,addBoard,storeActive} from './boards.js';
-import {addText} from './items.js';
+import {nodeOf} from './frames.js';
+import {addFrame,addText} from './items.js';
 import {bgCss,layout,renderItems} from './layout.js';
 import {select} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
@@ -22,6 +23,7 @@ import {$,D2R} from '../util.js';
    layout:
    - Klasik: every screen a device low in the frame, text above.
    - Dönüşümlü: the same, the device turned left and right in turn.
+   Every screen's headline and subtitle form an auto-layout frame (addTexts).
    - Panorama: the screens are slices of one wide scene (state.pano, lens shift in render/transform.js; boards.js keeps
      the set's scene in sync): the background gradient runs across the set and one device lies across the seam
      between the first two screens.
@@ -56,17 +58,22 @@ function setupBoard(o,i){
   addTexts(o,i);
 }
 // headline near the top, subtitle under it; both wrap within the safe width
+/* The headline and subtitle sit in an auto-layout frame ("Başlık bloğu"): a column as wide as the safe area, hugging
+   its height, the texts filling its width (so they wrap there). Editing a headline later re-flows the block; moving the
+   block moves both. Portrait: centred, near the top. Landscape: left aligned, on the left, centred vertically. */
 function addTexts(o,i){
-  // landscape boards: the text block on the left (left aligned, centred vertically), the device on the right
   const line=o.lines[i]||{h:'',s:''},W=o.size.w,H=o.size.h,land=W>H,T=o.theme;
-  const hs=land?.052:.085,ss=land?.024:.04,width=land?.4:.84;
-  let top=land?0:.06;const made=[];
-  const add=(text,size,props)=>{if(!text)return null;
-    const it=addText(Object.assign({text,font:o.font,size,wrap:+(width/size).toFixed(2),lh:1.08,align:land?'left':'center',x:.5,y:.5,color:T.ink},props));
-    const b=textBox(it,W);if(land)it.x=+((.07*W+b.w/2)/W).toFixed(4);it.y=+(top+b.h/2/H).toFixed(4);top+=b.h/H;made.push(it);return it;};
-  add(line.h,hs,{weight:800,ls:-.02,name:'Başlık'});top+=land?.03:.012;
+  const hs=land?.052:.085,ss=land?.024:.04,width=land?.4:.84,margin=land?.07:.06;
+  if(!line.h&&!line.s)return;
+  const f=addFrame({name:'Başlık bloğu',fillOn:false,radius:0,wMode:'fixed',w:width,hMode:'hug',x:land?margin+width/2:.5,y:.5,
+    layout:{dir:'col',gap:+((land?.03:.012)*H/W).toFixed(5),pad:[0,0,0,0],justify:'start',align:land?'start':'center'}});
+  const add=(text,size,props)=>{if(!text)return;
+    const it=addText(Object.assign({text,font:o.font,size,wMode:'fill',wrap:0,lh:1.08,align:land?'left':'center',color:T.ink},props));it.parent=f.id;};
+  add(line.h,hs,{weight:800,ls:-.02,name:'Başlık'});
   add(line.s,ss,{weight:500,lh:1.3,color:T.sub,name:'Alt başlık'});
-  if(land){const dy=(1-top)/2;made.forEach(it=>{it.y=+(it.y+dy).toFixed(4);});}
+  renderItems();
+  // the block's height is known once laid out: its top at the margin (portrait), or centred (landscape)
+  const n=nodeOf(f);if(n&&!land)f.y=+((margin*H+n.h/2)/H).toFixed(5);
   renderItems();
 }
 
