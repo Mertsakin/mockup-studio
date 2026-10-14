@@ -21,7 +21,7 @@ Yayından önce ürünün içerik eksikleri kapanır; yayın ve ürünleştirme 
 
 1. [x] **Metin katmanı** (14 Ekim): yeni bir 2B öğe türü (`kind: 'text'`). Metin kendi tuvaline çizilir, öğenin görseli o tuvaldir; seçim kutusu, yapışma, önde/arkada, dışa aktarım ve küçük resimler değişmeden çalışır. Yazı tipi (seçilmiş Google Fonts listesi + kendi fontunu yükleme, belgeye gömülü), kalınlık, boyut, renk/gradyan, hizalama, satır/harf aralığı, kutu genişliği (satır kaydırma), gölge; tuvalde çift tıklayıp yerinde düzenleme; dışa aktarım boyutunda yeniden çizim (keskin). İlk aşamada 2B (3B metin sonra).
 2. [x] **2B öğe animasyonu + metin efektleri** (14 Ekim): öğelere iz (konum, ölçek, dönüş, opaklık; `animate.js` kayıt mantığı aynı); metin hazır efektleri: solarak/alttan/kayarak giriş, ölçekle belirme, daktilo, kelime/harf bazlı kademeli giriş, vurgu (altı çizilen kelime), sayaç.
-3. [ ] **Çoklu seçim + sağ tık menüsü** (aşağıda "İş akışı").
+3. [x] **Çoklu seçim + sağ tık menüsü** (14 Ekim): Shift/⌘ + tıklama, ⌘A, grup taşıma, hizala/dağıt, kopyala/kes/yapıştır (artboard'lar arası), ⌘D, sağ tık menüsü.
 4. [ ] **Mağaza görseli üretici:** App Store (6,9", 6,5", iPad 13") ve Play Store (telefon, tablet, öne çıkan görsel) ölçüleri; tek seferde 5–8 artboard'luk "mağaza seti" (ortak fon, yazı tipi, renk; başlık + cihaz + ekran); **panorama modu** (fon ve cihazlar artboard sınırlarını aşarak akar). Yerelleştirme (dil başına metin varyantı, toplu ZIP) bundan sonra.
 5. [ ] **Şablonlar:** metinli ve mağaza seti şablonları, animasyonlu şablonlar, kendi sahneni şablon olarak kaydetme, kartlarda gerçek örnek ekranlar.
 
@@ -116,9 +116,9 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 
 **Sıradaki öncelik:** yukarıdaki "Sıradaki yol" bölümüne bak.
 
-- [ ] **Çoklu seçim:** Shift ile birden fazla cihaz (ve 2B öğe) seçip birlikte taşıma / döndürme / katman komutu.
-- [ ] **Sağ tık bağlam menüsü:** kopyala, çoğalt, sil, katman sırası, odakla.
-- [ ] Artboard'lar arası cihaz kopyalama / taşıma; artboard çoğaltırken yerleşim seçimi.
+- [x] **Çoklu seçim:** Shift/⌘ ile cihaz ve 2B öğe seçip birlikte taşıma, silme, çoğaltma, kopyalama. (Grubu birlikte döndürme / ölçekleme ve sürükleyerek kutu seçimi henüz yok.)
+- [x] **Sağ tık bağlam menüsü:** kopyala, yapıştır, çoğalt, sil, katman sırası, odakla, metni düzenle. (Katman ağacında sağ tık henüz yok.)
+- [x] Artboard'lar arası cihaz ve öğe kopyalama (⌘C → başka artboard → ⌘V). [ ] Artboard çoğaltırken yerleşim seçimi.
 - [ ] **Metin katmanı:** bkz. "Sıradaki yol" 1.
 - [ ] **Mağaza görseli üretici:** bkz. "Sıradaki yol" 4.
 - [ ] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP).

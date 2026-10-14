@@ -93,4 +93,7 @@ addEventListener('keydown',e=>{
   }
 },true);
 
-export {setScale};
+// a device's outline on the stage (the projected box's hull), for the multi-selection outlines (selection.js)
+function outline(id){const o=RT.get(id),pts=o&&project(o);return pts?hull(pts):null;}
+
+export {outline,setScale};

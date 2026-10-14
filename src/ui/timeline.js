@@ -269,7 +269,7 @@ addEventListener('keydown',e=>{
   if(e.code==='Space'){stopIt();if(!e.repeat)play();}
   else if(e.key==='Home'){stopIt();stop();seek(0);}
   else if(e.key.toLowerCase()==='k'&&!e.repeat){stopIt();addPoseKey(cur());}
-  else if((e.key==='ArrowLeft'||e.key==='ArrowRight')&&ui.kind!=='item'&&!(t&&t.type==='range')){stopIt();stop();seek(A.t+(e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:1/fps()));}
+  else if((e.key==='ArrowLeft'||e.key==='ArrowRight')&&ui.kind!=='item'&&ui.kind!=='multi'&&!(t&&t.type==='range')){stopIt();stop();seek(A.t+(e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:1/fps()));}
   else if((e.key==='Delete'||e.key==='Backspace')&&A.sel){stopIt();deleteSelected();}
 },true);
 

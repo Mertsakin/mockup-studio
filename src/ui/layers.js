@@ -3,7 +3,9 @@ import {RT} from '../devices/rt.js';
 import {camera} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
-import {sel,state} from '../state/state.js';
+import {sel,selItem,state} from '../state/state.js';
+import {reorder} from './items.js';
+import {ui} from './ui-state.js';
 import {syncSliders} from './sliders.js';
 import {onSyncUI} from './sync.js';
 import {toast} from './toast.js';
@@ -68,7 +70,10 @@ onSyncUI(()=>{const many=state.devices.length>1;btns.querySelectorAll('button').
 window.addEventListener('keydown',e=>{
   if(!(e.metaKey||e.ctrlKey)||(e.target&&/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)))return;
   const cmd=e.code==='BracketRight'?(e.shiftKey?'front':'forward'):e.code==='BracketLeft'?(e.shiftKey?'back':'backward'):null;
-  if(cmd){e.preventDefault();layer(cmd);}
+  if(!cmd)return;e.preventDefault();
+  // a 2D item: its paint order within its layer
+  if(ui.kind==='item'){const it=selItem();if(it)reorder(it.id,{front:Infinity,forward:1,backward:-1,back:-Infinity}[cmd]);return;}
+  if(ui.kind==='device')layer(cmd);
 });
 
 export {layer};

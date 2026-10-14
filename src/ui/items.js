@@ -3,6 +3,7 @@ import {TEXT_DEFAULTS,keepAnchor,textLayout} from '../render/text.js';
 import {nextItemId,selItem,state} from '../state/state.js';
 import {sizeOf} from './boards.js';
 import {boardScreen,hideItem,imgSize,itemRect,onLayout,renderItems} from './layout.js';
+import {moveGroupFrom,saveGroup} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {onUi,panning,setUi,ui} from './ui-state.js';
 import {$,clamp} from '../util.js';
@@ -114,7 +115,8 @@ function guide(x,y,w,h){const g=document.createElement('div');g.className='guide
 function begin(e,o){drag=Object.assign({id:e.pointerId,it:selItem(),start:toStage(e.clientX,e.clientY)},o);
   drag.save={x:drag.it.x,y:drag.it.y,w:drag.it.w,size:drag.it.size,rot:drag.it.rot};canvas.classList.add('dragging');box.classList.add('active');
   addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onCancel);}
-function startItemDrag(e,it){selectItem(it.id);begin(e,{mode:'move'});}
+// group: the item is part of a multi-selection, the others follow it (selection.js)
+function startItemDrag(e,it,group){if(!group)selectItem(it.id);begin(e,{mode:'move',it,group:group?saveGroup(it):null});}
 box.querySelectorAll('[data-h]').forEach(h=>h.addEventListener('pointerdown',e=>{
   if(e.button!==0||!selItem())return;e.preventDefault();e.stopPropagation();
   const k=h.dataset.h,r=screenRect(selItem());
@@ -141,6 +143,7 @@ function onMove(e){
       if(Y){cy=Y.c;guide(s.x,s.y+Y.t,s.w,1);}
     }
     it.x=+(cx/s.w).toFixed(4);it.y=+(cy/s.h).toFixed(4);
+    if(drag.group)moveGroupFrom(drag.group,(it.x-sv.x)*s.w,(it.y-sv.y)*s.h);
   } else if(drag.mode==='scale'){
     const r=drag.r,a=r.rot*D2R,cos=Math.cos(a),sin=Math.sin(a);
     // the item's width (fraction of the board) scales by k; a text item scales its font size instead
@@ -165,7 +168,7 @@ function onMove(e){
 }
 function end(cancel){
   if(!drag)return;const it=drag.it;
-  if(cancel)Object.assign(it,drag.save);
+  if(cancel){Object.assign(it,drag.save);if(drag.group)moveGroupFrom(drag.group,0,0);}
   removeEventListener('pointermove',onMove);removeEventListener('pointerup',onUp);removeEventListener('pointercancel',onCancel);
   drag=null;clearGuides();canvas.classList.remove('dragging');box.classList.remove('active');val.hidden=true;changed();
 }

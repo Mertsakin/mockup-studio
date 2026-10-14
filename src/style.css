@@ -328,6 +328,8 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .ibox-rot::before{content:"";position:absolute;inset:-6px}
 .ibox[data-small="true"] .th{width:8px;height:8px;margin:-4px 0 0 -4px}
 .ibox.active .th,.ibox.active .ibox-rot{background:var(--accent)}
+.msel{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}
+.msel polygon{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 3}
 .ibox.editing .th,.ibox.editing .ibox-rot,.ibox.editing .ibox-stem{display:none}
 /* text being edited in place (items.js): styled like the item at the screen's scale */
 .tedit{position:absolute;left:0;top:0;z-index:5;box-sizing:border-box;margin:0;border:0;outline:0;background:transparent;resize:none;overflow:hidden;transform-origin:50% 50%;caret-color:var(--accent)}

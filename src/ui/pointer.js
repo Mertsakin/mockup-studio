@@ -10,7 +10,8 @@ import {sel,state,view} from '../state/state.js';
 import {lightMoved} from './dome.js';
 import {gizmoDown,gizmoHot,gizmoMove,gizmoUp,showGizmo} from './gizmo.js';
 import {itemAt,startItemDrag} from './items.js';
-import {frame} from './layout.js';
+import {frame,renderItems} from './layout.js';
+import {inSel,isMulti,moveGroupFrom,saveGroup,toggle} from './selection.js';
 import {syncSliders} from './sliders.js';
 import {syncAll,syncUI} from './sync.js';
 import {panning,setUi,ui} from './ui-state.js';
@@ -60,8 +61,10 @@ function moveSelected(dx,dy){
 }
 /* Tools (ui-state.js): Select / Move / Rotate pick devices; dragging a device moves it across the screen, dragging
    empty space orbits the scene. Move and Rotate also show the device's axes (gizmo). Orbit turns the scene wherever
-   you drag. Hand is handled by the workspace (the canvas never sees those presses). Shift+drag pans the camera. */
-let gizmoDrag=false,dragDevice=false;
+   you drag. Hand is handled by the workspace (the canvas never sees those presses). Shift+drag on empty space pans
+   the camera; Shift (or ⌘/Ctrl) + click on a device or 2D item adds it to the selection or takes it out
+   (selection.js). Dragging a member of a multi-selection moves the whole group. */
+let gizmoDrag=false,dragDevice=false,group=null;
 function selectDevice(id){if(id!==state.selected){state.selected=id;syncAll();}setUi({kind:'device'});showGizmo(ui.tool==='move'||ui.tool==='rotate');}
 canvas.addEventListener('pointerdown',e=>{
   if(panning()||e.button!==0&&e.pointerType==='mouse')return;
@@ -69,14 +72,17 @@ canvas.addEventListener('pointerdown',e=>{
   if(!pointers.size&&gizmoDown(e)){gizmoDrag=true;canvas.setPointerCapture(e.pointerId);canvas.classList.add('dragging');return;}
   canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   canvas.classList.add('dragging');downAt={x:e.clientX,y:e.clientY};moved=false;dragDevice=false;
-  if(pointers.size!==1||ui.tool==='orbit')return;
-  // 2D items: those in front of the devices first, those behind them only where no device is hit
-  const take=it=>{pointers.delete(e.pointerId);canvas.releasePointerCapture(e.pointerId);canvas.classList.remove('dragging');showGizmo(false);startItemDrag(e,it);};
-  const front=itemAt(e.clientX,e.clientY,true);if(front){take(front);return;}
-  const lidHit=pickLight(e.clientX,e.clientY);
+  if(pointers.size!==1||ui.tool==='orbit')return;group=null;
+  const release=()=>{pointers.delete(e.pointerId);canvas.releasePointerCapture(e.pointerId);canvas.classList.remove('dragging');};
+  // what is under the pointer: 2D items in front of the devices first, those behind them only where no device is hit
+  const front=itemAt(e.clientX,e.clientY,true),lidHit=!front&&pickLight(e.clientX,e.clientY);
+  const id=!front&&!lidHit?pick(e.clientX,e.clientY):null,dev=id&&state.devices.find(d=>d.id===id);
+  const hit=front||dev||(!lidHit&&itemAt(e.clientX,e.clientY,false))||null;
+  if(hit&&(e.shiftKey||e.metaKey||e.ctrlKey)){release();showGizmo(false);toggle(hit);return;}
+  const multi=hit&&isMulti()&&inSel(hit);
+  if(hit&&!hit.type){release();showGizmo(false);startItemDrag(e,hit,multi);return;}
   if(lidHit){lightDrag=lidHit;if(state.selLight!==lidHit){state.selLight=lidHit;syncAll();}setUi({kind:'light'});return;}
-  const id=pick(e.clientX,e.clientY);if(id){dragDevice=true;selectDevice(id);}
-  else{const back=itemAt(e.clientX,e.clientY,false);if(back)take(back);}
+  if(dev){dragDevice=true;if(multi)group=saveGroup(null);else selectDevice(id);}
 });
 canvas.addEventListener('pointermove',e=>{
   if(gizmoDrag){gizmoMove(e);return;}
@@ -86,7 +92,8 @@ canvas.addEventListener('pointermove',e=>{
   if(downAt&&Math.hypot(e.clientX-downAt.x,e.clientY-downAt.y)>4)moved=true;
   const S=state.scene;
   if(pointers.size===1){
-    if(e.shiftKey)pan(dx,dy);
+    if(group){moveGroupFrom(group,e.clientX-downAt.x,e.clientY-downAt.y);syncSliders();p.x=e.clientX;p.y=e.clientY;return;}
+    if(e.shiftKey&&!dragDevice)pan(dx,dy);
     else if(dragDevice)moveSelected(dx,dy);
     else{S.ry=wrap(S.ry+dx*.45);S.rx=clamp(S.rx+dy*.45,-90,90);}
   } else if(pointers.size===2){
@@ -103,7 +110,7 @@ const endPtr=e=>{
   if(!pointers.size){canvas.classList.remove('dragging');
     // a click (no drag) on empty space selects the board and hides the axes
     if(was===1&&!moved&&!dragDevice&&ui.tool!=='orbit'&&e.type==='pointerup'){showGizmo(false);setUi({kind:'board'});}
-    dragDevice=false;}
+    if(group)renderItems();dragDevice=false;group=null;}
 };
 canvas.addEventListener('pointermove',e=>{if(pointers.size||gizmoDrag||e.pointerType!=='mouse')return;gizmoMove(e);canvas.style.cursor=gizmoHot()||pickLight(e.clientX,e.clientY)?'grab':itemAt(e.clientX,e.clientY,true)||(state.items.length&&!pick(e.clientX,e.clientY)&&itemAt(e.clientX,e.clientY,false))?'move':'';});
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);

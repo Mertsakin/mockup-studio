@@ -9,6 +9,7 @@ import {renderDome} from './dome.js';
 import {setGizmoMode,showGizmo} from './gizmo.js';
 import {hydrateIcons,icon} from './icons.js';
 import {addText,editText,removeItem,selectItem} from './items.js';
+import {isMulti,selection,toggle} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {applyTemplate} from './templates.js';
 import {boardScreen} from './layout.js';
@@ -32,10 +33,10 @@ const devNames=list=>labels(list,d=>TYPES[d.type]||'Cihaz');
 const lightNames=list=>labels(list,L=>L.mod==='custom'?'Işık':modOf(L.mod).n);
 
 /* ---------- inspector ---------- */
-const insp={board:$('#inspBoard'),device:$('#inspDevice'),light:$('#inspLight'),item:$('#inspItem')};
+const insp={board:$('#inspBoard'),device:$('#inspDevice'),light:$('#inspLight'),item:$('#inspItem'),multi:$('#inspMulti')};
 let lastDevIcon='';
 function syncInspector(){
-  if((ui.kind==='light'&&!state.lights.length)||(ui.kind==='item'&&!selItem())||(ui.kind==='device'&&!state.devices.length)){setUi({kind:'board'});return;}
+  if((ui.kind==='light'&&!state.lights.length)||(ui.kind==='item'&&!selItem())||(ui.kind==='device'&&!state.devices.length)||(ui.kind==='multi'&&!isMulti())){setUi({kind:'board'});return;}
   // no artboard: an empty state with a way to make one
   const none=!hasBoard();$('#inspEmpty').hidden=!none;$('#exportMenuBtn').disabled=none;
   for(const k in insp)insp[k].hidden=none||k!==ui.kind;
@@ -62,7 +63,7 @@ function node(o){
   const act=el.querySelector('.act');
   (o.actions||[]).forEach(([ic,label,fn])=>{const b=document.createElement('button');b.type='button';b.tabIndex=-1;b.setAttribute('aria-label',label);b.title=label;b.innerHTML=icon(ic,14);
     b.addEventListener('click',e=>{e.stopPropagation();fn(el);});act.appendChild(b);});
-  el.addEventListener('click',e=>{if(e.target.closest('.tw')){o.toggle();return;}o.pick();});
+  el.addEventListener('click',e=>{if(e.target.closest('.tw')){o.toggle();return;}o.pick(e);});
   if(o.rename)el.querySelector('.nm').addEventListener('dblclick',e=>{e.stopPropagation();o.rename(el);});
   return el;
 }
@@ -87,12 +88,15 @@ function renderTree(){
     const go=(fn)=>{if(!live)activate(b.id);fn();};
     // 2D items in stacking order: those in front of the devices above them, those behind below the lights
     const items=live?state.items:b.snap.state.items||[];
-    const itemNode=it=>tree.appendChild(node({child:true,name:it.name,icon:it.kind==='text'?'text-square':'gallery',anim:hasAnim(it)||!!it.fx,sel:live&&ui.kind==='item'&&state.selItem===it.id,
-      pick:()=>go(()=>selectItem(it.id)),actions:live?[['trash-bin-minimalistic','Sil',()=>removeItem(it.id)]]:[]}));
+    // Shift / ⌘ + click in the tree adds to the selection or takes out (the live board only)
+    const picked=o=>live&&(isMulti()?selection().includes(o):(o.type?ui.kind==='device'&&state.selected===o.id:ui.kind==='item'&&state.selItem===o.id));
+    const multiPick=(e,o)=>{if(live&&e&&(e.shiftKey||e.metaKey||e.ctrlKey)){toggle(o);return true;}return false;};
+    const itemNode=it=>tree.appendChild(node({child:true,name:it.name,icon:it.kind==='text'?'text-square':'gallery',anim:hasAnim(it)||!!it.fx,sel:picked(it),
+      pick:e=>{if(!multiPick(e,it))go(()=>selectItem(it.id));},actions:live?[['trash-bin-minimalistic','Sil',()=>removeItem(it.id)]]:[]}));
     items.filter(it=>it.front).reverse().forEach(itemNode);
     devNames(devs).forEach((n,i)=>{const d=devs[i];
-      tree.appendChild(node({child:true,name:n,icon:DEV_ICON[d.type]||'smartphone',anim:hasAnim(d),sel:live&&ui.kind==='device'&&state.selected===d.id,
-        pick:()=>go(()=>{state.selected=d.id;syncAll();setUi({kind:'device'});syncTool();}),
+      tree.appendChild(node({child:true,name:n,icon:DEV_ICON[d.type]||'smartphone',anim:hasAnim(d),sel:picked(d),
+        pick:e=>{if(!multiPick(e,d))go(()=>{state.selected=d.id;syncAll();setUi({kind:'device'});syncTool();});},
         actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selected=d.id;syncAll();$('#removeDevice').click();}]]:[]}));});
     lightNames(lights).forEach((n,i)=>{const L=lights[i];
       tree.appendChild(node({child:true,name:n,dot:L.color,sel:live&&ui.kind==='light'&&state.selLight===L.id,

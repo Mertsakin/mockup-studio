@@ -289,6 +289,25 @@
         </section>
       </div>
 
+      <!-- multi-selection (selection.js) -->
+      <div id="inspMulti" hidden>
+        <div class="head"><span data-icon="layers"></span><span class="t" id="multiTitle">Çoklu seçim</span><button class="ib sm" type="button" id="multiDelete" aria-label="Seçilenleri sil" title="Sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
+        <section class="sec">
+          <p class="hint-sm" id="multiWhat"></p>
+          <div class="row"><span class="lbl">Seçim</span><span class="cells"><button class="btn" type="button" id="multiDup">Çoğalt</button></span></div>
+          <p class="hint-sm">Birini sürükleyince hepsi birlikte taşınır; oklar da hepsini kaydırır. Shift ya da ⌘ ile tıklayarak seçime ekle ya da çıkar.</p>
+        </section>
+        <section class="sec" id="multiAlignSec">
+          <h3 class="sh">Hizala</h3>
+          <div id="multiAlign">
+            <div class="row"><span class="lbl">Yatay</span><span class="cells"><button class="btn" type="button" data-align="left">Sol</button><button class="btn" type="button" data-align="hcenter">Orta</button><button class="btn" type="button" data-align="right">Sağ</button></span></div>
+            <div class="row"><span class="lbl">Dikey</span><span class="cells"><button class="btn" type="button" data-align="top">Üst</button><button class="btn" type="button" data-align="vcenter">Orta</button><button class="btn" type="button" data-align="bottom">Alt</button></span></div>
+            <div class="row"><span class="lbl">Eşit dağıt</span><span class="cells"><button class="btn" type="button" data-align="hdist">Yatay</button><button class="btn" type="button" data-align="vdist">Dikey</button></span></div>
+          </div>
+          <p class="hint-sm">Seçimdeki 2B öğeleri (görsel, metin) kendi sınırlarına göre hizalar.</p>
+        </section>
+      </div>
+
       <!-- 2D item -->
       <div id="inspItem" hidden>
         <div class="head"><span id="itemIcon" data-icon="gallery"></span><input class="title-in" id="itemName" aria-label="Öğe adı" spellcheck="false"><button class="ib sm" type="button" id="itemDelete" aria-label="Öğeyi sil" title="Sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
