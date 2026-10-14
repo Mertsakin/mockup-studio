@@ -102,22 +102,23 @@
       <svg class="nav" id="navSvg" viewBox="-48 -48 96 96" role="group" aria-label="Görünüm yönü. Bir eksene tıkla ya da sürükleyerek döndür."></svg>
       <div class="menu" id="addMenu" role="menu" hidden></div>
       <nav class="dock" id="dock" aria-label="Araçlar">
-        <button class="ib" type="button" data-tool="select" aria-label="Seç"><span data-icon="cursor" data-size="18"></span><span class="tip">Seç <kbd>V</kbd> · cihazı ölçekle <kbd>⌘T</kbd></span></button>
-        <button class="ib" type="button" data-tool="move" aria-label="Taşı"><span data-icon="move" data-size="18"></span><span class="tip">Taşı <kbd>W</kbd></span></button>
-        <button class="ib" type="button" data-tool="rotate" aria-label="Döndür"><span data-icon="restart" data-size="18"></span><span class="tip">Döndür <kbd>E</kbd></span></button>
+        <div class="tool-split" role="group" aria-label="Seçim araçları">
+          <button class="ib" type="button" data-tool="select" id="selMain" aria-label="Seç"><span class="ti" data-icon="cursor" data-size="18"></span><span class="tip">Seç <kbd>V</kbd></span></button>
+          <button class="split-chev" type="button" id="selChev" aria-label="Seç, Taşı ya da Döndür" aria-haspopup="menu" aria-expanded="false"><span data-icon="alt-arrow-down" data-size="10"></span></button>
+        </div>
         <button class="ib" type="button" data-tool="orbit" aria-label="Yörünge"><span data-icon="planet" data-size="18"></span><span class="tip">Yörünge <kbd>O</kbd></span></button>
         <button class="ib" type="button" data-tool="hand" aria-label="Kaydır"><span data-icon="hand" data-size="18"></span><span class="tip">Kaydır <kbd>H</kbd> · basılı <kbd>Boşluk</kbd></span></button>
         <span class="vr"></span>
-        <button class="ib" type="button" data-add="device" aria-label="Cihaz ekle" aria-haspopup="menu"><span data-icon="smartphone" data-size="18"></span><span class="tip">Cihaz ekle <kbd>D</kbd></span></button>
-        <button class="ib" type="button" data-add="light" aria-label="Işık ekle" aria-haspopup="menu"><span data-icon="sun-2" data-size="18"></span><span class="tip">Işık ekle <kbd>L</kbd></span></button>
         <button class="ib" type="button" id="addBoardDock" aria-label="Artboard ekle"><span data-icon="frame" data-size="18"></span><span class="tip">Artboard ekle <kbd>A</kbd></span></button>
-        <button class="ib" type="button" id="addTextDock" data-tool="text" aria-label="Metin aracı"><span data-icon="text-square" data-size="18"></span><span class="tip">Metin: artboarda tıkla <kbd>T</kbd></span></button>
         <button class="ib" type="button" id="addFrameDock" data-tool="frame" aria-label="Çerçeve aracı"><span data-icon="hashtag" data-size="18"></span><span class="tip">Çerçeve: tıkla ya da sürükleyerek çiz <kbd>F</kbd> · auto layout <kbd>⇧A</kbd></span></button>
-        <span class="vr"></span>
-        <button class="ib" type="button" id="focusBtn" aria-label="Seçiliye odaklan"><span data-icon="target" data-size="18"></span><span class="tip">Seçiliye odaklan <kbd>⇧F</kbd></span></button>
-        <button class="ib" type="button" id="fitBtn" aria-label="Kadraja sığdır"><span data-icon="maximize-square" data-size="18"></span><span class="tip">Kadraja sığdır</span></button>
+        <button class="ib" type="button" id="addTextDock" data-tool="text" aria-label="Metin aracı"><span data-icon="text-square" data-size="18"></span><span class="tip">Metin: artboarda tıkla <kbd>T</kbd></span></button>
+        <button class="ib has-menu" type="button" data-add="device" aria-label="Cihaz ekle" aria-haspopup="menu"><span data-icon="smartphone" data-size="18"></span><span class="tip">Cihaz ekle <kbd>D</kbd></span></button>
+        <button class="ib has-menu" type="button" data-add="light" aria-label="Işık ekle" aria-haspopup="menu"><span data-icon="sun-2" data-size="18"></span><span class="tip">Işık ekle <kbd>L</kbd></span></button>
       </nav>
-      <div class="zoombox" aria-label="Tuval yakınlığı">
+      <div class="zoombox" aria-label="Görünüm">
+        <button class="ib" type="button" id="focusBtn" aria-label="Seçiliye odaklan"><span data-icon="target" data-size="16"></span><span class="tip">Seçiliye odaklan <kbd>⇧F</kbd></span></button>
+        <button class="ib" type="button" id="fitBtn" aria-label="Kadraja sığdır"><span data-icon="maximize-square" data-size="16"></span><span class="tip">Kadraja sığdır</span></button>
+        <span class="vr"></span>
         <button class="ib" type="button" id="zoomOut" aria-label="Uzaklaş"><span data-icon="minus-circle"></span></button>
         <button class="zv" type="button" id="zoomVal" title="Tümünü göster (⇧1)">100%</button>
         <button class="ib" type="button" id="zoomIn" aria-label="Yakınlaş"><span data-icon="add-circle"></span></button>

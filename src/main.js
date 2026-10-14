@@ -35,6 +35,7 @@ import './ui/store.js';
 import './ui/sections.js';
 import './ui/shortcuts.js';
 import './ui/insert.js';
+import './ui/dock.js';
 import './ui/assets.js';
 import './ui/timeline.js';
 import './export/video.js';

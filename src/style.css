@@ -646,3 +646,21 @@ details.more>summary:hover{color:var(--ink-2)}
 .tb-toggle:has(input:checked){background:var(--accent-soft);color:var(--accent-ink)}
 .tb-toggle:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:1px}
 .topbar #exportMenuBtn{height:32px;padding:0 14px}
+
+/* ---------- dock, minimal: [select ▾] [orbit] [hand] | [artboard] [frame] [text] [device ▾] [light ▾] ---------- */
+.dock{gap:4px;padding:6px;border-radius:12px}
+.dock .ib{width:34px;height:34px;border-radius:8px}
+.dock .vr{height:22px;margin:0 4px}
+.tool-split{display:flex;align-items:center;border-radius:8px}
+.tool-split .ib{border-top-right-radius:4px;border-bottom-right-radius:4px}
+.split-chev{width:14px;height:34px;display:grid;place-items:center;border-radius:0 6px 6px 0;color:var(--muted)}
+.split-chev:hover,.split-chev[aria-expanded="true"]{background:var(--field);color:var(--ink)}
+.tool-split:has(.ib[aria-pressed="true"]) .split-chev{color:var(--ink-2)}
+/* a menu button: a small corner caret */
+.dock .ib.has-menu{position:relative}
+.dock .ib.has-menu::after{content:"";position:absolute;right:4px;bottom:4px;border:3px solid transparent;border-right-color:var(--muted);border-bottom-color:var(--muted)}
+.dock-menu{position:fixed;min-width:200px;z-index:30}
+.dock-menu .mi.on{color:var(--accent-ink)}
+/* view box: focus, fit | zoom */
+.zoombox{height:36px;padding:0 4px;border-radius:10px;gap:2px}
+.zoombox .vr{height:18px;margin:0 4px}
