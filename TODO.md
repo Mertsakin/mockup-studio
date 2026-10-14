@@ -96,6 +96,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] **Yol izleme (Fotoğraf kalitesi):** three-gpu-pathtracer, OIDN (kendi karolamamız, albedo + normal), zaman bütçesi, ilerleme göstergesi, gölge yakalayıcı zemin, stüdyo HDRI'ı.
 - [x] **Canlı fotoğraf önizlemesi:** isteğe bağlı anahtar; kamera 700 ms durunca yol izlemeye geçer.
 - [x] **Telefon, tablet, monitör:** eloksal kasa, 2.5D ön cam, temas gölgesi, cam arka (mat/parlak), eş merkezli köşeler; monitörde yeni arka gövde, ayak ve taban.
+- [ ] **Zemin kalibrasyonunu kararlı yap** (yol izleme, tahmini 1–2 saat): `calibrateFloor` (64 px / 24 örnek ön geçiş) aynı kodla çalıştırmadan çalıştırmaya ±10 seviye oynuyor; zeminden yansıyan ışıkla cihaz gövdesi de değişiyor (1920 px telefon sahnesinde gövde 171 ↔ 189). Önce/sonra karşılaştırmalarını da güvenilmez yapıyor. Denenecekler: sabit gürültü tohumu (`stableNoise`), daha fazla kalibrasyon örneği/pikseli, daha kararlı tahmin; maliyeti ölç. Bitti = 3 tekrarda yayılım ~2 seviyenin altında (telefon + koyu fonlu dizüstü sahnesi, `PT_DEBUG=1`).
 - [ ] **Şeffaf arka planda zemin gölgesi** (yol izleme): şu an gölge yalnızca düz/gradyan fonda var; iki geçişli gölge yakalayıcı ya da gölgeyi alfa olarak çıkarma.
 - [ ] **Alan ışıkları (raster):** `RectAreaLight` ile softbox/strip/pencere; parlak yüzeylerde doğru şekilli vurgu.
 - [ ] Ekranın gövdeye yansıyan ışığı (`SCREEN_GLOW`) ve ortam kalibrasyonu: farklı sahnelerle ince ayar.
@@ -152,6 +153,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 ## Bilinen sorunlar
 
 - Fırçalanmış metal ve dizüstü hoparlör ızgarası uzak mesafede hafif hare (moiré) oluşturabiliyor.
+- Yol izlemede zemin kalibrasyonu çalıştırmadan çalıştırmaya ±10 seviye oynuyor (bkz. Gerçekçilik).
 - Yol izlemede zemin cihazdan uzaklaştıkça fondan %2–5 koyu kalabiliyor (yumuşak vinyet).
 - Çok geniş açılı spotlarda gölge haritası çözünürlüğü düşüyor (gölge kamerası fov = 2 × açı).
 - Işık küreleri bazı sahnelerde kadraja giriyor; asıl kontrol ışık haritası.
