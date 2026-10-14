@@ -134,6 +134,23 @@ function ensurePT(){
     'vec3 focalPoint = ray.origin + normalize( ray.direction ) * ( physicalCamera.focusDistance / max( 1e-4, dot( normalize( ray.direction ), camFwd ) ) );');
   if(plane===sharp)console.warn('PhysicalPathTracingMaterial: focus line not found, the depth of field focuses on a sphere');
   ptm.fragmentShader=plane;ptm.needsUpdate=true;
+  // stableNoise (a fixed seed) was not fixed, and broke the stratification:
+  // - the per-pixel blue-noise offsets come from Math.random once per page load: regenerate them from a seeded LCG
+  // - the sampler's reset puts the strata in identity order without shuffling: of every four dimensions, two stayed in
+  //   their first eighth for 64 samples (the calibration measured the floor with them, and the export that followed
+  //   carried on from that order). Rebuild the sampler instead: a new one shuffles first, with the seeded random.
+  const blue=ptm.stratifiedOffsetTexture,st=ptm.stratifiedTexture,rnd=Math.random;
+  if(blue&&blue.update&&st&&st.generator)try{
+    let seed=1;Math.random=()=>(seed=(Math.imul(seed,1103515245)+12345)>>>0)/4294967296;
+    blue.update();
+  }finally{Math.random=rnd;}
+  // - the low-res tracer shares the material and is reset right after the main one, with its own stableNoise (false):
+  //   the jitter inside the strata went back to Math.random. It follows the main one now.
+  if(st&&st.generator){
+    st.reset=function(){this.generator.seed=0;this.sampler=null;this.init();};
+    const main=pt._pathTracer,low=pt._lowResPathTracer;
+    if(low)Object.defineProperty(low,'stableNoise',{get:()=>main.stableNoise,set(){},configurable:true});
+  }else console.warn('PhysicalPathTracingMaterial: sampler not found, photo exports are not repeatable');
   return pt;
 }
 // Prepares the live scene for path tracing; returns the function that undoes it.
@@ -362,8 +379,13 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000,backdrop=null)
     // one call per tile of about TRACE_TILE_PX pixels: the page keeps repainting at export sizes (a whole 3840 px
     // sample would block the tab for seconds); pt.samples advances by a fraction per tile
     const n=Math.max(1,Math.ceil(Math.sqrt(renderer.domElement.width*renderer.domElement.height/TRACE_TILE_PX)));pt.tiles.set(n,n);
-    const t1=performance.now();
-    while(pt.samples<samples&&(pt.samples<8||performance.now()-t0<budgetMs)){
+    // fixed seed: the tracer hands every pixel the same samples, so the error of ~24 of them is shared by the whole
+    // image (a brightness shift of a few levels from run to run, not grain OIDN could remove). Spreading it per pixel
+    // cost speed and left blotches at this sample count; frozen, the same scene always renders the same.
+    pt.stableNoise=true;pt.reset();
+    // whole samples only: stopping mid-sample would leave some tiles one sample ahead of the others
+    const t1=performance.now(),whole=()=>Math.abs(pt.samples-Math.round(pt.samples))<1e-6;
+    while(!whole()||pt.samples<samples&&(pt.samples<8||performance.now()-t0<budgetMs)){
       pt.renderSample();
       // at most TRACE_QUEUE tiles in flight: the GPU queue stays short (no context loss, the system stays responsive),
       // and the next tile is already queued when one finishes. A one-pixel read after every tile used to drain the
@@ -381,7 +403,7 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000,backdrop=null)
     raw=copyCanvas(renderer.domElement);if(floorShown())fix=fixFloorMask();
     if(!window.__noOidn&&!window.__noAux)try{const ta=performance.now();aux=renderAux(raw.width,raw.height);console.info('Yardımcı geçişler '+Math.round(performance.now()-ta)+' ms');}
       catch(e){console.warn('Albedo/normal geçişleri alınamadı, yalnızca renkle gürültü giderme:',e);}
-  }finally{fences.forEach(f=>gl.deleteSync(f));undoStudio();req();}
+  }finally{pt.stableNoise=false;fences.forEach(f=>gl.deleteSync(f));undoStudio();req();}
   if(backdrop)raw=overBackdrop(raw,backdrop,aux);
   if(window.__ptKeep)window.__ptLast={raw:copyCanvas(raw),aux};  // test hook: compare denoiser variants on the same samples
   const tn=performance.now();
