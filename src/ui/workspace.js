@@ -156,25 +156,28 @@ function dragBoard(e,id){
   addEventListener('pointermove',mv);addEventListener('pointerup',up);addEventListener('pointercancel',up);
 }
 
-/* --- zoom tool (Figma's Z): a click zooms in 2× at the pointer, Alt / Option + click zooms out, a drag zooms to the
-   dragged area. Z held: the tool while the key is down (back to the previous tool when it was used); Z tapped: the
-   tool stays until Esc or another tool. Captured on the stage, so the 3D canvas never sees these presses. */
-let zdrag=null,zPrev='select',zHeld=false,zUsed=false;
+/* --- zoom tool (Figma's Z): only while Z is held. A click zooms in 2× at the pointer, a drag zooms to the dragged
+   area; with Alt / Option a click zooms out (no area drag then). Releasing Z (or leaving the window) goes back to the
+   previous tool. Captured on the stage, so the 3D canvas never sees these presses. */
+let zdrag=null,zPrev='select',zHeld=false,altDown=false;
+// Option / Alt: from the pointer event, or from the keyboard (some pointer sources leave altKey out of drags)
+const alt=e=>e.altKey||altDown;
 const marq=document.createElement('div');marq.className='zmarq';marq.hidden=true;stage.appendChild(marq);
 stage.addEventListener('pointerdown',e=>{
   if(ui.tool!=='zoom'||e.button!==0||e.target.closest('.dock,.zoombox,.menu,.ibox,.tbox'))return;
   e.preventDefault();e.stopPropagation();const r=stage.getBoundingClientRect();
-  zdrag={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top,alt:e.altKey};stage.setPointerCapture(e.pointerId);
+  zdrag={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top,alt:alt(e)};stage.setPointerCapture(e.pointerId);
 },true);
 stage.addEventListener('pointermove',e=>{
   if(!zdrag||e.pointerId!==zdrag.id)return;const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-  if(Math.hypot(x-zdrag.x,y-zdrag.y)<5){marq.hidden=true;return;}
+  if(zdrag.alt||alt(e)||Math.hypot(x-zdrag.x,y-zdrag.y)<5){marq.hidden=true;return;}  // zooming out: clicks only
   marq.hidden=false;Object.assign(marq.style,{left:Math.min(x,zdrag.x)+'px',top:Math.min(y,zdrag.y)+'px',width:Math.abs(x-zdrag.x)+'px',height:Math.abs(y-zdrag.y)+'px'});
 },true);
 function endZoom(e,cancel){
   if(!zdrag||e.pointerId!==zdrag.id)return;const d=zdrag;zdrag=null;const dragged=!marq.hidden;marq.hidden=true;if(cancel)return;
-  const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;zUsed=true;
-  if(!dragged){zoomAt(e.altKey||d.alt?.5:2,x,y);return;}
+  const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  if(alt(e)||d.alt){zoomAt(.5,x,y);return;}
+  if(!dragged){zoomAt(2,x,y);return;}
   // the dragged area fills the stage (the same margins as "fit")
   const w=Math.abs(x-d.x),h=Math.abs(y-d.y),cx=(x+d.x)/2,cy=(y+d.y)/2,pad=40;
   const z=clamp(V.z*Math.min((r.width-2*pad)/w,(r.height-2*pad)/h),.02,4),wx=(cx-V.x)/V.z,wy=(cy-V.y)/V.z;
@@ -182,15 +185,17 @@ function endZoom(e,cancel){
 }
 stage.addEventListener('pointerup',e=>endZoom(e,false),true);stage.addEventListener('pointercancel',e=>endZoom(e,true),true);
 // the cursor: magnifier, with a minus while Alt / Option is down
-const altKey=on=>{document.documentElement.classList.toggle('alt-down',on);};
+const altKey=on=>{altDown=on;document.documentElement.classList.toggle('alt-down',on);};
 addEventListener('keydown',e=>{if(e.key==='Alt')altKey(true);});addEventListener('keyup',e=>{if(e.key==='Alt')altKey(false);});
 addEventListener('blur',()=>altKey(false));
 addEventListener('keydown',e=>{
   if(typing(e.target)||e.metaKey||e.ctrlKey||e.shiftKey)return;
-  if(e.code==='KeyZ'&&!e.repeat){e.preventDefault();if(ui.tool!=='zoom'){zPrev=ui.tool;setUi({tool:'zoom'});}zHeld=true;zUsed=false;}
-  else if(e.key==='Escape'&&ui.tool==='zoom'){e.preventDefault();setUi({tool:zPrev==='zoom'?'select':zPrev});}
+  if(e.code==='KeyZ'){e.preventDefault();if(!zHeld&&ui.tool!=='zoom'){zPrev=ui.tool;setUi({tool:'zoom'});}zHeld=true;}
 },true);
-addEventListener('keyup',e=>{if(e.code!=='KeyZ'||!zHeld)return;zHeld=false;if(zUsed&&ui.tool==='zoom')setUi({tool:zPrev});});
+// Z released (or the window lost focus while it was down): the previous tool again
+const releaseZ=()=>{if(!zHeld)return;zHeld=false;marq.hidden=true;zdrag=null;if(ui.tool==='zoom')setUi({tool:zPrev==='zoom'?'select':zPrev});};
+addEventListener('keyup',e=>{if(e.code==='KeyZ')releaseZ();});
+addEventListener('blur',releaseZ);
 
 /* --- keys: Space = temporary hand, Shift+1 fit all, Shift+2 fit the active board */
 const typing=t=>t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable);
