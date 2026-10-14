@@ -2,7 +2,7 @@
 
 Öncelik sırası, gerçekçilik ve iş akışı hızı birlikte düşünülerek verildi. Her maddeden sonra render düzeneğiyle görsel doğrulama yap.
 
-_Son güncelleme: 12 Ekim 2026 (`main` @ `7063de4`)._
+_Son güncelleme: 14 Ekim 2026 (`main` @ `bf48e52`)._
 
 ## Mevcut durum
 
@@ -14,6 +14,16 @@ Stüdyo uçtan uca kullanılabilir durumda: boş belgeyle açılır (ya da son �
 - **Animasyon:** Tasarla / Canlandır modları, zaman çizelgesi, anahtar kareler, hazır hareketler, MP4 dışa aktarım.
 - **Pazarlama:** `landing/` örnek SaaS açılış sayfası; görselleri stüdyonun kendisiyle üretiliyor.
 - Açık dal / bekleyen iş yok; `main` temiz ve GitHub'a gönderilmiş.
+
+## Sıradaki yol (14 Ekim 2026 kararı)
+
+Yayından önce ürünün içerik eksikleri kapanır; yayın ve ürünleştirme (barındırma, hesap/ödeme, karşılama akışı, lisans sayfası) **en sona** kalır. Yakalama servisi altyapı kararı da en sonda verilir.
+
+1. [ ] **Metin katmanı:** yeni bir 2B öğe türü (`kind: 'text'`). Metin kendi tuvaline çizilir, öğenin görseli o tuvaldir; seçim kutusu, yapışma, önde/arkada, dışa aktarım ve küçük resimler değişmeden çalışır. Yazı tipi (seçilmiş Google Fonts listesi + kendi fontunu yükleme, belgeye gömülü), kalınlık, boyut, renk/gradyan, hizalama, satır/harf aralığı, kutu genişliği (satır kaydırma), gölge; tuvalde çift tıklayıp yerinde düzenleme; dışa aktarım boyutunda yeniden çizim (keskin). İlk aşamada 2B (3B metin sonra).
+2. [ ] **2B öğe animasyonu + metin efektleri:** öğelere iz (konum, ölçek, dönüş, opaklık; `animate.js` kayıt mantığı aynı); metin hazır efektleri: solarak/alttan/kayarak giriş, ölçekle belirme, daktilo, kelime/harf bazlı kademeli giriş, vurgu (altı çizilen kelime), sayaç.
+3. [ ] **Çoklu seçim + sağ tık menüsü** (aşağıda "İş akışı").
+4. [ ] **Mağaza görseli üretici:** App Store (6,9", 6,5", iPad 13") ve Play Store (telefon, tablet, öne çıkan görsel) ölçüleri; tek seferde 5–8 artboard'luk "mağaza seti" (ortak fon, yazı tipi, renk; başlık + cihaz + ekran); **panorama modu** (fon ve cihazlar artboard sınırlarını aşarak akar). Yerelleştirme (dil başına metin varyantı, toplu ZIP) bundan sonra.
+5. [ ] **Şablonlar:** metinli ve mağaza seti şablonları, animasyonlu şablonlar, kendi sahneni şablon olarak kaydetme, kartlarda gerçek örnek ekranlar.
 
 ## Strateji
 
@@ -50,7 +60,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [ ] İlk 60 saniye: boş tuval yerine "URL ver → hazır görsel" karşılama akışı.
 - [ ] Jenerik cihaz algısı: "Neden iPhone gibi değil?" sorusuna GLB içe aktarma ve "Kendi çerçeven" ile net cevap.
 
-## Son eklenenler (9–11 Ekim 2026)
+## Son eklenenler (9–13 Ekim 2026)
 
 - [x] Yol izleme: kalibre edilmiş gölge yakalayıcı zemin diski, parlak stüdyo ortamı, fon duvarı kaldırıldı; fon rengi birebir.
 - [x] Yol izleme hız/kalite: 4096 px dokular, Neutral ton eşleme, sakin ekran camı, karolu örnekleme ve OIDN (3840×4800 ≈ 25 sn, eskiden 116 sn), bantlı aux geçişleri; dışa aktarımda keskin ekranlar (`crispScreens`).
@@ -70,6 +80,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] Dizüstü klavye çukuru gövde rengini izler, tuşlar koyu kalır.
 - [x] Görünüm küpü (eksen göstergesinin yerine), serbest dönüştürme kutusu (T), sürükleme davranışı (cihaz sürükle = taşı, boş alan = yörünge).
 - [x] Landing: Midas tarzı örnek SaaS açılış sayfası, görseller stüdyoyla render edildi.
+- [x] Dışa aktarım: küçük boyutlarda keskin ekranlar (`CRISP_MAX` 16); boyut artık **genişlik** (1080 / 1920 / 3840 px, uzun kenar en çok 3840) (13 Ekim).
 
 ## 1. Temel
 
@@ -103,13 +114,13 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] **2B öğeler + varlık kütüphanesi** (logo, rozet, metin görseli; önde/arkada).
 - [x] **Video:** Canlandır modu, hazır hareketler (aşağıdan yüksel, döner tabla, süzülme, kapağı aç, ekranı kaydır), MP4.
 
-**Sıradaki öncelik (önerilen):** çoklu seçim → sağ tık menüsü → kendi sahneni şablon olarak kaydet → metin katmanı / mağaza görseli üretici.
+**Sıradaki öncelik:** yukarıdaki "Sıradaki yol" bölümüne bak.
 
 - [ ] **Çoklu seçim:** Shift ile birden fazla cihaz (ve 2B öğe) seçip birlikte taşıma / döndürme / katman komutu.
 - [ ] **Sağ tık bağlam menüsü:** kopyala, çoğalt, sil, katman sırası, odakla.
 - [ ] Artboard'lar arası cihaz kopyalama / taşıma; artboard çoğaltırken yerleşim seçimi.
-- [ ] **Metin katmanı:** yazı tipi, boyut, renk (şu an metin ancak görsel olarak eklenebiliyor).
-- [ ] **Mağaza görseli üretici:** App Store / Play Store ölçülerinde toplu çıktı (metin katmanından sonra).
+- [ ] **Metin katmanı:** bkz. "Sıradaki yol" 1.
+- [ ] **Mağaza görseli üretici:** bkz. "Sıradaki yol" 4.
 - [ ] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP).
 - [ ] Video: WebM/GIF seçeneği, video için fotoğraf kalitesi (yavaş ama mümkün), ses yok.
 - [ ] Mobil düzen: sol panel 820 px altında gizli; çekmece olarak açılmalı.
