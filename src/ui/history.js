@@ -147,7 +147,7 @@ async function closeProject(){
     if(a==='cancel')return;
     if(a==='save'&&!(await save(false)))return;
   }
-  doc.assets=[];clearAll();
+  doc.assets=[];doc.fonts=[];clearAll();
   past=[];future=[];current=snapshot();currentSig=signature(current);pending='';savedSig=currentSig;syncButtons();
   fileHandle=null;setFileName('');clearTimeout(saveTimer);autosave(current);
   toast('Proje kapatıldı');

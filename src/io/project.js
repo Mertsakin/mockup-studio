@@ -26,7 +26,8 @@ function snapshot(){
   const images={},st={};
   for(const k in state)if(!SKIP_STATE.has(k))st[k]=copy(state[k]);
   st.bgImg=imgKey(state.bgImg);if(state.bgImg)images[st.bgImg]=state.bgImg;
-  st.items=state.items.map(it=>{const o=Object.assign({},it,{img:imgKey(it.img)});images[o.img]=it.img;return copy(o);});
+  // text items have no image (kind 'text'): their content is plain data
+  st.items=state.items.map(it=>{if(!it.img)return copy(it);const o=Object.assign({},it,{img:imgKey(it.img)});images[o.img]=it.img;return copy(o);});
   const devices=state.devices.map(d=>{const o={};for(const k in d)if(!SKIP_DEVICE.has(k))o[k]=copy(d[k]);
     // animated values are stored at the design frame, not at the editor's playhead (moving the playhead is not an edit)
     tracked(d).forEach(k=>{o[k]=interp(d.tracks[k],designT(d));});
@@ -42,7 +43,7 @@ function restore(s){
   const cur=new Set(Object.keys(state));
   for(const k in s.state)if(cur.has(k)&&k!=='scene'&&k!=='bgImg')state[k]=copy(s.state[k]);
   state.bgImg=s.state.bgImg&&s.images[s.state.bgImg]||null;
-  state.items=(s.state.items||[]).map(o=>Object.assign(copy(o),{img:s.images[o.img]||null})).filter(o=>o.img);
+  state.items=(s.state.items||[]).map(o=>o.kind==='text'?copy(o):Object.assign(copy(o),{img:s.images[o.img]||null})).filter(o=>o.img||o.kind==='text');
   reserveItemIds(Math.max(0,...state.items.map(i=>i.id)));if(!state.items.some(i=>i.id===state.selItem))state.selItem=null;
   // documents from when patterns were a background style: the pattern becomes the background image
   if(s.state.bg==='pattern'){Object.assign(state,patternBg(s.state));Object.assign(s.state,{bg:'image',bgImgName:state.bgImgName,bgImg:imgKey(state.bgImg)});s.images[s.state.bgImg]=state.bgImg;}
@@ -74,7 +75,7 @@ const docImages=d=>{const m={};d.boards.forEach(b=>Object.assign(m,b.snap.images
 const SNAP_KEYS=['v','state','devices','lights','selected','selLight','frame'];
 const plainSnap=s=>{const o={};SNAP_KEYS.forEach(k=>{o[k]=s[k];});return o;};
 // thumbnails (small data URLs) travel along, so a loaded document shows every board without re-rendering it
-const plainDoc=d=>({v:2,layout:d.layout,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null})),assets:d.assets||[]});
+const plainDoc=d=>({v:2,layout:d.layout,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null})),assets:d.assets||[],fonts:d.fonts||[]});
 /* The asset library (left panel) belongs to the document: assets [{img: key, name}] + assetImages {key: image}. */
 function packAssets(list){const assetImages={},assets=list.map(a=>{const k=imgKey(a.img);assetImages[k]=a.img;return {img:k,name:a.name};});return {assets,assetImages};}
 // a single-scene snapshot (v1 files, old autosaves) becomes a one-board document

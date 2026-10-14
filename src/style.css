@@ -169,6 +169,9 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:0}
 input[type=color]::-webkit-color-swatch{border:0;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
 input[type=color]::-moz-color-swatch{border:0;border-radius:3px}
 .pair{display:flex;gap:4px}
+.cells.cells-2-1{grid-auto-flow:row;grid-template-columns:minmax(0,1fr) 40px}
+.tbody{display:block;width:100%;box-sizing:border-box;min-height:52px;margin:2px 0 4px;padding:6px 8px;border-radius:5px;border:1px solid transparent;background:var(--field);resize:vertical;font:inherit;line-height:1.35}
+.tbody:focus{outline:0;border-color:var(--accent)}
 
 /* segmented control */
 .seg{display:inline-grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--field);border-radius:5px;padding:2px;height:var(--h);min-width:0}
@@ -203,6 +206,8 @@ input[type=color]::-moz-color-swatch{border:0;border-radius:3px}
 .slider input{grid-column:2;grid-row:1}
 .slider output{grid-column:3;grid-row:1;text-align:right;color:var(--ink-2)}
 .slider .note{display:none}
+#textSec .slider{grid-template-columns:88px minmax(0,1fr) 60px}  /* px values and "Otomatik" */
+#textSec .slider output{white-space:nowrap}
 /* range: thick rounded track, accent fill up to the thumb's centre (--p 0..1, set by sliders.js), white thumb */
 input[type=range]{--p:.5;--th:20px;--tk:10px;appearance:none;-webkit-appearance:none;width:100%;min-width:0;margin:0;height:var(--th);background:none;cursor:pointer}
 input[type=range]::-webkit-slider-runnable-track{height:var(--tk);border-radius:999px;
@@ -282,7 +287,7 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .frame{position:absolute;left:0;top:0;overflow:hidden}
 /* 2D items: a layer under the WebGL canvas and one over it (layout.js); picking goes through pointer.js */
 .items{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
-.items img{position:absolute;left:0;top:0;display:block;max-width:none;user-select:none}
+.items img,.items canvas{position:absolute;left:0;top:0;display:block;max-width:none;user-select:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 #gl.dragging{cursor:grabbing}
 .stage[data-tool="orbit"] #gl{cursor:grab}
@@ -316,6 +321,9 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .ibox-rot::before{content:"";position:absolute;inset:-6px}
 .ibox[data-small="true"] .th{width:8px;height:8px;margin:-4px 0 0 -4px}
 .ibox.active .th,.ibox.active .ibox-rot{background:var(--accent)}
+.ibox.editing .th,.ibox.editing .ibox-rot,.ibox.editing .ibox-stem{display:none}
+/* text being edited in place (items.js): styled like the item at the screen's scale */
+.tedit{position:absolute;left:0;top:0;z-index:5;box-sizing:border-box;margin:0;border:0;outline:0;background:transparent;resize:none;overflow:hidden;transform-origin:50% 50%;caret-color:var(--accent)}
 
 /* floating chrome */
 .dock{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:4px;background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line),var(--shadow);z-index:5}

@@ -1,7 +1,8 @@
 import {canvas} from '../render/renderer.js';
+import {TEXT_DEFAULTS,keepAnchor,textLayout} from '../render/text.js';
 import {nextItemId,selItem,state} from '../state/state.js';
 import {sizeOf} from './boards.js';
-import {boardScreen,imgSize,itemRect,onLayout,renderItems} from './layout.js';
+import {boardScreen,hideItem,imgSize,itemRect,onLayout,renderItems} from './layout.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {onUi,panning,setUi,ui} from './ui-state.js';
 import {$,clamp} from '../util.js';
@@ -41,7 +42,7 @@ function mask(img){
 function hit(it,p){
   const r=screenRect(it);if(!r)return false;const l=local(r,p);
   if(Math.abs(l.x)>r.w/2||Math.abs(l.y)>r.h/2)return false;
-  const m=mask(it.img);if(!m)return true;
+  const m=it.kind==='text'?null:mask(it.img);if(!m)return true;  // text: the whole block
   const u=Math.min(m.w-1,Math.floor((l.x/r.w+.5)*m.w)),v=Math.min(m.h-1,Math.floor((l.y/r.h+.5)*m.h));
   return m.a[(v*m.w+u)*4+3]>16;
 }
@@ -62,6 +63,17 @@ function addItem(img,name,at){
   if(at){const s=boardScreen(),p=toStage(at.x,at.y);if(s){x=clamp((p.x-s.x)/s.w,0,1);y=clamp((p.y-s.y)/s.h,0,1);}}
   const it={id:nextItemId(),name:name||'Görsel',img,x,y,w:Math.max(.02,w),rot:0,opacity:1,front:true};
   state.items.push(it);renderItems();selectItem(it.id);return it;
+}
+// a new text item (Sıradaki yol 1): near the top of the board, dark or light depending on the background
+function addText(props){
+  const it=Object.assign({id:nextItemId(),name:'Metin',x:.5,y:.14,rot:0,opacity:1,front:true,kind:'text'},TEXT_DEFAULTS,{color:darkBg()?'#ffffff':'#111111'},props);
+  state.items.push(it);renderItems();selectItem(it.id);return it;
+}
+// is the board's background dark (by its average colour)? image backgrounds count as light
+function darkBg(){
+  const hex=state.bg==='solid'?[state.solid]:state.bg==='gradient'?[state.bg1,state.bg2]:[];if(!hex.length)return false;
+  const lum=hex.map(h=>{const n=parseInt(String(h).slice(1),16);return .2126*(n>>16&255)+.7152*(n>>8&255)+.0722*(n&255);});
+  return lum.reduce((a,b)=>a+b,0)/lum.length<110;
 }
 function removeItem(id){
   const i=state.items.findIndex(x=>x.id===id);if(i<0)return;
@@ -100,7 +112,7 @@ function guide(x,y,w,h){const g=document.createElement('div');g.className='guide
 
 /* ---------- drags: move (from pointer.js), scale / rotate (handles) */
 function begin(e,o){drag=Object.assign({id:e.pointerId,it:selItem(),start:toStage(e.clientX,e.clientY)},o);
-  drag.save={x:drag.it.x,y:drag.it.y,w:drag.it.w,rot:drag.it.rot};canvas.classList.add('dragging');box.classList.add('active');
+  drag.save={x:drag.it.x,y:drag.it.y,w:drag.it.w,size:drag.it.size,rot:drag.it.rot};canvas.classList.add('dragging');box.classList.add('active');
   addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onCancel);}
 function startItemDrag(e,it){selectItem(it.id);begin(e,{mode:'move'});}
 box.querySelectorAll('[data-h]').forEach(h=>h.addEventListener('pointerdown',e=>{
@@ -131,18 +143,19 @@ function onMove(e){
     it.x=+(cx/s.w).toFixed(4);it.y=+(cy/s.h).toFixed(4);
   } else if(drag.mode==='scale'){
     const r=drag.r,a=r.rot*D2R,cos=Math.cos(a),sin=Math.sin(a);
+    // the item's width (fraction of the board) scales by k; a text item scales its font size instead
+    const w0=r.w/s.w,scale=k=>{k=clamp(k,.01/w0,4/w0);if(it.kind==='text')it.size=+(sv.size*k).toFixed(5);else it.w=+(sv.w*k).toFixed(4);return k;};
     if(e.altKey){  // about the centre
-      const l=local(r,p),k=Math.max(Math.abs(l.x)/(r.w/2),Math.abs(l.y)/(r.h/2));
-      it.w=clamp(sv.w*k,.01,4);it.x=sv.x;it.y=sv.y;
+      const l=local(r,p);scale(Math.max(Math.abs(l.x)/(r.w/2),Math.abs(l.y)/(r.h/2)));it.x=sv.x;it.y=sv.y;
     } else {
       // anchor = opposite corner; new size from the pointer's projection on the item's axes
       const ax=r.cx+(-drag.sx*r.w/2)*cos-(-drag.sy*r.h/2)*sin,ay=r.cy+(-drag.sx*r.w/2)*sin+(-drag.sy*r.h/2)*cos;
       const dx=p.x-ax,dy=p.y-ay,lx=(dx*cos+dy*sin)*drag.sx,ly=(-dx*sin+dy*cos)*drag.sy;
-      const k=clamp(Math.max(lx/r.w,ly/r.h),.01/sv.w,4/sv.w),w=r.w*k,h=r.h*k;
+      const k=scale(Math.max(lx/r.w,ly/r.h)),w=r.w*k,h=r.h*k;
       const cx=ax+(drag.sx*w/2)*cos-(drag.sy*h/2)*sin,cy=ay+(drag.sx*w/2)*sin+(drag.sy*h/2)*cos;
-      it.w=+(sv.w*k).toFixed(4);it.x=+((cx-s.x)/s.w).toFixed(4);it.y=+((cy-s.y)/s.h).toFixed(4);
+      it.x=+((cx-s.x)/s.w).toFixed(4);it.y=+((cy-s.y)/s.h).toFixed(4);
     }
-    val.hidden=false;val.textContent=Math.round(it.w*sizeOf(state)[0])+' px';
+    val.hidden=false;val.textContent=Math.round((it.kind==='text'?it.size:it.w)*sizeOf(state)[0])+' px';
   } else if(drag.mode==='rot'){
     const r=drag.r;let deg=Math.atan2(p.y-r.cy,p.x-r.cx)/D2R+90;
     if(e.shiftKey)deg=Math.round(deg/15)*15;
@@ -158,6 +171,37 @@ function end(cancel){
 }
 const onUp=()=>end(false),onCancel=()=>end(true);
 
+/* ---------- text: editing in place (double-click a text item, or right after adding one)
+   A textarea over the item, styled like it at the screen's scale; the item's canvas is hidden meanwhile. Every keystroke
+   updates the item (the top edge and the aligned side stay put). Esc or a click elsewhere ends it, ⌘/Ctrl + Enter too. */
+let editor=null;
+function editText(it,selectAll){
+  if(!it||it.kind!=='text')return;endEdit();
+  const ta=document.createElement('textarea');ta.className='tedit';ta.spellcheck=false;ta.setAttribute('aria-label','Metin');ta.value=it.text;
+  stage.appendChild(ta);editor={ta,it};hideItem(it.id);box.classList.add('editing');
+  const fit=()=>{const s=boardScreen(),r=screenRect(it);if(!s||!r){endEdit();return;}
+    const px=it.size*s.w,L=textLayout(it);
+    Object.assign(ta.style,{width:(r.w+px*.6)+'px',height:(r.h+2)+'px',transform:'translate('+(r.cx-r.w/2-px*.3)+'px,'+(r.cy-r.h/2-1)+'px) rotate('+r.rot+'deg)',
+      font:(it.italic?'italic ':'')+it.weight+' '+px+'px "'+it.font+'",sans-serif',lineHeight:(it.lh*px)+'px',letterSpacing:(it.ls*px)+'px',
+      textAlign:it.align,color:it.color,padding:'1px '+(px*.3)+'px',whiteSpace:it.wrap?'pre-wrap':'pre',opacity:String(it.opacity??1)});
+    ta.rows=L.lines.length;};
+  editor.fit=fit;fit();
+  ta.addEventListener('input',()=>{const [bw,bh]=sizeOf(state);keepAnchor(it,bw,bh,()=>{it.text=ta.value;});changed();fit();});
+  ta.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape'||e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();endEdit();}});
+  ta.addEventListener('blur',()=>endEdit());
+  ta.focus();if(selectAll)ta.select();
+}
+function endEdit(){
+  if(!editor)return;const {ta,it}=editor;editor=null;ta.remove();hideItem(null);box.classList.remove('editing');
+  if(!it.text.trim()&&state.items.includes(it))removeItem(it.id); else changed();
+}
+onLayout(()=>{if(editor)editor.fit();});onSyncUI(()=>{if(editor&&!state.items.includes(editor.it))endEdit();else if(editor)editor.fit();});
+// double-click a text item: edit it (before the navigator's double-click focus)
+canvas.addEventListener('dblclick',e=>{
+  const it=itemAt(e.clientX,e.clientY,true)||itemAt(e.clientX,e.clientY,false);
+  if(!it||it.kind!=='text')return;e.stopImmediatePropagation();selectItem(it.id);editText(it,true);
+},true);
+
 /* ---------- keys: arrows nudge, Delete removes, Esc cancels a drag */
 addEventListener('keydown',e=>{
   if(e.key==='Escape'&&drag){e.preventDefault();e.stopImmediatePropagation();end(true);return;}
@@ -166,7 +210,8 @@ addEventListener('keydown',e=>{
   const it=selItem(),[bw,bh]=sizeOf(state),n=e.shiftKey?10:1;
   const mv={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
   if(mv){e.preventDefault();e.stopImmediatePropagation();it.x=+(it.x+mv[0]*n/bw).toFixed(4);it.y=+(it.y+mv[1]*n/bh).toFixed(4);changed();return;}
-  if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();e.stopImmediatePropagation();removeItem(it.id);}
+  if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();e.stopImmediatePropagation();removeItem(it.id);return;}
+  if(e.key==='Enter'&&it.kind==='text'){e.preventDefault();e.stopImmediatePropagation();editText(it,true);}
 },true);
 
-export {addItem,itemAt,removeItem,reorder,selectItem,setFront,startItemDrag};
+export {addItem,addText,editText,itemAt,removeItem,reorder,selectItem,setFront,startItemDrag};

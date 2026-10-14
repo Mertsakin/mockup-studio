@@ -1,6 +1,7 @@
 import {ArrayBufferTarget,Muxer} from 'mp4-muxer';
 import {LRT} from '../lights/runtime.js';
 import {pauseLive,renderNow} from '../render/accumulation.js';
+import {fontsReady} from '../render/text.js';
 import {canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {hasAnim} from '../state/anim.js';
@@ -35,6 +36,7 @@ async function pickConfig(w,h){
 
 let cancel=false;
 async function renderVideo(onProgress){
+  await fontsReady(state.items);
   const [W,H]=size(),n=frames(),config=await pickConfig(W,H);
   if(!config)throw new Error('codec');
   const target=new ArrayBufferTarget();

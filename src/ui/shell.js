@@ -8,7 +8,7 @@ import {activate,activeBoard,addBoard,doc,duplicateBoard,ensureBoard,hasBoard,on
 import {renderDome} from './dome.js';
 import {setGizmoMode,showGizmo} from './gizmo.js';
 import {hydrateIcons,icon} from './icons.js';
-import {removeItem,selectItem} from './items.js';
+import {addText,editText,removeItem,selectItem} from './items.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {applyTemplate} from './templates.js';
 import {boardScreen} from './layout.js';
@@ -87,7 +87,7 @@ function renderTree(){
     const go=(fn)=>{if(!live)activate(b.id);fn();};
     // 2D items in stacking order: those in front of the devices above them, those behind below the lights
     const items=live?state.items:b.snap.state.items||[];
-    const itemNode=it=>tree.appendChild(node({child:true,name:it.name,icon:'gallery',sel:live&&ui.kind==='item'&&state.selItem===it.id,
+    const itemNode=it=>tree.appendChild(node({child:true,name:it.name,icon:it.kind==='text'?'text-square':'gallery',sel:live&&ui.kind==='item'&&state.selItem===it.id,
       pick:()=>go(()=>selectItem(it.id)),actions:live?[['trash-bin-minimalistic','Sil',()=>removeItem(it.id)]]:[]}));
     items.filter(it=>it.front).reverse().forEach(itemNode);
     devNames(devs).forEach((n,i)=>{const d=devs[i];
@@ -168,6 +168,8 @@ $('#dock [data-add="light"]').addEventListener('click',e=>{e.stopPropagation();o
   MODS.filter(m=>m.k!=='custom').map(m=>[LIGHT_ICON[m.k]||'sun-2',m.n,()=>{ensureBoard();const n=state.lights.length;$('#addLight').click();
     if(state.lights.length>n){const b=$('#modGrid [data-mod="'+m.k+'"]');if(b)b.click();setUi({kind:'light'});}}]));});
 const newBoard=()=>{addBoard();setUi({kind:'board'});fitAll();};
+// a new text item, edited in place right away (the layout of a new board settles first)
+$('#addTextDock').addEventListener('click',()=>{ensureBoard();const it=addText();requestAnimationFrame(()=>editText(it,true));});
 $('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEventListener('click',newBoard);$('#emptyAddBoard').addEventListener('click',newBoard);
 
 /* ---------- export popover ---------- */

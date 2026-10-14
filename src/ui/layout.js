@@ -1,5 +1,6 @@
 import {gradCss,paintGradient} from '../render/backgrounds.js';
 import {renderer,setCrop} from '../render/renderer.js';
+import {drawText,onFont,textBox,textPad} from '../render/text.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
 import {$} from '../util.js';
@@ -72,28 +73,49 @@ function paintBg(g,W,H){
 }
 
 /* ---------- 2D items ----------
-   Geometry of an item on a W x H board: centre (x*W, y*H), width w*W, height from the image's aspect, rotation rot. */
-function itemRect(it,W,H){const [iw,ih]=imgSize(it.img),w=it.w*W;return {cx:it.x*W,cy:it.y*H,w,h:w*ih/iw,rot:it.rot||0};}
-const els=new Map();  // item id -> <img>
+   Geometry of an item on a W x H board: centre (x*W, y*H), width w*W, height from the image's aspect, rotation rot.
+   Text items (kind 'text'): the size follows from the text and its font size (render/text.js). */
+function itemRect(it,W,H){
+  if(it.kind==='text'){const b=textBox(it,W);return {cx:it.x*W,cy:it.y*H,w:b.w,h:b.h,rot:it.rot||0};}
+  const [iw,ih]=imgSize(it.img),w=it.w*W;return {cx:it.x*W,cy:it.y*H,w,h:w*ih/iw,rot:it.rot||0};
+}
+const els=new Map();  // item id -> <img> (or <canvas> for text)
+let hiddenItem=null;  // the text being edited in place (its editor shows the text instead)
+function hideItem(id){hiddenItem=id;renderItems();}
+// a text item drawn on its own canvas at the screen's pixel density (at most 4096 px a side), padded for overhang and shadow
+function drawTextEl(el,it,r,W){
+  const px=(it.size||.06)*W,pad=textPad(it)*px,cw=r.w+2*pad,ch=r.h+2*pad;
+  const k=Math.min(window.devicePixelRatio||1,2,4096/Math.max(cw,ch)),bw=Math.max(1,Math.round(cw*k)),bh=Math.max(1,Math.round(ch*k));
+  const key=JSON.stringify([it.text,it.font,it.weight,it.italic,it.color,it.color2,it.fill,it.align,it.lh,it.ls,it.wrap,it.shadow,bw,bh,r.w]);
+  if(el.dataset.key!==key){el.dataset.key=key;el.width=bw;el.height=bh;
+    const g=el.getContext('2d');g.setTransform(k,0,0,k,cw*k/2,ch*k/2);drawText(g,it,px);}
+  return pad;
+}
 function renderItems(){
   if(!board)return;
   const {w:W,h:H,x,y}=board,seen=new Set();
   for(const k in itemLayers){const L=itemLayers[k];L.style.width=W+'px';L.style.height=H+'px';L.style.transform='translate('+x+'px,'+y+'px)';}
   state.items.forEach(it=>{
-    let el=els.get(it.id);
-    if(!el){el=document.createElement('img');el.alt='';el.draggable=false;els.set(it.id,el);}
-    if(el.src!==it.img.src)el.src=it.img.src;
+    const text=it.kind==='text';let el=els.get(it.id);
+    if(el&&(el.tagName==='CANVAS')!==text){el.remove();el=null;}
+    if(!el){el=document.createElement(text?'canvas':'img');if(!text){el.alt='';el.draggable=false;}els.set(it.id,el);}
     const r=itemRect(it,W,H),L=itemLayers[it.front?'front':'back'];
-    el.style.cssText='width:'+r.w+'px;height:'+r.h+'px;transform:translate('+(r.cx-r.w/2)+'px,'+(r.cy-r.h/2)+'px) rotate('+r.rot+'deg);opacity:'+(it.opacity??1);
+    let pad=0;
+    if(text)pad=drawTextEl(el,it,r,W); else if(el.src!==it.img.src)el.src=it.img.src;
+    el.style.cssText='width:'+(r.w+2*pad)+'px;height:'+(r.h+2*pad)+'px;transform:translate('+(r.cx-r.w/2-pad)+'px,'+(r.cy-r.h/2-pad)+'px) rotate('+r.rot+'deg);opacity:'+(it.opacity??1)+(it.id===hiddenItem?';visibility:hidden':'');
     L.appendChild(el);seen.add(it.id);  // re-appending keeps the DOM order = paint order
-    if(!it.img.complete)it.img.addEventListener('load',renderItems,{once:true});
+    if(!text&&!it.img.complete)it.img.addEventListener('load',renderItems,{once:true});
   });
   els.forEach((el,id)=>{if(!seen.has(id)){el.remove();els.delete(id);}});
 }
 // export / thumbnails: the items of one layer drawn on a W x H canvas
 function paintItems(g,W,H,front){
-  state.items.forEach(it=>{if(!!it.front!==front||!it.img.complete)return;const r=itemRect(it,W,H);
-    g.save();g.globalAlpha=it.opacity??1;g.translate(r.cx,r.cy);g.rotate(r.rot*Math.PI/180);g.drawImage(it.img,-r.w/2,-r.h/2,r.w,r.h);g.restore();});
+  state.items.forEach(it=>{const text=it.kind==='text';if(!!it.front!==front||!text&&!it.img.complete)return;const r=itemRect(it,W,H);
+    g.save();g.globalAlpha=it.opacity??1;g.translate(r.cx,r.cy);g.rotate(r.rot*Math.PI/180);
+    if(text)drawText(g,it,(it.size||.06)*W); else g.drawImage(it.img,-r.w/2,-r.h/2,r.w,r.h);
+    g.restore();});
 }
+// a web font finished loading: text items are measured again and redrawn
+onFont(()=>{renderItems();layoutSubs.forEach(f=>f(screen));});
 
-export {bgCss,gradCss,boardScreen,frame,imgSize,invalidateLayout,itemRect,layout,onLayout,paintBg,paintItems,ratioNums,renderItems,setStageGeometry};
+export {bgCss,gradCss,boardScreen,frame,hideItem,imgSize,invalidateLayout,itemRect,layout,onLayout,paintBg,paintItems,ratioNums,renderItems,setStageGeometry};

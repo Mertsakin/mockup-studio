@@ -106,6 +106,7 @@
         <button class="ib" type="button" data-add="device" aria-label="Cihaz ekle" aria-haspopup="menu"><span data-icon="smartphone" data-size="18"></span><span class="tip">Cihaz ekle</span></button>
         <button class="ib" type="button" data-add="light" aria-label="Işık ekle" aria-haspopup="menu"><span data-icon="sun-2" data-size="18"></span><span class="tip">Işık ekle</span></button>
         <button class="ib" type="button" id="addBoardDock" aria-label="Artboard ekle"><span data-icon="frame" data-size="18"></span><span class="tip">Artboard ekle <kbd>A</kbd></span></button>
+        <button class="ib" type="button" id="addTextDock" aria-label="Metin ekle"><span data-icon="text-square" data-size="18"></span><span class="tip">Metin ekle</span></button>
         <span class="vr"></span>
         <button class="ib" type="button" id="focusBtn" aria-label="Seçiliye odaklan"><span data-icon="target" data-size="18"></span><span class="tip">Seçiliye odaklan <kbd>F</kbd></span></button>
         <button class="ib" type="button" id="fitBtn" aria-label="Kadraja sığdır"><span data-icon="maximize-square" data-size="18"></span><span class="tip">Kadraja sığdır</span></button>
@@ -290,7 +291,18 @@
 
       <!-- 2D item -->
       <div id="inspItem" hidden>
-        <div class="head"><span data-icon="gallery"></span><input class="title-in" id="itemName" aria-label="Öğe adı" spellcheck="false"><button class="ib sm" type="button" id="itemDelete" aria-label="Öğeyi sil" title="Sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
+        <div class="head"><span id="itemIcon" data-icon="gallery"></span><input class="title-in" id="itemName" aria-label="Öğe adı" spellcheck="false"><button class="ib sm" type="button" id="itemDelete" aria-label="Öğeyi sil" title="Sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
+        <section class="sec" id="textSec" hidden>
+          <h3 class="sh">Metin</h3>
+          <textarea class="tbody" id="textBody" rows="2" aria-label="Metin içeriği" spellcheck="false"></textarea>
+          <div class="row"><label class="lbl" for="textFont">Yazı tipi</label><select id="textFont"></select></div>
+          <div class="row"><label class="lbl" for="textWeight">Kalınlık</label><span class="cells cells-2-1"><select id="textWeight"></select><button class="btn" type="button" id="textItalic" aria-pressed="false" title="İtalik"><span data-icon="text-italic"></span></button></span></div>
+          <div id="textSizeSlot"></div>
+          <div class="row"><span class="lbl">Hizalama</span><div class="seg" id="textAlign" role="group" aria-label="Metin hizalaması"><button type="button" data-v="left">Sol</button><button type="button" data-v="center">Orta</button><button type="button" data-v="right">Sağ</button></div></div>
+          <div class="row"><span class="lbl">Dolgu</span><div class="seg" id="textFill" role="group" aria-label="Metin dolgusu"><button type="button" data-v="solid">Düz</button><button type="button" data-v="gradient">Gradyan</button></div></div>
+          <div class="row"><span class="lbl">Renk</span><span class="pair"><input type="color" id="textColor" aria-label="Metin rengi"><input type="color" id="textColor2" aria-label="Gradyan bitiş rengi"></span></div>
+          <div id="textSliders"></div>
+        </section>
         <section class="sec">
           <h3 class="sh">Konum ve boyut</h3>
           <div id="itemSliders"></div>

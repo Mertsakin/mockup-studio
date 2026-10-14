@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {RT} from '../devices/rt.js';
 import {LRT} from '../lights/runtime.js';
 import {renderNow} from '../render/accumulation.js';
+import {fontsReady} from '../render/text.js';
 import {camera,canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
@@ -47,6 +48,7 @@ function crispScreens(W){
   return ()=>maps.forEach(m=>{m.generateMipmaps=true;m.minFilter=THREE.LinearMipmapLinearFilter;m.needsUpdate=true;});
 }
 async function renderExport(onProgress){
+  await fontsReady(state.items);  // text layers draw with their web fonts, not the fallback
   const [W,H]=exportSize(state.size);
   const pr=renderer.getPixelRatio();
   setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();  // whole frame (layout() restores the live crop)

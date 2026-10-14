@@ -1,6 +1,7 @@
 import {LRT} from '../lights/runtime.js';
 import {renderNow} from '../render/accumulation.js';
 import {overlays,renderer,req,setCrop} from '../render/renderer.js';
+import {addFontFace} from '../render/text.js';
 import {applyTransform} from '../render/transform.js';
 import {asDoc,packAssets,restore,signature,snapshot} from '../io/project.js';
 import {state,view} from '../state/state.js';
@@ -14,7 +15,8 @@ import {mkCanvas} from '../util.js';
    board (snapshot + thumbnail) and restores the target's snapshot, so every existing panel keeps working unchanged.
    Board positions and sizes are in output pixels (1920 x 1080 board = 1920 x 1080 canvas units). */
 const GAP=160;
-const doc={boards:[],active:null,assets:[]};  // assets: the document's asset library [{img, name}] (ui/assets.js)
+// assets: the document's asset library [{img, name}] (ui/assets.js); fonts: uploaded fonts [{family, data (data URL)}]
+const doc={boards:[],active:null,assets:[],fonts:[]};
 let uid=0,DEFAULT=null;
 const subs=[];
 function onBoards(fn){subs.push(fn);}
@@ -88,9 +90,9 @@ function moveBoard(id,x,y){const b=boardById(id);if(!b)return;b.x=Math.round(x);
 /* --- whole document, for undo / redo, autosave and project files */
 function docSnapshot(){
   const a=activeBoard();if(a)a.snap=snapshot();
-  return Object.assign({v:2,layout:LAYOUT,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb}))},packAssets(doc.assets));
+  return Object.assign({v:2,layout:LAYOUT,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb})),fonts:doc.fonts.slice()},packAssets(doc.assets));
 }
-const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[]]);
+const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[],(d.fonts||[]).map(f=>f.family)]);
 // first board whose content differs between two documents (undo jumps there)
 function changedBoard(from,to){
   const fm=new Map(from.boards.map(b=>[b.id,signature(b.snap)]));
@@ -99,6 +101,7 @@ function changedBoard(from,to){
 // replaces the document; the active board is `prefer`, else the document's own. Thumbnails: the live ones of boards
 // that still exist (fresher), else the document's
 function applyDoc(d,prefer){
+  doc.fonts=(d.fonts||[]).slice();doc.fonts.forEach(f=>addFontFace(f.family,f.data));
   if(!d.boards.length){const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);clearAll();return;}
   if(d.layout!==LAYOUT){
     // older layout: positions were in the export size's pixels; scale them with each board's own growth
