@@ -87,8 +87,9 @@ box.addEventListener('pointerup',()=>endDrag(false));box.addEventListener('point
 addEventListener('keydown',e=>{
   if(e.key==='Escape'&&drag){e.preventDefault();e.stopImmediatePropagation();endDrag(true);return;}
   const t=e.target;if(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable))return;
-  // T (or Ctrl/⌘+T where the browser lets the page have it): free transform on the selected device
-  if(e.key.toLowerCase()==='t'&&!e.altKey&&!e.shiftKey&&!e.repeat&&state.devices.length){
+  // ⌘ T / Ctrl T: free transform on the selected device (Chrome keeps ⌘ T for a new tab: Ctrl T works on a Mac too).
+  // Plain T adds a text (shortcuts.js)
+  if(e.code==='KeyT'&&(e.metaKey||e.ctrlKey)&&!e.altKey&&!e.shiftKey&&!e.repeat&&state.devices.length){
     e.preventDefault();setUi({tool:'select',kind:'device'});document.querySelector('#dock [data-tool="select"]').click();
   }
 },true);

@@ -241,8 +241,8 @@ addEventListener('keydown',e=>{
   if(mod&&k==='s'){e.preventDefault();$(e.shiftKey?'#saveProjectAs':'#saveProject').click();return;}
   if(mod&&k==='o'){e.preventDefault();$('#openProjectBtn').click();return;}
   if(mod||e.altKey)return;
-  if(TOOL_KEYS[k]&&!e.repeat){setTool(TOOL_KEYS[k]);return;}
-  if(k==='a'&&!e.repeat){newBoard();return;}
+  if(TOOL_KEYS[k]&&!e.repeat&&!e.shiftKey){setTool(TOOL_KEYS[k]);return;}
+  if(k==='a'&&!e.repeat&&!e.shiftKey){newBoard();return;}
   if(e.key==='F2'){e.preventDefault();const f=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#tree .node.board');
     if(f){const b=doc.boards[[...tree.querySelectorAll('.node.board')].indexOf(f)];if(b){startRename(f,b);return;}}renameActive();return;}
   if(e.key==='Escape'){showGizmo(false);setUi({kind:'board'});return;}

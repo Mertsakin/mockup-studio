@@ -121,8 +121,10 @@ function place(entries,shift){
     if(it.parent==null)return;
     if(ids.has(it.parent)){it.parent=ids.get(it.parent);return;}
     if(state.items.some(x=>x.id===it.parent&&x.kind==='frame'))return;
-    delete it.parent;if(abs)Object.assign(it,{x:+abs.x.toFixed(5),y:+abs.y.toFixed(5),rot:+abs.rot.toFixed(2),front:abs.front});
+    delete it.parent;if(abs)Object.assign(it,{x:+abs.x.toFixed(5),y:+abs.y.toFixed(5),rot:+abs.rot.toFixed(2),front:abs.front,_abs:abs});
   });
+  // abs positions are centres: an anchored frame stores its edge, so place those once laid out
+  made.forEach(({it})=>{if(it._abs){const a=it._abs;delete it._abs;const [W,H]=sizeOf(state);setCenter(it,a.x*W,a.y*H);}});
   if(shift)made.forEach(({it})=>{if(out.includes(it)&&!inFlow(state.items,it))moveBy(it,.02*sizeOf(state)[0],.02*sizeOf(state)[0]);});
   if(out.some(o=>o.type))applyTransform();renderItems();select(out);return out;
 }

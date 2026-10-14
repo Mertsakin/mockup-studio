@@ -27,11 +27,15 @@ const imgDims=img=>img?[img.naturalWidth||img.width||1,img.naturalHeight||img.he
 // the default sizing of older items: a text with a wrap width is fixed, without one it hugs
 const wModeOf=it=>it.wMode||(isText(it)?(it.wrap?'fixed':'hug'):'fixed');
 const hModeOf=it=>isFrame(it)?it.hMode||'fixed':'hug';
+/* Anchoring (frames marked anc: 1, i.e. made since this rule): on an axis the frame hugs, its stored position is its
+   start edge (left / top), not its centre, so it grows right / down when its content grows and the top edge stays put
+   (Figma). anchorOff: from the stored point to the centre, in px (unrotated). Older frames keep centre positions. */
+const anchorOff=(it,w,h)=>it.anc&&isFrame(it)?[wModeOf(it)==='hug'?w/2:0,hModeOf(it)==='hug'?h/2:0]:[0,0];
 
 let cache={key:'',out:null};
 function signature(items,W,H){
   return W+'x'+H+'|'+fontEpoch()+'|'+JSON.stringify(items.map(it=>[it.id,it.parent,it.kind,it.x,it.y,it.w,it.h,it.wMode,it.hMode,it.wPct,it.hPct,it.rot,
-    it.size,it.wrap,it.text,it.font,it.weight,it.italic,it.ls,it.lh,it.layout,it.abs,it.img?imgDims(it.img).join():0]));
+    it.size,it.wrap,it.text,it.font,it.weight,it.italic,it.ls,it.lh,it.layout,it.abs,it.anc,it.img?imgDims(it.img).join():0]));
 }
 
 function resolve(items,W,H){
@@ -119,7 +123,7 @@ function resolve(items,W,H){
       place(c,x,y,s.w,s.h);
     });
     // free children: their own centre within the frame (fractions of its size)
-    free.forEach(c=>{const s=size(c,{cw:w,ch:h});place(c,(c.x??.5)*w-s.w/2,(c.y??.5)*h-s.h/2,s.w,s.h);});
+    free.forEach(c=>{const s=size(c,{cw:w,ch:h}),[ox,oy]=anchorOff(c,s.w,s.h);place(c,(c.x??.5)*w-s.w/2+ox,(c.y??.5)*h-s.h/2+oy,s.w,s.h);});
     return {w,h};
   }
   // records a node and lays out its own children (frames) once its size is final
@@ -138,7 +142,7 @@ function resolve(items,W,H){
     };
   }
   const top=placeIn(null);
-  roots.forEach(it=>{const s=size(it,{cw:W,ch:H});top(it,(it.x??.5)*W-s.w/2,(it.y??.5)*H-s.h/2,s.w,s.h);});
+  roots.forEach(it=>{const s=size(it,{cw:W,ch:H}),[ox,oy]=anchorOff(it,s.w,s.h);top(it,(it.x??.5)*W-s.w/2+ox,(it.y??.5)*H-s.h/2+oy,s.w,s.h);});
   const out={nodes,roots:roots.map(it=>it.id)};
   cache={key,out};return out;
 }
@@ -151,4 +155,4 @@ const inFlow=(items,it)=>{const p=parentOf(items,it);return !!p&&lay(p).dir!=='n
 // the item and everything inside it
 function subtree(items,it){const out=[it];for(let i=0;i<out.length;i++)items.forEach(x=>{if(x.parent===out[i].id&&isFrame(out[i]))out.push(x);});return out;}
 
-export {DEF_LAYOUT,hModeOf,inFlow,lay,parentOf,rectOf,resolve,subtree,wModeOf};
+export {DEF_LAYOUT,anchorOff,hModeOf,inFlow,lay,parentOf,rectOf,resolve,subtree,wModeOf};

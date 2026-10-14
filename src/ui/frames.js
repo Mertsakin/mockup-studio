@@ -1,4 +1,4 @@
-import {DEF_LAYOUT,inFlow,lay,parentOf,resolve,subtree} from '../render/item-layout.js';
+import {DEF_LAYOUT,anchorOff,inFlow,lay,parentOf,resolve,subtree} from '../render/item-layout.js';
 import {nextItemId,state} from '../state/state.js';
 import {sizeOf} from './boards.js';
 import {renderItems} from './layout.js';
@@ -28,11 +28,20 @@ function moveBy(it,dx,dy){
   const n=nodeOf(p),a=-n.arot*D2R,lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);
   it.x=+(it.x+lx/n.w).toFixed(5);it.y=+(it.y+ly/n.h).toFixed(5);
 }
-// puts the item's centre at a board point (in its parent's terms)
+// puts the item's centre at a board point (in its parent's terms; an anchored frame stores its start edge instead)
 function setCenter(it,x,y){
-  const f=parentOf(state.items,it);
-  if(!f){const [W,H]=board();it.x=+(x/W).toFixed(5);it.y=+(y/H).toFixed(5);return;}
-  const l=toLocal(f,x,y),n=nodeOf(f);it.x=+(l.x/n.w).toFixed(5);it.y=+(l.y/n.h).toFixed(5);
+  const f=parentOf(state.items,it),me=nodeOf(it),[ox,oy]=me?anchorOff(it,me.w,me.h):[0,0];
+  if(!f){const [W,H]=board();it.x=+((x-ox)/W).toFixed(5);it.y=+((y-oy)/H).toFixed(5);return;}
+  const l=toLocal(f,x,y),n=nodeOf(f);it.x=+((l.x-ox)/n.w).toFixed(5);it.y=+((l.y-oy)/n.h).toFixed(5);
+}
+// runs fn (a change of size mode, say) and keeps the item's centre where it was
+function keepPlace(it,fn){const n=nodeOf(it);fn();if(n&&!inFlow(state.items,it))setCenter(it,n.cx,n.cy);}
+// the item's centre on its parent's middle, on one axis (in the parent's own axes)
+function centerOn(it,axis){
+  const n=nodeOf(it);if(!n)return;const f=parentOf(state.items,it),[W,H]=board();
+  if(!f){setCenter(it,axis==='x'?W/2:n.cx,axis==='y'?H/2:n.cy);return;}
+  const c=nodeOf(f),[ox,oy]=anchorOff(it,n.w,n.h);
+  if(axis==='x')it.x=+(.5-ox/c.w).toFixed(5);else it.y=+(.5-oy/c.h).toFixed(5);
 }
 // puts `it` at position `index` among its siblings (array order)
 function placeAmong(it,index){
@@ -45,8 +54,9 @@ function placeAmong(it,index){
 function reparent(it,target,index){
   const [W,H]=board(),n=nodeOf(it);if(!n)return;
   const front=frontOf(it);
-  if(target){const l=toLocal(target,n.cx,n.cy),tn=nodeOf(target);it.parent=target.id;it.x=+(l.x/tn.w).toFixed(5);it.y=+(l.y/tn.h).toFixed(5);it.rot=+(n.arot-tn.arot).toFixed(2);}
-  else{delete it.parent;it.x=+(n.cx/W).toFixed(5);it.y=+(n.cy/H).toFixed(5);it.rot=+n.arot.toFixed(2);it.front=front;}
+  const [ox,oy]=anchorOff(it,n.w,n.h);
+  if(target){const l=toLocal(target,n.cx,n.cy),tn=nodeOf(target);it.parent=target.id;it.x=+((l.x-ox)/tn.w).toFixed(5);it.y=+((l.y-oy)/tn.h).toFixed(5);it.rot=+(n.arot-tn.arot).toFixed(2);}
+  else{delete it.parent;it.x=+((n.cx-ox)/W).toFixed(5);it.y=+((n.cy-oy)/H).toFixed(5);it.rot=+n.arot.toFixed(2);it.front=front;}
   // fill / % sizes meant the old parent: keep the current size fixed
   if(it.wMode==='fill'||it.wMode==='pct'){fixWidth(it,n.w);}
   placeAmong(it,index??Infinity);
@@ -74,7 +84,7 @@ function removeTree(it){const gone=new Set(subtree(state.items,it));state.items=
 
 /* ---------- making frames */
 function newFrame(props){
-  return Object.assign({id:nextItemId(),kind:'frame',name:'Çerçeve',x:.5,y:.5,w:.4,h:.3,rot:0,opacity:1,front:true,
+  return Object.assign({id:nextItemId(),kind:'frame',anc:1,name:'Çerçeve',x:.5,y:.5,w:.4,h:.3,rot:0,opacity:1,front:true,
     fill:'#ffffff',fillOn:true,radius:0,clip:false,wMode:'fixed',hMode:'fixed',layout:Object.assign({},DEF_LAYOUT)},props);
 }
 // wraps the items (they must share a parent: the first one's) in a new frame around them; auto: with auto layout,
@@ -101,7 +111,10 @@ function wrap(list,auto){
     const near=(vals)=>Math.max(...vals)-Math.min(...vals)<W*.004;
     const align=near(sorted.map(e=>row?e.n.cy:e.n.cx))?'center':near(sorted.map(e=>row?e.y0:e.x0))?'start':near(sorted.map(e=>row?e.y1:e.x1))?'end':'start';
     f.layout=Object.assign({},DEF_LAYOUT,{dir:row?'row':'col',gap:+(g/W).toFixed(5),align});f.wMode='hug';f.hMode='hug';
-    sorted.forEach(e=>{const it=e.n.it;it.parent=f.id;it.rot=+(e.n.arot).toFixed(2);const i=state.items.indexOf(it);state.items.splice(i,1);state.items.push(it);});
+    const pr=p?nodeOf(p).arot:0;
+    sorted.forEach(e=>{const it=e.n.it;it.parent=f.id;it.rot=+(e.n.arot-pr).toFixed(2);const i=state.items.indexOf(it);state.items.splice(i,1);state.items.push(it);});
+    // the hug frame's size is known now: its edges go where the items were
+    setCenter(f,(X0+X1)/2,(Y0+Y1)/2);
   } else list.forEach(it=>reparent(it,f));
   renderItems();return f;
 }
@@ -113,4 +126,4 @@ function unwrap(f){
   state.items=state.items.filter(x=>x!==f);renderItems();return kids;
 }
 
-export {byId,setCenter,fixHeight,fixWidth,flowIndex,frameAt,frontOf,inFlow,isFrame,kidsOf,moveBy,newFrame,nodeOf,placeAmong,removeTree,reparent,rootOf,siblingsOf,toLocal,unwrap,wrap};
+export {byId,centerOn,keepPlace,setCenter,fixHeight,fixWidth,flowIndex,frameAt,frontOf,inFlow,isFrame,kidsOf,moveBy,newFrame,nodeOf,placeAmong,removeTree,reparent,rootOf,siblingsOf,toLocal,unwrap,wrap};

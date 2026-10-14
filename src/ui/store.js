@@ -72,8 +72,9 @@ function addTexts(o,i){
   add(line.h,hs,{weight:800,ls:-.02,name:'Başlık'});
   add(line.s,ss,{weight:500,lh:1.3,color:T.sub,name:'Alt başlık'});
   renderItems();
-  // the block's height is known once laid out: its top at the margin (portrait), or centred (landscape)
-  const n=nodeOf(f);if(n&&!land)f.y=+((margin*H+n.h/2)/H).toFixed(5);
+  // the block hugs its height, so its stored y is its top edge (it grows downwards when a headline gets longer):
+  // the margin (portrait), or centred once its height is known (landscape)
+  const n=nodeOf(f);f.y=land&&n?+(.5-n.h/2/H).toFixed(5):margin;
   renderItems();
 }
 

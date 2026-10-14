@@ -44,7 +44,7 @@ function itemsFor(){
   if(one&&one.type)out.push(
     ['double-alt-arrow-up','En öne',()=>layer('front'),S+C+']',state.devices.length<2],['alt-arrow-up','Öne',()=>layer('forward'),C+']',state.devices.length<2],
     ['alt-arrow-down','Arkaya',()=>layer('backward'),C+'[',state.devices.length<2],['double-alt-arrow-down','En arkaya',()=>layer('back'),S+C+'[',state.devices.length<2],
-    null,['target','Odakla',focusSelected,'F']);
+    null,['target','Odakla',focusSelected,S+'F']);
   else if(one){
     out.push(['double-alt-arrow-up','En öne',()=>reorder(one.id,ORDER.front),S+C+']'],['alt-arrow-up','Öne',()=>reorder(one.id,ORDER.forward),C+']'],
       ['alt-arrow-down','Arkaya',()=>reorder(one.id,ORDER.backward),C+'['],['double-alt-arrow-down','En arkaya',()=>reorder(one.id,ORDER.back),S+C+'[']);

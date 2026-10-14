@@ -1,7 +1,7 @@
-import {DEF_LAYOUT,hModeOf,inFlow,lay,parentOf,wModeOf} from '../render/item-layout.js';
+import {DEF_LAYOUT,anchorOff,hModeOf,inFlow,lay,parentOf,wModeOf} from '../render/item-layout.js';
 import {selItem,state} from '../state/state.js';
 import {sizeOf} from './boards.js';
-import {fixHeight,fixWidth,nodeOf,setCenter} from './frames.js';
+import {fixHeight,fixWidth,keepPlace,nodeOf,setCenter} from './frames.js';
 import {renderItems} from './layout.js';
 import {numField} from './numfield.js';
 import {onSyncUI,syncAll} from './sync.js';
@@ -31,7 +31,7 @@ const pos=axis=>({get:()=>{const n=node();return n?round(axis==='x'?n.x:n.y):nul
   set:v=>{const i=selItem(),n=node();if(!i||!n||typeof v!=='number'||inFlow(state.items,i))return;
     // the new top-left -> the centre in the parent's space -> back to board px for setCenter
     const p=parentOf(state.items,i),pn=p&&nodeOf(p),[W,H]=sizeOf(state);
-    const lx=axis==='x'?v+n.w/2:n.x+n.w/2,ly=axis==='y'?v+n.h/2:n.y+n.h/2;
+    const [ox,oy]=anchorOff(i,n.w,n.h),lx=(axis==='x'?v+n.w/2:n.x+n.w/2)-ox,ly=(axis==='y'?v+n.h/2:n.y+n.h/2)-oy;
     if(!pn){i.x=+(lx/W).toFixed(5);i.y=+(ly/H).toFixed(5);}else{i.x=+(lx/pn.w).toFixed(5);i.y=+(ly/pn.h).toFixed(5);}
     after();},
   disabled:()=>{const i=selItem();return !!i&&inFlow(state.items,i);}});
@@ -43,17 +43,18 @@ const KEY={fill:'fill',doldur:'fill',hug:'hug',sar:'hug',auto:'hug',otomatik:'hu
 function setSize(axis,v){
   const i=selItem(),n=node();if(!i||!n)return;
   const pctKey=axis==='w'?'wPct':'hPct',modeKey=axis==='w'?'wMode':'hMode';
-  if(typeof v==='number'){if(axis==='w')fixWidth(i,Math.max(1,v));else fixHeight(i,Math.max(1,v));after();return;}
+  if(typeof v==='number'){keepPlace(i,()=>{if(axis==='w')fixWidth(i,Math.max(1,v));else fixHeight(i,Math.max(1,v));});after();return;}
   const t=String(v).trim().toLowerCase();
-  if(t.endsWith('%')){const q=parseFloat(t.replace(',','.'));if(Number.isFinite(q)){i[modeKey]='pct';i[pctKey]=Math.max(0,q)/100;after();}return;}
+  if(t.endsWith('%')){const q=parseFloat(t.replace(',','.'));if(Number.isFinite(q)){keepPlace(i,()=>{i[modeKey]='pct';i[pctKey]=Math.max(0,q)/100;});after();}return;}
   const m=KEY[t];if(m){setMode(axis,m);}
 }
-function setMode(axis,m){
+// a mode change keeps the item where it is (an anchored frame's stored point changes meaning with hug)
+function setMode(axis,m){const i=selItem();if(i)keepPlace(i,()=>applyMode(axis,m));after();}
+function applyMode(axis,m){
   const i=selItem(),n=node();if(!i||!n)return;const inner=parentInner(i);
   if(m==='fixed'){if(axis==='w')fixWidth(i,n.w);else fixHeight(i,n.h);}
   else if(m==='pct'){i[axis==='w'?'wMode':'hMode']='pct';i[axis==='w'?'wPct':'hPct']=+((axis==='w'?n.w/inner.w:n.h/inner.h)).toFixed(4);}
   else{if(m==='hug'&&isImage(i))return;i[axis==='w'?'wMode':'hMode']=m;if(m==='hug'&&i.kind==='text'&&axis==='w')i.wrap=0;}
-  after();
 }
 const MODES={fixed:'Sabit',hug:'Sar',fill:'Doldur',pct:'%'};
 function sizeField(axis){
@@ -84,9 +85,11 @@ const setL=o=>{const i=selItem();if(!isFrame(i))return;i.layout=Object.assign({}
 $$('#alDir button').forEach(b=>b.addEventListener('click',()=>{
   const i=selItem();if(!isFrame(i))return;const v=b.dataset.v;
   // turning auto layout on: the frame hugs its content like a fresh Figma auto layout
-  if(v!=='none'&&lay(i).dir==='none'){i.wMode='hug';i.hMode='hug';}
-  if(v==='none'){const n=nodeOf(i);if(n){fixWidth(i,n.w);fixHeight(i,n.h);}}
-  setL({dir:v});}));
+  keepPlace(i,()=>{
+    if(v!=='none'&&lay(i).dir==='none'){i.wMode='hug';i.hMode='hug';}
+    if(v==='none'){const n=nodeOf(i);if(n){fixWidth(i,n.w);fixHeight(i,n.h);}}
+    i.layout=Object.assign({},DEF_LAYOUT,i.layout||{},{dir:v});});
+  after();}));
 // 3 x 3 alignment: columns are horizontal, rows vertical, whatever the direction (like Figma)
 const grid=$('#alGrid'),POS=['start','center','end'];
 for(let r=0;r<3;r++)for(let c=0;c<3;c++){const b=document.createElement('button');b.type='button';b.dataset.r=r;b.dataset.c=c;

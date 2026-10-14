@@ -1,6 +1,6 @@
 import {canvas} from '../render/renderer.js';
 import {TEXT_DEFAULTS,keepAnchor,textLayout} from '../render/text.js';
-import {inFlow,parentOf,resolve} from '../render/item-layout.js';
+import {anchorOff,inFlow,parentOf,resolve} from '../render/item-layout.js';
 import {nextItemId,selItem,state} from '../state/state.js';
 import {sizeOf} from './boards.js';
 import {boardScreen,hideItem,imgSize,itemRect,onLayout,renderItems} from './layout.js';
@@ -153,7 +153,9 @@ function onMove(e){
   } else if(drag.mode==='move'){
     let dx=p.x-drag.start.x,dy=p.y-drag.start.y;
     if(e.shiftKey){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
-    let cx=sv.x*s.w+dx,cy=sv.y*s.h+dy;
+    // the centre (an anchored frame stores its start edge: anchorOff)
+    const r0=itemRect(it,s.w,s.h),[ox,oy]=anchorOff(it,r0.w,r0.h);
+    let cx=sv.x*s.w+ox+dx,cy=sv.y*s.h+oy+dy;
     if(!(e.metaKey||e.ctrlKey)){
       // axis-aligned extent of the rotated item, then snap centre / edges to the board's centre / edges
       const r=itemRect(it,s.w,s.h),a=r.rot*D2R,ex=(Math.abs(r.w*Math.cos(a))+Math.abs(r.h*Math.sin(a)))/2,ey=(Math.abs(r.w*Math.sin(a))+Math.abs(r.h*Math.cos(a)))/2;
@@ -164,7 +166,7 @@ function onMove(e){
       if(X){cx=X.c;guide(s.x+X.t,s.y,1,s.h);}
       if(Y){cy=Y.c;guide(s.x,s.y+Y.t,s.w,1);}
     }
-    it.x=+(cx/s.w).toFixed(4);it.y=+(cy/s.h).toFixed(4);
+    it.x=+((cx-ox)/s.w).toFixed(4);it.y=+((cy-oy)/s.h).toFixed(4);
     if(drag.group)moveGroupFrom(drag.group,(it.x-sv.x)*s.w,(it.y-sv.y)*s.h);
   } else if(drag.mode==='scale'){
     const r=drag.r,a=r.rot*D2R,cos=Math.cos(a),sin=Math.sin(a);

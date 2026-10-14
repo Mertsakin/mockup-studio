@@ -15,7 +15,7 @@ import {$,D2R,clamp,wrap} from '../util.js';
       Sağ / Sol / Üst / Alt. Clicking the middle of a face looks from that side; clicking near an edge or a corner
       turns to the ¾ view between those faces (elevation / heading of the summed face normals). Dragging on the
       widget orbits like dragging the stage. The angle shows on hover.
-   2. Focus ("Odakla", F, double-click a device): the composition is re-centred on the selected device and framed
+   2. Focus ("Odakla", ⇧F, double-click a device): the composition is re-centred on the selected device and framed
       to it, so the scene then orbits around that device. "Kadraja sığdır" goes back to the whole composition.
    Both animate; pressing on the stage or turning the wheel cancels a running animation. */
 const NS='http://www.w3.org/2000/svg',svg=$('#navSvg'),S=17;
@@ -97,7 +97,8 @@ canvas.addEventListener('pointerdown',()=>{tween=null;},true);canvas.addEventLis
 canvas.addEventListener('dblclick',e=>{const id=pick(e.clientX,e.clientY);if(!id)return;if(id!==state.selected){state.selected=id;syncAll();}focusSelected();});
 window.addEventListener('keydown',e=>{
   const t=e.target;if(e.metaKey||e.ctrlKey||e.altKey||(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.id==='domeSvg')))return;
-  if(e.key==='f'||e.key==='F'){e.preventDefault();focusSelected();}
+  // ⇧F (plain F adds a frame: shortcuts.js)
+  if(e.code==='KeyF'&&e.shiftKey){e.preventDefault();focusSelected();}
 });
 
 export {focusSelected};
