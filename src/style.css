@@ -673,5 +673,7 @@ html.alt-down[data-tool="zoom"] #stagearea,html.alt-down[data-tool="zoom"] #gl{c
 
 /* Kamera › Bokeh: picking a focus point on the scene (ui/lens-panel.js) */
 html[data-pick=focus] #stagearea canvas{cursor:crosshair!important}
-.dof-opts{margin-top:2px}
+/* the Bokeh switch and its settings are one group: the inspector's inner 8 px rhythm */
+#inspector .dof-group,#inspector .dof-opts{display:flex;flex-direction:column;gap:8px}
+#inspector .dof-opts[hidden]{display:none}
 .row>.lbl.wide{width:auto;flex:1}
