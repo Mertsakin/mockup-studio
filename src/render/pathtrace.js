@@ -184,7 +184,12 @@ function setupStudio(env){
    devices do.
    - lightsAt(p): what a white, unoccluded floor shows at p from the studio lights (sun: I sin(el); area light:
      I d^2 cosF cosL / r^2, with I the state intensity; checked against the tracer), plus le, the environment's share;
-   - a tiny pass (CAL_PX, CAL_SAMPLES) with a white, glow-less floor measures what the tracer really puts there; per
+   - a tiny pass (CAL_PX, CAL_SAMPLES) with a white, glow-less floor measures what the tracer really puts there. Its
+     noise is shared by every pixel (the stratified samples are, and the studio lights are large and close), so blurring
+     or a robust estimator cannot remove it: at 24 random samples the scale swung ±25% run to run (floor and, through
+     its glow, the devices ±5-10 levels). It runs with a fixed seed (stableNoise) and 64 samples, in batches of
+     CAL_BATCH per task (~0.5 s phone, ~0.8 s laptop): fewer stable samples are repeatable but land far from the
+     converged value (24: phone 0.71 vs 0.56). Per
      visible floor pixel inside the solid zone (box-blurred against the noise) the measured lights' share over the
      model's gives a ratio, and the 80th percentile of the ratios (lit floor, not the shadows) is the model's scale k
      (light shapes, bounce light, env occlusion). A least-squares fit of env share + light scale matched worse;
@@ -198,7 +203,7 @@ function setupStudio(env){
      vignette rather than an edge.
    Only the materials are updated afterwards (no BVH rebuild). Async: the first sample after setScene compiles the
    shader (renderSample is a no-op while pt.isCompiling); bails out if the set-up was undone meanwhile. */
-const CAL_PX=64,CAL_SAMPLES=24,CAL_BLUR=2,FLOOR_N=256,BG_N=96,PRE_MAX=1.5;  // PRE_MAX: the floor's radiance cap (its glow is real light that bounces onto the devices)
+const CAL_PX=64,CAL_SAMPLES=64,CAL_BATCH=4,CAL_BLUR=2,FLOOR_N=256,BG_N=96,PRE_MAX=1.5;  // PRE_MAX: the floor's radiance cap (its glow is real light that bounces onto the devices)
 function lightModel(){
   const R=view.fitRadius,c=new V3(pivot.position.x,pivot.position.y,0);
   return state.lights.filter(L=>L.intensity>0).map(L=>{const az=L.az*D2R,el=L.el*D2R,d=R*L.dist;
@@ -267,7 +272,10 @@ async function calibrateFloor(){
   const {mesh,mat,albedo,glow,disc,bgPx,bw,bh,le}=fc,W=renderer.domElement.width,H=renderer.domElement.height,scale=pt.renderScale,tiles=pt.tiles.clone();
   pt.renderScale=Math.min(1,CAL_PX/Math.max(W,H));pt.tiles.set(1,1);
   mat.color.setScalar(1);mat.emissive.setScalar(0);pt.updateMaterials();
-  for(let i=0;pt.samples<CAL_SAMPLES&&i<200;i++){pt.renderSample();await new Promise(r=>setTimeout(r,0));if(floorCal!==fc)return;}
+  pt.stableNoise=true;pt.reset();  // fixed seed: the same scene always measures the same
+  try{
+    for(let i=0;pt.samples<CAL_SAMPLES&&i<200;i++){for(let b=0;b<CAL_BATCH&&pt.samples<CAL_SAMPLES;b++)pt.renderSample();await new Promise(r=>setTimeout(r,0));if(floorCal!==fc)return;}
+  }finally{pt.stableNoise=false;}
   const w=pt.target.width,h=pt.target.height,px=new Float32Array(w*h*4);renderer.readRenderTargetPixels(pt.target,0,0,w,h,px);
   const mask=floorMask(mesh,w,h),lum=new Float32Array(w*h),meas=[],mod=[],lights=lightModel(),gy=mesh.position.y,cam=camera.position,q=new V3();
   for(let i=0;i<w*h;i++)lum[i]=.2126*px[i*4]+.7152*px[i*4+1]+.0722*px[i*4+2];
