@@ -112,7 +112,9 @@ const endPtr=e=>{
     if(was===1&&!moved&&!dragDevice&&ui.tool!=='orbit'&&e.type==='pointerup'){showGizmo(false);setUi({kind:'board'});}
     if(group)renderItems();dragDevice=false;group=null;}
 };
-canvas.addEventListener('pointermove',e=>{if(pointers.size||gizmoDrag||e.pointerType!=='mouse')return;gizmoMove(e);canvas.style.cursor=gizmoHot()||pickLight(e.clientX,e.clientY)?'grab':itemAt(e.clientX,e.clientY,true)||(state.items.length&&!pick(e.clientX,e.clientY)&&itemAt(e.clientX,e.clientY,false))?'move':'';});
+canvas.addEventListener('pointermove',e=>{if(pointers.size||gizmoDrag||e.pointerType!=='mouse')return;
+  if(ui.tool==='text'||ui.tool==='frame'){canvas.style.cursor='';return;}  // the insert tools' cursor comes from CSS
+  gizmoMove(e);canvas.style.cursor=gizmoHot()||pickLight(e.clientX,e.clientY)?'grab':itemAt(e.clientX,e.clientY,true)||(state.items.length&&!pick(e.clientX,e.clientY)&&itemAt(e.clientX,e.clientY,false))?'move':'';});
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
 // wheel over the live board: Alt zooms the camera; over the selected device's long screenshot it scrolls the screen
 // (~one screen per 500 px of wheel). Anything else bubbles to the workspace (pan / zoom the canvas).

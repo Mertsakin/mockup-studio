@@ -1,8 +1,8 @@
 import {canvas} from '../render/renderer.js';
 import {state} from '../state/state.js';
-import {ensureBoard} from './boards.js';
 import {icon} from './icons.js';
-import {addFrame,addText,editText,itemAt,reorder} from './items.js';
+import {editText,itemAt,reorder} from './items.js';
+import {placeFrame,placeText} from './insert.js';
 import {layer} from './layers.js';
 import {focusSelected} from './navigator.js';
 import {pick} from './pointer.js';
@@ -35,7 +35,7 @@ const ORDER={front:Infinity,forward:1,backward:-1,back:-Infinity};
 function itemsFor(){
   const list=selection(),one=list.length===1?list[0]:null,clip=['clipboard','Yapıştır',paste,C+'V',!hasClip()];
   if(!list.length)return [clip,['layers-minimalistic','Tümünü seç',selectAll,C+'A',!state.devices.length&&!state.items.length],null,
-    ['text-square','Metin ekle',()=>{ensureBoard();const it=addText();requestAnimationFrame(()=>editText(it,true));}],['hashtag','Çerçeve ekle',()=>{ensureBoard();addFrame();}],['maximize-square','Artboarda yakınlaş',fitActive,S+'2']];
+    ['text-square','Buraya metin ekle',()=>placeText(at.x,at.y)],['hashtag','Buraya çerçeve ekle',()=>placeFrame(at.x,at.y)],['maximize-square','Artboarda yakınlaş',fitActive,S+'2']];
   const out=[['copy','Kopyala',copyToClipboard,C+'C'],clip,['copy','Çoğalt',duplicateSelection,C+'D'],['trash-bin-minimalistic','Sil',deleteSelection,'⌫'],null];
   // 2D items: frames (Figma's shortcuts)
   const items=list.filter(o=>!o.type);
@@ -52,8 +52,10 @@ function itemsFor(){
   }
   return out;
 }
+// where the menu was opened: "Buraya … ekle" puts the new item there
+let at={x:0,y:0};
 canvas.addEventListener('contextmenu',e=>{
-  e.preventDefault();
+  e.preventDefault();at={x:e.clientX,y:e.clientY};
   const dev=!itemAt(e.clientX,e.clientY,true)&&pick(e.clientX,e.clientY);
   const hit=itemAt(e.clientX,e.clientY,true)||(dev&&state.devices.find(d=>d.id===dev))||itemAt(e.clientX,e.clientY,false)||null;
   if(hit&&!inSel(hit))select([hit]);else if(!hit&&!isMulti())select([]);

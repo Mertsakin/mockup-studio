@@ -1,5 +1,5 @@
 import {ensureBoard} from './boards.js';
-import {addFrame,addText,editText} from './items.js';
+import {setUi} from './ui-state.js';
 import {$} from '../util.js';
 
 /* Keyboard shortcuts, Figma-like: single letters pick a tool or add something, ⌘ / Ctrl + letter acts on the selection.
@@ -11,9 +11,9 @@ const MAC=/Mac|iPhone|iPad/.test(navigator.platform||'');
 const C=MAC?'⌘':'Ctrl',S='⇧',O=MAC?'⌥':'Alt';
 const SHEET=[
   ['Araçlar',[['V','Seç'],['W','Taşı (eksenler)'],['E','Döndür (eksenler)'],['O','Yörünge'],['H','Kaydır (basılı Boşluk da)'],[C+' T','Cihazı ölçekle (serbest dönüştürme)'+(MAC?'; tarayıcı ⌘T’yi alırsa Ctrl T':'')]]],
-  ['Ekle',[['T','Metin'],['F','Çerçeve'],['A','Artboard'],['D','Cihaz menüsü'],['L','Işık menüsü']]],
+  ['Ekle',[['T','Metin aracı: tıkladığın yere'],['F','Çerçeve aracı: tıkla ya da sürükleyerek çiz ('+S+' kare, '+O+' merkezden)'],['A','Artboard'],['D','Cihaz menüsü'],['L','Işık menüsü']]],
   ['Düzen',[[C+' Z','Geri al'],[S+' '+C+' Z','Yinele'],[C+' C / X / V','Kopyala / kes / yapıştır'],[C+' D','Çoğalt'],[C+' A','Tümünü seç'],['Sil','Sil'],
-    [S+' tıklama','Seçime ekle / çıkar'],['Oklar','Kaydır (1 px, '+S+' 10 px); auto layout içinde sırayı değiştir'],['Enter','Metni düzenle'],['Esc','Seçimi bırak']]],
+    [S+' tıklama','Seçime ekle / çıkar'],['Oklar','Kaydır (1 px, '+S+' 10 px); auto layout içinde sırayı değiştir'],['Enter','Metni düzenle'],['Esc','Seçimi bırak / aracı iptal et']]],
   ['Çerçeve',[[O+' '+C+' G','Seçimi çerçeveye al'],[S+' A','Auto layout ekle'],[S+' '+C+' G','Çerçeveden çıkar']]],
   ['Sıra',[[C+' ]','Öne'],[C+' [','Arkaya'],[S+' '+C+' ]','En öne'],[S+' '+C+' [','En arkaya']]],
   ['Görünüm',[[S+' F','Seçili cihaza odaklan'],[S+' 1','Tüm artboardlar'],[S+' 2','Etkin artboard'],[C+' tekerlek','Yakınlaştır'],[O+' tekerlek','Kamera yakınlığı']]],
@@ -47,8 +47,9 @@ addEventListener('keydown',e=>{
   if(e.key==='?'||(e.code==='Slash'&&e.shiftKey)){e.preventDefault();openSheet();return;}
   if(e.shiftKey)return;
   const k=e.key.toLowerCase();
-  if(k==='t'){e.preventDefault();ensureBoard();const it=addText();requestAnimationFrame(()=>editText(it,true));}
-  else if(k==='f'){e.preventDefault();ensureBoard();addFrame();}
+  // T / F pick the insert tool: the next click on the artboard places it (insert.js)
+  if(k==='t'){e.preventDefault();ensureBoard();setUi({tool:'text'});}
+  else if(k==='f'){e.preventDefault();ensureBoard();setUi({tool:'frame'});}
   else if(k==='d'){e.preventDefault();$('#dock [data-add="device"]').click();}
   else if(k==='l'){e.preventDefault();$('#dock [data-add="light"]').click();}
 });

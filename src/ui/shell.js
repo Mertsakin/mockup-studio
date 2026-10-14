@@ -8,7 +8,7 @@ import {activate,activeBoard,addBoard,doc,duplicateBoard,ensureBoard,hasBoard,on
 import {renderDome} from './dome.js';
 import {setGizmoMode,showGizmo} from './gizmo.js';
 import {hydrateIcons,icon} from './icons.js';
-import {addFrame,addText,editText,removeItem,selectItem} from './items.js';
+import {removeItem,selectItem} from './items.js';
 import {isMulti,selection,toggle} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {applyTemplate} from './templates.js';
@@ -130,7 +130,8 @@ function syncTool(){
   else showGizmo(false);
 }
 function setTool(t){setUi({tool:t});syncTool();}
-$$('#dock [data-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.tool)));
+// the insert tools (Metin, Çerçeve: insert.js) need an artboard to click on
+$$('#dock [data-tool]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.tool==='text'||b.dataset.tool==='frame')ensureBoard();setTool(b.dataset.tool);}));
 
 /* ---------- menus ---------- */
 let openEl=null,openBtn=null;
@@ -177,8 +178,6 @@ $('#dock [data-add="light"]').addEventListener('click',e=>{e.stopPropagation();o
     if(state.lights.length>n){const b=$('#modGrid [data-mod="'+m.k+'"]');if(b)b.click();setUi({kind:'light'});}}]));});
 const newBoard=()=>{addBoard();setUi({kind:'board'});fitAll();};
 // a new text item, edited in place right away (the layout of a new board settles first)
-$('#addTextDock').addEventListener('click',()=>{ensureBoard();const it=addText();requestAnimationFrame(()=>editText(it,true));});
-$('#addFrameDock').addEventListener('click',()=>{ensureBoard();addFrame();});
 $('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEventListener('click',newBoard);$('#emptyAddBoard').addEventListener('click',newBoard);
 
 /* ---------- export popover ---------- */
