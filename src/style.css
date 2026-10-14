@@ -610,3 +610,24 @@ details.more>summary:hover{color:var(--ink-2)}
 #inspector .nf .nfk{padding:0 6px 0 7px}
 #inspector .nf input{padding-right:5px}
 #inspector .slgrid>.sl[data-w="3"] .nfk,#inspector .slgrid .contents>.sl .nfk{max-width:55%}
+
+/* ---------- left panel: the inspector's rhythm (sections fold: sections.js) ----------
+   tabs on top; the layer tree and the asset grid fill the height; 12 px between groups, 8 px inside */
+.panel.left{display:flex;flex-direction:column}
+.panel.left .tabs{flex:none;padding:10px 12px 8px;border-bottom:1px solid var(--line)}
+.panel.left .lpane{display:flex;flex-direction:column;flex:1;min-height:0}
+.panel.left .lpane[hidden]{display:none}
+.panel.left .sec{display:flex;flex-direction:column;gap:8px;padding:4px 12px 12px}
+.panel.left .sec>.sh{height:32px;margin:0 0 -4px -4px}
+.panel.left .sec.folded{padding-bottom:4px}
+.panel.left .sec.folded>.sh{margin-bottom:0}
+.panel.left .grow-sec:not(.folded){flex:1;min-height:0}
+.panel.left .grow-sec:not(.folded)>.tree,.panel.left .grow-sec:not(.folded)>.asset-grid{overflow-y:auto;min-height:0;scrollbar-width:thin}
+.panel.left .sec:last-child{border-bottom:0}
+.panel.left .tree{padding:0;margin:0 -4px}
+.panel.left .chips,.panel.left .tpl-grid,.panel.left .asset-grid{padding:0;margin:0}
+.panel.left .empty{margin:0}
+.panel.left .sh .linkbtn{font-size:11px;font-weight:500}
+/* an empty asset library reads as a drop area */
+.panel.left #assetEmpty{border:1px dashed var(--line-strong);border-radius:8px;padding:18px 14px;text-align:center}
+.panel.left #assetsGroup.over #assetEmpty,.panel.left #assetsGroup.drag #assetEmpty{border-color:var(--accent);background:var(--accent-soft)}

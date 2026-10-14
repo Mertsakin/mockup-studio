@@ -212,11 +212,12 @@ $('#exportBoards').addEventListener('click',async()=>{
 });
 
 /* ---------- left tabs, templates ---------- */
+// left tabs: Katmanlar, Varlıklar, Şablonlar
+const TABS={layers:['#tabLayers','#paneLayers'],assets:['#tabAssets','#paneAssets'],tpl:['#tabTpl','#paneTpl']};
 function selectTab(k){
-  const lay=k!=='tpl';$('#tabLayers').setAttribute('aria-selected',String(lay));$('#tabTpl').setAttribute('aria-selected',String(!lay));
-  $('#paneLayers').hidden=!lay;$('#paneTpl').hidden=lay;
+  for(const t in TABS){const on=t===k;$(TABS[t][0]).setAttribute('aria-selected',String(on));$(TABS[t][1]).hidden=!on;}
 }
-$('#tabLayers').addEventListener('click',()=>selectTab('layers'));$('#tabTpl').addEventListener('click',()=>selectTab('tpl'));
+for(const t in TABS)$(TABS[t][0]).addEventListener('click',()=>selectTab(t));
 const tplGrid=$('#tplGrid');
 TEMPLATES.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='tpl';b.title=t.name+': yeni artboard olarak ekle';
   b.innerHTML='<img loading="lazy" alt=""><span></span>';b.querySelector('img').src='showcases/'+t.id+'.jpg';b.querySelector('span').textContent=t.name;

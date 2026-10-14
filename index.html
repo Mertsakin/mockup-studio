@@ -57,41 +57,44 @@
     <aside class="panel left" aria-label="Katmanlar">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" type="button" id="tabLayers" aria-selected="true" aria-controls="paneLayers">Katmanlar</button>
+        <button class="tab" role="tab" type="button" id="tabAssets" aria-selected="false" aria-controls="paneAssets">Varlıklar</button>
         <button class="tab" role="tab" type="button" id="tabTpl" aria-selected="false" aria-controls="paneTpl">Şablonlar</button>
       </div>
-      <div id="paneLayers" role="tabpanel" aria-labelledby="tabLayers">
-        <div class="group">
-          <div class="ghead">Artboardlar<button class="ib sm" type="button" id="addBoardBtn" aria-label="Artboard ekle"><span data-icon="add-circle" data-size="14"></span></button></div>
+      <div id="paneLayers" class="lpane" role="tabpanel" aria-labelledby="tabLayers">
+        <section class="sec grow-sec" data-sec="left-boards">
+          <h3 class="sh">Artboardlar<span class="sh-acts"><button class="ib sm" type="button" id="addBoardBtn" aria-label="Artboard ekle" title="Artboard ekle (A)"><span data-icon="add-circle" data-size="14"></span></button></span></h3>
           <div class="tree" id="tree" role="tree" aria-label="Artboardlar, cihazlar ve ışıklar"></div>
-        </div>
-        <div class="group">
-          <div class="ghead">Kayıtlı açılar<button class="ib sm" type="button" id="saveAngle" aria-label="Bu açıyı kaydet"><span data-icon="add-circle" data-size="14"></span></button></div>
+        </section>
+        <section class="sec" data-sec="left-angles">
+          <h3 class="sh">Kayıtlı açılar<span class="sh-acts"><button class="ib sm" type="button" id="saveAngle" aria-label="Bu açıyı kaydet" title="Bu açıyı kaydet"><span data-icon="add-circle" data-size="14"></span></button></span></h3>
           <div class="chips" id="savedList"></div>
-          <p class="empty" id="savedEmpty">Beğendiğin açıyı + ile kaydet; dışa aktarırken hepsini birden indirebilirsin.</p>
-        </div>
-        <div class="group" id="assetsGroup">
-          <div class="ghead">Varlıklar<button class="ib sm" type="button" id="addAssetBtn" aria-label="Varlık ekle (PNG, SVG)"><span data-icon="add-circle" data-size="14"></span></button></div>
-          <input type="file" id="assetFile" accept="image/png,image/svg+xml,image/webp,image/jpeg" multiple hidden>
-          <div class="asset-grid" id="assetGrid" role="list" aria-label="Varlıklar"></div>
-          <p class="empty" id="assetEmpty">PNG veya SVG görselleri + ile ekle ya da buraya sürükle. Tıklayınca ya da artboarda sürükleyince yerleşir.</p>
-        </div>
+          <p class="empty" id="savedEmpty">Şu anki açıyı + ile kaydet.</p>
+        </section>
         <!-- lists kept for the panels that render them; the tree above replaces them visually -->
         <div hidden><div id="devList"></div><div id="lightList"></div></div>
       </div>
-      <div id="paneTpl" role="tabpanel" aria-labelledby="tabTpl" hidden>
-        <div class="group">
-          <div class="ghead">Mağaza görselleri</div>
+      <div id="paneAssets" class="lpane" role="tabpanel" aria-labelledby="tabAssets" hidden>
+        <section class="sec grow-sec" id="assetsGroup" data-sec="left-assets">
+          <h3 class="sh">Varlıklar<span class="sh-acts"><button class="ib sm" type="button" id="addAssetBtn" aria-label="Varlık ekle (PNG, SVG)" title="Varlık ekle"><span data-icon="add-circle" data-size="14"></span></button></span></h3>
+          <input type="file" id="assetFile" accept="image/png,image/svg+xml,image/webp,image/jpeg" multiple hidden>
+          <div class="asset-grid" id="assetGrid" role="list" aria-label="Varlıklar"></div>
+          <p class="empty" id="assetEmpty">Logo, rozet gibi PNG / SVG görselleri buraya sürükle ya da + ile ekle. Tıkla ya da artboarda sürükle: yerleşir.</p>
+        </section>
+      </div>
+      <div id="paneTpl" class="lpane" role="tabpanel" aria-labelledby="tabTpl" hidden>
+        <section class="sec" data-sec="tpl-store">
+          <h3 class="sh">Mağaza görselleri</h3>
           <button class="btn full" type="button" id="storeSetBtn">Mağaza seti oluştur…</button>
-          <p class="hint-sm">App Store ve Google Play ölçülerinde 3–8 ekranlık bir set: başlıklar, ekran görüntülerin, ortak renk ve yazı tipi. Panorama düzeninde ekranlar birbirine bağlanır.</p>
-        </div>
-        <div class="group">
-          <div class="ghead">Hazır kompozisyonlar</div>
+          <p class="empty">App Store ve Google Play için 3–8 ekranlık set.</p>
+        </section>
+        <section class="sec" data-sec="tpl-comps">
+          <h3 class="sh">Hazır kompozisyonlar</h3>
           <div class="chips" id="comps"></div>
-        </div>
-        <div class="group">
-          <div class="ghead">Şablonlar<a class="linkbtn" href="showcases.html">Galeri</a></div>
+        </section>
+        <section class="sec" data-sec="tpl-grid">
+          <h3 class="sh">Şablonlar<span class="sh-acts"><a class="linkbtn" href="showcases.html">Galeri</a></span></h3>
           <div class="tpl-grid" id="tplGrid"></div>
-        </div>
+        </section>
       </div>
     </aside>
 

@@ -2,7 +2,7 @@ import {modOf} from '../lights/mods.js';
 import {FX} from '../render/text-fx.js';
 import {COLORS,TYPES} from '../state/constants.js';
 import {sel,selItem,state} from '../state/state.js';
-import {sizeOf} from './boards.js';
+import {doc,onBoards,sizeOf} from './boards.js';
 import {icon} from './icons.js';
 import {onSyncUI} from './sync.js';
 import {$$} from '../util.js';
@@ -12,7 +12,7 @@ import {$$} from '../util.js';
    start folded (FOLDED). Header actions (.sh-acts) keep working without toggling. A header button with
    data-chips="<id>" opens the buttons of that (hidden) chip group as a menu (camera angles, light set-ups). */
 const KEY='mockup-studio-sections';
-const FOLDED=new Set(['board-env','board-light','dev-layer','item-fx','item-layer']);
+const FOLDED=new Set(['board-env','board-light','dev-layer','item-fx','item-layer','left-angles']);
 let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){/* private mode */}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){/* ignore */}};
 const deg=v=>Math.round(v)+'°';
@@ -30,6 +30,12 @@ const SUMMARY={
   'item-text':()=>{const i=selItem();return i&&i.kind==='text'?i.font+' · '+Math.round((i.size||0)*sizeOf(state)[0]):'';},
   'item-fx':()=>{const i=selItem(),f=i&&i.fx;if(!f)return 'Yok';return [f.in&&FX[f.in.type]&&FX[f.in.type].n,f.out&&'çıkış',f.loop&&'sürekli'].filter(Boolean).join(' · ')||'Yok';},
   'item-layer':()=>{const i=selItem();return i?(i.front?'Cihazların önünde':'Cihazların arkasında'):'';},
+  // left panel
+  'left-boards':()=>{const n=doc.boards.length;return n?n+' artboard':'';},
+  'left-angles':()=>{const n=document.getElementById('savedList').children.length;return n?n+' açı':'Yok';},
+  'left-assets':()=>{const n=doc.assets.length;return n?n+' varlık':'Yok';},
+  'tpl-comps':()=>document.getElementById('comps').children.length+' kompozisyon',
+  'tpl-grid':()=>document.getElementById('tplGrid').children.length+' şablon',
   'item-al':()=>{const i=selItem(),l=i&&i.layout;return !l||l.dir==='none'?'Yok':l.dir==='row'?'Yatay':'Dikey';}
 };
 const secs=[...document.querySelectorAll('section.sec[data-sec]')];
@@ -49,6 +55,7 @@ secs.forEach(sec=>{
   setOpen(sec,saved[id]??!FOLDED.has(id));
 });
 onSyncUI(()=>secs.forEach(sec=>{if(sec.classList.contains('folded'))fillSummary(sec);}));
+onBoards(()=>secs.forEach(sec=>{if(sec.classList.contains('folded'))fillSummary(sec);}));
 
 /* ---------- chip groups as header menus */
 const menu=document.createElement('div');menu.className='menu';menu.setAttribute('role','menu');menu.hidden=true;menu.style.position='fixed';document.body.appendChild(menu);
