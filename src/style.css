@@ -571,3 +571,42 @@ details.more>summary:hover{color:var(--ink-2)}
 .nf .nfk .kdot{position:absolute;left:-3px;top:-3px;width:9px;height:9px;margin:0;background:var(--panel);z-index:1}
 .nf .nfk .kdot.at{background:var(--key)}
 .nf .nfk .kdot::before{content:"";position:absolute;inset:-5px}  /* a larger hit area */
+
+/* ---------- inspector spacing: one rhythm (sections are vertical stacks) ----------
+   between groups in a section 12 px, inside a group 8 px, grid cells 8 px; sections 16 px from the panel's edges.
+   Controls carry no margins of their own here: the stacks space them. */
+#inspector .sec{display:flex;flex-direction:column;gap:12px;padding:4px 16px 16px}
+#inspector .sec>.sh{height:32px;margin:0 0 -4px -4px}
+#inspector .sec.folded{padding-bottom:4px}
+#inspector .sec.folded>.sh{margin-bottom:0}
+#inspector .sec .row{margin-top:0;min-height:var(--h)}
+#inspector .sec .slgrid,#inspector .sec .nfgrid{margin-top:0;gap:8px}
+#inspector .sec .chips,#inspector .sec .swatches,#inspector .sec .typeicons{margin:0}
+#inspector .sec>.seg-wide{margin:0}
+#inspector .sec .hint-sm{margin:0}
+#inspector .sec .note{margin:0}
+#inspector .sec .lbl.block{margin:0}
+#inspector .sec .drop+.drop{margin-top:0}
+#inspector .sec .capture{margin:0;gap:8px}
+#inspector .sec .dome-slot{margin:0}
+#inspector .sec .charnote{margin:0}
+/* groups inside a section: their own, tighter stack */
+#inspector .sec>div:not([class]),#inspector #bgAdjust,#inspector #alBody,#inspector #keyEaseWrap,#inspector #multiAlign,
+#inspector .sec>div[data-for]:not(.row):not(.slgrid){display:flex;flex-direction:column;gap:8px}
+#inspector details.more{margin:0}
+#inspector details.more[open]{display:flex;flex-direction:column;gap:8px}
+#inspector details.more>summary{height:20px}
+/* auto layout block */
+#inspector .algrid-wrap{margin:0;gap:12px}
+#inspector .alside{display:flex;flex-direction:column;gap:8px}
+#inspector .alside .chk,#inspector .chk{margin:0}
+/* text effect options: a 2-column grid under their menu, indented */
+#inspector .fxopts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:-4px 0 0 2px;padding-left:10px}
+#inspector .fxopts>*{grid-column:1 / -1}
+#inspector .fxopts>.sl{grid-column:span 3}
+#inspector .fxopts>.fxseg{margin:0}
+#inspector .fxopts:empty,#inspector .fxopts[hidden]{display:none}
+/* value fields: a little less inner padding, so a third of a row holds a label and a value like "1.15×" */
+#inspector .nf .nfk{padding:0 6px 0 7px}
+#inspector .nf input{padding-right:5px}
+#inspector .slgrid>.sl[data-w="3"] .nfk,#inspector .slgrid .contents>.sl .nfk{max-width:55%}
