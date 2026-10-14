@@ -6,11 +6,12 @@
    hold the values the editor shows (ui/animate.js writes them). d.designT is the device's design frame (default 0 s):
    what Tasarla, the still image and snapshots show; editing in Tasarla rewrites the keys at that time. */
 const ANIM_PROPS=['px','py','pz','ry','rx','rz','scale','lidAngle','scroll'];
-// 2D items: position and width (fractions of the board), rotation, opacity; a text item's size is its font size
-const ITEM_PROPS=['x','y','w','size','rot','opacity'];
+// 2D items: position (in the parent), width (a frame also height; fractions of the board width), rotation, opacity;
+// a text item's size is its font size
+const ITEM_PROPS=['x','y','w','h','size','rot','opacity'];
 const MAX_DUR=30;
 const isDevice=o=>!!o.type;
-const propsOf=o=>isDevice(o)?ANIM_PROPS.filter(k=>k!=='lidAngle'||o.type==='laptop'):ITEM_PROPS.filter(k=>o.kind==='text'?k!=='w':k!=='size');
+const propsOf=o=>isDevice(o)?ANIM_PROPS.filter(k=>k!=='lidAngle'||o.type==='laptop'):ITEM_PROPS.filter(k=>o.kind==='text'?k!=='w'&&k!=='h':o.kind==='frame'?k!=='size':k!=='size'&&k!=='h');
 // a target's reference in the editor's selection / maps (device and item ids are separate counters)
 const refOf=o=>(isDevice(o)?'d':'i')+o.id;
 const EASE={

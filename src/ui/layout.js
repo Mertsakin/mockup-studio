@@ -1,10 +1,11 @@
 import {gradCss,paintGradient} from '../render/backgrounds.js';
 import {renderer,setCrop} from '../render/renderer.js';
-import {onFont,textBox,textPad} from '../render/text.js';
+import {rectOf,resolve} from '../render/item-layout.js';
+import {onFont,textPad} from '../render/text.js';
 import {drawTextAt,fxPad} from '../render/text-fx.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
-import {$} from '../util.js';
+import {$,roundRect} from '../util.js';
 
 /* ---------- layout & background ----------
    The live canvas (#frame) sits over the active artboard on the workspace. workspace.js registers the geometry
@@ -77,13 +78,11 @@ function paintBg(g,W,H){
 }
 
 /* ---------- 2D items ----------
-   Geometry of an item on a W x H board: centre (x*W, y*H), width w*W, height from the image's aspect, rotation rot.
-   Text items (kind 'text'): the size follows from the text and its font size (render/text.js). */
-function itemRect(it,W,H){
-  if(it.kind==='text'){const b=textBox(it,W);return {cx:it.x*W,cy:it.y*H,w:b.w,h:b.h,rot:it.rot||0};}
-  const [iw,ih]=imgSize(it.img),w=it.w*W;return {cx:it.x*W,cy:it.y*H,w,h:w*ih/iw,rot:it.rot||0};
-}
-const els=new Map();  // item id -> <img> (or <canvas> for text)
+   The items form a tree (frames hold items; render/item-layout.js lays it out). itemRect: an item's centre, size and
+   rotation on a W x H board, whatever its parents. The live view mirrors the tree in the DOM (a frame is a div holding
+   its children, so rotation, opacity and clipping nest like in the export); the export paints it on a canvas. */
+const itemRect=(it,W,H)=>rectOf(state.items,it,W,H);
+const els=new Map();  // item id -> <img>, <canvas> (text) or <div> (frame)
 /* Text effects draw at a time: the clock (set by ui/animate.js) gives the playhead in Canlandır, null (settled text)
    in Tasarla. Every redraw tells the onItems hooks (animation recording compares the items' fields then). */
 let clock=()=>null;
@@ -102,30 +101,47 @@ function drawTextEl(el,it,r,W,t){
     const g=el.getContext('2d');g.setTransform(k,0,0,k,cw*k/2,ch*k/2);drawTextAt(g,it,px,t);}
   return pad;
 }
+const tagOf=it=>it.kind==='text'?'CANVAS':it.kind==='frame'?'DIV':'IMG';
 function renderItems(){
   if(!board)return;
-  const {w:W,h:H,x,y}=board,seen=new Set(),t=clock();
+  const {w:W,h:H,x,y}=board,seen=new Set(),t=clock(),{nodes,roots}=resolve(state.items,W,H);
   for(const k in itemLayers){const L=itemLayers[k];L.style.width=W+'px';L.style.height=H+'px';L.style.transform='translate('+x+'px,'+y+'px)';}
-  state.items.forEach(it=>{
-    const text=it.kind==='text';let el=els.get(it.id);
-    if(el&&(el.tagName==='CANVAS')!==text){el.remove();el=null;}
-    if(!el){el=document.createElement(text?'canvas':'img');if(!text){el.alt='';el.draggable=false;}els.set(it.id,el);}
-    const r=itemRect(it,W,H),L=itemLayers[it.front?'front':'back'];
+  // depth first, so the DOM order is the paint order and children sit inside their frame's element
+  const put=(id,parentEl)=>{
+    const n=nodes.get(id);if(!n)return;const it=n.it,tag=tagOf(it);let el=els.get(id);
+    if(el&&el.tagName!==tag){el.remove();el=null;}
+    if(!el){el=document.createElement(tag.toLowerCase());if(tag==='IMG'){el.alt='';el.draggable=false;}if(tag==='DIV')el.className='ifr';els.set(id,el);}
     let pad=0;
-    if(text)pad=drawTextEl(el,it,r,W,t); else if(el.src!==it.img.src)el.src=it.img.src;
-    el.style.cssText='width:'+(r.w+2*pad)+'px;height:'+(r.h+2*pad)+'px;transform:translate('+(r.cx-r.w/2-pad)+'px,'+(r.cy-r.h/2-pad)+'px) rotate('+r.rot+'deg);opacity:'+(it.opacity??1)+(it.id===hiddenItem?';visibility:hidden':'');
-    L.appendChild(el);seen.add(it.id);  // re-appending keeps the DOM order = paint order
-    if(!text&&!it.img.complete)it.img.addEventListener('load',renderItems,{once:true});
-  });
+    if(tag==='CANVAS')pad=drawTextEl(el,n.view,n,W,t);
+    else if(tag==='IMG'){if(el.src!==it.img.src)el.src=it.img.src;if(!it.img.complete)it.img.addEventListener('load',renderItems,{once:true});}
+    let css='width:'+(n.w+2*pad)+'px;height:'+(n.h+2*pad)+'px;transform:translate('+(n.x-pad)+'px,'+(n.y-pad)+'px) rotate('+n.rot+'deg);opacity:'+(it.opacity??1)+(id===hiddenItem?';visibility:hidden':'');
+    if(tag==='DIV'){css+=';background:'+(it.fillOn===false||!it.fill?'transparent':it.fill)+';border-radius:'+((it.radius||0)*W)+'px;overflow:'+(it.clip?'hidden':'visible');
+      el.classList.toggle('nofill',it.fillOn===false||!it.fill);}
+    el.style.cssText=css;parentEl.appendChild(el);seen.add(id);
+    n.kids.forEach(k=>put(k,el));
+  };
+  roots.forEach(id=>{const n=nodes.get(id);put(id,itemLayers[n.it.front?'front':'back']);});
   els.forEach((el,id)=>{if(!seen.has(id)){el.remove();els.delete(id);}});
   itemSubs.forEach(f=>f());
 }
 // export / thumbnails: the items of one layer drawn on a W x H canvas; t: time of the text effects (video), else settled
 function paintItems(g,W,H,front,t){
-  state.items.forEach(it=>{const text=it.kind==='text';if(!!it.front!==front||!text&&!it.img.complete)return;const r=itemRect(it,W,H);
-    g.save();g.globalAlpha=it.opacity??1;g.translate(r.cx,r.cy);g.rotate(r.rot*Math.PI/180);
-    if(text)drawTextAt(g,it,(it.size||.06)*W,t??null); else g.drawImage(it.img,-r.w/2,-r.h/2,r.w,r.h);
-    g.restore();});
+  const {nodes,roots}=resolve(state.items,W,H);
+  const paint=id=>{
+    const n=nodes.get(id);if(!n)return;const it=n.it;
+    if(it.kind!=='text'&&it.kind!=='frame'&&!(it.img&&it.img.complete))return;
+    g.save();g.globalAlpha*=it.opacity??1;g.translate(n.x+n.w/2,n.y+n.h/2);g.rotate(n.rot*Math.PI/180);
+    if(it.kind==='text')drawTextAt(g,n.view,(it.size||.06)*W,t??null);
+    else if(it.kind==='frame'){
+      const r=Math.min((it.radius||0)*W,n.w/2,n.h/2);g.beginPath();roundRect(g,-n.w/2,-n.h/2,n.w,n.h,r);
+      if(it.fillOn!==false&&it.fill){g.fillStyle=it.fill;g.fill();}
+      if(it.clip)g.clip();
+      g.translate(-n.w/2,-n.h/2);n.kids.forEach(paint);
+    }
+    else g.drawImage(it.img,-n.w/2,-n.h/2,n.w,n.h);
+    g.restore();
+  };
+  roots.forEach(id=>{if(!!nodes.get(id).it.front===front)paint(id);});
 }
 // a web font finished loading: text items are measured again and redrawn
 onFont(()=>{renderItems();layoutSubs.forEach(f=>f(screen));});

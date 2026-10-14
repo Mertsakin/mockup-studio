@@ -5,6 +5,8 @@ import {applyTransform,autoRefit,camDist} from '../render/transform.js';
 import {POS_MAX} from '../state/constants.js';
 import {newDevice,nextItemId,state} from '../state/state.js';
 import {doc,sizeOf} from './boards.js';
+import {inFlow,resolve,subtree} from '../render/item-layout.js';
+import {isFrame,moveBy,setCenter,unwrap,wrap} from './frames.js';
 import {itemRect,boardScreen,frame,onLayout,renderItems} from './layout.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {toast} from './toast.js';
@@ -61,9 +63,12 @@ function moveDevice(d,dx,dy){
   const w=new V3(dx*upp,-dy*upp,0).applyQuaternion(pivot.quaternion.clone().invert());
   d.px=clamp(d.px+w.x,-POS_MAX,POS_MAX);d.py=clamp(d.py+w.y,-POS_MAX,POS_MAX);d.pz=clamp(d.pz+w.z,-POS_MAX,POS_MAX);
 }
-function moveItem(it,dx,dy){const s=boardScreen();if(!s)return;it.x=+(it.x+dx/s.w).toFixed(4);it.y=+(it.y+dy/s.h).toFixed(4);}
+// an item: in its parent's terms (screen px -> board px); auto layout places its own children
+function moveItem(it,dx,dy){const s=boardScreen();if(!s||inFlow(state.items,it))return;const k=sizeOf(state)[0]/s.w;moveBy(it,dx*k,dy*k);}
 // moves the members other than `except` by (dx, dy) px from where they were when `saves` was taken (saveGroup)
-function saveGroup(except){return selection().filter(o=>o!==except).map(o=>({o,v:o.type?{px:o.px,py:o.py,pz:o.pz}:{x:o.x,y:o.y}}));}
+// (an item inside another selected frame moves with that frame already)
+function saveGroup(except){const sel=selection(),inside=o=>!o.type&&sel.some(f=>f!==o&&!f.type&&subtree(state.items,f).includes(o));
+  return sel.filter(o=>o!==except&&!inside(o)).map(o=>({o,v:o.type?{px:o.px,py:o.py,pz:o.pz}:{x:o.x,y:o.y}}));}
 function moveGroupFrom(saves,dx,dy){
   let dev=false;
   saves.forEach(({o,v})=>{Object.assign(o,v);if(o.type){moveDevice(o,dx,dy);dev=true;}else moveItem(o,dx,dy);});
@@ -74,9 +79,9 @@ function nudge(dx,dy){const s=saveGroup(null);moveGroupFrom(s,dx,dy);syncAll();}
 /* ---------- delete, clipboard, duplicate */
 function removeTargets(list){
   if(!list.length)return;
-  const devs=list.filter(o=>o.type),items=list.filter(o=>!o.type);
+  const devs=list.filter(o=>o.type),items=new Set(list.filter(o=>!o.type).flatMap(o=>subtree(state.items,o)));
   devs.forEach(d=>disposeRT(d.id));
-  state.devices=state.devices.filter(d=>!devs.includes(d));state.items=state.items.filter(i=>!items.includes(i));
+  state.devices=state.devices.filter(d=>!devs.includes(d));state.items=state.items.filter(i=>!items.has(i));
   if(!state.devices.some(d=>d.id===state.selected))state.selected=state.devices[0]?state.devices[0].id:null;
   if(!state.items.some(i=>i.id===state.selItem))state.selItem=null;
   if(devs.length){autoRefit();applyTransform();}
@@ -88,23 +93,42 @@ const SKIP=new Set(['id','img','frameImg']);
 function copyOf(o){const c={};for(const k in o)if(!SKIP.has(k))c[k]=JSON.parse(JSON.stringify(o[k]??null));c.img=o.img||null;if(o.type)c.frameImg=o.frameImg||null;return c;}
 let clip=null;
 // clip.board: where it was copied (pasting there offsets the copies; a cut leaves no original, so none)
-function copySelection(){const list=selection();if(!list.length)return false;clip={id:Date.now().toString(36),board:doc.active,list:list.map(o=>({dev:!!o.type,data:copyOf(o)}))};return true;}
+function copySelection(){const list=selection();if(!list.length)return false;clip={id:Date.now().toString(36),board:doc.active,list:entriesOf(list)};return true;}
+/* clipboard entries: a frame brings everything inside it (old ids kept in oid so the copies can be re-linked); an
+   item whose parent is not copied also remembers where it is on the board (abs), for pasting it elsewhere */
+function entriesOf(list){
+  const items=new Set();list.filter(o=>!o.type).forEach(o=>subtree(state.items,o).forEach(x=>items.add(x)));
+  const [W,H]=sizeOf(state),{nodes}=resolve(state.items,W,H);
+  return list.filter(o=>o.type).map(o=>({dev:true,data:copyOf(o)})).concat(state.items.filter(x=>items.has(x)).map(o=>{
+    const n=nodes.get(o.id),e={dev:false,data:copyOf(o),oid:o.id,root:list.includes(o)};
+    if(n&&(o.parent==null||!items.has(state.items.find(x=>x.id===o.parent))))e.abs={x:n.cx/W,y:n.cy/H,rot:n.arot,front:!!rootFront(o)};
+    return e;}));
+}
+const rootFront=o=>{let r=o,p;while(r.parent!=null&&(p=state.items.find(x=>x.id===r.parent)))r=p;return r.front;};
 // new targets from copies; `shift`: offset so a copy on the same board does not hide the original
 function place(entries,shift){
-  const out=[];
-  entries.forEach(({dev,data})=>{
+  const out=[],ids=new Map(),made=[];
+  entries.forEach(({dev,data,oid,abs,root})=>{
     if(dev){const d=newDevice(data.type);const id=d.id;Object.assign(d,JSON.parse(JSON.stringify(Object.assign({},data,{img:null,frameImg:null}))),{id,img:data.img,frameImg:data.frameImg});
       if(shift){d.px=clamp(d.px+2,-POS_MAX,POS_MAX);d.py=clamp(d.py-1,-POS_MAX,POS_MAX);}
       state.devices.push(d);buildRT(d);out.push(d);}
     else{const it=Object.assign(JSON.parse(JSON.stringify(Object.assign({},data,{img:null}))),{id:nextItemId(),img:data.img});
-      if(shift){it.x=+(it.x+.02).toFixed(4);it.y=+(it.y+.02).toFixed(4);}
-      if(!it.img&&it.kind!=='text')return;state.items.push(it);out.push(it);}
+      if(!it.img&&it.kind!=='text'&&it.kind!=='frame')return;
+      ids.set(oid,it.id);state.items.push(it);made.push({it,abs,root});if(root!==false)out.push(it);}
   });
+  // parents: a copied frame -> its copy; a frame that is still on this board -> stays; otherwise the board, in place
+  made.forEach(({it,abs})=>{
+    if(it.parent==null)return;
+    if(ids.has(it.parent)){it.parent=ids.get(it.parent);return;}
+    if(state.items.some(x=>x.id===it.parent&&x.kind==='frame'))return;
+    delete it.parent;if(abs)Object.assign(it,{x:+abs.x.toFixed(5),y:+abs.y.toFixed(5),rot:+abs.rot.toFixed(2),front:abs.front});
+  });
+  if(shift)made.forEach(({it})=>{if(out.includes(it)&&!inFlow(state.items,it))moveBy(it,.02*sizeOf(state)[0],.02*sizeOf(state)[0]);});
   if(out.some(o=>o.type))applyTransform();renderItems();select(out);return out;
 }
 function copyToClipboard(){if(copySelection())toast('Kopyalandı');}
 function paste(){if(!clip)return false;place(clip.list,clip.board===doc.active);return true;}
-function duplicateSelection(){const list=selection();if(!list.length)return;place(list.map(o=>({dev:!!o.type,data:copyOf(o)})),true);toast(list.length>1?list.length+' öğe çoğaltıldı':'Çoğaltıldı');}
+function duplicateSelection(){const list=selection();if(!list.length)return;place(entriesOf(list),true);toast(list.length>1?list.length+' öğe çoğaltıldı':'Çoğaltıldı');}
 const hasClip=()=>!!clip;
 const typing=t=>t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable);
 // system clipboard events: ⌘C / ⌘X / ⌘V (and the browser's menu) go through them
@@ -152,19 +176,23 @@ onChange.add(schedule);onUi(schedule);onSyncUI(schedule);onLayout(schedule);
 
 /* ---------- inspector: the group's panel */
 function alignItems(how){
-  const s=boardScreen(),items=selection().filter(o=>!o.type);if(!s||items.length<2)return;
-  // axis-aligned extents of the rotated items, in board pixels
+  // items placed by an auto layout cannot be moved by hand: left out
+  const s=boardScreen(),items=selection().filter(o=>!o.type&&!inFlow(state.items,o));if(!s||items.length<2)return;
+  // axis-aligned extents of the rotated items, in the board's screen pixels; the new centres go through setCenter
+  // (board px), so items inside frames move in their frame's terms
+  const k=sizeOf(state)[0]/s.w;
   const ext=items.map(it=>{const r=itemRect(it,s.w,s.h),a=r.rot*D2R,ex=(Math.abs(r.w*Math.cos(a))+Math.abs(r.h*Math.sin(a)))/2,ey=(Math.abs(r.w*Math.sin(a))+Math.abs(r.h*Math.cos(a)))/2;
     return {it,x0:r.cx-ex,x1:r.cx+ex,y0:r.cy-ey,y1:r.cy+ey,cx:r.cx,cy:r.cy};});
   const X0=Math.min(...ext.map(e=>e.x0)),X1=Math.max(...ext.map(e=>e.x1)),Y0=Math.min(...ext.map(e=>e.y0)),Y1=Math.max(...ext.map(e=>e.y1));
+  const to=(e,cx,cy)=>setCenter(e.it,cx*k,cy*k);
   if(how==='hdist'||how==='vdist'){
     const h=how==='hdist',sorted=ext.slice().sort((a,b)=>h?a.cx-b.cx:a.cy-b.cy);if(sorted.length<3)return;
     const span=h?X1-X0:Y1-Y0,sizes=sorted.reduce((t,e)=>t+(h?e.x1-e.x0:e.y1-e.y0),0),gap=(span-sizes)/(sorted.length-1);
-    let p=h?X0:Y0;sorted.forEach(e=>{const sz=h?e.x1-e.x0:e.y1-e.y0;if(h)e.it.x=+((p+sz/2)/s.w).toFixed(4);else e.it.y=+((p+sz/2)/s.h).toFixed(4);p+=sz+gap;});
+    let p=h?X0:Y0;sorted.forEach(e=>{const sz=h?e.x1-e.x0:e.y1-e.y0;if(h)to(e,p+sz/2,e.cy);else to(e,e.cx,p+sz/2);p+=sz+gap;});
   } else ext.forEach(e=>{
     const w=e.x1-e.x0,hh=e.y1-e.y0;
-    if(how==='left')e.it.x=+((X0+w/2)/s.w).toFixed(4);else if(how==='right')e.it.x=+((X1-w/2)/s.w).toFixed(4);else if(how==='hcenter')e.it.x=+(((X0+X1)/2)/s.w).toFixed(4);
-    else if(how==='top')e.it.y=+((Y0+hh/2)/s.h).toFixed(4);else if(how==='bottom')e.it.y=+((Y1-hh/2)/s.h).toFixed(4);else if(how==='vcenter')e.it.y=+(((Y0+Y1)/2)/s.h).toFixed(4);
+    const x={left:X0+w/2,right:X1-w/2,hcenter:(X0+X1)/2}[how]??e.cx,y={top:Y0+hh/2,bottom:Y1-hh/2,vcenter:(Y0+Y1)/2}[how]??e.cy;
+    to(e,x,y);
   });
   renderItems();syncAll();
 }
@@ -179,12 +207,35 @@ onSyncUI(()=>{
   document.querySelectorAll('#multiAlign [data-align$="dist"]').forEach(b=>{b.disabled=ni<3;});
 });
 
+/* ---------- frames (Figma's shortcuts): ⌥⌘G the selection into a frame, ⇧A auto layout (a frame without one gets it,
+   anything else is wrapped in an auto-layout frame), ⇧⌘G the frame away (its children stay) */
+const items2D=()=>selection().filter(o=>!o.type);
+function frameSelection(auto){
+  const list=items2D();if(!list.length)return;
+  if(auto&&list.length===1&&isFrame(list[0])&&(!list[0].layout||list[0].layout.dir==='none')){
+    const f=list[0],kids=state.items.filter(x=>x.parent===f.id);
+    // the children in reading order, then the layout (direction from their spread)
+    if(kids.length){const g=wrap(kids,true);if(g){Object.assign(f,{layout:g.layout,wMode:'hug',hMode:'hug'});
+      state.items.filter(x=>x.parent===g.id).forEach(x=>{x.parent=f.id;});state.items=state.items.filter(x=>x!==g);}}
+    else f.layout=Object.assign({},f.layout||{},{dir:'col'});
+    renderItems();select([f]);toast('Auto layout eklendi');return;
+  }
+  const f=wrap(list,auto);if(f){select([f]);toast(auto?'Auto layout çerçevesi oluşturuldu':'Çerçeveye alındı');}
+}
+function unframeSelection(){
+  const frames=items2D().filter(isFrame);if(!frames.length)return;
+  const out=frames.flatMap(f=>unwrap(f));select(out);toast('Çerçeveden çıkarıldı');
+}
+
 /* ---------- keys: ⌘/Ctrl + A selects everything, ⌘/Ctrl + D duplicates; with a group: arrows nudge (1 px, Shift 10 px
    of the output), Delete removes, Esc deselects */
 addEventListener('keydown',e=>{
   if(typing(e.target))return;
   const k=e.key.toLowerCase(),mod=e.metaKey||e.ctrlKey;
   if(mod&&k==='a'&&!e.shiftKey&&!e.altKey){if(!state.devices.length&&!state.items.length)return;e.preventDefault();e.stopImmediatePropagation();selectAll();return;}
+  if(mod&&e.altKey&&e.code==='KeyG'&&!e.shiftKey){if(!items2D().length)return;e.preventDefault();e.stopImmediatePropagation();frameSelection(false);return;}
+  if(mod&&e.shiftKey&&e.code==='KeyG'&&!e.altKey){if(!items2D().some(isFrame))return;e.preventDefault();e.stopImmediatePropagation();unframeSelection();return;}
+  if(!mod&&!e.altKey&&e.shiftKey&&e.code==='KeyA'){if(!items2D().length)return;e.preventDefault();e.stopImmediatePropagation();frameSelection(true);return;}
   if(mod&&k==='d'&&!e.shiftKey&&!e.altKey){if(!selection().length)return;e.preventDefault();e.stopImmediatePropagation();duplicateSelection();return;}
   if(!isMulti()||mod||e.altKey)return;
   const mv={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
@@ -193,4 +244,4 @@ addEventListener('keydown',e=>{
   if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();select([]);}
 },true);
 
-export {copyToClipboard,deleteSelection,duplicateSelection,hasClip,inSel,isMulti,moveGroupFrom,nudge,paste,copySelection,saveGroup,select,selectAll,selection,toggle};
+export {copyToClipboard,deleteSelection,frameSelection,unframeSelection,duplicateSelection,hasClip,inSel,isMulti,moveGroupFrom,nudge,paste,copySelection,saveGroup,select,selectAll,selection,toggle};

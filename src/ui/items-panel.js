@@ -6,23 +6,16 @@ import {doc,sizeOf} from './boards.js';
 import {icon} from './icons.js';
 import {removeItem,reorder,setFront} from './items.js';
 import {renderItems} from './layout.js';
-import {fDeg,fPct,fX,makeSlider} from './sliders.js';
+import {numField} from './numfield.js';
+import {fPct,fX,makeSlider} from './sliders.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {toast} from './toast.js';
 import {$,$$} from '../util.js';
 
-/* Inspector for the selected 2D item (ui.kind 'item'): position, size, rotation, opacity, in front of / behind the
-   devices, paint order. Position and width are fractions of the board (shown in %). Text items (kind 'text') get the
-   "Metin" section instead of the width: content, font, weight, size, alignment, fill, spacing, box width, shadow. */
+/* Inspector for the selected 2D item (ui.kind 'item'): the text and its effects, name, delete, in front of / behind
+   the devices, paint order. Position, size, auto layout and the frame's look: ui/frame-panel.js. */
 const it=()=>selItem()||{};
 const after=()=>{renderItems();syncAll();};
-[
-  {id:'i-x',k:'x',l:'Yatay',min:-.25,max:1.25,step:.001,reset:.5,f:fPct,after},
-  {id:'i-y',k:'y',l:'Dikey',min:-.25,max:1.25,step:.001,reset:.5,f:fPct,after},
-  {id:'i-w',k:'w',l:'Genişlik',min:.01,max:2,step:.001,reset:.34,f:fPct,after},
-  {id:'i-rot',k:'rot',l:'Döndürme',min:-180,max:180,step:1,reset:0,f:fDeg,after}
-].forEach(d=>makeSlider($('#itemSliders'),d,it));
-makeSlider($('#itemLook'),{id:'i-op',k:'opacity',l:'Opaklık',min:0,max:1,step:.01,reset:1,f:fPct,after},it);
 
 /* ---------- text */
 const boardW=()=>sizeOf(state)[0];
@@ -30,12 +23,13 @@ const boardW=()=>sizeOf(state)[0];
 let prevBox=null;
 const textAfter=()=>{const t=selItem();if(t&&prevBox){const [W,H]=sizeOf(state);moveAnchor(t,W,H,prevBox);}after();};
 const edit=fn=>{const t=selItem();if(!t||t.kind!=='text')return;const [W,H]=sizeOf(state);keepAnchor(t,W,H,()=>fn(t));after();};
-makeSlider($('#textSizeSlot'),{id:'t-size',k:'size',l:'Boyut',min:.005,max:.3,step:.001,reset:.06,log:true,f:v=>Math.round(v*boardW())+' px',after:textAfter},it);
+// font size: a number field in board px (the item stores it as a fraction of the board width)
+const fsField=numField({id:'nf-fs',label:'Boyut',title:'Yazı boyutu (px)',min:1,max:2000,
+  get:()=>selItem()?Math.round((selItem().size||.06)*boardW()):null,set:v=>{if(typeof v==='number')edit(t=>{t.size=+(v/boardW()).toFixed(5);});}});
+fsField.el.classList.add('wide');$('#textSizeSlot').appendChild(fsField.el);$('#textSizeSlot').classList.add('nfgrid','one');
 [
   {id:'t-lh',k:'lh',l:'Satır aralığı',min:.7,max:2.5,step:.01,reset:1.15,f:fX,after:textAfter},
   {id:'t-ls',k:'ls',l:'Harf aralığı',min:-.1,max:.5,step:.005,reset:0,f:fPct,after:textAfter},
-  {id:'t-wrap',k:'wrap',l:'Kutu genişliği',min:0,max:30,step:.1,reset:0,note:'0: satırlar yalnızca Enter ile kırılır. Daha büyük değerde metin bu genişlikte kendiliğinden alt satıra geçer.',
-    f:v=>v?Math.round(v*(it().size||0)*boardW())+' px':'Otomatik',after:textAfter},
   {id:'t-shadow',k:'shadow',l:'Gölge',min:0,max:1,step:.01,reset:0,f:fPct,after:textAfter}
 ].forEach(d=>makeSlider($('#textSliders'),d,it));
 
@@ -167,10 +161,12 @@ onSyncUI(()=>{
   const i=selItem();if(!i)return;const text=i.kind==='text';
   if(document.activeElement!==nameEl)nameEl.value=i.name;
   $$('#itemSide button').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.front==='true')===!!i.front)));
-  const ic=text?'text-square':'gallery';if(ic!==shownIcon){$('#itemIcon').innerHTML=icon(ic);shownIcon=ic;}
-  $('#textSec').hidden=!text;$('#fxSec').hidden=!text;$('#s-i-w').closest('.slider').hidden=text;
+  const ic=text?'text-square':i.kind==='frame'?'hashtag':'gallery';if(ic!==shownIcon){$('#itemIcon').innerHTML=icon(ic);shownIcon=ic;}
+  $('#textSec').hidden=!text;$('#fxSec').hidden=!text;
+  // in front of / behind the devices: a top-level choice (children follow their frame)
+  $('#itemSide').hidden=i.parent!=null&&state.items.some(x=>x.id===i.parent);
   if(!text){prevBox=null;return;}
-  syncFx(i);
+  syncFx(i);fsField.sync();
   prevBox=textBox(i,boardW());
   if(document.activeElement!==body&&body.value!==i.text)body.value=i.text;
   fillCustom();fontEl.value=i.font;

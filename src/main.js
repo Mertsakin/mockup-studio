@@ -29,6 +29,7 @@ import './export/export.js';
 import './ui/shell.js';
 import './ui/transform-box.js';
 import './ui/items-panel.js';
+import './ui/frame-panel.js';
 import './ui/context-menu.js';
 import './ui/store.js';
 import './ui/assets.js';

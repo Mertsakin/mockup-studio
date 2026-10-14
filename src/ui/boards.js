@@ -86,7 +86,7 @@ function panoThumbs(){
   try{
     todo.forEach(b=>{
       const st=b.snap.state,im=b.snap.images||{};
-      SLICE.forEach(k=>{state[k]=k==='bgImg'?(st.bgImg&&im[st.bgImg])||null:k==='items'?(st.items||[]).map(o=>Object.assign({},o,{img:o.img?im[o.img]||null:null})).filter(o=>o.img||o.kind==='text'):st[k];});
+      SLICE.forEach(k=>{state[k]=k==='bgImg'?(st.bgImg&&im[st.bgImg])||null:k==='items'?(st.items||[]).map(o=>Object.assign({},o,{img:o.img?im[o.img]||null:null})).filter(o=>o.img||o.kind==='text'||o.kind==='frame'):st[k];});
       const t=captureThumb();if(t)b.thumb=t;b.stale=false;
     });
   }finally{Object.assign(state,keep);applyTransform();invalidateLayout();bgCss();layout();req();emit();}

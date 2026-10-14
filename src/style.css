@@ -107,7 +107,7 @@ kbd{font:inherit;color:var(--muted)}
 .node:hover{background:var(--field)}
 .node[aria-selected="true"]{background:var(--accent-soft)}
 .node[aria-selected="true"] .nm{color:var(--accent-ink)}
-.node.child{padding-left:26px}
+.node.child{padding-left:calc(26px + var(--depth,0) * 14px)}
 .node .tw{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px}
 .node .tw .ic{width:12px;height:12px;color:var(--muted)}
 .node .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -294,6 +294,8 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .frame{position:absolute;left:0;top:0;overflow:hidden}
 /* 2D items: a layer under the WebGL canvas and one over it (layout.js); picking goes through pointer.js */
 .items{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
+.items .ifr{position:absolute;left:0;top:0;transform-origin:50% 50%;box-sizing:border-box}
+.items .ifr.nofill{outline:1px dashed color-mix(in srgb,var(--muted) 45%,transparent);outline-offset:-1px}  /* editor guide only */
 .items img,.items canvas{position:absolute;left:0;top:0;display:block;max-width:none;user-select:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 #gl.dragging{cursor:grabbing}
@@ -466,3 +468,28 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 
 /* start-up: hidden until the last session is restored (or found empty), so the default scene never flashes */
 html.booting #world,html.booting #frame,html.booting #navSvg,html.booting #tree,html.booting #inspector>*,html.booting #projName,html.booting #timeline{visibility:hidden}
+
+/* number fields (numfield.js): label (drag to scrub) + input, Figma style; frame panel (frame-panel.js) */
+.nfgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.nfgrid.one{grid-template-columns:1fr}
+.nf{display:flex;align-items:center;height:var(--h);border-radius:5px;background:var(--field);border:1px solid transparent;min-width:0}
+.nf:focus-within{border-color:var(--accent)}
+.nf .nfk{flex:none;min-width:22px;padding:0 6px 0 8px;color:var(--muted);font-size:11px;cursor:ew-resize;user-select:none;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.nf input{flex:1;min-width:0;height:100%;border:0;background:transparent;padding:0 6px 0 0;font:inherit;font-variant-numeric:tabular-nums;color:var(--ink)}
+.nf input:focus{outline:0}
+.nf.off{opacity:.55}.nf.off .nfk{cursor:default}
+.nf.scrub{border-color:var(--accent)}
+.nfsize{display:flex;gap:4px;min-width:0;grid-column:1 / -1}
+.nfsize .nf{flex:1}
+.nfmode{flex:none;width:66px;height:var(--h);padding:0 4px;font-size:11px}
+.chk{display:flex;align-items:center;gap:6px;color:var(--ink-2);font-size:12px;margin-top:6px;cursor:pointer;user-select:none}
+.algrid-wrap{display:flex;gap:10px;margin-top:8px;align-items:flex-start}
+.alside{flex:1;min-width:0}
+.alside .chk:first-of-type{margin-top:8px}
+.algrid{flex:none;display:grid;grid-template-columns:repeat(3,22px);grid-template-rows:repeat(3,22px);gap:2px;padding:4px;background:var(--field);border-radius:6px}
+.algrid button{display:grid;place-items:center;border-radius:4px;padding:0}
+.algrid button i{width:4px;height:4px;border-radius:50%;background:color-mix(in srgb,var(--muted) 60%,transparent)}
+.algrid button:hover i{background:var(--ink-2)}
+.algrid button[aria-pressed="true"] i{width:12px;height:4px;border-radius:2px;background:var(--accent)}
+.algrid[data-dir="col"] button[aria-pressed="true"] i{width:4px;height:12px}
+#alPad{margin-top:8px}

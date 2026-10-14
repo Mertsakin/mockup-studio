@@ -8,7 +8,7 @@ import {activate,activeBoard,addBoard,doc,duplicateBoard,ensureBoard,hasBoard,on
 import {renderDome} from './dome.js';
 import {setGizmoMode,showGizmo} from './gizmo.js';
 import {hydrateIcons,icon} from './icons.js';
-import {addText,editText,removeItem,selectItem} from './items.js';
+import {addFrame,addText,editText,removeItem,selectItem} from './items.js';
 import {isMulti,selection,toggle} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {applyTemplate} from './templates.js';
@@ -56,6 +56,7 @@ $('#boardName').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Esca
 const tree=$('#tree'),expanded=new Set();
 function node(o){
   const el=document.createElement('div');el.className='node'+(o.child?' child':' board');el.setAttribute('role','treeitem');el.tabIndex=-1;
+  if(o.depth){el.style.setProperty('--depth',o.depth);el.setAttribute('aria-level',String(o.depth+2));}
   el.setAttribute('aria-selected',String(!!o.sel));if(!o.child)el.setAttribute('aria-expanded',String(!!o.open));
   el.innerHTML=(o.child?'':'<button class="tw" type="button" tabindex="-1" aria-label="'+(o.open?'Daralt':'Genişlet')+'">'+icon(o.open?'alt-arrow-down':'alt-arrow-right',12)+'</button>')+
     (o.dot?'<span class="dot" style="background:'+o.dot+'"></span>':icon(o.icon,14))+'<span class="nm"></span>'+(o.anim?'<span class="anim-mark" title="Animasyonlu"></span>':'')+'<span class="act"></span>';
@@ -91,9 +92,12 @@ function renderTree(){
     // Shift / ⌘ + click in the tree adds to the selection or takes out (the live board only)
     const picked=o=>live&&(isMulti()?selection().includes(o):(o.type?ui.kind==='device'&&state.selected===o.id:ui.kind==='item'&&state.selItem===o.id));
     const multiPick=(e,o)=>{if(live&&e&&(e.shiftKey||e.metaKey||e.ctrlKey)){toggle(o);return true;}return false;};
-    const itemNode=it=>tree.appendChild(node({child:true,name:it.name,icon:it.kind==='text'?'text-square':'gallery',anim:hasAnim(it)||!!it.fx,sel:picked(it),
+    // frames show their children under them, indented (topmost first, like the canvas)
+    const isRoot=it=>!(it.parent!=null&&items.some(x=>x.id===it.parent&&x.kind==='frame'));
+    const itemNode=(it,depth=0)=>{tree.appendChild(node({child:true,depth,name:it.name,icon:it.kind==='text'?'text-square':it.kind==='frame'?'hashtag':'gallery',anim:hasAnim(it)||!!it.fx,sel:picked(it),
       pick:e=>{if(!multiPick(e,it))go(()=>selectItem(it.id));},actions:live?[['trash-bin-minimalistic','Sil',()=>removeItem(it.id)]]:[]}));
-    items.filter(it=>it.front).reverse().forEach(itemNode);
+      if(it.kind==='frame')items.filter(x=>x.parent===it.id).reverse().forEach(x=>itemNode(x,depth+1));};
+    items.filter(it=>it.front&&isRoot(it)).reverse().forEach(it=>itemNode(it));
     devNames(devs).forEach((n,i)=>{const d=devs[i];
       tree.appendChild(node({child:true,name:n,icon:DEV_ICON[d.type]||'smartphone',anim:hasAnim(d),sel:picked(d),
         pick:e=>{if(!multiPick(e,d))go(()=>{state.selected=d.id;syncAll();setUi({kind:'device'});syncTool();});},
@@ -102,7 +106,7 @@ function renderTree(){
       tree.appendChild(node({child:true,name:n,dot:L.color,sel:live&&ui.kind==='light'&&state.selLight===L.id,
         pick:()=>go(()=>{state.selLight=L.id;syncAll();setUi({kind:'light'});}),
         actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selLight=L.id;syncAll();$('#removeLight').click();}]]:[]}));});
-    items.filter(it=>!it.front).reverse().forEach(itemNode);
+    items.filter(it=>!it.front&&isRoot(it)).reverse().forEach(it=>itemNode(it));
   });
   if(!doc.boards.length){const p=document.createElement('p');p.className='empty';p.style.margin='4px 8px';p.textContent='Artboard yok. + ile ya da A tuşuyla yeni bir artboard ekle.';tree.appendChild(p);return;}
   const items=[...tree.children];(items.find(x=>x.getAttribute('aria-selected')==='true')||items[0]).tabIndex=0;
@@ -174,6 +178,7 @@ $('#dock [data-add="light"]').addEventListener('click',e=>{e.stopPropagation();o
 const newBoard=()=>{addBoard();setUi({kind:'board'});fitAll();};
 // a new text item, edited in place right away (the layout of a new board settles first)
 $('#addTextDock').addEventListener('click',()=>{ensureBoard();const it=addText();requestAnimationFrame(()=>editText(it,true));});
+$('#addFrameDock').addEventListener('click',()=>{ensureBoard();addFrame();});
 $('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEventListener('click',newBoard);$('#emptyAddBoard').addEventListener('click',newBoard);
 
 /* ---------- export popover ---------- */

@@ -172,4 +172,7 @@ function moveAnchor(it,W,H,a){
 }
 function keepAnchor(it,W,H,fn){const a=textBox(it,W);fn();moveAnchor(it,W,H,a);}
 
-export {FONTS,REF,TEXT_DEFAULTS,WEIGHT_NAMES,addFontFace,charsOf,customFonts,drawText,lineOrigin,textStyle,fitWeight,fontsReady,keepAnchor,moveAnchor,onFont,textBox,textLayout,textPad,useFont,weightsOf};
+// changes whenever a font finishes loading (measurements made before it are stale)
+const fontEpoch=()=>fontVersion;
+
+export {FONTS,REF,fontEpoch,TEXT_DEFAULTS,WEIGHT_NAMES,addFontFace,charsOf,customFonts,drawText,lineOrigin,textStyle,fitWeight,fontsReady,keepAnchor,moveAnchor,onFont,textBox,textLayout,textPad,useFont,weightsOf};

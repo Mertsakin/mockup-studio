@@ -19,13 +19,13 @@ import {$,$$} from '../util.js';
    inspector shows one, else the selected device. */
 const tl=$('#timeline'),names=$('#tlNames'),lanes=$('#tlLanes');
 const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Yatış',scale:'Ölçek',lidAngle:'Kapak açısı',scroll:'Kaydırma',
-  x:'Yatay',y:'Dikey',w:'Genişlik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık'};
+  x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık'};
 const SLIDER={px:'s-d-px',py:'s-d-py',pz:'s-d-pz',ry:'s-d-ry',rx:'s-d-rx',rz:'s-d-rz',scale:'s-d-scale',lidAngle:'s-d-lid',scroll:'s-d-scroll',
-  x:'s-i-x',y:'s-i-y',w:'s-i-w',size:'s-t-size',rot:'s-i-rot',opacity:'s-i-op'};
+  x:'nf-x',y:'nf-y',w:'nf-w',h:'nf-h',size:'nf-fs',rot:'nf-r',opacity:'nf-op'};
 const EASES=[['smooth','Yumuşak','M2 20 C 14 20, 22 2, 34 2'],['linear','Doğrusal','M2 20 L 34 2'],['hold','Ani','M2 20 L 30 20 L 30 2 L 34 2'],['back','Geri tepme','M2 20 C 12 20, 18 -6, 34 2']];
 const DEV_ICON={phone:'smartphone',tablet:'tablet',laptop:'laptop',monitor:'monitor',browser:'window-frame',page:'display',custom:'gallery-wide'};
 const fmtT=t=>t.toFixed(2).replace('.',',');
-const fmtV=(k,v)=>/^(scroll|x|y|w|opacity)$/.test(k)?Math.round(v*100)+'%':k==='size'?Math.round(v*sizeOf(state)[0])+' px':k==='scale'?v.toFixed(2)+'×':/^r|lid/.test(k)?Math.round(v)+'°':v.toFixed(1);
+const fmtV=(k,v)=>/^(scroll|x|y|opacity)$/.test(k)?Math.round(v*100)+'%':/^(size|w|h)$/.test(k)?Math.round(v*sizeOf(state)[0])+' px':k==='scale'?v.toFixed(2)+'×':/^r|lid/.test(k)?Math.round(v)+'°':v.toFixed(1);
 function devNames(){const n={},seen={};state.devices.forEach(d=>{const b=TYPES[d.type]||'Cihaz';n[b]=(n[b]||0)+1;});
   return state.devices.map(d=>{const b=TYPES[d.type]||'Cihaz';seen[b]=(seen[b]||0)+1;return n[b]>1?b+' '+seen[b]:b;});}
 const fps=()=>state.anim.fps||30;
@@ -33,7 +33,7 @@ const open=new Set();  // target refs whose value rows are unfolded
 const targets=()=>state.devices.concat(state.items);
 // the target the inspector shows (an item, else the selected device)
 const cur=()=>ui.kind==='item'?selItem():sel();
-const itemIcon=it=>it.kind==='text'?'text-square':'gallery';
+const itemIcon=it=>it.kind==='text'?'text-square':it.kind==='frame'?'hashtag':'gallery';
 
 /* ---------- geometry */
 const W=()=>Math.max(40,lanes.clientWidth-44);

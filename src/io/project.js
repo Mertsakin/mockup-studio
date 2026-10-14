@@ -46,7 +46,8 @@ function restore(s){
   const cur=new Set(Object.keys(state));
   for(const k in s.state)if(cur.has(k)&&k!=='scene'&&k!=='bgImg')state[k]=copy(s.state[k]);
   state.bgImg=s.state.bgImg&&s.images[s.state.bgImg]||null;
-  state.items=(s.state.items||[]).map(o=>o.kind==='text'?copy(o):Object.assign(copy(o),{img:s.images[o.img]||null})).filter(o=>o.img||o.kind==='text');
+  // text and frames carry no image
+  state.items=(s.state.items||[]).map(o=>o.kind==='text'||o.kind==='frame'?copy(o):Object.assign(copy(o),{img:s.images[o.img]||null})).filter(o=>o.img||o.kind==='text'||o.kind==='frame');
   reserveItemIds(Math.max(0,...state.items.map(i=>i.id)));if(!state.items.some(i=>i.id===state.selItem))state.selItem=null;
   // documents from when patterns were a background style: the pattern becomes the background image
   if(s.state.bg==='pattern'){Object.assign(state,patternBg(s.state));Object.assign(s.state,{bg:'image',bgImgName:state.bgImgName,bgImg:imgKey(state.bgImg)});s.images[s.state.bgImg]=state.bgImg;}

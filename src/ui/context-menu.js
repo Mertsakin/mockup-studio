@@ -2,11 +2,11 @@ import {canvas} from '../render/renderer.js';
 import {state} from '../state/state.js';
 import {ensureBoard} from './boards.js';
 import {icon} from './icons.js';
-import {addText,editText,itemAt,reorder} from './items.js';
+import {addFrame,addText,editText,itemAt,reorder} from './items.js';
 import {layer} from './layers.js';
 import {focusSelected} from './navigator.js';
 import {pick} from './pointer.js';
-import {copyToClipboard,deleteSelection,duplicateSelection,hasClip,inSel,isMulti,paste,select,selectAll,selection} from './selection.js';
+import {copyToClipboard,deleteSelection,duplicateSelection,frameSelection,hasClip,inSel,isMulti,paste,select,selectAll,selection,unframeSelection} from './selection.js';
 import {fitActive} from './workspace.js';
 
 /* Right-click menu on the live artboard. What is under the pointer becomes the selection (unless it is already part
@@ -35,8 +35,12 @@ const ORDER={front:Infinity,forward:1,backward:-1,back:-Infinity};
 function itemsFor(){
   const list=selection(),one=list.length===1?list[0]:null,clip=['clipboard','Yapıştır',paste,C+'V',!hasClip()];
   if(!list.length)return [clip,['layers-minimalistic','Tümünü seç',selectAll,C+'A',!state.devices.length&&!state.items.length],null,
-    ['text-square','Metin ekle',()=>{ensureBoard();const it=addText();requestAnimationFrame(()=>editText(it,true));}],['maximize-square','Artboarda yakınlaş',fitActive,S+'2']];
+    ['text-square','Metin ekle',()=>{ensureBoard();const it=addText();requestAnimationFrame(()=>editText(it,true));}],['hashtag','Çerçeve ekle',()=>{ensureBoard();addFrame();}],['maximize-square','Artboarda yakınlaş',fitActive,S+'2']];
   const out=[['copy','Kopyala',copyToClipboard,C+'C'],clip,['copy','Çoğalt',duplicateSelection,C+'D'],['trash-bin-minimalistic','Sil',deleteSelection,'⌫'],null];
+  // 2D items: frames (Figma's shortcuts)
+  const items=list.filter(o=>!o.type);
+  if(items.length)out.push(['hashtag','Çerçeveye al',()=>frameSelection(false),'⌥'+C+'G'],['layout-list','Auto layout ekle',()=>frameSelection(true),S+'A'],
+    ['layers-minimalistic','Çerçeveden çıkar',unframeSelection,S+C+'G',!items.some(o=>o.kind==='frame')],null);
   if(one&&one.type)out.push(
     ['double-alt-arrow-up','En öne',()=>layer('front'),S+C+']',state.devices.length<2],['alt-arrow-up','Öne',()=>layer('forward'),C+']',state.devices.length<2],
     ['alt-arrow-down','Arkaya',()=>layer('backward'),C+'[',state.devices.length<2],['double-alt-arrow-down','En arkaya',()=>layer('back'),S+C+'[',state.devices.length<2],

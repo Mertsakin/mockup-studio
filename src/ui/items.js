@@ -1,8 +1,10 @@
 import {canvas} from '../render/renderer.js';
 import {TEXT_DEFAULTS,keepAnchor,textLayout} from '../render/text.js';
+import {inFlow,parentOf,resolve} from '../render/item-layout.js';
 import {nextItemId,selItem,state} from '../state/state.js';
 import {sizeOf} from './boards.js';
 import {boardScreen,hideItem,imgSize,itemRect,onLayout,renderItems} from './layout.js';
+import {fixHeight,fixWidth,flowIndex,frameAt,isFrame,moveBy,newFrame,nodeOf,placeAmong,removeTree,reparent,setCenter,siblingsOf,toLocal} from './frames.js';
 import {moveGroupFrom,saveGroup} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {onUi,panning,setUi,ui} from './ui-state.js';
@@ -43,14 +45,18 @@ function mask(img){
 function hit(it,p){
   const r=screenRect(it);if(!r)return false;const l=local(r,p);
   if(Math.abs(l.x)>r.w/2||Math.abs(l.y)>r.h/2)return false;
-  const m=it.kind==='text'?null:mask(it.img);if(!m)return true;  // text: the whole block
+  const m=it.kind==='text'||it.kind==='frame'?null:mask(it.img);if(!m)return true;  // text, frame: the whole box
   const u=Math.min(m.w-1,Math.floor((l.x/r.w+.5)*m.w)),v=Math.min(m.h-1,Math.floor((l.y/r.h+.5)*m.h));
   return m.a[(v*m.w+u)*4+3]>16;
 }
-// topmost item of one layer under a client point (front: over the devices, else under them)
+// topmost item of one layer under a client point (front: over the devices, else under them); children are above
+// their frame, so the deepest item under the point wins and a frame is picked where none of its children is
 function itemAt(cx,cy,front){
-  const p=toStage(cx,cy);
-  for(let i=state.items.length-1;i>=0;i--){const it=state.items[i];if(!!it.front===front&&hit(it,p))return it;}
+  const p=toStage(cx,cy),s=boardScreen();if(!s)return null;
+  const {nodes,roots}=resolve(state.items,s.w,s.h),order=[];
+  const walk=id=>{const n=nodes.get(id);if(!n)return;order.push(n.it);n.kids.forEach(walk);};
+  roots.forEach(id=>{if(!!nodes.get(id).it.front===front)walk(id);});
+  for(let i=order.length-1;i>=0;i--)if(hit(order[i],p))return order[i];
   return null;
 }
 
@@ -76,21 +82,26 @@ function darkBg(){
   const lum=hex.map(h=>{const n=parseInt(String(h).slice(1),16);return .2126*(n>>16&255)+.7152*(n>>8&255)+.0722*(n&255);});
   return lum.reduce((a,b)=>a+b,0)/lum.length<110;
 }
+// a new frame (Figma's F / A): white, in the middle of the board
+function addFrame(props){
+  const it=newFrame(Object.assign({radius:.012},props));state.items.push(it);renderItems();selectItem(it.id);return it;
+}
+// removes the item and, for a frame, everything in it
 function removeItem(id){
-  const i=state.items.findIndex(x=>x.id===id);if(i<0)return;
-  state.items.splice(i,1);if(state.selItem===id)state.selItem=null;renderItems();syncAll();
+  const it=state.items.find(x=>x.id===id);if(!it)return;
+  removeTree(it);if(!state.items.some(x=>x.id===state.selItem))state.selItem=null;renderItems();syncAll();
   if(ui.kind==='item')setUi({kind:'board'});
 }
-// paint order within the item's own layer (front / back): +1 forward, -1 backward, Infinity / -Infinity to the end
+// order among its siblings (a frame's children, or the top-level items of one layer): +1 forward, -1 backward,
+// Infinity / -Infinity to the end; in an auto-layout frame this is also the layout order
 function reorder(id,step){
   const it=state.items.find(x=>x.id===id);if(!it)return;
-  const layer=state.items.filter(x=>!!x.front===!!it.front),i=layer.indexOf(it);layer.splice(i,1);
-  layer.splice(step===Infinity?layer.length:step===-Infinity?0:clamp(i+step,0,layer.length),0,it);
-  state.items=state.items.filter(x=>!!x.front!==!!it.front).concat(layer);  // the layers paint separately: only the order within one matters
+  const sib=siblingsOf(it),i=sib.indexOf(it),n=sib.length-1;
+  placeAmong(it,step===Infinity?n:step===-Infinity?0:clamp(i+step,0,n));
   renderItems();syncAll();
 }
-// in front of / behind the devices; the item goes on top of its new layer
-function setFront(id,front){const it=state.items.find(x=>x.id===id);if(!it||!!it.front===front)return;it.front=front;state.items=state.items.filter(x=>x!==it).concat(it);renderItems();syncAll();}
+// in front of / behind the devices (top-level items; a child follows its frame); the item goes on top of its new layer
+function setFront(id,front){const it=state.items.find(x=>x.id===id);if(!it||parentOf(state.items,it)||!!it.front===front)return;it.front=front;placeAmong(it,Infinity);renderItems();syncAll();}
 const changed=()=>{renderItems();schedule();syncAll();};
 
 /* ---------- box */
@@ -113,7 +124,8 @@ function guide(x,y,w,h){const g=document.createElement('div');g.className='guide
 
 /* ---------- drags: move (from pointer.js), scale / rotate (handles) */
 function begin(e,o){drag=Object.assign({id:e.pointerId,it:selItem(),start:toStage(e.clientX,e.clientY)},o);
-  drag.save={x:drag.it.x,y:drag.it.y,w:drag.it.w,size:drag.it.size,rot:drag.it.rot};canvas.classList.add('dragging');box.classList.add('active');
+  const it=drag.it;drag.save={x:it.x,y:it.y,w:it.w,h:it.h,size:it.size,rot:it.rot,wrap:it.wrap,wMode:it.wMode,hMode:it.hMode,parent:it.parent,front:it.front};
+  drag.order=state.items.slice();drag.flow=inFlow(state.items,it);canvas.classList.add('dragging');box.classList.add('active');
   addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onCancel);}
 // group: the item is part of a multi-selection, the others follow it (selection.js)
 function startItemDrag(e,it,group){if(!group)selectItem(it.id);begin(e,{mode:'move',it,group:group?saveGroup(it):null});}
@@ -128,7 +140,17 @@ function onMove(e){
   if(!drag||e.pointerId!==drag.id)return;
   const it=drag.it,s=boardScreen(),p=toStage(e.clientX,e.clientY),sv=drag.save;if(!s)return;
   clearGuides();
-  if(drag.mode==='move'){
+  const k=sizeOf(state)[0]/s.w,bp={x:(p.x-s.x)*k,y:(p.y-s.y)*k};  // the pointer in board px
+  if(drag.mode==='move'&&drag.flow&&!drag.group){
+    // inside an auto-layout frame: dragging reorders; leaving the frame takes the item out (then it moves freely)
+    const f=parentOf(state.items,it),n=nodeOf(f),l=toLocal(f,bp.x,bp.y),m=12*k;
+    if(l.x<-m||l.y<-m||l.x>n.w+m||l.y>n.h+m){
+      reparent(it,parentOf(state.items,f));drag.flow=false;drag.start=p;Object.assign(drag.save,{x:it.x,y:it.y});
+    } else placeAmong(it,flowIndex(f,bp.x,bp.y,it));
+  } else if(drag.mode==='move'&&parentOf(state.items,it)&&!drag.group){
+    // inside a frame that does not lay it out: free move in the frame's own axes
+    Object.assign(it,{x:drag.save.x,y:drag.save.y});moveBy(it,(p.x-drag.start.x)*k,(p.y-drag.start.y)*k);
+  } else if(drag.mode==='move'){
     let dx=p.x-drag.start.x,dy=p.y-drag.start.y;
     if(e.shiftKey){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
     let cx=sv.x*s.w+dx,cy=sv.y*s.h+dy;
@@ -146,8 +168,12 @@ function onMove(e){
     if(drag.group)moveGroupFrom(drag.group,(it.x-sv.x)*s.w,(it.y-sv.y)*s.h);
   } else if(drag.mode==='scale'){
     const r=drag.r,a=r.rot*D2R,cos=Math.cos(a),sin=Math.sin(a);
-    // the item's width (fraction of the board) scales by k; a text item scales its font size instead
-    const w0=r.w/s.w,scale=k=>{k=clamp(k,.01/w0,4/w0);if(it.kind==='text')it.size=+(sv.size*k).toFixed(5);else it.w=+(sv.w*k).toFixed(4);return k;};
+    // the item's width (fraction of the board) scales by k; a text item scales its font size, a frame both sides.
+    // Fill / % / hug sizes become fixed at the size they had
+    const w0=r.w/s.w,scale=q=>{q=clamp(q,.01/w0,4/w0);
+      if(it.kind==='text'){it.size=+(sv.size*q).toFixed(5);if(sv.wMode==='fill'||sv.wMode==='pct'||(sv.wMode!=='hug'&&sv.wrap))it.wrap=+((r.w*q*k)/(it.size*sizeOf(state)[0])).toFixed(4);if(sv.wMode==='fill'||sv.wMode==='pct')it.wMode='fixed';}
+      else{fixWidth(it,r.w*q*k);if(isFrame(it))fixHeight(it,r.h*q*k);}
+      return q;};
     if(e.altKey){  // about the centre
       const l=local(r,p);scale(Math.max(Math.abs(l.x)/(r.w/2),Math.abs(l.y)/(r.h/2)));it.x=sv.x;it.y=sv.y;
     } else {
@@ -156,19 +182,27 @@ function onMove(e){
       const dx=p.x-ax,dy=p.y-ay,lx=(dx*cos+dy*sin)*drag.sx,ly=(-dx*sin+dy*cos)*drag.sy;
       const k=scale(Math.max(lx/r.w,ly/r.h)),w=r.w*k,h=r.h*k;
       const cx=ax+(drag.sx*w/2)*cos-(drag.sy*h/2)*sin,cy=ay+(drag.sx*w/2)*sin+(drag.sy*h/2)*cos;
-      it.x=+((cx-s.x)/s.w).toFixed(4);it.y=+((cy-s.y)/s.h).toFixed(4);
+      if(!drag.flow)setCenter(it,(cx-s.x)*k,(cy-s.y)*k);
     }
     val.hidden=false;val.textContent=Math.round((it.kind==='text'?it.size:it.w)*sizeOf(state)[0])+' px';
   } else if(drag.mode==='rot'){
     const r=drag.r;let deg=Math.atan2(p.y-r.cy,p.x-r.cx)/D2R+90;
     if(e.shiftKey)deg=Math.round(deg/15)*15;
-    deg=((deg+180)%360+360)%360-180;it.rot=+deg.toFixed(1);val.hidden=false;val.textContent=Math.round(it.rot)+'°';
+    deg=((deg+180)%360+360)%360-180;val.hidden=false;val.textContent=Math.round(deg)+'°';
+    const pn=parentOf(state.items,it)&&nodeOf(parentOf(state.items,it));it.rot=+(deg-(pn?pn.arot:0)).toFixed(1);  // relative to its frame
   }
   changed();
 }
 function end(cancel){
   if(!drag)return;const it=drag.it;
-  if(cancel){Object.assign(it,drag.save);if(drag.group)moveGroupFrom(drag.group,0,0);}
+  // Esc: back to the order, parent and geometry it had
+  if(cancel){state.items=drag.order;const sv=drag.save;for(const k in sv){if(sv[k]===undefined)delete it[k];else it[k]=sv[k];}if(drag.group)moveGroupFrom(drag.group,0,0);}
+  else if(drag.mode==='move'&&!drag.flow&&!drag.group){
+    // dropped on a frame: into it (an auto-layout frame takes it at the pointer's place); off its frame: out of it
+    const s=boardScreen(),n=nodeOf(it);
+    if(s&&n){const target=frameAt(n.cx,n.cy,it),cur=parentOf(state.items,it);
+      if(target!==cur){reparent(it,target,target&&target.layout&&target.layout.dir!=='none'?flowIndex(target,n.cx,n.cy,it):undefined);}}
+  }
   removeEventListener('pointermove',onMove);removeEventListener('pointerup',onUp);removeEventListener('pointercancel',onCancel);
   drag=null;clearGuides();canvas.classList.remove('dragging');box.classList.remove('active');val.hidden=true;changed();
 }
@@ -212,9 +246,13 @@ addEventListener('keydown',e=>{
   if(ui.kind!=='item'||!selItem()||e.metaKey||e.ctrlKey||e.altKey)return;
   const it=selItem(),[bw,bh]=sizeOf(state),n=e.shiftKey?10:1;
   const mv={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
-  if(mv){e.preventDefault();e.stopImmediatePropagation();it.x=+(it.x+mv[0]*n/bw).toFixed(4);it.y=+(it.y+mv[1]*n/bh).toFixed(4);changed();return;}
+  if(mv){e.preventDefault();e.stopImmediatePropagation();
+    // in an auto-layout frame the arrows move it along the order; elsewhere they nudge it (output px)
+    if(inFlow(state.items,it)){reorder(it.id,mv[0]+mv[1]);return;}
+    if(parentOf(state.items,it))moveBy(it,mv[0]*n,mv[1]*n);else{it.x=+(it.x+mv[0]*n/bw).toFixed(4);it.y=+(it.y+mv[1]*n/bh).toFixed(4);}
+    changed();return;}
   if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();e.stopImmediatePropagation();removeItem(it.id);return;}
   if(e.key==='Enter'&&it.kind==='text'){e.preventDefault();e.stopImmediatePropagation();editText(it,true);}
 },true);
 
-export {addItem,addText,editText,itemAt,removeItem,reorder,selectItem,setFront,startItemDrag};
+export {addFrame,addItem,addText,editText,itemAt,removeItem,reorder,selectItem,setFront,startItemDrag};

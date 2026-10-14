@@ -112,6 +112,7 @@
         <button class="ib" type="button" data-add="light" aria-label="Işık ekle" aria-haspopup="menu"><span data-icon="sun-2" data-size="18"></span><span class="tip">Işık ekle</span></button>
         <button class="ib" type="button" id="addBoardDock" aria-label="Artboard ekle"><span data-icon="frame" data-size="18"></span><span class="tip">Artboard ekle <kbd>A</kbd></span></button>
         <button class="ib" type="button" id="addTextDock" aria-label="Metin ekle"><span data-icon="text-square" data-size="18"></span><span class="tip">Metin ekle</span></button>
+        <button class="ib" type="button" id="addFrameDock" aria-label="Çerçeve ekle"><span data-icon="hashtag" data-size="18"></span><span class="tip">Çerçeve ekle · auto layout <kbd>⇧A</kbd></span></button>
         <span class="vr"></span>
         <button class="ib" type="button" id="focusBtn" aria-label="Seçiliye odaklan"><span data-icon="target" data-size="18"></span><span class="tip">Seçiliye odaklan <kbd>F</kbd></span></button>
         <button class="ib" type="button" id="fitBtn" aria-label="Kadraja sığdır"><span data-icon="maximize-square" data-size="18"></span><span class="tip">Kadraja sığdır</span></button>
@@ -317,6 +318,35 @@
       <!-- 2D item -->
       <div id="inspItem" hidden>
         <div class="head"><span id="itemIcon" data-icon="gallery"></span><input class="title-in" id="itemName" aria-label="Öğe adı" spellcheck="false"><button class="ib sm" type="button" id="itemDelete" aria-label="Öğeyi sil" title="Sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
+        <section class="sec" id="geoSec">
+          <h3 class="sh">Konum ve boyut<span class="sh-acts"><button class="keybtn anim-only" type="button" id="itemPoseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Tüm değerler için bu anda anahtar kare <kbd>K</kbd></span></button></span></h3>
+          <div class="nfgrid" id="geoGrid"></div>
+          <p class="hint-sm" id="flowNote" hidden>Konumu auto layout belirliyor. Sürükleyerek ya da oklarla sırasını değiştir.</p>
+          <div class="row" id="absRow" hidden><span class="lbl">Yerleşim</span><div class="seg" id="itemAbs" role="group" aria-label="Auto layout içinde yerleşim"><button type="button" data-v="flow">Otomatik</button><button type="button" data-v="abs">Mutlak</button></div></div>
+          <div class="row" id="centerRow"><span class="lbl">Ortala</span><span class="cells"><button class="btn" type="button" id="itemCenterX">Yatay</button><button class="btn" type="button" id="itemCenterY">Dikey</button></span></div>
+        </section>
+        <section class="sec" id="alSec" hidden>
+          <h3 class="sh">Auto layout</h3>
+          <div class="seg seg-wide" id="alDir" role="group" aria-label="Auto layout yönü"><button type="button" data-v="none">Yok</button><button type="button" data-v="row">Yatay →</button><button type="button" data-v="col">Dikey ↓</button></div>
+          <div id="alBody">
+            <div class="algrid-wrap">
+              <div class="algrid" id="alGrid" role="group" aria-label="Hizalama"></div>
+              <div class="alside">
+                <div class="nfgrid one" id="alGap"></div>
+                <label class="chk"><input type="checkbox" id="alBetween"> Eşit aralık</label>
+                <label class="chk"><input type="checkbox" id="alStretch"> Esnet</label>
+              </div>
+            </div>
+            <div class="nfgrid" id="alPad"></div>
+            <label class="chk"><input type="checkbox" id="alPadEach"> Her kenar ayrı</label>
+          </div>
+        </section>
+        <section class="sec" id="frameSec" hidden>
+          <h3 class="sh">Çerçeve</h3>
+          <div class="row"><span class="lbl">Dolgu</span><span class="pair"><label class="switch"><input type="checkbox" id="frFillOn" aria-label="Dolgu"><span></span></label><input type="color" id="frFill" aria-label="Dolgu rengi"></span></div>
+          <div class="nfgrid" id="frGrid"></div>
+          <div class="row"><span class="lbl">İçeriği kırp</span><label class="switch"><input type="checkbox" id="frClip" aria-label="Taşan içeriği kırp"><span></span></label></div>
+        </section>
         <section class="sec" id="textSec" hidden>
           <h3 class="sh">Metin</h3>
           <textarea class="tbody" id="textBody" rows="2" aria-label="Metin içeriği" spellcheck="false"></textarea>
@@ -337,15 +367,6 @@
           <div class="row"><label class="lbl" for="fxLoop">Sürekli</label><select id="fxLoop"></select></div>
           <div class="fxopts" id="fxLoopOpts"></div>
           <p class="hint-sm">Efektler Canlandır'da ve videoda oynar. Tasarla ve durağan görsel metnin son hâlini gösterir.</p>
-        </section>
-        <section class="sec">
-          <h3 class="sh">Konum ve boyut<span class="sh-acts"><button class="keybtn anim-only" type="button" id="itemPoseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Tüm değerler için bu anda anahtar kare <kbd>K</kbd></span></button></span></h3>
-          <div id="itemSliders"></div>
-          <div class="row"><span class="lbl">Hizala</span><span class="cells"><button class="btn" type="button" id="itemCenterX">Yatay ortala</button><button class="btn" type="button" id="itemCenterY">Dikey ortala</button></span></div>
-        </section>
-        <section class="sec">
-          <h3 class="sh">Görünüm</h3>
-          <div id="itemLook"></div>
         </section>
         <section class="sec anim-only">
           <h3 class="sh">Hazır hareket</h3>
