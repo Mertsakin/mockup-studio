@@ -23,6 +23,9 @@ const state={
   anim:{dur:5,fps:30,loop:true},
   // panorama set (ui/store.js): {g (set id), i (this board), n (boards)}; the boards share one scene, each shows its slice
   pano:null,
+  // env 'space' (Uzay): no floor, wall or contact shadows, free orbit over the top (render/transform.js orbit);
+  // worldLights: the lights turn with the scene instead of staying with the camera
+  env:'studio',worldLights:false,
   floor:true,wall:false,wallGap:.35,selfShadow:true,shadowColor:'#000000',shadowOpacity:.55,ambient:1,exposure:1,markers:true,showDome:true,lights:[],selLight:null,
   ratio:'4:5',customW:1920,customH:1080,size:3840,format:'png',quality:'fast',photoPreview:false
 };
@@ -33,7 +36,9 @@ const nextItemId=()=>++itemUid;
 const byId=id=>state.devices.find(d=>d.id===id);
 const selItem=()=>state.items.find(i=>i.id===state.selItem)||null;
 const sel=()=>byId(state.selected)||state.devices[0];
+// the floor (and the shadows it catches) is there: switched on, and not in space
+const floorOn=()=>state.floor&&state.env!=='space';
 // Framing shared by transforms, lights, layout and export (reassigned, so kept on an object).
 const view={fitRadius:10,fitBox:new THREE.Box3(new V3(-5,-5,-5),new V3(5,5,5)),aspect:1};
 
-export {byId,newDevice,nextItemId,reserveDeviceIds,reserveItemIds,sel,selItem,state,view};
+export {byId,floorOn,newDevice,nextItemId,reserveDeviceIds,reserveItemIds,sel,selItem,state,view};

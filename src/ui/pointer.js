@@ -4,7 +4,7 @@ import {scrollScreen,scrollScreens} from '../devices/screen.js';
 import {LRT} from '../lights/runtime.js';
 import {camera,canvas} from '../render/renderer.js';
 import {pivot} from '../render/stage.js';
-import {applyTransform,camDist} from '../render/transform.js';
+import {applyTransform,camDist,orbit} from '../render/transform.js';
 import {POS_MAX,ZOOM_MAX,ZOOM_MIN} from '../state/constants.js';
 import {sel,state,view} from '../state/state.js';
 import {lightMoved} from './dome.js';
@@ -95,7 +95,7 @@ canvas.addEventListener('pointermove',e=>{
     if(group){moveGroupFrom(group,e.clientX-downAt.x,e.clientY-downAt.y);syncSliders();p.x=e.clientX;p.y=e.clientY;return;}
     if(e.shiftKey&&!dragDevice)pan(dx,dy);
     else if(dragDevice)moveSelected(dx,dy);
-    else{S.ry=wrap(S.ry+dx*.45);S.rx=clamp(S.rx+dy*.45,-90,90);}
+    else orbit(dx,dy,.45);
   } else if(pointers.size===2){
     let o=null;for(const [id,q] of pointers){if(id!==e.pointerId)o=q;}
     const od=Math.hypot(p.x-o.x,p.y-o.y),nd=Math.hypot(e.clientX-o.x,e.clientY-o.y);

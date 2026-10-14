@@ -19,6 +19,11 @@ function onGlobal(key){
   else if(key==='bg'){bgCss();if(state.bg==='image'&&!state.bgImg)$('#bgFile').click();}  // no image yet: ask for one
   else if(key==='gizmo')setGizmoMode(state.gizmo);
   else if(key==='ratio')layout();
+  else if(key==='env'){
+    // back to the studio: the view upright again (Eğim within ±90°, no upside-down roll), the floor under it
+    if(state.env!=='space'){const S=state.scene;S.rx=Math.max(-90,Math.min(90,S.rx));if(Math.abs(S.rz)>90)S.rz=0;}
+    applyTransform();
+  }
   syncUI();
 }
 const bindColor=(id,key,fn)=>{const el=$('#'+id);el.value=state[key];el.addEventListener('input',()=>{state[key]=el.value;fn();});};
@@ -27,6 +32,7 @@ const bindSwitch=(id,key,fn)=>{const el=$('#'+id);el.checked=state[key];el.addEv
 bindSwitch('showDome','showDome',()=>renderDome());bindSwitch('floor','floor');bindSwitch('wall','wall');bindSwitch('markers','markers');
 bindSwitch('selfShadow','selfShadow',()=>RT.forEach(o=>o.holder.traverse(x=>{if(x.isMesh)x.receiveShadow=state.selfShadow&&x.material!==M.glare;})));
 bindColor('shadowColor','shadowColor',applyTransform);
+bindSwitch('worldLights','worldLights');
 const sizeEl=$('#size'),formatEl=$('#format');
 sizeEl.value=String(state.size);sizeEl.addEventListener('change',()=>{state.size=parseInt(sizeEl.value,10);});
 formatEl.value=state.format;formatEl.addEventListener('change',()=>{state.format=formatEl.value;syncUI();});
@@ -41,14 +47,16 @@ makeSlider($('#gradAngleSlot'),{id:'g-gang',k:'gradAngle',l:'Açı',min:0,max:36
 onSyncUI(()=>{
   // inputs bound once at start-up; templates change state underneath them
   ['solid','bg1','bg2','shadowColor'].forEach(k=>{const el=$('#'+k);if(el&&document.activeElement!==el)el.value=state[k];});
-  ['floor','wall','markers','selfShadow','showDome'].forEach(k=>{const el=$('#'+k);if(el)el.checked=state[k];});
+  ['floor','wall','markers','selfShadow','showDome','worldLights'].forEach(k=>{const el=$('#'+k);if(el)el.checked=!!state[k];});
+  // studio-only and space-only rows ([data-env], style.css)
+  document.documentElement.dataset.env=state.env||'studio';
   sizeEl.value=String(state.size);formatEl.value=state.format;qualityEl.value=state.quality;previewEl.checked=state.photoPreview;
   const custom=state.ratio==='custom';$('#artboard').hidden=!custom;$('#sizeRow').hidden=custom;
   ART.forEach(el=>{if(document.activeElement!==el)el.value=state[el.id];});
   $$('.seg[data-key]').forEach(seg=>{const v=String(state[seg.dataset.key]);seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));});
   $$('[data-bg]').forEach(el=>{el.hidden=el.dataset.bg!==state.bg;});
   $('#gradAngleSlot').hidden=state.bg!=='gradient'||state.gradType==='radial';  // the angle is for linear gradients
-  $('#shadowSlot').hidden=!(state.floor||state.wall);
+  $('#shadowSlot').hidden=state.env==='space'||!(state.floor||state.wall);
   $('#wallSlot').hidden=!state.wall;
   $('#export').textContent=(state.format==='jpg'?'JPG':'PNG')+' indir';  // png24: still a .png
 });

@@ -94,7 +94,8 @@ tools/render-harness/compare.sh renders/once renders/sonra
 
 ## Durum modeli
 
-- `state.scene` — sahne açısı (rx/ry/rz, zoom, fov, pan). `pivot` bu açıyla döner; ışıklar dönmez.
+- `state.scene` — sahne açısı (rx/ry/rz, zoom, fov, pan). `pivot` bu açıyla döner; ışıklar dönmez (`state.worldLights` açıksa sahneyle döner: ışık yönleri ve yansıma ortamı `pivot` dönüşüyle çevrilir, `lights/runtime.js`).
+- `state.env` — **Ortam**: `studio` (zemin, duvar, temas gölgesi; yörünge döner tabla gibi, Eğim ±90°) ya da `space` (**Uzay**: zemin/duvar/temas gölgesi ve yol izleyicinin zemin diski yok, `floorOn()`; yörünge iz topu: sahne ekran eksenleri etrafında döner, tepeden aşar, sonuç YXZ açıları olarak yazılır, `transform.js` `orbit`). Stüdyo'ya dönüşte Eğim ±90°'ye kırpılır, ters Yatış sıfırlanır. Panorama setinde ortak (`SHARED`). Hazır hareketlerde "Serbest takla" ve "Yörünge turu".
 - `state.devices[]` — her cihaz (boş olabilir: `sel()` o zaman `undefined` döner, `onSyncUI` parçaları buna dayanıklıdır): tip, renk, `finish`, konum/dönüş/ölçek, ekran görüntüsü, tipe özel alanlar. Çalışma zamanı nesneleri `RT` içinde.
 - Animasyon: cihazların `tracks` alanı ve `state.anim` (bkz. `state/anim.js`). İzli bir cihazın alanları editörde gösterilen anın değerlerini taşır (Canlandır: imleç, Tasarla: tasarım karesi); **anlık görüntü onları tasarım karesindeki değerleriyle saklar** (`io/project.js`), yoksa imleci gezdirmek ya da mod değiştirmek geri al adımı üretirdi. Durağan görsel (PNG/JPG) Tasarla'da alındığı için tasarım karesidir.
 - `state.items[]` — 2B öğeler (bkz. `ui/items.js`); görseller anlık görüntüde anahtarla. Varlık kütüphanesi artboard'a değil belgeye aittir (`doc.assets`).

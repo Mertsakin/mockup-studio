@@ -188,10 +188,13 @@
           </div>
         </section>
         <section class="sec">
-          <h3 class="sh">Zemin ve gölge</h3>
-          <div class="row"><span class="lbl">Zemine gölge</span><label class="switch"><input type="checkbox" id="floor" aria-label="Zemine gölge"><span></span></label></div>
-          <div class="row"><span class="lbl">Arka duvar</span><label class="switch"><input type="checkbox" id="wall" aria-label="Arka duvara gölge"><span></span></label></div>
-          <div id="wallSlot"></div>
+          <h3 class="sh">Ortam ve gölge</h3>
+          <div class="seg seg-wide" data-key="env" role="group" aria-label="Ortam"><button data-v="studio">Stüdyo</button><button data-v="space">Uzay</button></div>
+          <p class="hint-sm" data-env="space">Zemin yok; sahne her yöne, tepeden aşarak da döner.</p>
+          <div class="row" data-env="space"><span class="lbl">Işık sahneyle döner</span><label class="switch"><input type="checkbox" id="worldLights" aria-label="Işıklar sahneyle birlikte dönsün"><span></span></label></div>
+          <div class="row" data-env="studio"><span class="lbl">Zemine gölge</span><label class="switch"><input type="checkbox" id="floor" aria-label="Zemine gölge"><span></span></label></div>
+          <div class="row" data-env="studio"><span class="lbl">Arka duvar</span><label class="switch"><input type="checkbox" id="wall" aria-label="Arka duvara gölge"><span></span></label></div>
+          <div id="wallSlot" data-env="studio"></div>
           <div class="row"><span class="lbl">Cihazlar arası</span><label class="switch"><input type="checkbox" id="selfShadow" aria-label="Cihazlar birbirine gölge düşürsün"><span></span></label></div>
           <div class="row"><label class="lbl" for="shadowColor">Gölge rengi</label><input type="color" id="shadowColor"></div>
           <div id="shadowSlot"></div>
@@ -292,7 +295,7 @@
             <button type="button" data-layer="front" title="En öne getir (⇧⌘])">En öne</button><button type="button" data-layer="forward" title="Bir öne (⌘])">Öne</button><button type="button" data-layer="backward" title="Bir arkaya (⌘[)">Arkaya</button><button type="button" data-layer="back" title="En arkaya gönder (⇧⌘[)">En arkaya</button>
           </div>
           <div class="seg seg-wide" id="arrangeBtns" role="group" aria-label="Cihazları hizala">
-            <button type="button" id="settleBtn" title="Tüm cihazların altını aynı zemine hizala">Zemine oturt</button><button type="button" id="distributeBtn" title="Cihazları soldan sağa eşit aralıkla diz (en uçtakiler yerinde kalır)">Eşit dağıt</button>
+            <button type="button" id="settleBtn" data-env="studio" title="Tüm cihazların altını aynı zemine hizala">Zemine oturt</button><button type="button" id="distributeBtn" title="Cihazları soldan sağa eşit aralıkla diz (en uçtakiler yerinde kalır)">Eşit dağıt</button>
           </div>
         </section>
       </div>

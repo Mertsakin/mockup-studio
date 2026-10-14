@@ -146,7 +146,11 @@ const PRESETS=[
   {id:'turn',n:'Döner tabla',hint:'tüm süre',make:D=>({ry:[[0,D.ry,'linear'],[state.anim.dur,D.ry+360,'linear']]})},
   {id:'float',n:'Süzülme',hint:'tüm süre',make:D=>{const py=[],rz=[];for(let i=0;i<=4;i++){const t=state.anim.dur*i/4;py.push([t,D.py+(i%2?.8:0),'smooth']);rz.push([t,D.rz+(i%2?1.2:0),'smooth']);}return {py,rz};}},
   {id:'lid',n:'Kapağı aç',hint:'1,5 sn',end:1.5,ok:d=>d.type==='laptop',make:D=>({lidAngle:[[0,72,'smooth'],[1.5,Math.max(100,D.lidAngle),'smooth']]})},
-  {id:'scroll',n:'Ekranı kaydır',hint:'0,5 sn – sona',make:()=>({scroll:[[.5,0,'smooth'],[Math.max(1,state.anim.dur-.5),1,'smooth']]})}
+  {id:'scroll',n:'Ekranı kaydır',hint:'0,5 sn – sona',make:()=>({scroll:[[.5,0,'smooth'],[Math.max(1,state.anim.dur-.5),1,'smooth']]})},
+  // free motion (best in Uzay, where nothing has to stay on a floor): a slow tumble over two axes, and a full turn with
+  // the device tilting towards and away from the camera
+  {id:'tumble',n:'Serbest takla',hint:'tüm süre',make:D=>({rx:[[0,D.rx,'linear'],[state.anim.dur,D.rx+360,'linear']],ry:[[0,D.ry,'linear'],[state.anim.dur,D.ry+180,'linear']]})},
+  {id:'orbit',n:'Yörünge turu',hint:'tüm süre',make:D=>{const rx=[];for(let i=0;i<=4;i++)rx.push([state.anim.dur*i/4,D.rx+(i%2?22:0),'smooth']);return {ry:[[0,D.ry,'linear'],[state.anim.dur,D.ry+360,'linear']],rx};}}
 ];
 // 2D items (logos, badges, text blocks as a whole; text effects animate the letters themselves)
 const sizeKey=o=>o.kind==='text'?'size':'w';

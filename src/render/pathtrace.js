@@ -5,7 +5,7 @@ import {RT} from '../devices/rt.js';
 import {lightTan} from '../lights/mods.js';
 import {LIGHT_SCALE,camera,overlays,renderer,req,scene} from './renderer.js';
 import {ground,hemi,lightRoot,pivot,wall} from './stage.js';
-import {state,view} from '../state/state.js';
+import {floorOn as floorShown,state,view} from '../state/state.js';
 import {D2R,V3,mkCanvas} from '../util.js';
 import {paintGradient} from './backgrounds.js';
 
@@ -142,7 +142,7 @@ function setupStudio(env){
   });
   // the render is always transparent and composited over the chosen background (image backgrounds and 2D items
   // behind the devices show through); the floor disc only comes with a solid / gradient colour it can be painted in
-  const floorOn=state.floor&&(state.bg==='solid'||state.bg==='gradient')&&!state.items.some(i=>!i.front);
+  const floorOn=floorShown()&&(state.bg==='solid'||state.bg==='gradient')&&!state.items.some(i=>!i.front);
   set(scene,'environment',env);set(scene,'environmentIntensity',ENV_SCALE*(.25+.75*state.ambient));
   set(scene,'background',null);
   const extra=new THREE.Group();scene.add(extra);
@@ -341,7 +341,7 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000){
       await new Promise(r=>setTimeout(r,0));
     }
     present(1e-3);  // practically unfiltered (0 would divide by zero in the filter)
-    raw=copyCanvas(renderer.domElement);if(state.floor)fix=fixFloorMask();
+    raw=copyCanvas(renderer.domElement);if(floorShown())fix=fixFloorMask();
     if(!window.__noOidn&&!window.__noAux)try{const ta=performance.now();aux=renderAux(raw.width,raw.height);console.info('Yardımcı geçişler '+Math.round(performance.now()-ta)+' ms');}
       catch(e){console.warn('Albedo/normal geçişleri alınamadı, yalnızca renkle gürültü giderme:',e);}
   }finally{undoStudio();req();}

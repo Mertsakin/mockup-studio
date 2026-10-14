@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {lightTan} from './mods.js';
 import {scheduleEnv} from '../render/environment.js';
-import {LIGHT_SCALE,req} from '../render/renderer.js';
+import {LIGHT_SCALE,req,scene} from '../render/renderer.js';
 import {ambU,hemi,lightRoot,pivot} from '../render/stage.js';
 import {state,view} from '../state/state.js';
 import {D2R,V3} from '../util.js';
@@ -32,13 +32,18 @@ function applyAmbient(){
 // UI (light map, shadow description) refreshes after every light update
 const uiHooks=[];
 function onLightsUpdated(fn){uiHooks.push(fn);}
+const dir=new V3();
 function updateLights(){
   scheduleEnv();
+  // the reflections (environment) turn with the lights
+  if(state.worldLights)scene.environmentRotation.copy(pivot.rotation);else scene.environmentRotation.set(0,0,0);
   const R=view.fitRadius,c=new V3(pivot.position.x,pivot.position.y,0);
   state.lights.forEach(L=>{
     const o=LRT.get(L.id);if(!o)return;const l=o.light;
     const az=L.az*D2R,el=L.el*D2R,d=R*L.dist;
-    l.position.set(c.x+d*Math.cos(el)*Math.sin(az),c.y+d*Math.sin(el),c.z+d*Math.cos(el)*Math.cos(az));
+    // az / el are taken from the camera (studio lights), or from the scene's own front when the lights turn with it
+    dir.set(Math.cos(el)*Math.sin(az),Math.sin(el),Math.cos(el)*Math.cos(az));if(state.worldLights)dir.applyQuaternion(pivot.quaternion);
+    l.position.set(c.x+d*dir.x,c.y+d*dir.y,c.z+d*dir.z);
     if(l.target){l.target.position.copy(c);l.target.updateMatrixWorld();}
     l.color.set(L.color);l.intensity=L.intensity*LIGHT_SCALE;
     if(L.type==='spot'){l.angle=L.angle*D2R;l.penumbra=L.penumbra;}

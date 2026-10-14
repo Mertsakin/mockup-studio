@@ -507,3 +507,6 @@ html.booting #world,html.booting #frame,html.booting #navSvg,html.booting #tree,
 /* insert tools (insert.js): a text caret / crosshair over the live board */
 html[data-tool="text"] #gl{cursor:text}
 html[data-tool="frame"] #gl{cursor:crosshair}
+
+/* Ortam (controls.js): rows that only make sense in the studio or in space */
+html[data-env="space"] [data-env="studio"],html:not([data-env="space"]) [data-env="space"]{display:none!important}

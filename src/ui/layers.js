@@ -3,7 +3,7 @@ import {RT} from '../devices/rt.js';
 import {camera} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
-import {sel,selItem,state} from '../state/state.js';
+import {floorOn,sel,selItem,state} from '../state/state.js';
 import {reorder} from './items.js';
 import {ui} from './ui-state.js';
 import {syncSliders} from './sliders.js';
@@ -38,7 +38,7 @@ function depth(d){
 function push(d,delta){
   const o=RT.get(d.id),c0=depth(d).center;camera.getWorldDirection(F);o.holder.getWorldPosition(C);
   let dir;
-  if(state.floor){dir=new THREE.Vector3(F.x,0,F.z);if(dir.lengthSq()<1e-6)dir.set(0,0,-1);dir.normalize();}
+  if(floorOn()){dir=new THREE.Vector3(F.x,0,F.z);if(dir.lengthSq()<1e-6)dir.set(0,0,-1);dir.normalize();}
   else dir=C.clone().sub(camera.position).normalize();
   const k=dir.dot(F);if(Math.abs(k)<.05)return;
   V.copy(dir).multiplyScalar(delta/k).applyQuaternion(comp.getWorldQuaternion(Q).invert());

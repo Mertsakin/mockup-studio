@@ -4,8 +4,8 @@ import {RT,setHolder} from '../devices/rt.js';
 import {updateLights} from '../lights/runtime.js';
 import {camera,req,scene,shift} from './renderer.js';
 import {comp,ground,groundMat,pivot,wall} from './stage.js';
-import {byId,state,view} from '../state/state.js';
-import {D2R,V3} from '../util.js';
+import {byId,floorOn,state,view} from '../state/state.js';
+import {D2R,V3,clamp,wrap} from '../util.js';
 
 /* ---------- transforms ---------- */
 function refit(){
@@ -67,13 +67,26 @@ function applyTransform(){
   scene.updateMatrixWorld(true);
   // contact shadows: only while the floor is shown and the device stands on it the way the plane assumes (faces up)
   aoUp.set(0,1,0).transformDirection(comp.matrixWorld);
-  RT.forEach(o=>o.holder.traverse(x=>{if(x.userData.ao)x.visible=state.floor&&aoN.set(0,0,1).transformDirection(x.matrixWorld).dot(aoUp)>.97;}));
+  RT.forEach(o=>o.holder.traverse(x=>{if(x.userData.ao)x.visible=floorOn()&&aoN.set(0,0,1).transformDirection(x.matrixWorld).dot(aoUp)>.97;}));
   const ex=extents(),R=view.fitRadius;
-  ground.position.set(pivot.position.x,ex.y-.004,0);ground.visible=state.floor;
-  wall.position.set(pivot.position.x,ex.y-.004+2000,ex.z-state.wallGap*R);wall.visible=state.wall;
+  ground.position.set(pivot.position.x,ex.y-.004,0);ground.visible=floorOn();
+  wall.position.set(pivot.position.x,ex.y-.004+2000,ex.z-state.wallGap*R);wall.visible=state.wall&&state.env!=='space';
   groundMat.opacity=state.shadowOpacity;groundMat.color.set(state.shadowColor);
   updateLights();
   req();
 }
 
-export {applyTransform,autoRefit,camDist,compBox,deviceBox,refit};
+/* Orbit by a drag of (dx, dy) px, k degrees per px. Studio: a turntable (Dönüş around the vertical, Eğim held within
+   ±90°: the floor stays below). Space (state.env): a trackball — the scene turns about the screen's own axes, so it
+   goes over the top and upside down and a drag always moves the way the hand does; the result is written back as the
+   scene's YXZ angles (Eğim / Dönüş / Yatış). */
+const qa=new THREE.Quaternion(),qb=new THREE.Quaternion(),eu=new THREE.Euler(),AX=new V3(1,0,0),AY=new V3(0,1,0);
+function orbit(dx,dy,k){
+  const S=state.scene;
+  if(state.env!=='space'){S.ry=wrap(S.ry+dx*k);S.rx=clamp(S.rx+dy*k,-90,90);return;}
+  qa.setFromEuler(eu.set(S.rx*D2R,S.ry*D2R,S.rz*D2R,'YXZ'));
+  qb.setFromAxisAngle(AY,dx*k*D2R);qa.premultiply(qb);qb.setFromAxisAngle(AX,dy*k*D2R);qa.premultiply(qb);
+  eu.setFromQuaternion(qa,'YXZ');S.rx=+(eu.x/D2R).toFixed(3);S.ry=+(eu.y/D2R).toFixed(3);S.rz=+(eu.z/D2R).toFixed(3);
+}
+
+export {applyTransform,orbit,autoRefit,camDist,compBox,deviceBox,refit};

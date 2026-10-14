@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import {RT} from '../devices/rt.js';
 import {canvas} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
-import {applyTransform,deviceBox} from '../render/transform.js';
+import {applyTransform,deviceBox,orbit} from '../render/transform.js';
 import {sel,state,view} from '../state/state.js';
 import {pick} from './pointer.js';
 import {syncSliders} from './sliders.js';
 import {syncAll} from './sync.js';
 import {toast} from './toast.js';
-import {$,D2R,clamp,wrap} from '../util.js';
+import {$,D2R,wrap} from '../util.js';
 
 /* Camera navigation.
    1. View cube (top-right of the live artboard): a small cube that turns with the scene, faces labelled Ön / Arka /
@@ -74,9 +74,9 @@ function snap(dir){
 // dragging on the widget orbits (same feel as dragging the stage); a press without movement on a cell snaps
 let drag=null;
 svg.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,cell:e.target.closest('.nav-hit')};svg.setPointerCapture(e.pointerId);tween=null;});
-svg.addEventListener('pointermove',e=>{if(!drag)return;const Sc=state.scene;
+svg.addEventListener('pointermove',e=>{if(!drag)return;
   if(Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)>3)drag.cell=null;
-  Sc.ry=wrap(Sc.ry+(e.clientX-drag.x)*.6);Sc.rx=clamp(Sc.rx+(e.clientY-drag.y)*.6,-90,90);drag.x=e.clientX;drag.y=e.clientY;
+  orbit(e.clientX-drag.x,e.clientY-drag.y,.6);drag.x=e.clientX;drag.y=e.clientY;
   if(!drag.cell){applyTransform();syncSliders();}});
 const end=()=>{if(drag&&drag.cell)snap(drag.cell.dataset.dir.split(',').map(Number));drag=null;};
 svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',()=>{drag=null;});
