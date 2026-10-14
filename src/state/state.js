@@ -21,6 +21,8 @@ const state={
   items:[],selItem:null,
   // animation timing of this artboard (keys live on the devices: d.tracks, see state/anim.js)
   anim:{dur:5,fps:30,loop:true},
+  // panorama set (ui/store.js): {g (set id), i (this board), n (boards)}; the boards share one scene, each shows its slice
+  pano:null,
   floor:true,wall:false,wallGap:.35,selfShadow:true,shadowColor:'#000000',shadowOpacity:.55,ambient:1,exposure:1,markers:true,showDome:true,lights:[],selLight:null,
   ratio:'4:5',customW:1920,customH:1080,size:3840,format:'png',quality:'fast',photoPreview:false
 };

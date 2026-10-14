@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {M} from '../devices/materials.js';
 import {RT,setHolder} from '../devices/rt.js';
 import {updateLights} from '../lights/runtime.js';
-import {camera,req,scene} from './renderer.js';
+import {camera,req,scene,shift} from './renderer.js';
 import {comp,ground,groundMat,pivot,wall} from './stage.js';
 import {byId,state,view} from '../state/state.js';
 import {D2R,V3} from '../util.js';
@@ -44,8 +44,10 @@ function extents(){
   }));
   return {y:isFinite(minY)?minY:0,z:isFinite(minZ)?minZ:0};
 }
+// a panorama set frames the whole set (n boards side by side), not one board
+const frameAspect=()=>view.aspect*(state.pano?state.pano.n:1);
 function camDist(){
-  const S=state.scene,v=S.fov*D2R,h=2*Math.atan(Math.tan(v/2)*view.aspect),eff=Math.min(v,h);
+  const S=state.scene,v=S.fov*D2R,h=2*Math.atan(Math.tan(v/2)*frameAspect()),eff=Math.min(v,h);
   return view.fitRadius/Math.sin(eff/2)*.9/S.zoom;
 }
 const aoUp=new THREE.Vector3(),aoN=new THREE.Vector3();
@@ -56,6 +58,8 @@ function applyTransform(){
   // camDist() is the effective distance (framing / zoom). The camera itself stops short of the composition
   // (1.2 radii) and a longer lens (camera.zoom) gives the rest, so high Yakınlık never puts it inside a device.
   const v=S.fov*D2R,eff=camDist(),dist=Math.max(eff,view.fitRadius*1.2);
+  // the board's slice of a panorama: board i of n is shifted so the set's centre is the frame's centre
+  shift.x=state.pano?-(2*state.pano.i+1-state.pano.n)/2:0;
   camera.fov=S.fov;camera.aspect=view.aspect;camera.zoom=dist/eff;camera.position.set(0,0,dist);
   camera.near=Math.max(.05,dist*.03);camera.far=dist*5+2000;camera.lookAt(0,0,0);camera.updateProjectionMatrix();
   const vh=2*eff*Math.tan(v/2),vw=vh*view.aspect;  // visible size at the target plane

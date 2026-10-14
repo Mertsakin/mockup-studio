@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {RT} from '../devices/rt.js';
 import {LRT} from '../lights/runtime.js';
 import {renderNow} from '../render/accumulation.js';
+import {png24} from './png24.js';
 import {fontsReady} from '../render/text.js';
 import {camera,canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
@@ -62,6 +63,7 @@ async function renderExport(onProgress){
   }finally{uncrisp();LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});}
   const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);paintItems(g,W,H,false);g.drawImage(src,0,0,W,H);paintItems(g,W,H,true);
   renderer.setPixelRatio(pr);invalidateLayout();layout();req();
+  if(state.format==='png24')return png24(out);  // store listings: no alpha channel
   return new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('blob')),state.format==='jpg'?'image/jpeg':'image/png',.93));
 }
 const ext=()=>state.format==='jpg'?'jpg':'png';

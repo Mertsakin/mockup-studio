@@ -36,4 +36,16 @@ const POS_MAX=1000;
 // camera closeness (Yakınlık) on top of the framing: slider, Alt + wheel, pinch
 const ZOOM_MIN=.3,ZOOM_MAX=10;
 
-export {POS_MAX,ZOOM_MAX,ZOOM_MIN,SCALE_MAX,SCALE_MIN,COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};
+/* Store listing sizes (px, portrait unless noted). App Store: 6.9" is the primary iPhone set (smaller phones are
+   derived from it), 6.5" the older fallback, 13" iPad. Google Play: 9:16 phone, 7" tablet, 10" tablet (landscape) and
+   the feature graphic. Checked against 2026 guides; App Store Connect / Play Console have the final word. */
+const STORE_SIZES=[
+  {id:'ios-69',store:'App Store',n:'iPhone 6,9"',w:1320,h:2868,dev:'phone'},
+  {id:'ios-65',store:'App Store',n:'iPhone 6,5"',w:1284,h:2778,dev:'phone'},
+  {id:'ipad-13',store:'App Store',n:'iPad 13"',w:2064,h:2752,dev:'tablet'},
+  {id:'play-phone',store:'Google Play',n:'Telefon',w:1080,h:1920,dev:'phone'},
+  {id:'play-7',store:'Google Play',n:'7" tablet',w:1200,h:1920,dev:'tablet'},
+  {id:'play-10',store:'Google Play',n:'10" tablet (yatay)',w:1920,h:1200,dev:'tablet'},
+  {id:'play-feature',store:'Google Play',n:'Öne çıkan görsel',w:1024,h:500,dev:'phone',single:true}
+];
+export {STORE_SIZES,POS_MAX,ZOOM_MAX,ZOOM_MIN,SCALE_MAX,SCALE_MIN,COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};

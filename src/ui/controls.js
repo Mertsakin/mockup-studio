@@ -50,7 +50,7 @@ onSyncUI(()=>{
   $('#gradAngleSlot').hidden=state.bg!=='gradient'||state.gradType==='radial';  // the angle is for linear gradients
   $('#shadowSlot').hidden=!(state.floor||state.wall);
   $('#wallSlot').hidden=!state.wall;
-  $('#export').textContent=(state.format==='jpg'?'JPG':'PNG')+' indir';
+  $('#export').textContent=(state.format==='jpg'?'JPG':'PNG')+' indir';  // png24: still a .png
 });
 
 export {parseV};

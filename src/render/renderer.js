@@ -13,6 +13,18 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 const ANISO=renderer.capabilities.getMaxAnisotropy(),MAX_TEX=renderer.capabilities.maxTextureSize;
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(28,1,0.1,1000);
+/* Lens shift (panorama sets, ui/store.js): every board of a set shows its own slice of one wide frame taken by the same
+   camera, so a device crossing the seam between two boards lines up exactly. shift.x moves the image horizontally in
+   board widths (NDC: 2 per board). It is applied after three builds the projection, scaled by the view offset's zoom,
+   so the live crop, export tiles, the path tracer and picking (projectionMatrixInverse) all see it. */
+const shift={x:0};
+{const base=camera.updateProjectionMatrix.bind(camera);
+  camera.updateProjectionMatrix=function(){
+    base();if(!shift.x)return;
+    const v=this.view,s=v&&v.enabled?v.fullWidth/v.width:1;
+    // NDC x' = x + d  ->  clip x' = x + d·w; the perspective row w = -z, i.e. element 8 (column 2, row 0) -= d
+    this.projectionMatrix.elements[8]-=shift.x*2*s;this.projectionMatrixInverse.copy(this.projectionMatrix).invert();
+  };}
 
 // r128 scaled direct light by PI in the shader ("legacy lights"). Light intensities in state and presets
 // keep their r128 meaning; this factor is applied where they reach three.
@@ -28,4 +40,4 @@ function req(){redraw.dirty=true;onChange.forEach(f=>f());}
 const crop={c:null};
 function setCrop(c){crop.c=c;if(c)camera.setViewOffset(c.fw,c.fh,c.x,c.y,c.w,c.h);else camera.clearViewOffset();}
 
-export {ANISO,LIGHT_SCALE,MAX_TEX,camera,canvas,crop,onChange,onIdle,overlays,redraw,renderer,req,scene,setCrop};
+export {ANISO,LIGHT_SCALE,MAX_TEX,camera,shift,canvas,crop,onChange,onIdle,overlays,redraw,renderer,req,scene,setCrop};

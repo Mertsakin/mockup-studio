@@ -55,7 +55,42 @@ function captureThumb(){
   finally{hidden.forEach(o=>{o.visible=true;});renderer.setPixelRatio(pr);invalidateLayout();layout();req();}
   return url;
 }
-function store(){const b=activeBoard();if(!b)return;b.snap=snapshot();const t=captureThumb();if(t)b.thumb=t;}
+function store(){const b=activeBoard();if(!b)return;b.snap=snapshot();const t=captureThumb();if(t){b.thumb=t;b.stale=false;}syncPano(b);}
+
+/* Panorama sets (state.pano = {g, i, n}, made by ui/store.js): the boards of a set are slices of one wide frame, so
+   they share the 3D scene: devices, lights, camera, framing and the scene-wide settings. Whenever the active board's
+   snapshot is taken (switching boards, every history step) the others of its set get those parts; each keeps its own
+   background, 2D items and slice. Their thumbnails are re-rendered from the live scene (same camera, their own lens
+   shift, background and items), a moment later, without switching boards. */
+const SHARED=['floor','wall','wallGap','selfShadow','shadowColor','shadowOpacity','ambient','exposure','anim','quality'];
+const sharedOf=s=>JSON.stringify([s.devices,s.lights,s.frame,s.state.scene,SHARED.map(k=>s.state[k])]);
+const sameSet=(a,b)=>{const p=a.snap.state.pano,q=b.snap.state.pano;return a!==b&&!!p&&!!q&&p.g===q.g;};
+let thumbTimer=0;
+function syncPano(a){
+  if(!a||!a.snap.state.pano)return;
+  const sig=sharedOf(a.snap),copy=o=>JSON.parse(JSON.stringify(o));let changed=false;
+  doc.boards.forEach(b=>{
+    if(!sameSet(a,b)||sharedOf(b.snap)===sig)return;
+    const s=b.snap;s.devices=copy(a.snap.devices);s.lights=copy(a.snap.lights);s.frame=copy(a.snap.frame);s.state.scene=copy(a.snap.state.scene);
+    SHARED.forEach(k=>{s.state[k]=copy(a.snap.state[k]??null);});s.selected=a.snap.selected;s.selLight=a.snap.selLight;
+    s.images=Object.assign({},s.images,a.snap.images);b.stale=true;changed=true;
+  });
+  if(changed){clearTimeout(thumbTimer);thumbTimer=setTimeout(panoThumbs,350);}
+}
+// the stale boards of the active board's set, drawn as slices of the live scene
+const SLICE=['bg','solid','bg1','bg2','gradType','gradAngle','bgImg','bgImgName','bgFit','bgScale','bgX','bgY','items','pano','ratio','customW','customH','format'];
+function panoThumbs(){
+  const a=activeBoard();if(!a||!state.pano)return;
+  const todo=doc.boards.filter(b=>b.stale&&sameSet(a,b));if(!todo.length)return;
+  const keep={};SLICE.forEach(k=>{keep[k]=state[k];});
+  try{
+    todo.forEach(b=>{
+      const st=b.snap.state,im=b.snap.images||{};
+      SLICE.forEach(k=>{state[k]=k==='bgImg'?(st.bgImg&&im[st.bgImg])||null:k==='items'?(st.items||[]).map(o=>Object.assign({},o,{img:o.img?im[o.img]||null:null})).filter(o=>o.img||o.kind==='text'):st[k];});
+      const t=captureThumb();if(t)b.thumb=t;b.stale=false;
+    });
+  }finally{Object.assign(state,keep);applyTransform();invalidateLayout();bgCss();layout();req();emit();}
+}
 function show(b){doc.active=b.id;restore(b.snap);bgCss();layout();syncAll();emit();}
 
 // called once at start-up, after the initial scene is built
@@ -89,7 +124,7 @@ function moveBoard(id,x,y){const b=boardById(id);if(!b)return;b.x=Math.round(x);
 
 /* --- whole document, for undo / redo, autosave and project files */
 function docSnapshot(){
-  const a=activeBoard();if(a)a.snap=snapshot();
+  const a=activeBoard();if(a){a.snap=snapshot();syncPano(a);}
   return Object.assign({v:2,layout:LAYOUT,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb})),fonts:doc.fonts.slice()},packAssets(doc.assets));
 }
 const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[],(d.fonts||[]).map(f=>f.family)]);

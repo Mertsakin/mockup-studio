@@ -41,7 +41,7 @@
       <button class="btn primary" id="exportMenuBtn" type="button" aria-haspopup="dialog" aria-expanded="false">Dışa aktar</button>
       <div class="menu pop-export" id="exportMenu" role="dialog" aria-label="Dışa aktarım" hidden>
         <div class="row"><label for="quality">Kalite</label><select id="quality"><option value="fast">Hızlı</option><option value="photo">Fotoğraf (yol izleme)</option></select></div>
-        <div class="row"><label for="format">Biçim</label><select id="format"><option value="png">PNG</option><option value="jpg">JPG</option></select></div>
+        <div class="row"><label for="format">Biçim</label><select id="format"><option value="png">PNG</option><option value="png24">PNG, saydamsız (mağaza)</option><option value="jpg">JPG</option></select></div>
         <div class="row" id="sizeRow"><label for="size">Genişlik</label><select id="size"><option value="1080">1080 px</option><option value="1920">1920 px</option><option value="3840">3840 px</option></select></div>
         <p class="hint-sm" id="exportNote"></p>
         <button class="btn primary full" id="export" type="button">İndir</button>
@@ -78,6 +78,11 @@
         <div hidden><div id="devList"></div><div id="lightList"></div></div>
       </div>
       <div id="paneTpl" role="tabpanel" aria-labelledby="tabTpl" hidden>
+        <div class="group">
+          <div class="ghead">Mağaza görselleri</div>
+          <button class="btn full" type="button" id="storeSetBtn">Mağaza seti oluştur…</button>
+          <p class="hint-sm">App Store ve Google Play ölçülerinde 3–8 ekranlık bir set: başlıklar, ekran görüntülerin, ortak renk ve yazı tipi. Panorama düzeninde ekranlar birbirine bağlanır.</p>
+        </div>
         <div class="group">
           <div class="ghead">Hazır kompozisyonlar</div>
           <div class="chips" id="comps"></div>
@@ -154,6 +159,7 @@
             <button data-v="1:1">1:1</button><button data-v="4:5">4:5</button><button data-v="9:16">9:16</button><button data-v="16:9">16:9</button><button data-v="4:3">4:3</button><button data-v="21:9">21:9</button><button data-v="custom">Özel</button>
           </div>
           <div class="row" id="artboard"><span class="lbl">Piksel</span><span class="cells"><label class="fld"><span class="k">G</span><input type="number" id="customW" min="64" max="8192" step="1" inputmode="numeric" aria-label="Genişlik (px)"></label><label class="fld"><span class="k">Y</span><input type="number" id="customH" min="64" max="8192" step="1" inputmode="numeric" aria-label="Yükseklik (px)"></label></span></div>
+          <div class="row"><label class="lbl" for="storeSize">Mağaza</label><select id="storeSize"></select></div>
         </section>
         <section class="sec">
           <h3 class="sh">Kamera</h3>

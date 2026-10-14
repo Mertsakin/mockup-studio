@@ -68,9 +68,12 @@ function bgCss(){
   if(hasImg()&&!state.bgImg.complete)state.bgImg.addEventListener('load',()=>{if(hasImg())applyBgFit();},{once:true});
 }
 function paintBg(g,W,H){
+  // formats without transparency (JPG, 24-bit PNG) get white where nothing else is painted
+  const opaque=state.format==='jpg'||state.format==='png24';
   if(state.bg==='solid'){g.fillStyle=state.solid;g.fillRect(0,0,W,H);}
-  else if(state.bg==='gradient')paintGradient(g,W,H,state); else if(hasImg()){if(state.format==='jpg'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}const c=bgRect(W,H);g.drawImage(state.bgImg,c.x,c.y,c.w,c.h);}
-  else if(state.format==='jpg'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}
+  else if(state.bg==='gradient')paintGradient(g,W,H,state);
+  else if(hasImg()){if(opaque){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}const c=bgRect(W,H);g.drawImage(state.bgImg,c.x,c.y,c.w,c.h);}
+  else if(opaque){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}
 }
 
 /* ---------- 2D items ----------

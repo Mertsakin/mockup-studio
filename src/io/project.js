@@ -51,7 +51,7 @@ function restore(s){
   // documents from when patterns were a background style: the pattern becomes the background image
   if(s.state.bg==='pattern'){Object.assign(state,patternBg(s.state));Object.assign(s.state,{bg:'image',bgImgName:state.bgImgName,bgImg:imgKey(state.bgImg)});s.images[s.state.bgImg]=state.bgImg;}
   // fields newer than the snapshot get their defaults (not the previous board's values)
-  const DEF={gradType:'linear',gradAngle:135,bgFit:'cover',bgScale:1,bgX:0,bgY:0,anim:{dur:5,fps:30,loop:true}};
+  const DEF={gradType:'linear',gradAngle:135,bgFit:'cover',bgScale:1,bgX:0,bgY:0,anim:{dur:5,fps:30,loop:true},pano:null};
   for(const k in DEF)if(!(k in s.state))state[k]=copy(DEF[k]);
   // the export size used to be the long edge (1080 / 2160 / 3840); now it is the width (the #size options in index.html)
   if(![1080,1920,3840].includes(state.size))state.size=1920;
