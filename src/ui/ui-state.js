@@ -2,7 +2,8 @@
    kind: 'board' | 'device' | 'light' | 'item' | 'multi' (the device / light / item itself is state.selected / selLight /
    selItem; 'multi': devices and items picked together, ui/selection.js)
    mode: 'design' (Tasarla) | 'animate' (Canlandır, ui/animate.js)
-   tool: 'select' | 'move' | 'rotate' | 'orbit' | 'hand'; space: Space held (temporary hand) */
+   tool: 'select' | 'move' | 'rotate' | 'orbit' | 'hand' | 'text' | 'frame' (insert.js) | 'zoom' (workspace.js);
+   space: Space held (temporary hand) */
 const ui={kind:'board',tool:'select',space:false,mode:'design'};
 const subs=[];
 function onUi(fn){subs.push(fn);}

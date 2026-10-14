@@ -16,7 +16,7 @@ const SHEET=[
     [S+' tıklama','Seçime ekle / çıkar'],['Oklar','Kaydır (1 px, '+S+' 10 px); auto layout içinde sırayı değiştir'],['Enter','Metni düzenle'],['Esc','Seçimi bırak / aracı iptal et']]],
   ['Çerçeve',[[O+' '+C+' G','Seçimi çerçeveye al'],[S+' A','Auto layout ekle'],[S+' '+C+' G','Çerçeveden çıkar']]],
   ['Sıra',[[C+' ]','Öne'],[C+' [','Arkaya'],[S+' '+C+' ]','En öne'],[S+' '+C+' [','En arkaya']]],
-  ['Görünüm',[[S+' F','Seçili cihaza odaklan'],[S+' 1','Tüm artboardlar'],[S+' 2','Etkin artboard'],[C+' tekerlek','Yakınlaştır'],[O+' tekerlek','Kamera yakınlığı']]],
+  ['Görünüm',[['Z','Yakınlaştır: tıkla, '+O+' ile tıkla uzaklaş, sürükle: o alana'],[S+' F','Seçili cihaza odaklan'],[S+' 1','Tüm artboardlar'],[S+' 2','Etkin artboard'],[C+' tekerlek','Yakınlaştır'],[O+' tekerlek','Kamera yakınlığı']]],
   ['Animasyon (Canlandır)',[['Boşluk','Oynat / durdur'],['K','Anahtar kare'],['← →','Bir kare ('+S+' 1 sn)'],['Home','Başa dön']]],
   ['Dosya',[[C+' S','Kaydet'],[S+' '+C+' S','Farklı kaydet'],[C+' O','Aç'],['?','Bu liste']]]
 ];

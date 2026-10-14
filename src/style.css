@@ -664,3 +664,8 @@ details.more>summary:hover{color:var(--ink-2)}
 /* view box: focus, fit | zoom */
 .zoombox{height:36px;padding:0 4px;border-radius:10px;gap:2px}
 .zoombox .vr{height:18px;margin:0 4px}
+
+/* zoom tool (workspace.js): magnifier cursors, the dragged area */
+html[data-tool="zoom"] #stagearea,html[data-tool="zoom"] #gl{cursor:zoom-in}
+html.alt-down[data-tool="zoom"] #stagearea,html.alt-down[data-tool="zoom"] #gl{cursor:zoom-out}
+.zmarq{position:absolute;z-index:6;pointer-events:none;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:2px}
