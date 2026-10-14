@@ -28,6 +28,7 @@ Düzenek bir Vite dev sunucusunu kendi başlatır, sayfayı açar (uygulama boş
 | `EXPORT=1` | ham render yerine gerçek dışa aktarım yolunu (`renderExport`) çalıştırır: arka plan ve kodlama dahil. `QUALITY=photo` ile yol izlemeli fotoğraf kalitesi (SwiftShader'da çok yavaş, `GPU=1` ile kullan) |
 | `GPU=1` | SwiftShader yerine ANGLE/Metal. Daha hızlı ama sürücüye bağlı, bayt bayt kararlı değil. Karşılaştırma yaparken kullanma |
 | `NO_OIDN=1`, `OIDN_SRGB=0`, `PT_DEBUG=1` | fotoğraf kalitesi: OIDN'i kapat; rengi lineerleştirmeden ver; zemin kalibrasyon değerlerini konsola yaz |
+| `PT_TUNE='{"samples":16,"budget":1e7}'` | fotoğraf kalitesi: örnek sayısı ve süre bütçesi (ms) dışa aktarımınkinin yerine (sabit örnekle hız ölçümü). Konsol her render'da `Yol izleme N örnek, … ms/örnek` yazar |
 | sahneye özel | `COLOR`, `FIN`, `PRESET`, `RX`, `RY`, `ZOOM`, `C`, `MOD`… sahne dosyalarının başındaki açıklamalara bak |
 
 Varsayılan SwiftShader (CPU) render'ı **deterministiktir**: aynı kod aynı PNG'yi üretir. Bu yüzden piksel farkı anlamlıdır.

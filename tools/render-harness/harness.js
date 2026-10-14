@@ -22,6 +22,7 @@ const W=+process.env.W||640,H=+process.env.H||800,SAMPLES=+process.env.SAMPLES||
     const page=await browser.newPage({viewport:{width:1400,height:900}});
     await page.addInitScript(()=>{window.__noPhotoPreview=true;});
     if(process.env.PT_DEBUG)await page.addInitScript(()=>{window.__ptDebug=true;});  // keep renders deterministic
+    if(process.env.PT_TUNE)await page.addInitScript(v=>{window.__ptTune=JSON.parse(v);},process.env.PT_TUNE);  // photo quality: {samples, budget (ms)} instead of the export's
     if(process.env.NO_OIDN)await page.addInitScript(()=>{window.__noOidn=true;});
     if(process.env.OIDN_SRGB)await page.addInitScript(v=>{window.__oidnSrgb=v==='1';},process.env.OIDN_SRGB);
     page.on('pageerror',e=>{failed=true;console.error('page error:',e.message);});

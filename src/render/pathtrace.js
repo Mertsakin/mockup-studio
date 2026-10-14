@@ -35,10 +35,9 @@ const SHAPES={softbox:[1.25,.85],strip:[.3,1.5],window:[1,1.3],octa:[1,1,true],u
 const ENV_SCALE=1,SCREEN_GLOW=.9,SCREEN_SPEC=.35,PT_TEX_BUDGET=512*1024*1024,HDRI='hdri/photo_studio_01_1k.hdr',ENV_MEAN=.45;  // ENV_MEAN: the HDRI's average radiance before it is laid over the sweep
 // the raster room's sweep (environment.js roomMat), sRGB stops over the equirect's v (0 = zenith)
 const ROOM=[[0,'#d6d8dc'],[.45,'#bcc0c5'],[.52,'#9fa3a9'],[1,'#8a8e94']];
-const PREVIEW_SAMPLES=64,PREVIEW_SCALE=.5,FLOOR_SOLID=1.6,FLOOR_FADE=6,FLOOR_RIM=.8,TRACE_TILE_PX=1e6;  // floor: full shadows to FLOOR_SOLID x fit radius, none (plain background) at FLOOR_FADE x, the disc's radius; alpha fades over the outer 1 - FLOOR_RIM of it
+const PREVIEW_SAMPLES=64,PREVIEW_SCALE=.5,FLOOR_SOLID=1.6,FLOOR_FADE=6,FLOOR_RIM=.8,TRACE_TILE_PX=1e6,TRACE_QUEUE=2;  // floor: full shadows to FLOOR_SOLID x fit radius, none (plain background) at FLOOR_FADE x, the disc's radius; alpha fades over the outer 1 - FLOOR_RIM of it
 let pt=null,denoise=null,hdri=null,floorCal=null;  // floorCal: the current set-up's floor, for calibrateFloor
 const envUpCache=new Map();
-const PX=new Float32Array(4);  // the path tracer's target is float
 
 // radial weight of the floor's shadow catching: 1 inside FLOOR_SOLID / FLOOR_FADE of the disc radius, smoothstep to
 // 0 at the rim (floorWeightMap: the same as a texture, for the calibration mask)
@@ -340,28 +339,42 @@ function present(threshold){
    Intel Open Image Denoise (the "denoiser" package, weights self-hosted in public/oidn), keeping the alpha channel.
    OIDN also gets noise-free albedo and normal passes of the same view (renderAux): with them it keeps texture detail
    (key legends, screen text) instead of smoothing it as noise. Without them (aux failed) it denoises colour only.
+   backdrop (optional, a canvas of the same size): what the export paints behind the devices (background, 2D items
+   behind). The render is laid over it before OIDN, so the denoiser sees the final picture: the alpha channel is
+   never denoised, and coverage noise (out-of-focus edges with depth of field: a pixel's samples are part device, part
+   background) stayed as grain on the backdrop. Where nothing is hit, the albedo guide holds the backdrop's colour.
    Returns a 2D canvas with the final image. onProgress(0..1): sampling up to .9, denoising the rest. */
-async function renderPathTraced(samples,onProgress,budgetMs=60000){
+async function renderPathTraced(samples,onProgress,budgetMs=60000,backdrop=null){
   stopPreview();
+  const tune=window.__ptTune||{};if(tune.samples)samples=tune.samples;if(tune.budget)budgetMs=tune.budget;  // test hook (harness PT_TUNE)
   const env=await loadHdri().catch(()=>null)||gradientEnv(),undoStudio=setupStudio(env),t0=performance.now();
-  let raw,aux=null,fix=null;
+  let raw,aux=null,fix=null;const gl=renderer.getContext(),fences=[];
   try{
     ensurePT();pt.renderScale=1;{const s=textureSizeFor(scene);pt.textureSize.set(s,s);}applyLens();pt.setScene(scene,camera);await calibrateFloor();
     // one call per tile of about TRACE_TILE_PX pixels: the page keeps repainting at export sizes (a whole 3840 px
     // sample would block the tab for seconds); pt.samples advances by a fraction per tile
     const n=Math.max(1,Math.ceil(Math.sqrt(renderer.domElement.width*renderer.domElement.height/TRACE_TILE_PX)));pt.tiles.set(n,n);
+    const t1=performance.now();
     while(pt.samples<samples&&(pt.samples<8||performance.now()-t0<budgetMs)){
       pt.renderSample();
-      // waiting on a pixel read keeps the GPU queue short (no context loss, the system stays responsive)
-      renderer.readRenderTargetPixels(pt.target,0,0,1,1,PX);
+      // at most TRACE_QUEUE tiles in flight: the GPU queue stays short (no context loss, the system stays responsive),
+      // and the next tile is already queued when one finishes. A one-pixel read after every tile used to drain the
+      // queue: the GPU idled between tiles (5-10% of the time). Fences are polled: a wait blocks nothing.
+      fences.push(gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0));gl.flush();
+      while(fences.length>TRACE_QUEUE){
+        if(gl.clientWaitSync(fences[0],0,0)===gl.TIMEOUT_EXPIRED){await new Promise(r=>setTimeout(r,1));continue;}
+        gl.deleteSync(fences.shift());
+      }
       if(onProgress)onProgress(.9*Math.min(1,Math.max(pt.samples/samples,(performance.now()-t0)/budgetMs)));
       await new Promise(r=>setTimeout(r,0));
     }
+    console.info(`Yol izleme ${Math.floor(pt.samples)} örnek, ${Math.round((performance.now()-t1)/Math.max(1,pt.samples))} ms/örnek (${n}×${n} karo; hazırlık ${Math.round(t1-t0)} ms)`);
     present(1e-3);  // practically unfiltered (0 would divide by zero in the filter)
     raw=copyCanvas(renderer.domElement);if(floorShown())fix=fixFloorMask();
     if(!window.__noOidn&&!window.__noAux)try{const ta=performance.now();aux=renderAux(raw.width,raw.height);console.info('Yardımcı geçişler '+Math.round(performance.now()-ta)+' ms');}
       catch(e){console.warn('Albedo/normal geçişleri alınamadı, yalnızca renkle gürültü giderme:',e);}
-  }finally{undoStudio();req();}
+  }finally{fences.forEach(f=>gl.deleteSync(f));undoStudio();req();}
+  if(backdrop)raw=overBackdrop(raw,backdrop,aux);
   if(window.__ptKeep)window.__ptLast={raw:copyCanvas(raw),aux};  // test hook: compare denoiser variants on the same samples
   const tn=performance.now();
   if(!window.__noOidn)try{await denoiseCanvas(raw,aux,p=>{if(onProgress)onProgress(.9+.1*p);});console.info('OIDN '+Math.round(performance.now()-tn)+' ms, '+Math.floor(pt.samples)+' örnek'+(aux?', albedo + normal':''));}
@@ -378,6 +391,14 @@ function textureSizeFor(sc){
   sc.traverseVisible(x=>{if(!x.isMesh)return;(Array.isArray(x.material)?x.material:[x.material]).forEach(m=>{m&&TEX_SLOTS.forEach(k=>{if(m[k])seen.add(m[k]);});});});
   let s=4096;while(s>1024&&seen.size*s*s*4>PT_TEX_BUDGET)s/=2;return s;
 }
+// the render laid over the backdrop; the albedo guide gets the backdrop where the render is (partly) empty
+function overBackdrop(raw,backdrop,aux){
+  const W=raw.width,H=raw.height,c=copyCanvas(backdrop),g=c.getContext('2d');
+  if(aux){const a=raw.getContext('2d').getImageData(0,0,W,H).data,b=g.getImageData(0,0,W,H).data,alb=aux.albedo;
+    for(let i=0;i<W*H;i++){const t=(255-a[i*4+3])/255*b[i*4+3]/255;if(t<=0)continue;
+      for(let k=0;k<3;k++){const j=i*3+k,v=S2L[alb[j]]+S2L[b[i*4+k]]*t;alb[j]=L2S8[v>=1?4095:Math.round(v*4095)];}}}
+  g.drawImage(raw,0,0);return c;
+}
 function copyCanvas(src){const c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);return c;}
 
 /* OIDN's auxiliary inputs, rendered by the rasteriser from the same camera while the studio set-up is still applied
@@ -387,13 +408,22 @@ function copyCanvas(src){const c=document.createElement('canvas');c.width=src.wi
    plenty for a guide image, and a third of the memory of floats at export sizes):
    - albedo: linear base colour (with its map), sRGB-encoded (S2L decodes it per tile); emissive surfaces (screens)
      their emissive image; nothing = black;
-   - normal: view-space normals (with normal / bump maps) encoded 0..1; nothing = 0.5 (zero vector).
-   Additive / transmissive surfaces are left out: OIDN wants the first diffuse-ish hit behind them. */
-const AUX_BAND_PX=2e6;
+   - normal: view-space normals (with normal / bump maps) encoded 0..1; nothing = 0.5 (zero vector);
+   - blur (depth of field only, one byte per pixel): how out of focus the pixel is, 0 (sharp: the circle of confusion
+     under BLUR_LO px) to 255 (BLUR_HI px or more; nothing hit counts as far away), from a view-depth pass.
+   Additive / transmissive surfaces are left out: OIDN wants the first diffuse-ish hit behind them.
+   Sharp guides over a blurred image make OIDN keep the grain of out-of-focus areas as if it were detail (still
+   visible at 26 samples); guides blurred like the image (averaged over the aperture) left blotches in out-of-focus
+   text. So denoiseCanvas takes blurred pixels from a colour-only pass instead (blur). */
+const AUX_BAND_PX=2e6,BLUR_LO=4,BLUR_HI=10;
+const depthVs='varying float vz;\nvoid main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vz=-mv.z;gl_Position=projectionMatrix*mv;}';
+const depthFs='varying float vz;\nvoid main(){gl_FragColor=vec4(vz,0.0,0.0,1.0);}';
 function renderAux(w,h){
-  const bh=Math.max(1,Math.min(h,Math.floor(AUX_BAND_PX/w)));
+  const bh=Math.max(1,Math.min(h,Math.floor(AUX_BAND_PX/w))),dofPass=dofOn();
+  // circle of confusion in px at view depth z: aperture · |z - F| / z on the focus plane, which is 2 F tan(fov/2) tall
+  const A=dofPass?apertureCm():0,F=dofPass?focusDistance():1,cocK=A*h/(2*F*Math.tan(camera.fov*Math.PI/360)/(camera.zoom||1));
   const rt=new THREE.WebGLRenderTarget(w,bh,{type:THREE.FloatType,samples:4}),buf=new Float32Array(w*bh*4);
-  const meshes=[],made=new Map(),out={albedo:new Uint8Array(w*h*3),normal:new Uint8Array(w*h*3)};
+  const meshes=[],made=new Map(),out={albedo:new Uint8Array(w*h*3),normal:new Uint8Array(w*h*3),blur:dofPass?new Uint8Array(w*h):null};
   scene.traverseVisible(x=>{if(x.isMesh&&x.material)meshes.push([x,x.material]);});
   const swap=(m,k)=>{
     if(!made.has(m)){
@@ -403,7 +433,8 @@ function renderAux(w,h){
       ['r','g','b'].forEach(c=>{a.color[c]=Math.min(1,a.color[c]);});
       const n=new THREE.MeshNormalMaterial(Object.assign({normalMap:m.normalMap||null,bumpMap:m.bumpMap||null},base));
       if(m.normalScale)n.normalScale.copy(m.normalScale);if(m.bumpScale!==undefined)n.bumpScale=m.bumpScale;
-      made.set(m,{albedo:a,normal:n});
+      const z=new THREE.ShaderMaterial({vertexShader:depthVs,fragmentShader:depthFs,side:m.side,visible:base.visible});
+      made.set(m,{albedo:a,normal:n,depth:z});
     }
     return made.get(m)[k];
   };
@@ -411,14 +442,16 @@ function renderAux(w,h){
   const view=camera.view&&camera.view.enabled?Object.assign({},camera.view):null;
   try{
     scene.background=null;
-    for(const [k,clear,enc] of [['albedo',0,true],['normal',.5,false]]){
+    for(const [k,clear,enc] of [['albedo',0,true],['normal',.5,false],...(dofPass?[['depth',0,false]]:[])]){
       meshes.forEach(([x,m])=>{x.material=Array.isArray(m)?m.map(q=>swap(q,k)):swap(m,k);});
-      const o=out[k];
+      const o=out[k==='depth'?'blur':k];
       for(let y0=0;y0<h;y0+=bh){
         y0=Math.min(y0,h-bh);  // the last band is shifted up rather than shrunk: same target, same view size
         camera.setViewOffset(w,h,0,y0,w,bh);
         renderer.setRenderTarget(rt);renderer.setClearColor(new THREE.Color(clear,clear,clear),1);renderer.clear();renderer.render(scene,camera);
         renderer.readRenderTargetPixels(rt,0,0,w,bh,buf);
+        if(k==='depth'){for(let r=0;r<bh;r++){const s=(bh-1-r)*w*4,d=(y0+r)*w;
+          for(let x=0;x<w;x++){const z=buf[s+x*4],c=z>0?cocK*Math.abs(z-F)/z:1e9;o[d+x]=Math.round(255*Math.min(1,Math.max(0,(c-BLUR_LO)/(BLUR_HI-BLUR_LO))));}}continue;}
         for(let r=0;r<bh;r++){const s=(bh-1-r)*w*4,d=(y0+r)*w*3;  // flip to top-down rows, drop alpha, quantise
           for(let x=0;x<w;x++)for(let c=0;c<3;c++){const v=Math.min(1,Math.max(0,buf[s+x*4+c]));o[d+x*3+c]=enc?L2S8[Math.round(v*4095)]:Math.round(v*255);}}
       }
@@ -427,7 +460,7 @@ function renderAux(w,h){
     meshes.forEach(([x,m])=>{x.material=m;});scene.background=bg;
     if(view)camera.setViewOffset(view.fullWidth,view.fullHeight,view.offsetX,view.offsetY,view.width,view.height);else camera.clearViewOffset();
     renderer.setRenderTarget(target);renderer.setClearColor(cc,ca);rt.dispose();
-    made.forEach(v=>{v.albedo.dispose();v.normal.dispose();});
+    made.forEach(v=>{v.albedo.dispose();v.normal.dispose();v.depth.dispose();});
   }
   return out;
 }
@@ -438,8 +471,11 @@ function renderAux(w,h){
    image while reassembling (quadratic in the tile count: minutes and a frozen tab at 3840 px). The network is built
    once for one tile; neighbouring tiles overlap by OVERLAP px and are blended with a linear ramp. Tiles are
    processed one per task so the page keeps repainting; onProgress(0..1) follows the tiles.
+   With aux.blur (depth of field) it runs twice, with the guides and colour-only, and mixes the two per pixel by blur;
+   a tile that needs only one of them skips the other. Switching between the two rebuilds the network (resetInputs),
+   so the passes run one after the other, not per tile.
    window.__oidnSrgb = false feeds the sRGB values unchanged (test hook). */
-let oidnP=null;
+let oidnP=null,oidnAux=null;  // oidnAux: whether the network was last built with the guides
 const TILE=512,OVERLAP=32;  // TILE: a multiple of 16 (the UNet's stride)
 const S2L=new Float32Array(256).map((_,i)=>{const v=i/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);});
 const L2S=v=>v<=.0031308?v*12.92:1.055*Math.pow(v,1/2.4)-.055;
@@ -455,21 +491,31 @@ async function denoiseCanvas(c,aux,onProgress){
   const acc=new Float32Array(n*3),wt=new Float32Array(n);  // blended output and the weight each pixel has received
   // tile origins: a stride of TILE - OVERLAP, the last tile pulled back to the edge (never past it)
   const starts=L=>{if(L<=TILE)return [0];const s=[];for(let p=0;;p+=TILE-OVERLAP){if(p+TILE>=L){s.push(L-TILE);break;}s.push(p);}return s;};
-  const xs=starts(W),ys=starts(H),total=xs.length*ys.length;let done=0;
+  const xs=starts(W),ys=starts(H),blur=aux&&aux.blur,passes=blur?[true,false]:[!!aux];
+  const total=xs.length*ys.length*passes.length;let done=0;
   const ramp=(p,o,L)=>{let w=1;if(o>0)w=Math.min(w,(p+1)/OVERLAP);if(o+TILE<L)w=Math.min(w,(TILE-p)/OVERLAP);return w;};
-  for(const y0 of ys)for(const x0 of xs){
-    for(let ty=0;ty<TILE;ty++){const sy=Math.min(H-1,y0+ty);  // the source is clamped when the image is smaller than a tile
-      for(let tx=0;tx<TILE;tx++){const si=sy*W+Math.min(W-1,x0+tx),di=(ty*TILE+tx)*3;
-        for(let k=0;k<3;k++){col[di+k]=lin?S2L[a[si*4+k]]:a[si*4+k]/255;if(aux){alb[di+k]=S2L[aux.albedo[si*3+k]];nrm[di+k]=aux.normal[si*3+k]/255;}}}}
-    await d.setInputData('color',col,{channels:3});  // no resetInputs between tiles: it marks the network for a rebuild
-    if(aux){await d.setInputData('albedo',alb,{channels:3});await d.setInputData('normal',nrm,{channels:3});}
-    const out=await d.execute();
-    if(!out||out.length!==T*3)throw new Error('OIDN çıktısı geçersiz');
-    for(let ty=0;ty<TILE&&y0+ty<H;ty++){const wy=ramp(ty,y0,H);
-      for(let tx=0;tx<TILE&&x0+tx<W;tx++){const w=wy*ramp(tx,x0,W),si=(y0+ty)*W+x0+tx,di=(ty*TILE+tx)*3;
-        acc[si*3]+=out[di]*w;acc[si*3+1]+=out[di+1]*w;acc[si*3+2]+=out[di+2]*w;wt[si]+=w;}}
-    if(onProgress)onProgress(++done/total);
-    await new Promise(r=>setTimeout(r,0));
+  // the share of a pass in pixel si: all of it, or (depth of field) the sharp part with the guides, the blurred without
+  const share=(withAux,si)=>!blur?1:withAux?1-blur[si]/255:blur[si]/255;
+  for(let pi=0;pi<passes.length;pi++){const withAux=passes[pi];
+    if(oidnAux!==withAux){if(oidnAux!==null)d.resetInputs();oidnAux=withAux;}
+    for(const y0 of ys)for(const x0 of xs){
+      let used=!blur;
+      for(let ty=0;ty<TILE&&y0+ty<H&&!used;ty++)for(let tx=0;tx<TILE&&x0+tx<W;tx++)if(share(withAux,(y0+ty)*W+x0+tx)>0){used=true;break;}
+      if(used){
+        for(let ty=0;ty<TILE;ty++){const sy=Math.min(H-1,y0+ty);  // the source is clamped when the image is smaller than a tile
+          for(let tx=0;tx<TILE;tx++){const si=sy*W+Math.min(W-1,x0+tx),di=(ty*TILE+tx)*3;
+            for(let k=0;k<3;k++){col[di+k]=lin?S2L[a[si*4+k]]:a[si*4+k]/255;if(withAux){alb[di+k]=S2L[aux.albedo[si*3+k]];nrm[di+k]=aux.normal[si*3+k]/255;}}}}
+        await d.setInputData('color',col,{channels:3});  // no resetInputs between tiles: it marks the network for a rebuild
+        if(withAux){await d.setInputData('albedo',alb,{channels:3});await d.setInputData('normal',nrm,{channels:3});}
+        const out=await d.execute();
+        if(!out||out.length!==T*3)throw new Error('OIDN çıktısı geçersiz');
+        for(let ty=0;ty<TILE&&y0+ty<H;ty++){const wy=ramp(ty,y0,H);
+          for(let tx=0;tx<TILE&&x0+tx<W;tx++){const si=(y0+ty)*W+x0+tx,w=wy*ramp(tx,x0,W),ws=w*share(withAux,si),di=(ty*TILE+tx)*3;
+            acc[si*3]+=out[di]*ws;acc[si*3+1]+=out[di+1]*ws;acc[si*3+2]+=out[di+2]*ws;if(pi===0)wt[si]+=w;}}
+      }else if(pi===0)for(let ty=0;ty<TILE&&y0+ty<H;ty++){const wy=ramp(ty,y0,H);for(let tx=0;tx<TILE&&x0+tx<W;tx++)wt[(y0+ty)*W+x0+tx]+=wy*ramp(tx,x0,W);}
+      if(onProgress)onProgress(++done/total);
+      await new Promise(r=>setTimeout(r,0));
+    }
   }
   // a failed GPU pass can come back blank without an error: keep the raw image unless the result has content
   let lit=0,ref=0;

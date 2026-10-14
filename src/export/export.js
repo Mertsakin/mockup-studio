@@ -61,9 +61,11 @@ async function renderExport(onProgress){
   const out=mkCanvas(W,H),g=out.getContext('2d');
   try{
     // the path tracer (~260 kB) loads on first use
-    if(state.quality==='photo')src=await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress,PHOTO_BUDGET_MS);
+    paintBg(g,W,H);paintItems(g,W,H,false);
+    // photo: the path tracer lays its render over what is behind it before denoising and returns the whole picture
+    if(state.quality==='photo'){src=await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress,PHOTO_BUDGET_MS,out);g.clearRect(0,0,W,H);}
     else renderNow(dofOn()?DOF_SAMPLES:state.size>=3000?32:48);  // the depth of field is sampled by the passes
-    paintBg(g,W,H);paintItems(g,W,H,false);g.drawImage(src,0,0,W,H);paintItems(g,W,H,true);
+    g.drawImage(src,0,0,W,H);paintItems(g,W,H,true);
   }finally{
     // also when the render was cancelled (onProgress throws, ui/busy.js): the live view comes back
     uncrisp();LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});
