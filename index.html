@@ -303,14 +303,28 @@
           <div class="row"><span class="lbl">Renk</span><span class="pair"><input type="color" id="textColor" aria-label="Metin rengi"><input type="color" id="textColor2" aria-label="Gradyan bitiş rengi"></span></div>
           <div id="textSliders"></div>
         </section>
+        <section class="sec" id="fxSec" hidden>
+          <h3 class="sh">Metin efekti<span class="sh-acts"><button class="btn sm" type="button" id="fxPlay" title="Canlandır'a geç ve efekti oynat">Oynat</button></span></h3>
+          <div class="row"><label class="lbl" for="fxIn">Giriş</label><select id="fxIn"></select></div>
+          <div class="fxopts" id="fxInOpts"></div>
+          <div class="row"><label class="lbl" for="fxOut">Çıkış</label><select id="fxOut"></select></div>
+          <div class="fxopts" id="fxOutOpts"></div>
+          <div class="row"><label class="lbl" for="fxLoop">Sürekli</label><select id="fxLoop"></select></div>
+          <div class="fxopts" id="fxLoopOpts"></div>
+          <p class="hint-sm">Efektler Canlandır'da ve videoda oynar. Tasarla ve durağan görsel metnin son hâlini gösterir.</p>
+        </section>
         <section class="sec">
-          <h3 class="sh">Konum ve boyut</h3>
+          <h3 class="sh">Konum ve boyut<span class="sh-acts"><button class="keybtn anim-only" type="button" id="itemPoseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Tüm değerler için bu anda anahtar kare <kbd>K</kbd></span></button></span></h3>
           <div id="itemSliders"></div>
           <div class="row"><span class="lbl">Hizala</span><span class="cells"><button class="btn" type="button" id="itemCenterX">Yatay ortala</button><button class="btn" type="button" id="itemCenterY">Dikey ortala</button></span></div>
         </section>
         <section class="sec">
           <h3 class="sh">Görünüm</h3>
           <div id="itemLook"></div>
+        </section>
+        <section class="sec anim-only">
+          <h3 class="sh">Hazır hareket</h3>
+          <div class="chips" id="itemPresetChips"></div>
         </section>
         <section class="sec">
           <h3 class="sh">Katman</h3>

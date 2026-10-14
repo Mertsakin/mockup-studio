@@ -27,7 +27,10 @@ function snapshot(){
   for(const k in state)if(!SKIP_STATE.has(k))st[k]=copy(state[k]);
   st.bgImg=imgKey(state.bgImg);if(state.bgImg)images[st.bgImg]=state.bgImg;
   // text items have no image (kind 'text'): their content is plain data
-  st.items=state.items.map(it=>{if(!it.img)return copy(it);const o=Object.assign({},it,{img:imgKey(it.img)});images[o.img]=it.img;return copy(o);});
+  st.items=state.items.map(it=>{
+    const o=it.img?Object.assign({},it,{img:imgKey(it.img)}):Object.assign({},it);if(it.img)images[o.img]=it.img;
+    tracked(it).forEach(k=>{o[k]=interp(it.tracks[k],designT(it));});  // like the devices: values at the design frame
+    return copy(o);});
   const devices=state.devices.map(d=>{const o={};for(const k in d)if(!SKIP_DEVICE.has(k))o[k]=copy(d[k]);
     // animated values are stored at the design frame, not at the editor's playhead (moving the playhead is not an edit)
     tracked(d).forEach(k=>{o[k]=interp(d.tracks[k],designT(d));});

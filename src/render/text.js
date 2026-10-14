@@ -49,23 +49,24 @@ const TEXT_DEFAULTS={text:'Başlığınız',font:'Inter',weight:700,italic:false
 /* ---------- font loading: one stylesheet per family, on first use; every load bumps fontVersion (layouts measured with
    the fallback font are thrown away) and calls the onFont hooks (the live view redraws) */
 let fontVersion=0;
-const requested=new Set(),pending=new Set(),fontSubs=[];
+const sheets=new Map(),loaded=new Set(),pending=new Set(),fontSubs=[];  // sheets: family -> stylesheet loaded (promise)
 function onFont(fn){fontSubs.push(fn);}
 const GENERIC={sans:'sans-serif',serif:'serif',monospace:'monospace',cursive:'cursive',custom:'sans-serif'};
 const stack=family=>'"'+family+'",'+GENERIC[(FONT_BY.get(family)||{}).kind||'sans'];
 const fontSpec=(it,px)=>(it.italic?'italic ':'')+(it.weight||400)+' '+px+'px '+stack(it.font);
+// latin and the Turkish letters (latin-ext subset), so a later edit does not need another file
+const SAMPLE='AaZzĞğİıŞşÇçÖöÜü09';
+const fontDone=()=>{fontVersion++;fontSubs.forEach(fn=>fn());};
 function useFont(it){
-  const f=FONT_BY.get(it.font);if(!f||f.kind==='custom'||typeof document==='undefined')return;
-  if(!requested.has(f.name)){requested.add(f.name);
-    const l=document.createElement('link');l.rel='stylesheet';
+  const f=FONT_BY.get(it.font);if(!f||f.kind==='custom'||typeof document==='undefined'||!document.fonts)return;
+  if(!sheets.has(f.name))sheets.set(f.name,new Promise(res=>{
+    const l=document.createElement('link');l.rel='stylesheet';l.onload=l.onerror=()=>res();
     l.href='https://fonts.googleapis.com/css2?family='+f.name.replace(/ /g,'+')+':wght@'+f.weights.join(';')+'&display=swap';
-    document.head.appendChild(l);}
-  const spec=fontSpec(it,100);if(!document.fonts||pending.has(spec)||document.fonts.check(spec,it.text||'A'))return;
+    document.head.appendChild(l);}));
+  // document.fonts.check() is true while no face is registered yet: wait for the stylesheet, then load the face
+  const spec=fontSpec(it,100);if(loaded.has(spec)||pending.has(spec))return;
   pending.add(spec);
-  // the stylesheet may still be loading: wait for it, then for the face itself
-  const done=()=>{pending.delete(spec);fontVersion++;fontSubs.forEach(fn=>fn());};
-  const tryLoad=n=>document.fonts.load(spec,it.text||'A').then(r=>{if(r.length||n<=0)done();else setTimeout(()=>tryLoad(n-1),250);},done);
-  tryLoad(40);
+  sheets.get(f.name).then(()=>document.fonts.load(spec,SAMPLE+(it.text||''))).catch(()=>{}).then(()=>{pending.delete(spec);loaded.add(spec);fontDone();});
 }
 /* Fonts the user uploaded (kept in the document as data URLs, ui/boards.js): registered as FontFaces. Weights other
    than the file's own are synthesised by the browser. */
@@ -74,14 +75,14 @@ function addFontFace(family,data){
   if(custom.get(family)===data||typeof FontFace==='undefined')return;
   custom.set(family,data);FONT_BY.set(family,{name:family,kind:'custom',weights:[400,700]});
   const key='custom:'+family;pending.add(key);
-  const done=()=>{pending.delete(key);fontVersion++;fontSubs.forEach(fn=>fn());};
+  const done=()=>{pending.delete(key);fontDone();};
   new FontFace(family,'url('+data+')').load().then(f=>{document.fonts.add(f);done();},e=>{console.warn('Yazı tipi yüklenemedi:',family,e);done();});
 }
 const customFonts=()=>[...custom.keys()];
 // resolves when every font the items use has loaded (or failed): the export waits for it
 async function fontsReady(items){
   items.forEach(it=>{if(it.kind==='text')useFont(it);});
-  for(let i=0;i<100&&pending.size;i++)await new Promise(r=>setTimeout(r,50));
+  for(let i=0;i<300&&pending.size;i++)await new Promise(r=>setTimeout(r,50));  // at most 15 s (a slow network)
   if(document.fonts)await document.fonts.ready;
 }
 
@@ -118,24 +119,47 @@ function textLayout(it){
   L={lines,ws,bw,bh,asc,desc};
   if(cache.size>400)cache.clear();cache.set(key,L);return L;
 }
+/* Characters of the laid-out text, for effects that move them one by one (render/text-fx.js): per line, each glyph's
+   start and width at 100 px (prefix widths, so kerning and letter spacing stay), its word and line index. Spaces are
+   left out (they draw nothing) but count in the positions. Cached with the layout. */
+function charsOf(it){
+  const L=textLayout(it);if(L.chars)return L.chars;
+  const g=ctx();setFont(g,it,REF);
+  const out=[];let word=-1;
+  L.lines.forEach((line,li)=>{
+    const cs=Array.from(line);let pre='',x0=0,inWord=false;
+    cs.forEach(c=>{
+      pre+=c;const x1=g.measureText(pre).width;
+      if(/\s/.test(c))inWord=false;
+      else{if(!inWord){word++;inWord=true;}out.push({c,line:li,word,x:x0,w:x1-x0});}
+      x0=x1;
+    });
+  });
+  L.words=word+1;L.chars=out;return out;
+}
 // size of the text block on a board W px wide (px); the item's rectangle
 function textBox(it,W){const L=textLayout(it),k=(it.size||.06)*W/REF;return {w:L.bw*k,h:L.bh*k};}
 // room around the block for glyph overhang (italics, swashes) and the shadow, as a fraction of the font size
 const textPad=it=>.35+(it.shadow>0?.6:0);
 
-/* Draws the block centred on (0, 0) of g's current transform at font size px. */
-function drawText(g,it,px){
-  const L=textLayout(it),k=px/REF,bw=L.bw*k,bh=L.bh*k,lh=(it.lh||1.15)*px;
-  g.save();setFont(g,it,px);g.textBaseline='alphabetic';g.textAlign='left';
+// font, fill and shadow of the item on g at font size px (the block is bw wide, centred on 0)
+function textStyle(g,it,px,bw){
+  setFont(g,it,px);g.textBaseline='alphabetic';g.textAlign='left';
   if(it.fill==='gradient'){const gr=g.createLinearGradient(-bw/2,0,bw/2,0);gr.addColorStop(0,it.color);gr.addColorStop(1,it.color2||it.color);g.fillStyle=gr;}
   else g.fillStyle=it.color||'#111111';
   if(it.shadow>0){g.shadowColor='rgba(0,0,0,'+(.18+.32*it.shadow).toFixed(3)+')';g.shadowBlur=px*(.08+.3*it.shadow);g.shadowOffsetY=px*(.02+.08*it.shadow);}
-  const asc=L.asc*k,desc=L.desc*k;
-  L.lines.forEach((s,i)=>{
-    const w=L.ws[i]*k,x=it.align==='left'?-bw/2:it.align==='right'?bw/2-w:-w/2;
-    const y=-bh/2+i*lh+(lh-(asc+desc))/2+asc;
-    g.fillText(s,x,y);
-  });
+}
+// where line i starts (x) and its baseline (y), relative to the block's centre, at font size px
+function lineOrigin(it,L,i,px,w){
+  const k=px/REF,bw=L.bw*k,bh=L.bh*k,lh=(it.lh||1.15)*px,asc=L.asc*k,desc=L.desc*k;
+  if(w===undefined)w=L.ws[i]*k;
+  return {x:it.align==='left'?-bw/2:it.align==='right'?bw/2-w:-w/2,y:-bh/2+i*lh+(lh-(asc+desc))/2+asc};
+}
+/* Draws the block centred on (0, 0) of g's current transform at font size px (settled: no effect). */
+function drawText(g,it,px){
+  const L=textLayout(it);
+  g.save();textStyle(g,it,px,L.bw*px/REF);
+  L.lines.forEach((s,i)=>{const o=lineOrigin(it,L,i,px);g.fillText(s,o.x,o.y);});
   g.restore();
 }
 
@@ -148,4 +172,4 @@ function moveAnchor(it,W,H,a){
 }
 function keepAnchor(it,W,H,fn){const a=textBox(it,W);fn();moveAnchor(it,W,H,a);}
 
-export {FONTS,TEXT_DEFAULTS,WEIGHT_NAMES,addFontFace,customFonts,drawText,fitWeight,fontsReady,keepAnchor,moveAnchor,onFont,textBox,textLayout,textPad,useFont,weightsOf};
+export {FONTS,REF,TEXT_DEFAULTS,WEIGHT_NAMES,addFontFace,charsOf,customFonts,drawText,lineOrigin,textStyle,fitWeight,fontsReady,keepAnchor,moveAnchor,onFont,textBox,textLayout,textPad,useFont,weightsOf};

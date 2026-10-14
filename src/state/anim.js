@@ -1,4 +1,4 @@
-/* Device animation data (no three, no DOM).
+/* Animation data (no three, no DOM): devices and 2D items (state.items) animate the same way.
    A device animates through `d.tracks`: one track per value, tracks[prop] = keys [{t (s), v, ease}], where ease
    shapes the move from that key to the next. Values without a track keep the device's own field. The animatable
    values are the Dönüşüm set (position, rotation, scale), the laptop lid angle and the screenshot scroll.
@@ -6,13 +6,23 @@
    hold the values the editor shows (ui/animate.js writes them). d.designT is the device's design frame (default 0 s):
    what Tasarla, the still image and snapshots show; editing in Tasarla rewrites the keys at that time. */
 const ANIM_PROPS=['px','py','pz','ry','rx','rz','scale','lidAngle','scroll'];
+// 2D items: position and width (fractions of the board), rotation, opacity; a text item's size is its font size
+const ITEM_PROPS=['x','y','w','size','rot','opacity'];
 const MAX_DUR=30;
-const propsOf=d=>ANIM_PROPS.filter(k=>k!=='lidAngle'||d.type==='laptop');
+const isDevice=o=>!!o.type;
+const propsOf=o=>isDevice(o)?ANIM_PROPS.filter(k=>k!=='lidAngle'||o.type==='laptop'):ITEM_PROPS.filter(k=>o.kind==='text'?k!=='w':k!=='size');
+// a target's reference in the editor's selection / maps (device and item ids are separate counters)
+const refOf=o=>(isDevice(o)?'d':'i')+o.id;
 const EASE={
   smooth:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,
   linear:x=>x,
   hold:x=>x<1?0:1,
-  back:x=>{const c=1.70158,c3=c+1;return 1+c3*Math.pow(x-1,3)+c*Math.pow(x-1,2);}
+  back:x=>{const c=1.70158,c3=c+1;return 1+c3*Math.pow(x-1,3)+c*Math.pow(x-1,2);},
+  // ease-outs for text effects (GSAP power3.out, expo.out, elastic.out, bounce.out)
+  out:x=>1-Math.pow(1-x,3),
+  expo:x=>x>=1?1:1-Math.pow(2,-10*x),
+  elastic:x=>x<=0?0:x>=1?1:Math.pow(2,-10*x)*Math.sin((x*10-.75)*(2*Math.PI)/3)+1,
+  bounce:x=>{const n=7.5625,d=2.75;if(x<1/d)return n*x*x;if(x<2/d)return n*(x-=1.5/d)*x+.75;if(x<2.5/d)return n*(x-=2.25/d)*x+.9375;return n*(x-=2.625/d)*x+.984375;}
 };
 const sortKeys=tr=>tr.sort((a,b)=>a.t-b.t);
 function interp(tr,t){
@@ -33,4 +43,4 @@ const designT=d=>d.designT||0;
 const keyIn=(tr,t,fps)=>tr?tr.find(k=>Math.abs(k.t-t)<halfFrame(fps)):undefined;
 const snapT=(t,fps)=>Math.round(t*(fps||30))/(fps||30);
 
-export {ANIM_PROPS,EASE,MAX_DUR,designT,halfFrame,hasAnim,interp,keyIn,propsOf,snapT,sortKeys,timesOf,tracked,valuesAt};
+export {ANIM_PROPS,EASE,ITEM_PROPS,MAX_DUR,designT,isDevice,refOf,halfFrame,hasAnim,interp,keyIn,propsOf,snapT,sortKeys,timesOf,tracked,valuesAt};

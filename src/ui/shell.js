@@ -87,7 +87,7 @@ function renderTree(){
     const go=(fn)=>{if(!live)activate(b.id);fn();};
     // 2D items in stacking order: those in front of the devices above them, those behind below the lights
     const items=live?state.items:b.snap.state.items||[];
-    const itemNode=it=>tree.appendChild(node({child:true,name:it.name,icon:it.kind==='text'?'text-square':'gallery',sel:live&&ui.kind==='item'&&state.selItem===it.id,
+    const itemNode=it=>tree.appendChild(node({child:true,name:it.name,icon:it.kind==='text'?'text-square':'gallery',anim:hasAnim(it)||!!it.fx,sel:live&&ui.kind==='item'&&state.selItem===it.id,
       pick:()=>go(()=>selectItem(it.id)),actions:live?[['trash-bin-minimalistic','Sil',()=>removeItem(it.id)]]:[]}));
     items.filter(it=>it.front).reverse().forEach(itemNode);
     devNames(devs).forEach((n,i)=>{const d=devs[i];

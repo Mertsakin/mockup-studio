@@ -6,7 +6,7 @@ import {canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {hasAnim} from '../state/anim.js';
 import {state,view} from '../state/state.js';
-import {applyAt,applyNow,onAnim,stop} from '../ui/animate.js';
+import {anyAnim,applyAt,applyNow,onAnim,stop} from '../ui/animate.js';
 import {invalidateLayout,layout,paintBg,paintItems} from '../ui/layout.js';
 import {toast} from '../ui/toast.js';
 import {ui} from '../ui/ui-state.js';
@@ -59,7 +59,7 @@ async function renderVideo(onProgress){
       else renderNow(SAMPLES);
       g.clearRect(0,0,W,H);
       if(state.bg==='transparent'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}  // MP4 has no alpha
-      paintBg(g,W,H);paintItems(g,W,H,false);g.drawImage(canvas,0,0,W,H);paintItems(g,W,H,true);
+      paintBg(g,W,H);paintItems(g,W,H,false,t);g.drawImage(canvas,0,0,W,H);paintItems(g,W,H,true,t);
       const f=new VideoFrame(out,{timestamp:Math.round(i*1e6/X.fps),duration:Math.round(1e6/X.fps)});
       enc.encode(f,{keyFrame:i%(X.fps*2)===0});f.close();
       while(enc.encodeQueueSize>2)await new Promise(r=>setTimeout(r,2));
@@ -94,7 +94,7 @@ function syncSetup(){
 }
 let blob=null;
 function openDialog(){
-  if(!state.devices.some(hasAnim)){toast('Henüz animasyon yok: önce bir anahtar kare ekle');return;}
+  if(!anyAnim()){toast('Henüz animasyon yok: önce bir anahtar kare ya da metin efekti ekle');return;}
   stop();blob=null;$('#videoSetup').hidden=false;$('#videoRun').hidden=true;$('#videoTitle').textContent='Video dışa aktar';
   syncSetup();scrim.hidden=false;$('#vGo').focus();
 }

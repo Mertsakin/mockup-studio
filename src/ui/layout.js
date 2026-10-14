@@ -1,6 +1,7 @@
 import {gradCss,paintGradient} from '../render/backgrounds.js';
 import {renderer,setCrop} from '../render/renderer.js';
-import {drawText,onFont,textBox,textPad} from '../render/text.js';
+import {onFont,textBox,textPad} from '../render/text.js';
+import {drawTextAt,fxPad} from '../render/text-fx.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
 import {$} from '../util.js';
@@ -80,20 +81,27 @@ function itemRect(it,W,H){
   const [iw,ih]=imgSize(it.img),w=it.w*W;return {cx:it.x*W,cy:it.y*H,w,h:w*ih/iw,rot:it.rot||0};
 }
 const els=new Map();  // item id -> <img> (or <canvas> for text)
+/* Text effects draw at a time: the clock (set by ui/animate.js) gives the playhead in Canlandır, null (settled text)
+   in Tasarla. Every redraw tells the onItems hooks (animation recording compares the items' fields then). */
+let clock=()=>null;
+function setItemClock(fn){clock=fn;}
+const itemSubs=[];
+function onItems(fn){itemSubs.push(fn);}
 let hiddenItem=null;  // the text being edited in place (its editor shows the text instead)
 function hideItem(id){hiddenItem=id;renderItems();}
 // a text item drawn on its own canvas at the screen's pixel density (at most 4096 px a side), padded for overhang and shadow
-function drawTextEl(el,it,r,W){
-  const px=(it.size||.06)*W,pad=textPad(it)*px,cw=r.w+2*pad,ch=r.h+2*pad;
+function drawTextEl(el,it,r,W,t){
+  if(!it.fx||!(it.fx.in||it.fx.out||it.fx.loop))t=null;  // no effect: the time does not change the drawing
+  const px=(it.size||.06)*W,pad=(textPad(it)+fxPad(it))*px,cw=r.w+2*pad,ch=r.h+2*pad;
   const k=Math.min(window.devicePixelRatio||1,2,4096/Math.max(cw,ch)),bw=Math.max(1,Math.round(cw*k)),bh=Math.max(1,Math.round(ch*k));
-  const key=JSON.stringify([it.text,it.font,it.weight,it.italic,it.color,it.color2,it.fill,it.align,it.lh,it.ls,it.wrap,it.shadow,bw,bh,r.w]);
+  const key=JSON.stringify([it.text,it.font,it.weight,it.italic,it.color,it.color2,it.fill,it.align,it.lh,it.ls,it.wrap,it.shadow,it.fx,t,bw,bh,r.w]);
   if(el.dataset.key!==key){el.dataset.key=key;el.width=bw;el.height=bh;
-    const g=el.getContext('2d');g.setTransform(k,0,0,k,cw*k/2,ch*k/2);drawText(g,it,px);}
+    const g=el.getContext('2d');g.setTransform(k,0,0,k,cw*k/2,ch*k/2);drawTextAt(g,it,px,t);}
   return pad;
 }
 function renderItems(){
   if(!board)return;
-  const {w:W,h:H,x,y}=board,seen=new Set();
+  const {w:W,h:H,x,y}=board,seen=new Set(),t=clock();
   for(const k in itemLayers){const L=itemLayers[k];L.style.width=W+'px';L.style.height=H+'px';L.style.transform='translate('+x+'px,'+y+'px)';}
   state.items.forEach(it=>{
     const text=it.kind==='text';let el=els.get(it.id);
@@ -101,21 +109,22 @@ function renderItems(){
     if(!el){el=document.createElement(text?'canvas':'img');if(!text){el.alt='';el.draggable=false;}els.set(it.id,el);}
     const r=itemRect(it,W,H),L=itemLayers[it.front?'front':'back'];
     let pad=0;
-    if(text)pad=drawTextEl(el,it,r,W); else if(el.src!==it.img.src)el.src=it.img.src;
+    if(text)pad=drawTextEl(el,it,r,W,t); else if(el.src!==it.img.src)el.src=it.img.src;
     el.style.cssText='width:'+(r.w+2*pad)+'px;height:'+(r.h+2*pad)+'px;transform:translate('+(r.cx-r.w/2-pad)+'px,'+(r.cy-r.h/2-pad)+'px) rotate('+r.rot+'deg);opacity:'+(it.opacity??1)+(it.id===hiddenItem?';visibility:hidden':'');
     L.appendChild(el);seen.add(it.id);  // re-appending keeps the DOM order = paint order
     if(!text&&!it.img.complete)it.img.addEventListener('load',renderItems,{once:true});
   });
   els.forEach((el,id)=>{if(!seen.has(id)){el.remove();els.delete(id);}});
+  itemSubs.forEach(f=>f());
 }
-// export / thumbnails: the items of one layer drawn on a W x H canvas
-function paintItems(g,W,H,front){
+// export / thumbnails: the items of one layer drawn on a W x H canvas; t: time of the text effects (video), else settled
+function paintItems(g,W,H,front,t){
   state.items.forEach(it=>{const text=it.kind==='text';if(!!it.front!==front||!text&&!it.img.complete)return;const r=itemRect(it,W,H);
     g.save();g.globalAlpha=it.opacity??1;g.translate(r.cx,r.cy);g.rotate(r.rot*Math.PI/180);
-    if(text)drawText(g,it,(it.size||.06)*W); else g.drawImage(it.img,-r.w/2,-r.h/2,r.w,r.h);
+    if(text)drawTextAt(g,it,(it.size||.06)*W,t??null); else g.drawImage(it.img,-r.w/2,-r.h/2,r.w,r.h);
     g.restore();});
 }
 // a web font finished loading: text items are measured again and redrawn
 onFont(()=>{renderItems();layoutSubs.forEach(f=>f(screen));});
 
-export {bgCss,gradCss,boardScreen,frame,hideItem,imgSize,invalidateLayout,itemRect,layout,onLayout,paintBg,paintItems,ratioNums,renderItems,setStageGeometry};
+export {bgCss,gradCss,boardScreen,frame,hideItem,imgSize,invalidateLayout,itemRect,layout,onItems,onLayout,paintBg,paintItems,ratioNums,renderItems,setItemClock,setStageGeometry};

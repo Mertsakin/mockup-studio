@@ -208,6 +208,13 @@ input[type=color]::-moz-color-swatch{border:0;border-radius:3px}
 .slider .note{display:none}
 #textSec .slider{grid-template-columns:88px minmax(0,1fr) 60px}  /* px values and "Otomatik" */
 #textSec .slider output{white-space:nowrap}
+#fxSec .slider{grid-template-columns:88px minmax(0,1fr) 60px}
+#fxSec .slider output{white-space:nowrap}
+.fxopts{margin:0 0 6px 2px;padding-left:6px;border-left:2px solid var(--line)}
+.fxopts .row>.lbl,.fxopts .row>label:first-child{width:72px}
+#fxSec .fxopts .slider{grid-template-columns:72px minmax(0,1fr) 56px}
+.fxopts:empty{display:none}
+.fxopts .fxseg{display:grid;margin:4px 0 2px}
 /* range: thick rounded track, accent fill up to the thumb's centre (--p 0..1, set by sliders.js), white thumb */
 input[type=range]{--p:.5;--th:20px;--tk:10px;appearance:none;-webkit-appearance:none;width:100%;min-width:0;margin:0;height:var(--th);background:none;cursor:pointer}
 input[type=range]::-webkit-slider-runnable-track{height:var(--tk);border-radius:999px;
@@ -420,6 +427,9 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .kf::before{content:"";position:absolute;inset:2px;transform:rotate(45deg);background:var(--key);border-radius:2px;box-shadow:0 0 0 1.5px var(--panel)}
 .kf.small::before{inset:3px}
 .kf.on::before{background:var(--accent);box-shadow:0 0 0 1.5px var(--panel),0 0 0 3px var(--accent)}
+/* text effect span on an item's row (timeline.js): drag to move */
+.fx-bar{position:absolute;top:7px;height:18px;padding:0 6px;border-radius:4px;background:color-mix(in srgb,var(--accent) 22%,var(--track));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent-ink);font-size:10.5px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:ew-resize;user-select:none;box-sizing:border-box}
+.fx-bar.out{background:color-mix(in srgb,var(--accent) 12%,var(--track))}
 .end{position:absolute;top:0;bottom:0;width:10px;margin-left:-5px;cursor:ew-resize;z-index:2}
 .end::before{content:"";position:absolute;left:4px;top:0;bottom:0;width:2px;background:var(--line-strong)}
 .end span{position:absolute;top:26px;right:9px;font-size:10px;color:var(--muted);white-space:nowrap}
