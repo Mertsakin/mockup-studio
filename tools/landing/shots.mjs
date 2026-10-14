@@ -22,7 +22,7 @@ try{
     const p=await ctx.newPage();p.on('pageerror',e=>console.error('page error',e.message));
     await p.addInitScript(()=>{window.__noPhotoPreview=true;});
     await p.goto(url);await p.waitForFunction(()=>window.__app&&!document.documentElement.classList.contains('booting'),null,{timeout:60000});
-    await p.evaluate(async id=>{const app=window.__app;if(!app('hasBoard')())app('addBoard')();app('applyTemplate')(app('TEMPLATES').find(t=>t.id===id));
+    await p.evaluate(async id=>{const app=window.__app;if(!app('hasBoard')())app('addBoard')();app('applyTemplate')(id);
       // give the template's devices screen content (the sample screens captured above)
       const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});
       for(const d of app('state').devices){d.img=await load(d.type==='phone'?'/tools/landing/src/app-light.png':'/tools/landing/src/showcases-tablet.png');d.imgName='ekran.png';app('setScreenTexture')(d);}
@@ -30,10 +30,10 @@ try{
     await p.evaluate(()=>new Promise(r=>setTimeout(r,2500)));
     await p.screenshot({path:path.join(OUT,name+'.png')});await ctx.close();console.log(name);
   };
-  // showcases gallery (tablet)
-  {const ctx=await browser.newContext({viewport:{width:1180,height:820},deviceScaleFactor:2});
-   const p=await ctx.newPage();await p.goto(url+'showcases.html');await p.evaluate(()=>new Promise(r=>setTimeout(r,1500)));
-   await p.screenshot({path:path.join(OUT,'showcases-tablet.png')});await ctx.close();console.log('showcases-tablet');}
-  await studio('studio-laptop',1440,900,'panel-telefon');
-  await studio('studio-monitor',1920,1080,'banner-masaustu');
+  // the tablet's screen (showcases-tablet.png) stays as captured before the template gallery was removed
+  // the studio with a laptop + phone and a desktop set-up open (inline scenes: the old templates are gone)
+  await studio('studio-laptop',1440,900,{ratio:'1:1',bg:{bg:'pattern',pattern:'glow',pbase:'#0a0b10',paccent:'#3b2f8f'},lights:'İki softbox',scene:{rx:10,ry:-22,zoom:1.2,panY:.02},
+    devices:[{type:'laptop',colorKey:'graphite',glare:false},{type:'phone',colorKey:'graphite',px:18,py:-4,pz:7,ry:-18,glare:false}]});
+  await studio('studio-monitor',1920,1080,{ratio:'21:9',bg:{bg:'gradient',bg1:'#dfe6ff',bg2:'#f4dcea'},lights:'Yumuşak tavan',floor:true,settle:true,scene:{rx:8,ry:0,zoom:1.1},
+    devices:[{type:'monitor'},{type:'laptop',px:-31,py:-10.25,pz:8,ry:22},{type:'tablet',colorKey:'white',px:30,pz:6,ry:-20,landscape:true}]});
 }finally{await browser.close();await server.close();}

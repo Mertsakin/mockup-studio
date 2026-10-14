@@ -219,6 +219,8 @@ function selectTab(k){
 }
 for(const t in TABS)$(TABS[t][0]).addEventListener('click',()=>selectTab(t));
 const tplGrid=$('#tplGrid');
+// the template list (empty for now: state/templates.js); each one opens as a new artboard
+$('#tplEmpty').hidden=TEMPLATES.length>0;
 TEMPLATES.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='tpl';b.title=t.name+': yeni artboard olarak ekle';
   b.innerHTML='<img loading="lazy" alt=""><span></span>';b.querySelector('img').src='showcases/'+t.id+'.jpg';b.querySelector('span').textContent=t.name;
   b.addEventListener('click',()=>{addBoard(null,t.name);applyTemplate(t);setUi({kind:'board'});fitAll();toast(t.name+' yeni artboard olarak eklendi');});

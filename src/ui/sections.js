@@ -35,7 +35,7 @@ const SUMMARY={
   'left-angles':()=>{const n=document.getElementById('savedList').children.length;return n?n+' açı':'Yok';},
   'left-assets':()=>{const n=doc.assets.length;return n?n+' varlık':'Yok';},
   'tpl-comps':()=>document.getElementById('comps').children.length+' kompozisyon',
-  'tpl-grid':()=>document.getElementById('tplGrid').children.length+' şablon',
+  'tpl-grid':()=>{const n=document.getElementById('tplGrid').children.length;return n?n+' şablon':'Yok';},
   'item-al':()=>{const i=selItem(),l=i&&i.layout;return !l||l.dir==='none'?'Yok':l.dir==='row'?'Yatay':'Dikey';}
 };
 const secs=[...document.querySelectorAll('section.sec[data-sec]')];

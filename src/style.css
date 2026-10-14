@@ -631,3 +631,18 @@ details.more>summary:hover{color:var(--ink-2)}
 /* an empty asset library reads as a drop area */
 .panel.left #assetEmpty{border:1px dashed var(--line-strong);border-radius:8px;padding:18px 14px;text-align:center}
 .panel.left #assetsGroup.over #assetEmpty,.panel.left #assetsGroup.drag #assetEmpty{border-color:var(--accent);background:var(--accent-soft)}
+
+/* ---------- top bar, minimal: [logo + file ▾] [undo redo] … [Tasarla | Canlandır] … [live photo] [Dışa aktar] ---------- */
+.topbar{gap:2px;padding:0 10px 0 8px;height:48px}
+.appbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 8px 0 4px;border-radius:7px;max-width:260px;min-width:0;margin-right:6px;color:var(--ink)}
+.appbtn:hover,.appbtn[aria-expanded="true"]{background:var(--field)}
+.appbtn .mark{margin:0;width:24px;height:24px;border-radius:6px;font-size:12px;flex:none}
+.appbtn .proj{padding:0;max-width:22ch;font-weight:600;font-size:13px}
+.appbtn>[data-icon]{color:var(--muted);display:inline-flex;flex:none}
+.topbar .modes{height:32px}
+.topbar .modes button{padding:0 16px}
+.tb-toggle{position:relative;cursor:pointer;margin-right:6px}
+.tb-toggle input{position:absolute;opacity:0;pointer-events:none}
+.tb-toggle:has(input:checked){background:var(--accent-soft);color:var(--accent-ink)}
+.tb-toggle:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:1px}
+.topbar #exportMenuBtn{height:32px;padding:0 14px}

@@ -13,16 +13,14 @@
 <div class="app">
   <!-- ============ top bar ============ -->
   <header class="topbar">
-    <span class="mark" aria-hidden="true">M</span>
     <div class="menu-wrap">
-      <button class="ib" id="appMenuBtn" type="button" aria-label="Menü" aria-haspopup="menu" aria-expanded="false"><span data-icon="hamburger-menu"></span></button>
+      <button class="appbtn" id="appMenuBtn" type="button" aria-label="Menü" aria-haspopup="menu" aria-expanded="false"><span class="mark" aria-hidden="true">M</span><span class="proj" id="projName">Mockup stüdyosu</span><span data-icon="alt-arrow-down" data-size="12"></span></button>
       <div class="menu" id="appMenu" role="menu" hidden>
         <button class="mi" role="menuitem" type="button" id="openProjectBtn"><span data-icon="folder-open"></span>Proje aç…<kbd>⌘O</kbd></button>
         <button class="mi" role="menuitem" type="button" id="saveProject"><span data-icon="diskette"></span>Projeyi kaydet<kbd>⌘S</kbd></button>
         <button class="mi" role="menuitem" type="button" id="saveProjectAs"><span data-icon="diskette"></span>Farklı kaydet…<kbd>⇧⌘S</kbd></button>
         <button class="mi" role="menuitem" type="button" id="closeProject"><span data-icon="close-square"></span>Projeyi kapat</button>
         <div class="msep" role="separator"></div>
-        <a class="mi" role="menuitem" href="showcases.html"><span data-icon="widget"></span>Şablon galerisi</a>
         <button class="mi" role="menuitem" type="button" id="keysBtn"><span data-icon="keyboard"></span>Klavye kısayolları<kbd>?</kbd></button>
         <div class="msep" role="separator"></div>
         <div class="mlabel">Tema</div>
@@ -30,14 +28,11 @@
       </div>
       <input type="file" id="openProject" accept=".json,application/json" hidden>
     </div>
-    <span class="proj" id="projName">Mockup stüdyosu</span>
-    <span class="vr"></span>
     <button class="ib" type="button" id="undoBtn" aria-label="Geri al"><span data-icon="undo-left"></span><span class="tip">Geri al <kbd>⌘Z</kbd></span></button>
     <button class="ib" type="button" id="redoBtn" aria-label="Yinele"><span data-icon="undo-right"></span><span class="tip">Yinele <kbd>⇧⌘Z</kbd></span></button>
     <div class="seg modes" id="modeSeg" role="group" aria-label="Mod"><button type="button" data-mode="design">Tasarla</button><button type="button" data-mode="animate">Canlandır</button></div>
     <span class="grow"></span>
-    <label class="tb-switch" title="Kamera durunca önizleme fotoğraf kalitesinde render edilir. GPU'yu yoğun kullanır."><input type="checkbox" id="photoPreview" role="switch"><span class="tg" aria-hidden="true"></span>Canlı fotoğraf</label>
-    <span class="vr"></span>
+    <label class="ib tb-toggle" aria-label="Canlı fotoğraf önizlemesi"><input type="checkbox" id="photoPreview" role="switch"><span data-icon="magic-stick-3" data-size="18"></span><span class="tip">Canlı fotoğraf: kamera durunca önizleme fotoğraf kalitesine geçer (GPU'yu yoğun kullanır)</span></label>
     <div class="menu-wrap">
       <button class="btn primary" id="exportMenuBtn" type="button" aria-haspopup="dialog" aria-expanded="false">Dışa aktar</button>
       <div class="menu pop-export" id="exportMenu" role="dialog" aria-label="Dışa aktarım" hidden>
@@ -92,8 +87,9 @@
           <div class="chips" id="comps"></div>
         </section>
         <section class="sec" data-sec="tpl-grid">
-          <h3 class="sh">Şablonlar<span class="sh-acts"><a class="linkbtn" href="showcases.html">Galeri</a></span></h3>
+          <h3 class="sh">Şablonlar</h3>
           <div class="tpl-grid" id="tplGrid"></div>
+          <p class="empty tpl-empty" id="tplEmpty">Henüz şablon yok. Yeni şablonlar burada görünecek.</p>
         </section>
       </div>
     </aside>

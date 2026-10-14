@@ -130,7 +130,8 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 
 ## Şablonlar
 
-- [x] 20 hazır şablon ve Showcases sayfası (`showcases.html`), 21:9 oran, "Sade ekran" cihazı; desenli şablonlar arka plan görseline çevrildi.
+- [x] 21:9 oran, "Sade ekran" cihazı. (İlk 20 şablon ve galeri sayfası 14 Ekim'de kaldırıldı; tasarım dili stüdyoya uymuyordu. Yeni şablon seti gelecek.)
+- [ ] **Yeni şablon seti** (stüdyonun kendi tasarım diliyle) ve galeri.
 - [ ] Kullanıcının kendi sahnesini şablon olarak kaydetmesi.
 - [ ] Şablon kartlarında örnek ekran görüntüleri (şu an yer tutucu).
 - [ ] Animasyonlu şablonlar (hazır hareketli).
