@@ -11,6 +11,7 @@ import {state,view} from '../state/state.js';
 import {applySaved,saved} from '../ui/angles.js';
 import {invalidateLayout,layout,paintBg,paintItems,ratioNums} from '../ui/layout.js';
 import {syncSliders} from '../ui/sliders.js';
+import {busy,isCancel,paint} from '../ui/busy.js';
 import {toast} from '../ui/toast.js';
 import {$,mkCanvas} from '../util.js';
 
@@ -57,13 +58,19 @@ async function renderExport(onProgress){
   let src=canvas;
   LRT.forEach(o=>o.marker.visible=false);const ov=[...overlays].map(o=>[o,o.visible]);ov.forEach(([o])=>{o.visible=false;});
   const uncrisp=crispScreens(Math.max(W,H));
+  const out=mkCanvas(W,H),g=out.getContext('2d');
   try{
     // the path tracer (~260 kB) loads on first use
     if(state.quality==='photo')src=await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress,PHOTO_BUDGET_MS);
     else renderNow(dofOn()?DOF_SAMPLES:state.size>=3000?32:48);  // the depth of field is sampled by the passes
-  }finally{uncrisp();LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});}
-  const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);paintItems(g,W,H,false);g.drawImage(src,0,0,W,H);paintItems(g,W,H,true);
-  renderer.setPixelRatio(pr);invalidateLayout();layout();req();
+    paintBg(g,W,H);paintItems(g,W,H,false);g.drawImage(src,0,0,W,H);paintItems(g,W,H,true);
+  }finally{
+    // also when the render was cancelled (onProgress throws, ui/busy.js): the live view comes back
+    uncrisp();LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});
+    renderer.setPixelRatio(pr);invalidateLayout();layout();req();
+  }
+  if(onProgress)onProgress(1);  // encoding the file (a 3840 px PNG takes a moment)
+  await new Promise(r=>setTimeout(r,0));
   if(state.format==='png24')return png24(out);  // store listings: no alpha channel
   return new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('blob')),state.format==='jpg'?'image/jpeg':'image/png',.93));
 }
@@ -84,19 +91,20 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const exportBtn=$('#export'),exportAllBtn=$('#exportAll');
 exportBtn.addEventListener('click',async()=>{
   exportBtn.disabled=true;
-  const label=exportBtn.textContent;
-  try{const blob=await renderExport(p=>{exportBtn.textContent='Fotoğraf hazırlanıyor: %'+Math.round(p*100);});offer('mockup-'+stamp()+'.'+ext(),blob);toast('İndirildi');}
-  catch(e){toast('Görsel oluşturulamadı. Daha küçük bir çözünürlük dene.');}
-  finally{exportBtn.disabled=false;exportBtn.textContent=label;}
+  const b=busy(state.quality==='photo'?'Fotoğraf hazırlanıyor':'Görsel hazırlanıyor');
+  try{await paint();const blob=await renderExport(b.progress);offer('mockup-'+stamp()+'.'+ext(),blob);toast('İndirildi');}
+  catch(e){toast(isCancel(e)?'Dışa aktarım durduruldu':'Görsel oluşturulamadı. Daha küçük bir çözünürlük dene.');}
+  finally{b.close();exportBtn.disabled=false;}
 });
 exportAllBtn.addEventListener('click',async()=>{
   if(!saved.length)return;
   exportAllBtn.disabled=true;const keep=Object.assign({},state.scene),files=[];
+  const bz=busy('Açılar hazırlanıyor');
   try{
     const JSZip=await loadJSZip(),zip=JSZip?new JSZip():null,used={};
     for(let i=0;i<saved.length;i++){
-      exportAllBtn.textContent='Hazırlanıyor: '+(i+1)+' / '+saved.length;
-      applySaved(saved[i]);const b=await renderExport(p=>{exportAllBtn.textContent='Hazırlanıyor: '+(i+1)+' / '+saved.length+' (%'+Math.round(p*100)+')';});
+      bz.step(i,saved.length,saved[i].name);
+      applySaved(saved[i]);await paint();const b=await renderExport(bz.progress);
       let base=slug(saved[i].name);if(used[base])base+='-'+(++used[base]);else used[base]=1;
       files.push([base+'.'+ext(),b]);if(zip)zip.file(base+'.'+ext(),b);
     }
@@ -105,8 +113,8 @@ exportAllBtn.addEventListener('click',async()=>{
     // JSZip could not be loaded: fall back to one download per angle (spaced so browsers don't drop them)
     else for(const [n,b] of files){offer(n,b);await wait(250);}
     toast('İndirildi');
-  }catch(e){Object.assign(state.scene,keep);applyTransform();syncSliders();toast('Görseller oluşturulamadı. Daha küçük bir çözünürlük dene.');}
-  finally{exportAllBtn.disabled=false;exportAllBtn.textContent='Kayıtlı açıların hepsini ZIP olarak indir';}
+  }catch(e){Object.assign(state.scene,keep);applyTransform();syncSliders();toast(isCancel(e)?'Dışa aktarım durduruldu':'Görseller oluşturulamadı. Daha küçük bir çözünürlük dene.');}
+  finally{bz.close();exportAllBtn.disabled=false;}
 });
 
 export {exportSize,offer,renderExport};

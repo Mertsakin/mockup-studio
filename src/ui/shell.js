@@ -1,4 +1,5 @@
 import {exportSize,offer,renderExport} from '../export/export.js';
+import {busy,isCancel,paint} from './busy.js';
 import {MODS,modOf} from '../lights/mods.js';
 import {TYPES} from '../state/constants.js';
 import {TEMPLATES} from '../state/templates.js';
@@ -195,20 +196,21 @@ function syncExport(){
 $('#export').addEventListener('click',()=>setTimeout(closeMenu,0));
 const slug=s=>{const m={ç:'c',ğ:'g',ı:'i',ö:'o',ş:'s',ü:'u',Ç:'c',Ğ:'g',İ:'i',Ö:'o',Ş:'s',Ü:'u'};return String(s).replace(/[çğıöşüÇĞİÖŞÜ]/g,c=>m[c]).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'artboard';};
 $('#exportBoards').addEventListener('click',async()=>{
-  const btn=$('#exportBoards'),label=btn.textContent,back=doc.active,files=[],used={};btn.disabled=true;
+  const btn=$('#exportBoards'),back=doc.active,files=[],used={};btn.disabled=true;closeMenu();
+  const bz=busy('Artboardlar hazırlanıyor');
   try{
     for(let i=0;i<doc.boards.length;i++){
-      const b=doc.boards[i];btn.textContent='Hazırlanıyor: '+(i+1)+' / '+doc.boards.length;activate(b.id);
-      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      const b=doc.boards[i];bz.step(i,doc.boards.length,b.name);activate(b.id);
+      await paint();
       let name=slug(b.name);used[name]=(used[name]||0)+1;if(used[name]>1)name+='-'+used[name];
-      files.push([name+'.'+(state.format==='jpg'?'jpg':'png'),await renderExport()]);
+      files.push([name+'.'+(state.format==='jpg'?'jpg':'png'),await renderExport(bz.progress)]);
     }
     let JSZip=null;try{JSZip=(await import('jszip')).default;}catch(e){/* separate files */}
     if(JSZip){const z=new JSZip();files.forEach(([n,bl])=>z.file(n,bl));offer('artboardlar.zip',await z.generateAsync({type:'blob'}));}
     else files.forEach(([n,bl])=>offer(n,bl));
     toast(files.length+' artboard indirildi');
-  }catch(e){toast('Dışa aktarım tamamlanamadı. Daha küçük bir çözünürlük dene.');}
-  finally{activate(back);btn.disabled=false;btn.textContent=label;closeMenu();}
+  }catch(e){toast(isCancel(e)?'Dışa aktarım durduruldu':'Dışa aktarım tamamlanamadı. Daha küçük bir çözünürlük dene.');}
+  finally{bz.close();activate(back);btn.disabled=false;closeMenu();}
 });
 
 /* ---------- left tabs, templates ---------- */

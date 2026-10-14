@@ -677,3 +677,24 @@ html[data-pick=focus] #stagearea canvas{cursor:crosshair!important}
 #inspector .dof-group,#inspector .dof-opts{display:flex;flex-direction:column;gap:8px}
 #inspector .dof-opts[hidden]{display:none}
 .row>.lbl.wide{width:auto;flex:1}
+
+/* ---------- export progress (ui/busy.js): the whole editor waits under a scrim, the card in the dialog style ---------- */
+.scrim.busy{z-index:80;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:busy-in .2s ease-out .15s both}
+.busy-card{width:380px;padding:20px 20px 16px;display:flex;flex-direction:column;gap:16px}
+.busy-head{display:flex;align-items:center;gap:12px}
+.busy-head>div{flex:1;min-width:0}
+.busy-title{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.busy-stage{color:var(--muted);font-size:12px;margin-top:2px}
+.busy-step{flex:none;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.busy-spin{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:busy-spin .8s linear infinite}
+.busy-prog{margin:0;height:6px}
+.busy-prog i{transition:width .3s ease-out}
+.busy-prog.ind i{width:30%!important;animation:busy-ind 1.2s ease-in-out infinite;transition:none}
+.busy-foot{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.busy-pct{color:var(--ink);font-weight:500;min-width:36px}
+.busy-eta{flex:1}
+.busy-foot .btn{color:var(--ink)}
+@keyframes busy-in{from{opacity:0}to{opacity:1}}
+@keyframes busy-spin{to{transform:rotate(360deg)}}
+@keyframes busy-ind{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+@media (prefers-reduced-motion:reduce){.busy-spin,.busy-prog.ind i{animation-duration:3s}.scrim.busy{animation:none}}
