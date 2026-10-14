@@ -161,9 +161,18 @@
           <div class="row" id="artboard"><span class="lbl">Piksel</span><span class="cells"><label class="fld"><span class="k">G</span><input type="number" id="customW" min="64" max="8192" step="1" inputmode="numeric" aria-label="Genişlik (px)"></label><label class="fld"><span class="k">Y</span><input type="number" id="customH" min="64" max="8192" step="1" inputmode="numeric" aria-label="Yükseklik (px)"></label></span></div>
         </section>
         <section class="sec" data-sec="board-camera">
-          <h3 class="sh">Kamera<span class="sh-acts"><button class="menu-btn" type="button" data-chips="presets" aria-haspopup="menu">Açılar<span data-icon="alt-arrow-down" data-size="12"></span></button></span></h3>
+          <h3 class="sh">Kamera<span class="sh-acts"><button class="menu-btn" type="button" data-chips="lenses" aria-haspopup="menu">Objektif<span data-icon="alt-arrow-down" data-size="12"></span></button><button class="menu-btn" type="button" data-chips="presets" aria-haspopup="menu">Açılar<span data-icon="alt-arrow-down" data-size="12"></span></button></span></h3>
           <div class="chips" id="presets" hidden></div>
+          <div class="chips" id="lenses" hidden></div>
           <div id="angleSliders" class="slgrid"></div>
+          <div id="lensSlot" class="slgrid"></div>
+          <div class="row"><span class="lbl">Bokeh</span><label class="switch"><input type="checkbox" id="dofOn" role="switch" aria-label="Alan derinliği (bokeh)"><span></span></label></div>
+          <div id="dofOpts" class="dof-opts" hidden>
+            <div id="dofSliders" class="slgrid"></div>
+            <div class="row"><label for="dofFocus">Odak</label><select id="dofFocus"></select></div>
+            <div class="row"><span class="lbl" title="Diyafram şekli: bokeh lekelerinin biçimi">Şekil</span><div class="seg" id="dofBlades" role="group" aria-label="Diyafram şekli"><button data-v="0" title="Yuvarlak diyafram">Daire</button><button data-v="6" title="6 bıçaklı diyafram (altıgen)">6</button><button data-v="8" title="8 bıçaklı diyafram (sekizgen)">8</button></div></div>
+            <div class="row"><span class="lbl wide">Arka planı bulanıklaştır</span><label class="switch"><input type="checkbox" id="dofBg" role="switch" aria-label="Arka plan görselini ya da geçişini bulanıklaştır"><span></span></label></div>
+          </div>
           <details class="more"><summary>Kayma</summary><div id="panSliders" class="slgrid"></div></details>
         </section>
         <section class="sec" data-sec="board-bg">

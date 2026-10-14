@@ -17,13 +17,13 @@ const camera=new THREE.PerspectiveCamera(28,1,0.1,1000);
    camera, so a device crossing the seam between two boards lines up exactly. shift.x moves the image horizontally in
    board widths (NDC: 2 per board). It is applied after three builds the projection, scaled by the view offset's zoom,
    so the live crop, export tiles, the path tracer and picking (projectionMatrixInverse) all see it. */
-const shift={x:0};
+const shift={x:0,dx:0,dy:0};  // dx, dy: an extra NDC shift (the depth-of-field samples, render/accumulation.js)
 {const base=camera.updateProjectionMatrix.bind(camera);
   camera.updateProjectionMatrix=function(){
-    base();if(!shift.x)return;
-    const v=this.view,s=v&&v.enabled?v.fullWidth/v.width:1;
-    // NDC x' = x + d  ->  clip x' = x + d·w; the perspective row w = -z, i.e. element 8 (column 2, row 0) -= d
-    this.projectionMatrix.elements[8]-=shift.x*2*s;this.projectionMatrixInverse.copy(this.projectionMatrix).invert();
+    base();const sx=shift.x*2+shift.dx,sy=shift.dy;if(!sx&&!sy)return;
+    const v=this.view,s=v&&v.enabled?v.fullWidth/v.width:1,t=v&&v.enabled?v.fullHeight/v.height:1,e=this.projectionMatrix.elements;
+    // NDC x' = x + d  ->  clip x' = x + d·w; the perspective row w = -z, i.e. element 8 (column 2, row 0) -= d (y: 9)
+    e[8]-=sx*s;e[9]-=sy*t;this.projectionMatrixInverse.copy(this.projectionMatrix).invert();
   };}
 
 // r128 scaled direct light by PI in the shader ("legacy lights"). Light intensities in state and presets

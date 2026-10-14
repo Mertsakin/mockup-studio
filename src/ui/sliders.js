@@ -58,7 +58,6 @@ const G=()=>state.scene;
   {id:'g-rx',k:'rx',l:'Eğim',w:3,min:-90,max:90,step:1,reset:0,f:fDeg},
   {id:'g-rz',k:'rz',l:'Yatış',w:3,min:-180,max:180,step:1,reset:0,f:fDeg},
   {id:'g-zoom',k:'zoom',l:'Yakınlık',min:ZOOM_MIN,max:ZOOM_MAX,step:.01,reset:1,f:fX,log:true},
-  {id:'g-fov',k:'fov',l:'Perspektif',min:6,max:60,step:1,reset:28,f:fDeg,note:'Düşük değer düz, yüksek değer derin bir görünüm verir.'},
   {id:'g-panX',k:'panX',l:'Yatay kayma',s:'Yatay',min:-.6,max:.6,step:.01,reset:0,f:fPct},
   {id:'g-panY',k:'panY',l:'Dikey kayma',s:'Dikey',min:-.6,max:.6,step:.01,reset:0,f:fPct}
 ].forEach(d=>makeSlider(d.k==='panX'||d.k==='panY'?$('#panSliders'):$('#angleSliders'),d,G));  // the shift lives under "Kayma"

@@ -32,6 +32,7 @@ import './ui/items-panel.js';
 import './ui/frame-panel.js';
 import './ui/context-menu.js';
 import './ui/store.js';
+import './ui/lens-panel.js';
 import './ui/sections.js';
 import './ui/shortcuts.js';
 import './ui/insert.js';

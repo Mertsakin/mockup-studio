@@ -1,5 +1,6 @@
 import {gradCss,paintGradient} from '../render/backgrounds.js';
-import {renderer,setCrop} from '../render/renderer.js';
+import {onChange,renderer,setCrop} from '../render/renderer.js';
+import {backgroundBlurPx} from '../render/lens.js';
 import {rectOf,resolve} from '../render/item-layout.js';
 import {onFont,textPad} from '../render/text.js';
 import {drawTextAt,fxPad} from '../render/text-fx.js';
@@ -24,6 +25,8 @@ const boardScreen=()=>screen;
 const itemLayers={back:document.createElement('div'),front:document.createElement('div')};
 itemLayers.back.className='items';itemLayers.front.className='items';
 frame.prepend(itemLayers.back);frame.append(itemLayers.front);
+/* the background has its own layer under everything (the depth of field can blur it: applyBgBlur) */
+const bgEl=document.createElement('div');bgEl.className='bgl';frame.prepend(bgEl);
 function layout(){
   const r=geometry&&geometry();if(!r){frame.hidden=true;screen=null;layoutSubs.forEach(f=>f(null));return;}screen={x:r.x,y:r.y,w:r.w,h:r.h};
   // visible part of the board on the stage; the canvas covers only that, the camera renders that slice
@@ -32,7 +35,7 @@ function layout(){
   frame.hidden=x1<=x0||y1<=y0;
   frame.style.transform='translate('+vx+'px,'+vy+'px)';
   // the board background (CSS) is sized to the whole board and shifted, so the visible part lines up
-  board={w:r.w,h:r.h,x:r.x-vx,y:r.y-vy};applyBgFit();renderItems();layoutSubs.forEach(f=>f(screen));
+  board={w:r.w,h:r.h,x:r.x-vx,y:r.y-vy};applyBgFit();applyBgBlur();renderItems();layoutSubs.forEach(f=>f(screen));
   const pr=Math.min(window.devicePixelRatio||1,2),full=vw>=Math.round(r.w)-1&&vh>=Math.round(r.h)-1;
   const key=[vw,vh,pr,full?'':[r.w,r.h,vx-r.x,vy-r.y].map(v=>v.toFixed(1)).join()].join('|');
   if(key===lastKey)return;lastKey=key;
@@ -49,26 +52,45 @@ function bgRect(W,H){
   const [iw,ih]=imgSize(state.bgImg),f=state.bgFit==='contain'?Math.min:Math.max,k=f(W/iw,H/ih)*(state.bgScale||1);
   return {w:iw*k,h:ih*k,x:(W-iw*k)/2+(state.bgX||0)*W,y:(H-ih*k)/2+(state.bgY||0)*H};
 }
-function applyBgFit(){if(!board||state.bg==='transparent'){frame.style.backgroundSize='';frame.style.backgroundPosition='';return;}
+function applyBgFit(){if(!board||state.bg==='transparent'){bgEl.style.backgroundSize='';bgEl.style.backgroundPosition='';return;}
   let {w,h,x,y}=board;
   const px=v=>v.toFixed(1)+'px';
   if(hasImg()){
     // the image over a checkerboard: what the image does not cover stays transparent in the export
     const c=bgRect(w,h);
-    frame.style.backgroundSize=px(c.w)+' '+px(c.h)+',16px 16px';frame.style.backgroundPosition=px(x+c.x)+' '+px(y+c.y)+','+px(x)+' '+px(y);frame.style.backgroundRepeat='no-repeat,repeat';
+    bgEl.style.backgroundSize=px(c.w)+' '+px(c.h)+',16px 16px';bgEl.style.backgroundPosition=px(x+c.x)+' '+px(y+c.y)+','+px(x)+' '+px(y);bgEl.style.backgroundRepeat='no-repeat,repeat';
     return;
   }
-  frame.style.backgroundSize=px(w)+' '+px(h);frame.style.backgroundPosition=px(x)+' '+px(y);frame.style.backgroundRepeat='no-repeat';}
+  bgEl.style.backgroundSize=px(w)+' '+px(h);bgEl.style.backgroundPosition=px(x)+' '+px(y);bgEl.style.backgroundRepeat='no-repeat';}
 // forces the next layout to resize the renderer (after an export or thumbnail changed it)
 function invalidateLayout(){lastKey='';}
 function bgCss(){
   frame.classList.toggle('checker',state.bg==='transparent');
-  frame.style.background=state.bg==='solid'?state.solid:state.bg==='gradient'?gradCss(state):hasImg()?'url("'+state.bgImg.src+'"),repeating-conic-gradient(var(--chk1) 0 25%,var(--chk2) 0 50%)':'';
+  bgEl.style.background=state.bg==='solid'?state.solid:state.bg==='gradient'?gradCss(state):hasImg()?'url("'+state.bgImg.src+'"),repeating-conic-gradient(var(--chk1) 0 25%,var(--chk2) 0 50%)':'';
   applyBgFit();
   // the cover fit needs the image's size: lay out again once it has loaded
   if(hasImg()&&!state.bgImg.complete)state.bgImg.addEventListener('load',()=>{if(hasImg())applyBgFit();},{once:true});
 }
+/* Depth of field and the 2D background (photography's "background out of focus"): an image or gradient background
+   is blurred by the circle of confusion of something far away (render/lens.js). The layer is scaled up a little so
+   the blur does not fade at the edges; the export does the same (paintBg). */
+let bgBlur=-1;
+function applyBgBlur(){
+  const blurry=board&&(state.bg==='image'||state.bg==='gradient'),r=blurry?backgroundBlurPx(board.h):0;
+  if(Math.abs(r-bgBlur)<.25)return;bgBlur=r;
+  bgEl.style.filter=r>.3?'blur('+r.toFixed(1)+'px)':'';bgEl.style.transform=r>.3?'scale('+(1+4*r/Math.max(1,Math.min(board.w,board.h))).toFixed(4)+')':'';
+}
+onChange.add(applyBgBlur);
 function paintBg(g,W,H){
+  const r=(state.bg==='image'||state.bg==='gradient')?backgroundBlurPx(H):0;
+  if(r>.3){
+    // painted sharp off-screen, then drawn blurred and slightly enlarged (no transparent fringe at the edges)
+    const c=document.createElement('canvas');c.width=W;c.height=H;paintBgSharp(c.getContext('2d'),W,H);
+    const m=2*r;g.save();g.filter='blur('+r.toFixed(1)+'px)';g.drawImage(c,-m,-m*H/W,W+2*m,H+2*m*H/W);g.restore();return;
+  }
+  paintBgSharp(g,W,H);
+}
+function paintBgSharp(g,W,H){
   // formats without transparency (JPG, 24-bit PNG) get white where nothing else is painted
   const opaque=state.format==='jpg'||state.format==='png24';
   if(state.bg==='solid'){g.fillStyle=state.solid;g.fillRect(0,0,W,H);}

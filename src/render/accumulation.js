@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {camera,crop,onIdle,redraw,renderer,scene} from './renderer.js';
+import {apertureCm,apertureSample,dof,dofOn,focusDistance} from './lens.js';
+import {camera,crop,onIdle,redraw,renderer,scene,shift} from './renderer.js';
 
 /* ---------- progressive rendering: jittered samples are averaged while the view is still (anti-aliasing + grain-free soft shadows) ---------- */
 const seedU={value:0};
@@ -42,6 +43,15 @@ function accEnsure(w,h){
 }
 function halton(b,i){let f=1,r=0;i+=1;while(i>0){f/=b;r+=f*(i%b);i=Math.floor(i/b);}return r;}
 const dbs=new THREE.Vector2();
+/* one point of the aperture for sample i: the camera moved there (its own x / y axes), the projection shifted by
+   P·offset / F so points on the focus plane land where they did (thin lens). Returns the position to restore. */
+function lensSample(i){
+  const pos=camera.position.clone(),r=apertureCm()/2,[ax,ay]=apertureSample(i,dof().blades),dx=ax*r,dy=ay*r,F=focusDistance();
+  const tanV=Math.tan(camera.fov*Math.PI/360)/(camera.zoom||1);
+  camera.position.x+=dx;camera.position.y+=dy;camera.updateMatrixWorld();
+  shift.dx=dx/(F*tanV*camera.aspect);shift.dy=dy/(F*tanV);camera.updateProjectionMatrix();
+  return {pos};
+}
 function renderSample(i){
   renderer.getDrawingBufferSize(dbs);const w=dbs.x,h=dbs.y;
   if(i===0){hookAll();renderer.shadowMap.needsUpdate=true;}
@@ -49,7 +59,10 @@ function renderSample(i){
   const c=crop.c,jx=halton(2,i)-.5,jy=halton(3,i)-.5;
   if(i>0){if(c)camera.setViewOffset(c.fw,c.fh,c.x+jx*c.w/w,c.y+jy*c.h/h,c.w,c.h);else camera.setViewOffset(w,h,jx,jy,w,h);}
   seedU.value=(i*0.618034)%1*97.0;
+  // depth of field: the camera moves within the aperture, the image shifts back so the focus plane stays put
+  const lens=dofOn()?lensSample(i):null;
   renderer.setRenderTarget(ACC.frame);renderer.clear();renderer.render(scene,camera);
+  if(lens){camera.position.copy(lens.pos);camera.updateMatrixWorld();shift.dx=0;shift.dy=0;camera.updateProjectionMatrix();}
   if(i>0){if(c)camera.setViewOffset(c.fw,c.fh,c.x,c.y,c.w,c.h);else camera.clearViewOffset();}
   quad.material=addMat;addMat.uniforms.tex.value=ACC.frame.texture;
   renderer.setRenderTarget(ACC.acc);if(i===0)renderer.clear();
@@ -71,13 +84,16 @@ function startLoop(){(function loop(){
   requestAnimationFrame(loop);
   if(ACC.paused)return;
   if(redraw.dirty){redraw.dirty=false;ACC.n=0;}
-  if(ACC.n>=ACC.max){onIdle.forEach(f=>f());return;}
+  // the depth of field needs more samples for smooth blur (the aperture is sampled by them)
+  const max=dofOn()?DOF_SAMPLES:ACC.max;
+  if(ACC.n>=max){onIdle.forEach(f=>f());return;}
   renderer.getDrawingBufferSize(dbs);
   if(!accEnsure(dbs.x,dbs.y)){hookAll();renderer.shadowMap.needsUpdate=true;renderer.setRenderTarget(null);renderer.render(scene,camera);ACC.n=ACC.max;return;}
   const per=ACC.n===0?1:2;
-  for(let k=0;k<per&&ACC.n<ACC.max;k++){renderSample(ACC.n);ACC.n++;}
+  for(let k=0;k<per&&ACC.n<max;k++){renderSample(ACC.n);ACC.n++;}
   present(ACC.n);
 })();}
 
+const DOF_SAMPLES=192;
 const pauseLive=on=>{ACC.paused=on;if(!on)redraw.dirty=true;};
-export {pauseLive,renderNow,startLoop};
+export {DOF_SAMPLES,pauseLive,renderNow,startLoop};

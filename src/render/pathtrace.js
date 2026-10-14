@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {HDRLoader} from 'three/addons/loaders/HDRLoader.js';
-import {DenoiseMaterial,GradientEquirectTexture,ShapedAreaLight,WebGLPathTracer} from 'three-gpu-pathtracer';
+import {DenoiseMaterial,GradientEquirectTexture,PhysicalCamera,ShapedAreaLight,WebGLPathTracer} from 'three-gpu-pathtracer';
 import {RT} from '../devices/rt.js';
 import {lightTan} from '../lights/mods.js';
 import {LIGHT_SCALE,camera,overlays,renderer,req,scene} from './renderer.js';
@@ -8,6 +8,7 @@ import {ground,hemi,lightRoot,pivot,wall} from './stage.js';
 import {floorOn as floorShown,state,view} from '../state/state.js';
 import {D2R,V3,mkCanvas} from '../util.js';
 import {paintGradient} from './backgrounds.js';
+import {apertureCm,dof,dofOn,focusDistance} from './lens.js';
 
 /* Photo quality (three-gpu-pathtracer): the export (renderPathTraced) and the idle preview (previewTick) share one
    studio set-up (setupStudio), applied to the live scene and undone right after; nothing else ever sees it, because
@@ -99,6 +100,16 @@ function envUp(tex){
     for(let x=0;x<W;x++){const i=(y*W+x)*4;e+=w*(.2126*f(d[i])+.7152*f(d[i+1])+.0722*f(d[i+2]));}}
   envUpCache.set(tex,e/Math.PI);return e/Math.PI;
 }
+/* Depth of field (render/lens.js): the path tracer reads a lens only from a PhysicalCamera, so the scene camera
+   becomes one (a PerspectiveCamera subclass: nothing else changes). Its shader assumes metres (bokehSize · 1e-3 is the
+   aperture); the scene is in cm, so the aperture in cm goes in × 1000. Set before every setScene (it reads the camera). */
+function applyLens(){
+  if(!(camera instanceof PhysicalCamera))Object.setPrototypeOf(camera,PhysicalCamera.prototype);
+  const on=dofOn();
+  Object.defineProperty(camera,'bokehSize',{value:on?apertureCm()*1000:0,writable:true,configurable:true});
+  camera.focusDistance=on?Math.max(.01,focusDistance()-camera.near):10;  // its rays start on the near plane
+  camera.apertureBlades=on?dof().blades:0;camera.apertureRotation=0;camera.anamorphicRatio=1;
+}
 function ensurePT(){
   if(pt)return pt;
   pt=new WebGLPathTracer(renderer);
@@ -117,7 +128,13 @@ function ensurePT(){
   const ptm=pt._pathTracer.material,pfs=ptm.fragmentShader,
     sharp=pfs.replace('tentFilter( ruv.x ) * ssd.x, tentFilter( ruv.y ) * ssd.y','( ruv.x - 0.5 ) * ssd.x, ( ruv.y - 0.5 ) * ssd.y');
   if(sharp===pfs)console.warn('PhysicalPathTracingMaterial: pixel filter line not found, photo exports stay softer');
-  ptm.fragmentShader=sharp;ptm.needsUpdate=true;
+  // depth of field: the package focuses on a sphere around the camera (the distance along each ray), so a device off the
+  // image centre fell out of focus. A real lens (and the raster preview, accumulation.js) focuses on a plane.
+  const plane=sharp.replace('vec3 focalPoint = ray.origin + normalize( ray.direction ) * physicalCamera.focusDistance;',
+    'vec3 camFwd = normalize( ( cameraWorldMatrix * vec4( 0.0, 0.0, - 1.0, 0.0 ) ).xyz );\n'+
+    'vec3 focalPoint = ray.origin + normalize( ray.direction ) * ( physicalCamera.focusDistance / max( 1e-4, dot( normalize( ray.direction ), camFwd ) ) );');
+  if(plane===sharp)console.warn('PhysicalPathTracingMaterial: focus line not found, the depth of field focuses on a sphere');
+  ptm.fragmentShader=plane;ptm.needsUpdate=true;
   return pt;
 }
 // Prepares the live scene for path tracing; returns the function that undoes it.
@@ -329,7 +346,7 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000){
   const env=await loadHdri().catch(()=>null)||gradientEnv(),undoStudio=setupStudio(env),t0=performance.now();
   let raw,aux=null,fix=null;
   try{
-    ensurePT();pt.renderScale=1;{const s=textureSizeFor(scene);pt.textureSize.set(s,s);}pt.setScene(scene,camera);await calibrateFloor();
+    ensurePT();pt.renderScale=1;{const s=textureSizeFor(scene);pt.textureSize.set(s,s);}applyLens();pt.setScene(scene,camera);await calibrateFloor();
     // one call per tile of about TRACE_TILE_PX pixels: the page keeps repainting at export sizes (a whole 3840 px
     // sample would block the tab for seconds); pt.samples advances by a fraction per tile
     const n=Math.max(1,Math.ceil(Math.sqrt(renderer.domElement.width*renderer.domElement.height/TRACE_TILE_PX)));pt.tiles.set(n,n);
@@ -470,7 +487,7 @@ function gradientEnv(){if(!gradient){gradient=new GradientEquirectTexture(64);gr
 let preview=null;
 function previewTick(){
   if(!hdri){loadHdri().catch(()=>{hdri=null;});return;}  // first time: wait for the HDRI
-  if(!preview){ensurePT();const p=preview={undo:setupStudio(hdri),busy:true};pt.renderScale=PREVIEW_SCALE;pt.tiles.set(1,1);pt.textureSize.set(1024,1024);pt.setScene(scene,camera);
+  if(!preview){ensurePT();const p=preview={undo:setupStudio(hdri),busy:true};pt.renderScale=PREVIEW_SCALE;pt.tiles.set(1,1);pt.textureSize.set(1024,1024);applyLens();pt.setScene(scene,camera);
     calibrateFloor().finally(()=>{p.busy=false;});}
   if(preview.busy||pt.samples>=PREVIEW_SAMPLES)return;
   pt.renderSample();

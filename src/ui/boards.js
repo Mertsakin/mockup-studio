@@ -62,7 +62,7 @@ function store(){const b=activeBoard();if(!b)return;b.snap=snapshot();const t=ca
    snapshot is taken (switching boards, every history step) the others of its set get those parts; each keeps its own
    background, 2D items and slice. Their thumbnails are re-rendered from the live scene (same camera, their own lens
    shift, background and items), a moment later, without switching boards. */
-const SHARED=['floor','wall','wallGap','selfShadow','shadowColor','shadowOpacity','ambient','exposure','anim','quality','env','worldLights'];
+const SHARED=['floor','wall','wallGap','selfShadow','shadowColor','shadowOpacity','ambient','exposure','anim','quality','env','worldLights','dof'];
 const sharedOf=s=>JSON.stringify([s.devices,s.lights,s.frame,s.state.scene,SHARED.map(k=>s.state[k])]);
 const sameSet=(a,b)=>{const p=a.snap.state.pano,q=b.snap.state.pano;return a!==b&&!!p&&!!q&&p.g===q.g;};
 let thumbTimer=0;

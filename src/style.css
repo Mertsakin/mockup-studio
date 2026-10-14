@@ -291,7 +291,8 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .ab.active .ab-label,.ab.sel .ab-label{color:var(--accent-ink)}
 .ab-size{position:absolute;left:50%;top:100%;margin-top:6px;background:var(--accent);color:var(--on-accent);font-size:10px;line-height:16px;padding:0 5px;border-radius:3px;white-space:nowrap;transform-origin:50% 0}
 .guide{position:absolute;background:var(--guide);pointer-events:none;z-index:2}
-.frame{position:absolute;left:0;top:0;overflow:hidden}
+.frame{position:absolute;left:0;top:0;overflow:hidden;isolation:isolate}
+.frame>.bgl{position:absolute;inset:0;z-index:-1;pointer-events:none;transform-origin:50% 50%}
 /* 2D items: a layer under the WebGL canvas and one over it (layout.js); picking goes through pointer.js */
 .items{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
 .items .ifr{position:absolute;left:0;top:0;transform-origin:50% 50%;box-sizing:border-box}
@@ -669,3 +670,8 @@ details.more>summary:hover{color:var(--ink-2)}
 html[data-tool="zoom"] #stagearea,html[data-tool="zoom"] #gl{cursor:zoom-in}
 html.alt-down[data-tool="zoom"] #stagearea,html.alt-down[data-tool="zoom"] #gl{cursor:zoom-out}
 .zmarq{position:absolute;z-index:6;pointer-events:none;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:2px}
+
+/* Kamera › Bokeh: picking a focus point on the scene (ui/lens-panel.js) */
+html[data-pick=focus] #stagearea canvas{cursor:crosshair!important}
+.dof-opts{margin-top:2px}
+.row>.lbl.wide{width:auto;flex:1}

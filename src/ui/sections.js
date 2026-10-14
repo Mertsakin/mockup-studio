@@ -1,4 +1,5 @@
 import {modOf} from '../lights/mods.js';
+import {mmFromFov} from '../render/lens.js';
 import {FX} from '../render/text-fx.js';
 import {COLORS,TYPES} from '../state/constants.js';
 import {sel,selItem,state} from '../state/state.js';
@@ -19,7 +20,7 @@ const deg=v=>Math.round(v)+'°';
 const BG={transparent:'Yok',solid:'Düz renk',gradient:'Geçiş',image:'Görsel'};
 const SUMMARY={
   'board-size':()=>{const [w,h]=sizeOf(state);return (state.ratio==='custom'?'Özel':state.ratio)+' · '+w+' × '+h;},
-  'board-camera':()=>{const S=state.scene;return deg(S.ry)+' · '+deg(S.rx)+' · '+S.zoom.toFixed(2)+'×';},
+  'board-camera':()=>{const S=state.scene,d=state.dof;return Math.round(mmFromFov(S.fov))+' mm'+(d&&d.on?' f/'+d.f:'')+' · '+deg(S.ry)+' · '+deg(S.rx)+' · '+S.zoom.toFixed(2)+'×';},
   'board-bg':()=>BG[state.bg]||'',
   'board-env':()=>(state.env==='space'?'Uzay':'Stüdyo')+(state.env!=='space'&&state.floor?' · gölge %'+Math.round(state.shadowOpacity*100):''),
   'board-light':()=>{const n=state.lights.length;return n?modOf(state.lights[0].mod).n+(n>1?' + '+(n-1):''):'Işık yok';},

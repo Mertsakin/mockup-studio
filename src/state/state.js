@@ -26,6 +26,8 @@ const state={
   // env 'space' (Uzay): no floor, wall or contact shadows, free orbit over the top (render/transform.js orbit);
   // worldLights: the lights turn with the scene instead of staying with the camera
   env:'studio',worldLights:false,
+  // depth of field (render/lens.js): null = off; {on, f, focus, blades, bg}
+  dof:null,
   floor:true,wall:false,wallGap:.35,selfShadow:true,shadowColor:'#000000',shadowOpacity:.55,ambient:1,exposure:1,markers:true,showDome:true,lights:[],selLight:null,
   ratio:'4:5',customW:1920,customH:1080,size:3840,format:'png',quality:'fast',photoPreview:false
 };

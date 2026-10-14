@@ -13,12 +13,13 @@ import {ui} from '../ui/ui-state.js';
 import {$,$$,mkCanvas} from '../util.js';
 import {exportSize,offer} from './export.js';
 
+import {dofOn} from '../render/lens.js';
 /* Video export (Canlandır): every frame is set up at its time and rendered like the fast still export (progressive
    samples, background and 2D items composited), then encoded to H.264 with WebCodecs and muxed into an MP4.
    Deterministic: frame i shows t = i / fps whatever the machine's speed.
    Motion blur: the frame's samples are spread over half a frame interval around t (a 180° shutter), so only what
    moves blurs, like a real camera. The screenshot scroll is set once per frame (redrawing it per sample is costly). */
-const SAMPLES=16,SHUTTER=.5,BPP=.16;  // bits per pixel per frame
+const SAMPLES=16,DOF_SAMPLES=64,SHUTTER=.5,BPP=.16;  // bits per pixel per frame
 const X={res:1920,fps:30,blur:true};
 const scrim=$('#videoScrim');
 const size=()=>{const [w,h]=exportSize(X.res,X.res);return [w-w%2,h-h%2];};  // H.264 wants even sizes
@@ -49,14 +50,14 @@ async function renderVideo(onProgress){
   pauseLive(true);
   try{
     setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
-    const moving=state.devices.some(hasAnim),dt=1/X.fps;
+    const moving=state.devices.some(hasAnim),dt=1/X.fps,S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
     for(let i=0;i<n;i++){
       if(cancel)return null;
       if(failed)throw failed;
       const t=i*dt;
       applyAt(t,{sync:true});
-      if(X.blur&&moving)renderNow(SAMPLES,j=>{applyAt(Math.max(0,Math.min(state.anim.dur,t+((j+.5)/SAMPLES-.5)*SHUTTER*dt)),{scroll:false});});
-      else renderNow(SAMPLES);
+      if(X.blur&&moving)renderNow(S,j=>{applyAt(Math.max(0,Math.min(state.anim.dur,t+((j+.5)/S-.5)*SHUTTER*dt)),{scroll:false});});
+      else renderNow(S);
       g.clearRect(0,0,W,H);
       if(state.bg==='transparent'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}  // MP4 has no alpha
       paintBg(g,W,H);paintItems(g,W,H,false,t);g.drawImage(canvas,0,0,W,H);paintItems(g,W,H,true,t);

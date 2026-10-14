@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {RT} from '../devices/rt.js';
 import {LRT} from '../lights/runtime.js';
-import {renderNow} from '../render/accumulation.js';
+import {DOF_SAMPLES,renderNow} from '../render/accumulation.js';
+import {dofOn} from '../render/lens.js';
 import {png24} from './png24.js';
 import {fontsReady} from '../render/text.js';
 import {camera,canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
@@ -59,7 +60,7 @@ async function renderExport(onProgress){
   try{
     // the path tracer (~260 kB) loads on first use
     if(state.quality==='photo')src=await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,onProgress,PHOTO_BUDGET_MS);
-    else renderNow(state.size>=3000?32:48);
+    else renderNow(dofOn()?DOF_SAMPLES:state.size>=3000?32:48);  // the depth of field is sampled by the passes
   }finally{uncrisp();LRT.forEach(o=>o.marker.visible=state.markers);ov.forEach(([o,v])=>{o.visible=v;});}
   const out=mkCanvas(W,H),g=out.getContext('2d');paintBg(g,W,H);paintItems(g,W,H,false);g.drawImage(src,0,0,W,H);paintItems(g,W,H,true);
   renderer.setPixelRatio(pr);invalidateLayout();layout();req();

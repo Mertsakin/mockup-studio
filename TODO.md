@@ -51,7 +51,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 3. [ ] **Gömülebilir etkileşimli 3B mockup:** açılış sayfasına PNG yerine döndürülebilen, kaydırılabilen hafif bir web bileşeni.
 4. [ ] **Yapay zekâ ile sahne:** 3B cihazı yapay zekâyla üretilmiş ortama ışığı ve gölgesi tutarlı oturtma (ortamdan HDRI / ışık yönü tahmini → yol izleyici); referans fotoğrafın ışığını taklit; istemden kompozisyon önerisi.
 5. [ ] **Ekranda video:** cihaz ekranında MP4 ekran kaydı; 9:16 ve 1:1 sosyal formatlar; artboard'lar arası kamera geçişleri; WebM/GIF.
-6. [ ] **Gerçekçilikte son mil:** alan derinliği, yansıtıcı/dokulu zemin, jenerik 3B eller (telefonu tutan el), dekor nesneleri, GLB içe aktarma.
+6. [ ] **Gerçekçilikte son mil:** ~~alan derinliği~~ (bitti), yansıtıcı/dokulu zemin, jenerik 3B eller (telefonu tutan el), dekor nesneleri, GLB içe aktarma.
 7. [ ] **Ekip ve bulut:** bulut proje, paylaşım linki, yorumlar, ekip kütüphanesi (marka kiti, ortak şablonlar); ücretli ekip planının dayanağı.
 
 İlk sırada 1, 2 ve 5 gelir (gelir getiren iş akışı); 3 ve 4 vitrin özellikleri.
@@ -100,7 +100,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [ ] **Alan ışıkları (raster):** `RectAreaLight` ile softbox/strip/pencere; parlak yüzeylerde doğru şekilli vurgu.
 - [ ] Ekranın gövdeye yansıyan ışığı (`SCREEN_GLOW`) ve ortam kalibrasyonu: farklı sahnelerle ince ayar.
 - [ ] Ekran camı yansımasına kullanıcı ayarı (yoğunluk); sıyırma açısında ekranı soldurmasın.
-- [ ] **Alan derinliği (bokeh)** ve odak noktası seçimi (yol izleyicide kamera açıklığı hazır).
+- [x] **Alan derinliği (bokeh)** ve odak noktası seçimi: objektif hazırları (24–200 mm), mm alanı, Bokeh anahtarı (diyafram, odak: cihaz ya da sahneden nokta, diyafram şekli, arka planı bulanıklaştır); Hızlı ve Fotoğraf kalitesinde, videoda.
 - [ ] **Yansıtıcı / dokulu zemin:** parlak masa, mermer, ahşap, beton.
 - [ ] **GLB içe aktarma:** kullanıcının kendi (lisanslı) modeli + ekran malzemesini işaretleme.
 - [ ] Cihaz detayları devamı: jenerik kamera lensleri, monitör ayağı formu.
