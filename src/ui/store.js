@@ -194,16 +194,24 @@ function openDialog(){
 }
 $('#storeSetBtn').addEventListener('click',openDialog);
 
-/* ---------- the board inspector's "Mağaza" sizes: the artboard takes that exact size and the 24-bit PNG format */
-const sizeEl=$('#storeSize');
-sizeEl.appendChild(new Option('Hazır ölçü seç…',''));
+/* ---------- the board's size: one list for the aspect ratios, the store sizes and a custom size. A store size makes the
+   artboard exactly that big and switches the export to 24-bit PNG */
+const RATIOS=['1:1','4:5','9:16','16:9','4:3','21:9'];
+const sizeEl=$('#ratioSel');
+{const g=document.createElement('optgroup');g.label='Oran';RATIOS.forEach(r=>g.appendChild(new Option(r,'r:'+r)));sizeEl.appendChild(g);}
 ['App Store','Google Play'].forEach(st=>{const g=document.createElement('optgroup');g.label=st;
-  STORE_SIZES.filter(z=>z.store===st).forEach(z=>g.appendChild(new Option(z.n+' · '+z.w+' × '+z.h,z.id)));sizeEl.appendChild(g);});
+  STORE_SIZES.filter(z=>z.store===st).forEach(z=>g.appendChild(new Option(z.n+' · '+z.w+' × '+z.h,'s:'+z.id)));sizeEl.appendChild(g);});
+sizeEl.appendChild(new Option('Özel boyut…','custom'));
 sizeEl.addEventListener('change',()=>{
-  const z=STORE_SIZES.find(x=>x.id===sizeEl.value);if(!z)return;
-  Object.assign(state,{ratio:'custom',customW:z.w,customH:z.h,format:'png24'});layout();syncAll();
-  toast(z.store+' '+z.n+': '+z.w+' × '+z.h+' px, saydamsız PNG');
+  const v=sizeEl.value;
+  if(v.startsWith('r:'))state.ratio=v.slice(2);
+  else if(v==='custom')state.ratio='custom';
+  else{const z=STORE_SIZES.find(x=>'s:'+x.id===v);if(z){Object.assign(state,{ratio:'custom',customW:z.w,customH:z.h,format:'png24'});toast(z.store+' '+z.n+': '+z.w+' × '+z.h+' px, saydamsız PNG');}}
+  layout();syncAll();
 });
-onSyncUI(()=>{const z=STORE_SIZES.find(x=>state.ratio==='custom'&&x.w===state.customW&&x.h===state.customH);sizeEl.value=z?z.id:'';});
+onSyncUI(()=>{
+  if(state.ratio!=='custom'){sizeEl.value='r:'+state.ratio;return;}
+  const z=STORE_SIZES.find(x=>x.w===state.customW&&x.h===state.customH);sizeEl.value=z?'s:'+z.id:'custom';
+});
 
 export {generate as generateStoreSet,openDialog as openStoreDialog};

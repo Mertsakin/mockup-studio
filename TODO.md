@@ -25,6 +25,7 @@ Yayından önce ürünün içerik eksikleri kapanır; yayın ve ürünleştirme 
 4. [x] **Mağaza görseli üretici** (14 Ekim; yerelleştirme hariç): App Store (6,9", 6,5", iPad 13") ve Play Store (telefon, tablet, öne çıkan görsel) ölçüleri; tek seferde 5–8 artboard'luk "mağaza seti" (ortak fon, yazı tipi, renk; başlık + cihaz + ekran); **panorama modu** (fon ve cihazlar artboard sınırlarını aşarak akar). Yerelleştirme (dil başına metin varyantı, toplu ZIP) bundan sonra.
 4b. [x] **Çerçeveler ve auto layout** (14 Ekim, Figma mantığı): metin ve görseller çerçevelere girer; yön, aralık, iç boşluk, 3×3 hizalama, eşit aralık, esnet; Sabit / Sar / Doldur / % boyutlar; X, Y, W, H sayısal alanları; sürükleyerek sıralama, çerçeveye bırakma, ⌥⌘G / ⇧A / ⇧⌘G. [x] Mağaza setinde başlık + alt başlık auto layout çerçevesinde. [ ] Sonra: kenar kısıtları (constraints), sarma (wrap), min/maks boyut, çerçeve gölgesi ve kenarlığı. [x] İçeriğe saran çerçeve büyürken üst kenar sabit (anc).
 4c. [x] **Uzay ortamı** (14 Ekim): artboard ayarında Stüdyo / Uzay; Uzay'da zemin yok, sahne iz topuyla her yöne döner, isteğe bağlı "Işık sahneyle döner"; "Serbest takla" ve "Yörünge turu" hazır hareketleri.
+4d. [x] **Sağ panel sadeleşti** (14 Ekim): katlanan bölümler ve özet satırları, kaydırıcılar yerine değer alanları, hazırlar menüde, boyut tek listede, seyrek ayarlar "Ayrıntılar" altında, cihazda Ekran üstte.
 5. [ ] **Şablonlar:** metinli ve mağaza seti şablonları, animasyonlu şablonlar, kendi sahneni şablon olarak kaydetme, kartlarda gerçek örnek ekranlar.
 
 ## Strateji

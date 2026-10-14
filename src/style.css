@@ -143,8 +143,8 @@ kbd{font:inherit;color:var(--muted)}
 .title-in{border:1px solid transparent;border-radius:4px;background:none;height:26px;padding:0 4px;margin-left:-5px}
 .title-in:hover{border-color:var(--line-strong)}
 .title-in:focus{border-color:var(--accent);outline:none}
-.sec{padding:12px 16px 14px;border-bottom:1px solid var(--line)}
-.sh{display:flex;align-items:center;justify-content:space-between;height:20px;margin:0 0 8px;font-weight:600;font-size:11px}
+.sec{padding:4px 14px 14px;border-bottom:1px solid var(--line)}
+.sh{display:flex;align-items:center;justify-content:space-between;gap:6px;height:36px;margin:0 0 4px;font-weight:600;font-size:12px}
 .sh .ib{margin-right:-6px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:var(--h);margin-top:4px}
 .row>.lbl,.row>label:first-child{flex:none;width:88px;color:var(--muted);line-height:14px}
@@ -510,3 +510,64 @@ html[data-tool="frame"] #gl{cursor:crosshair}
 
 /* Ortam (controls.js): rows that only make sense in the studio or in space */
 html[data-env="space"] [data-env="studio"],html:not([data-env="space"]) [data-env="space"]{display:none!important}
+
+/* ---------- inspector, minimal (sections.js, sliders.js value fields) ---------- */
+/* folding sections: the header is a button; folded, only the header (title + summary) shows */
+.sh.fold{cursor:pointer;user-select:none;justify-content:flex-start;margin-left:-4px;border-radius:5px}
+.sh.fold:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sh .chev{display:inline-flex;width:14px;justify-content:center;color:var(--muted);transition:transform .15s;flex:none}
+.sh .chev .ic{width:12px;height:12px}
+.sec.folded>.sh .chev{transform:rotate(-90deg)}
+.sh .sum{flex:1;min-width:0;text-align:right;color:var(--muted);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sec:not(.folded)>.sh .sum{visibility:hidden}
+.sec.folded{padding-bottom:4px}
+.sec.folded>:not(.sh){display:none!important}
+.sec.folded>.sh{margin-bottom:0}
+.sh .sh-acts{margin-left:auto}
+.menu-btn{display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 6px;border-radius:5px;color:var(--ink-2);font-weight:500;font-size:11px}
+.menu-btn:hover{background:var(--field)}
+.menu .mi.on{color:var(--accent-ink)}
+/* value fields in a 6-column grid: data-w 3 = a third, 2 = half, 1 = the whole row */
+.slgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:6px}
+.slgrid:empty{display:none}
+.slgrid>.sl,.slgrid>.nf{grid-column:span 3}
+.slgrid>.sl[data-w="3"],.slgrid>.cell3{grid-column:span 2}
+.slgrid>.sl[data-w="1"]{grid-column:1 / -1}
+.slgrid.one{grid-template-columns:1fr;margin-top:0}
+.slgrid.one>*{grid-column:1 / -1}
+.slgrid .contents{display:contents}
+.slgrid .contents>.sl{grid-column:span 2}
+.slgrid>.cell3>.nf{width:100%}
+.slgrid>[hidden],.slgrid .contents>[hidden]{display:none}
+.nf.sl .nfk{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62%}
+.nf.sl input{text-align:left}
+/* "more" disclosures: rarely used settings */
+details.more{margin-top:8px}
+details.more>summary{list-style:none;display:flex;align-items:center;gap:4px;color:var(--muted);font-size:11px;cursor:pointer;user-select:none;height:20px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"";width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);margin:0 4px 0 2px;transition:transform .15s}
+details.more[open]>summary::before{transform:rotate(45deg)}
+details.more>summary:hover{color:var(--ink-2)}
+/* rows that pack several controls */
+.row.tight{gap:6px;justify-content:flex-start}
+.row.tight>select{flex:1;min-width:0}
+.row.tight>select.grow2{flex:2}
+.row .grow,.grow{flex:1;min-width:0}
+.row>select:only-child{flex:1}
+.seg.mini{flex:none;width:60px}
+.seg.mini button{font-size:13px}
+/* device type: one row of icons */
+.typeicons{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;background:var(--field);border-radius:6px;padding:2px;margin-bottom:8px}
+.typeicons button{height:28px;border-radius:4px;display:grid;place-items:center;color:var(--muted)}
+.typeicons button:hover{color:var(--ink)}
+.typeicons button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.sec .swatches{margin-bottom:4px}
+/* screen drop zone and capture: tighter */
+.drop{min-height:40px;padding:6px 8px;border-style:solid;border-color:transparent}
+.capture{margin:6px 0 2px}
+.capture-actions .btn{height:26px}
+/* the animation ◆ of a value field sits on the field's corner, so the label keeps its room */
+.nf{position:relative}
+.nf .nfk .kdot{position:absolute;left:-3px;top:-3px;width:9px;height:9px;margin:0;background:var(--panel);z-index:1}
+.nf .nfk .kdot.at{background:var(--key)}
+.nf .nfk .kdot::before{content:"";position:absolute;inset:-5px}  /* a larger hit area */

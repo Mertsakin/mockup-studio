@@ -155,26 +155,22 @@
       </div>
       <div id="inspBoard">
         <div class="head"><span data-icon="frame"></span><input class="title-in" id="boardName" aria-label="Artboard adı" spellcheck="false"><button class="ib sm" type="button" id="boardMore" aria-label="Artboard seçenekleri"><span data-icon="menu-dots"></span></button></div>
-        <section class="sec">
+        <section class="sec" data-sec="board-size">
           <h3 class="sh">Boyut</h3>
-          <div class="seg seg-wide" data-key="ratio" role="group" aria-label="Görsel oranı">
-            <button data-v="1:1">1:1</button><button data-v="4:5">4:5</button><button data-v="9:16">9:16</button><button data-v="16:9">16:9</button><button data-v="4:3">4:3</button><button data-v="21:9">21:9</button><button data-v="custom">Özel</button>
-          </div>
+          <div class="row"><select id="ratioSel" aria-label="Artboard boyutu"></select></div>
           <div class="row" id="artboard"><span class="lbl">Piksel</span><span class="cells"><label class="fld"><span class="k">G</span><input type="number" id="customW" min="64" max="8192" step="1" inputmode="numeric" aria-label="Genişlik (px)"></label><label class="fld"><span class="k">Y</span><input type="number" id="customH" min="64" max="8192" step="1" inputmode="numeric" aria-label="Yükseklik (px)"></label></span></div>
-          <div class="row"><label class="lbl" for="storeSize">Mağaza</label><select id="storeSize"></select></div>
         </section>
-        <section class="sec">
-          <h3 class="sh">Kamera</h3>
-          <div class="chips" id="presets"></div>
-          <div id="angleSliders"></div>
+        <section class="sec" data-sec="board-camera">
+          <h3 class="sh">Kamera<span class="sh-acts"><button class="menu-btn" type="button" data-chips="presets" aria-haspopup="menu">Açılar<span data-icon="alt-arrow-down" data-size="12"></span></button></span></h3>
+          <div class="chips" id="presets" hidden></div>
+          <div id="angleSliders" class="slgrid"></div>
+          <details class="more"><summary>Kayma</summary><div id="panSliders" class="slgrid"></div></details>
         </section>
-        <section class="sec">
+        <section class="sec" data-sec="board-bg">
           <h3 class="sh">Arka plan</h3>
           <div class="seg seg-wide" data-key="bg"><button data-v="transparent">Yok</button><button data-v="solid">Düz</button><button data-v="gradient">Geçiş</button><button data-v="image">Görsel</button></div>
-          <div class="row" data-bg="solid"><label class="lbl" for="solid">Renk</label><input type="color" id="solid"></div>
-          <div class="row" data-bg="gradient"><span class="lbl">Renkler</span><span class="pair"><input type="color" id="bg1" aria-label="Başlangıç rengi"><input type="color" id="bg2" aria-label="Bitiş rengi"></span></div>
-          <div class="row" data-bg="gradient"><span class="lbl">Tür</span><div class="seg" data-key="gradType" role="group" aria-label="Geçiş türü"><button data-v="linear">Doğrusal</button><button data-v="radial">Dairesel</button></div></div>
-          <div id="gradAngleSlot" data-bg="gradient"></div>
+          <div class="row" data-bg="solid"><input type="color" id="solid" aria-label="Arka plan rengi"><span class="hint-sm">Düz renk</span></div>
+          <div class="row tight" data-bg="gradient"><span class="pair"><input type="color" id="bg1" aria-label="Başlangıç rengi"><input type="color" id="bg2" aria-label="Bitiş rengi"></span><div id="gradAngleSlot" class="slgrid one grow"></div><div class="seg mini" data-key="gradType" role="group" aria-label="Geçiş türü"><button data-v="linear" title="Doğrusal" aria-label="Doğrusal">⟋</button><button data-v="radial" title="Dairesel" aria-label="Dairesel">◎</button></div></div>
           <label class="drop" id="bgDrop" tabindex="0" data-bg="image">
             <input type="file" id="bgFile" accept="image/*" hidden>
             <span class="drop-ic" data-icon="gallery-add"></span>
@@ -183,27 +179,27 @@
           </label>
           <div data-bg="image" id="bgAdjust">
             <div class="row"><span class="lbl">Yerleşim</span><div class="seg" data-key="bgFit" role="group" aria-label="Görsel yerleşimi"><button data-v="cover">Kapla</button><button data-v="contain">Sığdır</button></div></div>
-            <div id="bgSliders"></div>
+            <div id="bgSliders" class="slgrid"></div>
             <div class="row"><span class="lbl"></span><button class="linkbtn" type="button" id="bgReset">Yerleşimi sıfırla</button></div>
           </div>
         </section>
-        <section class="sec">
+        <section class="sec" data-sec="board-env">
           <h3 class="sh">Ortam ve gölge</h3>
           <div class="seg seg-wide" data-key="env" role="group" aria-label="Ortam"><button data-v="studio">Stüdyo</button><button data-v="space">Uzay</button></div>
           <p class="hint-sm" data-env="space">Zemin yok; sahne her yöne, tepeden aşarak da döner.</p>
           <div class="row" data-env="space"><span class="lbl">Işık sahneyle döner</span><label class="switch"><input type="checkbox" id="worldLights" aria-label="Işıklar sahneyle birlikte dönsün"><span></span></label></div>
           <div class="row" data-env="studio"><span class="lbl">Zemine gölge</span><label class="switch"><input type="checkbox" id="floor" aria-label="Zemine gölge"><span></span></label></div>
           <div class="row" data-env="studio"><span class="lbl">Arka duvar</span><label class="switch"><input type="checkbox" id="wall" aria-label="Arka duvara gölge"><span></span></label></div>
-          <div id="wallSlot" data-env="studio"></div>
+          <div id="wallSlot" data-env="studio" class="slgrid"></div>
           <div class="row"><span class="lbl">Cihazlar arası</span><label class="switch"><input type="checkbox" id="selfShadow" aria-label="Cihazlar birbirine gölge düşürsün"><span></span></label></div>
           <div class="row"><label class="lbl" for="shadowColor">Gölge rengi</label><input type="color" id="shadowColor"></div>
-          <div id="shadowSlot"></div>
+          <div id="shadowSlot" class="slgrid"></div>
         </section>
-        <section class="sec">
-          <h3 class="sh">Işık düzeni</h3>
-          <div class="chips" id="lightPresets"></div>
+        <section class="sec" data-sec="board-light">
+          <h3 class="sh">Işık<span class="sh-acts"><button class="menu-btn" type="button" data-chips="lightPresets" aria-haspopup="menu">Hazır<span data-icon="alt-arrow-down" data-size="12"></span></button></span></h3>
+          <div class="chips" id="lightPresets" hidden></div>
           <div class="dome-slot" id="domeSlotBoard"></div>
-          <div id="ambientSlot"></div>
+          <div id="ambientSlot" class="slgrid"></div>
           <div class="row"><span class="lbl">Işık küreleri</span><label class="switch"><input type="checkbox" id="markers" aria-label="Işık konumlarını sahnede göster"><span></span></label></div>
           <input type="checkbox" id="showDome" hidden aria-hidden="true" tabindex="-1">
         </section>
@@ -220,36 +216,7 @@
           <p class="hint-sm" id="keyIsDesign" hidden>Tasarım karesi: Tasarla ve durağan görsel bu anı gösterir.</p>
           <button class="btn full" type="button" id="keyDesign" title="Tasarla ve durağan görsel bu anı göstersin">Tasarım karesi yap</button>
         </section>
-        <section class="sec">
-          <h3 class="sh">Model</h3>
-          <div class="typegrid" id="typeGrid" role="group" aria-label="Cihaz tipi"></div>
-          <div data-for="phone tablet laptop monitor page">
-            <span class="lbl block">Renk</span><div class="swatches" id="swatches"></div>
-            <span class="lbl block">Yüzey</span>
-            <div class="typegrid" id="finishGrid" role="group" aria-label="Gövde yüzeyi"></div>
-            <div class="row" data-for="phone tablet"><span class="lbl">Arka yüz</span>
-              <div class="seg" data-dkey="backFinish" role="group" aria-label="Arka yüz"><button data-v="matte">Mat</button><button data-v="glossy">Parlak</button></div>
-            </div>
-          </div>
-          <div class="row" data-for="phone tablet"><span class="lbl">Yön</span>
-            <div class="seg" data-dkey="landscape"><button data-v="false">Dikey</button><button data-v="true">Yatay</button></div>
-          </div>
-          <div class="row" data-for="phone"><span class="lbl">Ön kamera</span>
-            <div class="seg" data-dkey="notch"><button data-v="hole">Delik</button><button data-v="none">Yok</button></div>
-          </div>
-          <div id="lidSlot" data-for="laptop"></div>
-          <div class="row" data-for="browser"><span class="lbl">Tema</span>
-            <div class="seg" data-dkey="theme"><button data-v="light">Açık</button><button data-v="dark">Koyu</button></div>
-          </div>
-          <div class="row" data-for="browser"><span class="lbl">Pencere</span>
-            <div class="seg" data-dkey="winRatio"><button data-v="16:9">16:9</button><button data-v="16:10">16:10</button><button data-v="4:3">4:3</button></div>
-          </div>
-          <div class="row" data-for="page"><span class="lbl">Oran</span>
-            <div class="seg" data-dkey="pageRatio"><button data-v="16:10">16:10</button><button data-v="4:3">4:3</button><button data-v="3:4">3:4</button><button data-v="9:16">9:16</button></div>
-          </div>
-          <div class="row" data-for="browser"><label class="lbl" for="url">Adres</label><input type="text" id="url" spellcheck="false" autocomplete="off"></div>
-        </section>
-        <section class="sec">
+        <section class="sec" data-sec="dev-screen">
           <h3 class="sh">Ekran</h3>
           <label class="drop" id="drop" tabindex="0">
             <input type="file" id="file" accept="image/*" hidden>
@@ -272,24 +239,54 @@
             <div class="seg" data-dkey="fit"><button data-v="cover">Doldur</button><button data-v="contain">Sığdır</button><button data-v="stretch">Esnet</button></div>
           </div>
           <div class="row" id="screenBgRow"><label class="lbl" for="screenBg">Boşluk rengi</label><input type="color" id="screenBg"></div>
-          <div id="scrollSlot" hidden>
+          <div id="scrollSlot" class="slgrid" hidden>
             <button class="btn full" id="scrollAll" type="button">Tüm cihazları bu noktaya kaydır</button>
           </div>
           <div class="row" data-for="phone tablet laptop monitor browser page"><span class="lbl">Cam yansıması</span><label class="switch"><input type="checkbox" id="glare" aria-label="Ekran camı yansıması"><span></span></label></div>
         </section>
-        <section class="sec">
+        <section class="sec" data-sec="dev-model">
+          <h3 class="sh">Model</h3>
+          <div class="typeicons" id="typeGrid" role="group" aria-label="Cihaz tipi"></div>
+          <div data-for="phone tablet laptop monitor page">
+            <div class="swatches" id="swatches" role="group" aria-label="Renk"></div>
+            <div class="row"><label class="lbl" for="finishSel">Yüzey</label><select id="finishSel"></select></div>
+          </div>
+          <div id="lidSlot" data-for="laptop" class="slgrid"></div>
+          <details class="more" data-for="phone tablet"><summary>Ayrıntılar</summary>
+            <div class="row" data-for="phone tablet"><span class="lbl">Arka yüz</span>
+              <div class="seg" data-dkey="backFinish" role="group" aria-label="Arka yüz"><button data-v="matte">Mat</button><button data-v="glossy">Parlak</button></div>
+            </div>
+            <div class="row" data-for="phone tablet"><span class="lbl">Yön</span>
+              <div class="seg" data-dkey="landscape"><button data-v="false">Dikey</button><button data-v="true">Yatay</button></div>
+            </div>
+            <div class="row" data-for="phone"><span class="lbl">Ön kamera</span>
+              <div class="seg" data-dkey="notch"><button data-v="hole">Delik</button><button data-v="none">Yok</button></div>
+            </div>
+          </details>
+          <div class="row" data-for="browser"><span class="lbl">Tema</span>
+            <div class="seg" data-dkey="theme"><button data-v="light">Açık</button><button data-v="dark">Koyu</button></div>
+          </div>
+          <div class="row" data-for="browser"><span class="lbl">Pencere</span>
+            <div class="seg" data-dkey="winRatio"><button data-v="16:9">16:9</button><button data-v="16:10">16:10</button><button data-v="4:3">4:3</button></div>
+          </div>
+          <div class="row" data-for="page"><span class="lbl">Oran</span>
+            <div class="seg" data-dkey="pageRatio"><button data-v="16:10">16:10</button><button data-v="4:3">4:3</button><button data-v="3:4">3:4</button><button data-v="9:16">9:16</button></div>
+          </div>
+          <div class="row" data-for="browser"><label class="lbl" for="url">Adres</label><input type="text" id="url" spellcheck="false" autocomplete="off"></div>
+        </section>
+        <section class="sec" data-sec="dev-transform">
           <h3 class="sh">Dönüşüm<span class="sh-acts"><button class="keybtn anim-only" type="button" id="poseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Tüm değerler için bu anda anahtar kare <kbd>K</kbd></span></button><button class="ib sm" type="button" id="resetDevice" aria-label="Konumu sıfırla"><span data-icon="restart" data-size="14"></span><span class="tip">Konumu sıfırla</span></button></span></h3>
-          <div id="devSliders"></div>
+          <div id="devSliders" class="slgrid"></div>
           <div id="animSlots" class="anim-only"></div>
           <p class="hint-sm anim-only" id="animHint">◆ dolu: bu anda kare var · ◇: değer animasyonlu. Bir değeri değiştirmek yalnızca onu kaydeder.</p>
           <p class="note design-only" id="animNote" hidden>Bu cihaz animasyonlu. Burada animasyonun tasarım karesini (<span id="animNoteT"></span> sn) görüyorsun; değişiklikler yalnızca o kareye yazılır, diğer kareler değişmez.</p>
           <details id="placeDetails" hidden></details>
         </section>
-        <section class="sec anim-only">
+        <section class="sec anim-only" data-sec="dev-presets">
           <h3 class="sh">Hazır hareket</h3>
           <div class="chips" id="presetChips"></div>
         </section>
-        <section class="sec">
+        <section class="sec" data-sec="dev-layer">
           <h3 class="sh">Yerleşim</h3>
           <div class="seg seg-wide" id="layerBtns" role="group" aria-label="Seçili cihazın katman sırası">
             <button type="button" data-layer="front" title="En öne getir (⇧⌘])">En öne</button><button type="button" data-layer="forward" title="Bir öne (⌘])">Öne</button><button type="button" data-layer="backward" title="Bir arkaya (⌘[)">Arkaya</button><button type="button" data-layer="back" title="En arkaya gönder (⇧⌘[)">En arkaya</button>
@@ -322,14 +319,14 @@
       <!-- 2D item -->
       <div id="inspItem" hidden>
         <div class="head"><span id="itemIcon" data-icon="gallery"></span><input class="title-in" id="itemName" aria-label="Öğe adı" spellcheck="false"><button class="ib sm" type="button" id="itemDelete" aria-label="Öğeyi sil" title="Sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
-        <section class="sec" id="geoSec">
+        <section class="sec" id="geoSec" data-sec="item-geo">
           <h3 class="sh">Konum ve boyut<span class="sh-acts"><button class="keybtn anim-only" type="button" id="itemPoseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Tüm değerler için bu anda anahtar kare <kbd>K</kbd></span></button></span></h3>
           <div class="nfgrid" id="geoGrid"></div>
           <p class="hint-sm" id="flowNote" hidden>Konumu auto layout belirliyor. Sürükleyerek ya da oklarla sırasını değiştir.</p>
           <div class="row" id="absRow" hidden><span class="lbl">Yerleşim</span><div class="seg" id="itemAbs" role="group" aria-label="Auto layout içinde yerleşim"><button type="button" data-v="flow">Otomatik</button><button type="button" data-v="abs">Mutlak</button></div></div>
           <div class="row" id="centerRow"><span class="lbl">Ortala</span><span class="cells"><button class="btn" type="button" id="itemCenterX">Yatay</button><button class="btn" type="button" id="itemCenterY">Dikey</button></span></div>
         </section>
-        <section class="sec" id="alSec" hidden>
+        <section class="sec" id="alSec" data-sec="item-al" hidden>
           <h3 class="sh">Auto layout</h3>
           <div class="seg seg-wide" id="alDir" role="group" aria-label="Auto layout yönü"><button type="button" data-v="none">Yok</button><button type="button" data-v="row">Yatay →</button><button type="button" data-v="col">Dikey ↓</button></div>
           <div id="alBody">
@@ -345,24 +342,24 @@
             <label class="chk"><input type="checkbox" id="alPadEach"> Her kenar ayrı</label>
           </div>
         </section>
-        <section class="sec" id="frameSec" hidden>
+        <section class="sec" id="frameSec" data-sec="item-frame" hidden>
           <h3 class="sh">Çerçeve</h3>
           <div class="row"><span class="lbl">Dolgu</span><span class="pair"><label class="switch"><input type="checkbox" id="frFillOn" aria-label="Dolgu"><span></span></label><input type="color" id="frFill" aria-label="Dolgu rengi"></span></div>
           <div class="nfgrid" id="frGrid"></div>
           <div class="row"><span class="lbl">İçeriği kırp</span><label class="switch"><input type="checkbox" id="frClip" aria-label="Taşan içeriği kırp"><span></span></label></div>
         </section>
-        <section class="sec" id="textSec" hidden>
+        <section class="sec" id="textSec" data-sec="item-text" hidden>
           <h3 class="sh">Metin</h3>
           <textarea class="tbody" id="textBody" rows="2" aria-label="Metin içeriği" spellcheck="false"></textarea>
-          <div class="row"><label class="lbl" for="textFont">Yazı tipi</label><select id="textFont"></select></div>
-          <div class="row"><label class="lbl" for="textWeight">Kalınlık</label><span class="cells cells-2-1"><select id="textWeight"></select><button class="btn" type="button" id="textItalic" aria-pressed="false" title="İtalik"><span data-icon="text-italic"></span></button></span></div>
-          <div id="textSizeSlot"></div>
-          <div class="row"><span class="lbl">Hizalama</span><div class="seg" id="textAlign" role="group" aria-label="Metin hizalaması"><button type="button" data-v="left">Sol</button><button type="button" data-v="center">Orta</button><button type="button" data-v="right">Sağ</button></div></div>
-          <div class="row"><span class="lbl">Dolgu</span><div class="seg" id="textFill" role="group" aria-label="Metin dolgusu"><button type="button" data-v="solid">Düz</button><button type="button" data-v="gradient">Gradyan</button></div></div>
-          <div class="row"><span class="lbl">Renk</span><span class="pair"><input type="color" id="textColor" aria-label="Metin rengi"><input type="color" id="textColor2" aria-label="Gradyan bitiş rengi"></span></div>
-          <div id="textSliders"></div>
+          <div class="row tight"><select id="textFont" aria-label="Yazı tipi" class="grow2"></select><select id="textWeight" aria-label="Kalınlık"></select></div>
+          <div class="slgrid" id="textGrid"><div id="textSizeSlot" class="cell3"></div><div id="textSliders" class="contents"></div></div>
+          <div class="row tight"><div class="seg grow" id="textAlign" role="group" aria-label="Metin hizalaması"><button type="button" data-v="left">Sol</button><button type="button" data-v="center">Orta</button><button type="button" data-v="right">Sağ</button></div><button class="ib" type="button" id="textItalic" aria-pressed="false" title="İtalik" aria-label="İtalik"><span data-icon="text-italic"></span></button><input type="color" id="textColor" aria-label="Metin rengi"></div>
+          <details class="more"><summary>Gradyan ve gölge</summary>
+            <div class="row tight"><div class="seg grow" id="textFill" role="group" aria-label="Metin dolgusu"><button type="button" data-v="solid">Düz</button><button type="button" data-v="gradient">Gradyan</button></div><input type="color" id="textColor2" aria-label="Gradyan bitiş rengi"></div>
+            <div id="textMoreSliders" class="slgrid"></div>
+          </details>
         </section>
-        <section class="sec" id="fxSec" hidden>
+        <section class="sec" id="fxSec" data-sec="item-fx" hidden>
           <h3 class="sh">Metin efekti<span class="sh-acts"><button class="btn sm" type="button" id="fxPlay" title="Canlandır'a geç ve efekti oynat">Oynat</button></span></h3>
           <div class="row"><label class="lbl" for="fxIn">Giriş</label><select id="fxIn"></select></div>
           <div class="fxopts" id="fxInOpts"></div>
@@ -372,11 +369,11 @@
           <div class="fxopts" id="fxLoopOpts"></div>
           <p class="hint-sm">Efektler Canlandır'da ve videoda oynar. Tasarla ve durağan görsel metnin son hâlini gösterir.</p>
         </section>
-        <section class="sec anim-only">
+        <section class="sec anim-only" data-sec="item-presets">
           <h3 class="sh">Hazır hareket</h3>
           <div class="chips" id="itemPresetChips"></div>
         </section>
-        <section class="sec">
+        <section class="sec" data-sec="item-layer">
           <h3 class="sh">Katman</h3>
           <div class="seg seg-wide" id="itemSide" role="group" aria-label="Cihazlara göre konum"><button type="button" data-front="true">Cihazların önünde</button><button type="button" data-front="false">Arkasında</button></div>
           <div class="row"><span class="lbl">Sıra</span><span class="cells">
@@ -392,16 +389,16 @@
       <div id="inspLight" hidden>
         <div class="head"><span data-icon="sun-2"></span><span class="t" id="lightTitle">Işık</span><button class="ib sm" type="button" id="removeLight" aria-label="Işığı sil"><span data-icon="trash-bin-minimalistic"></span></button></div>
         <div class="lightbox" id="lightBox">
-          <section class="sec">
+          <section class="sec" data-sec="light-src">
             <h3 class="sh">Kaynak</h3>
             <div class="typegrid" id="modGrid" role="group" aria-label="Işık kaynağı ve şekillendirici"></div>
             <div class="seg seg-wide" data-lkey="type"><button data-v="directional">Yönlü</button><button data-v="point">Nokta</button><button data-v="spot">Spot</button></div>
             <div class="row"><label class="lbl" for="lightColor">Renk</label><input type="color" id="lightColor"></div>
           </section>
-          <section class="sec">
+          <section class="sec" data-sec="light-char">
             <h3 class="sh">Konum ve karakter</h3>
             <div class="dome-slot" id="domeSlotLight"></div>
-            <div id="lightSliders"></div>
+            <div id="lightSliders" class="slgrid"></div>
             <div class="row"><span class="lbl">Gölge düşür</span><label class="switch"><input type="checkbox" id="lightShadow" aria-label="Bu ışık gölge düşürsün"><span></span></label></div>
             <div id="lightShadowSlot"><p class="charnote" id="lightChar"></p></div>
           </section>

@@ -27,12 +27,12 @@ const edit=fn=>{const t=selItem();if(!t||t.kind!=='text')return;const [W,H]=size
 // font size: a number field in board px (the item stores it as a fraction of the board width)
 const fsField=numField({id:'nf-fs',label:'Boyut',title:'Yazı boyutu (px)',min:1,max:2000,
   get:()=>selItem()?Math.round((selItem().size||.06)*boardW()):null,set:v=>{if(typeof v==='number')edit(t=>{t.size=+(v/boardW()).toFixed(5);});}});
-fsField.el.classList.add('wide');$('#textSizeSlot').appendChild(fsField.el);$('#textSizeSlot').classList.add('nfgrid','one');
+$('#textSizeSlot').appendChild(fsField.el);
 [
-  {id:'t-lh',k:'lh',l:'Satır aralığı',min:.7,max:2.5,step:.01,reset:1.15,f:fX,after:textAfter},
-  {id:'t-ls',k:'ls',l:'Harf aralığı',min:-.1,max:.5,step:.005,reset:0,f:fPct,after:textAfter},
-  {id:'t-shadow',k:'shadow',l:'Gölge',min:0,max:1,step:.01,reset:0,f:fPct,after:textAfter}
+  {id:'t-lh',k:'lh',l:'Satır aralığı',s:'Satır',w:3,min:.7,max:2.5,step:.01,reset:1.15,f:fX,after:textAfter},
+  {id:'t-ls',k:'ls',l:'Harf aralığı',s:'Harf',w:3,min:-.1,max:.5,step:.005,reset:0,f:fPct,after:textAfter},
 ].forEach(d=>makeSlider($('#textSliders'),d,it));
+makeSlider($('#textMoreSliders'),{id:'t-shadow',k:'shadow',l:'Gölge',min:0,max:1,step:.01,reset:0,f:fPct,after:textAfter},it);
 
 const body=$('#textBody'),fontEl=$('#textFont'),weightEl=$('#textWeight');
 body.addEventListener('input',()=>edit(t=>{t.text=body.value;}));

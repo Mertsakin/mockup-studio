@@ -9,6 +9,7 @@ import {applyTransform,autoRefit,refit} from '../render/transform.js';
 import {COLORS,COMPS,DEFAULT_SCENE,SCALE_MIN,TYPES,ZOOM_MIN} from '../state/constants.js';
 import {newDevice,sel,state} from '../state/state.js';
 import {parseV} from './controls.js';
+import {icon} from './icons.js';
 import {fPct,makeSlider,syncSliders} from './sliders.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
 import {toast} from './toast.js';
@@ -30,10 +31,11 @@ function renderDevList(){
 }
 const addSel=$('#addType');
 Object.entries(TYPES).forEach(([k,n])=>{const o=document.createElement('option');o.value=k;o.textContent=n;addSel.appendChild(o);});
-const typeGrid=$('#typeGrid');
+// device types: one row of icons (the name in the tooltip and for screen readers)
+const typeGrid=$('#typeGrid'),TYPE_ICON={phone:'smartphone',tablet:'tablet',laptop:'laptop',monitor:'monitor',browser:'window-frame',page:'display',custom:'gallery-wide'};
 Object.entries(TYPES).forEach(([k,n])=>{
-  const b=document.createElement('button');b.type='button';b.textContent=n==='Kendi çerçeven'?'Çerçeve':n;b.dataset.type=k;
-  if(k==='custom')b.title='Kendi çerçeve PNG\u2019n';
+  const b=document.createElement('button');b.type='button';b.innerHTML=icon(TYPE_ICON[k]||'smartphone',16);b.dataset.type=k;
+  b.title=k==='custom'?'Kendi çerçeven (PNG)':n;b.setAttribute('aria-label',b.title);
   b.addEventListener('click',()=>{const d=sel();if(d.type===k)return;
     const solo=state.devices.length===1;d.type=k;
     if(solo){Object.assign(state.scene,DEFAULT_SCENE[k],{zoom:1,panX:0,panY:0});}
@@ -103,9 +105,11 @@ function applyComp(c){
   $('#placeDetails').open=state.devices.length>1;syncAll();
 }
 /* ---------- swatches ---------- */
-const finishGrid=$('#finishGrid');
-Object.entries(FINISHES).forEach(([k,f])=>{const b=document.createElement('button');b.type='button';b.textContent=f.n;b.dataset.fin=k;
-  b.addEventListener('click',()=>{const d=sel();d.finish=k;const o=RT.get(d.id);if(o)applyColorTo(o.mats,d);req();syncUI();});finishGrid.appendChild(b);});
+// body finish: a list (null: the colour's own finish)
+const finishSel=$('#finishSel');
+finishSel.appendChild(new Option('Renge göre',''));
+Object.entries(FINISHES).forEach(([k,f])=>finishSel.appendChild(new Option(f.n,k)));
+finishSel.addEventListener('change',()=>{const d=sel();d.finish=finishSel.value||null;const o=RT.get(d.id);if(o)applyColorTo(o.mats,d);req();syncUI();});
 const swWrap=$('#swatches');
 COLORS.forEach(c=>{
   const b=document.createElement('button');b.type='button';b.className='sw';b.style.background=c.c;b.dataset.k=c.k;
@@ -141,7 +145,7 @@ onSyncUI(d=>{
   $$('[data-for]').forEach(el=>{el.hidden=!el.dataset.for.split(' ').includes(d.type);});
   $('#screenBgRow').hidden=d.fit!=='contain';
   swWrap.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===d.colorKey)));
-  finishGrid.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.fin===d.finish)));
+  finishSel.value=d.finish||'';
   customInput.value=d.custom;custom.style.background=d.colorKey==='custom'?d.custom:'';
   screenBgEl.value=d.screenBg;glareEl.checked=d.glare;if(document.activeElement!==urlEl)urlEl.value=d.url;
   $('#selTitle').textContent=devLabel(d);
