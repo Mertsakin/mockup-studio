@@ -151,7 +151,25 @@ function ensurePT(){
     const main=pt._pathTracer,low=pt._lowResPathTracer;
     if(low)Object.defineProperty(low,'stableNoise',{get:()=>main.stableNoise,set(){},configurable:true});
   }else console.warn('PhysicalPathTracingMaterial: sampler not found, photo exports are not repeatable');
+  // - the package sorts meshes, materials, textures and lights by uuid, which is random per page load: with three
+  //   lights the light list came out in a different order every run, so the same seed sampled other lights (the
+  //   laptop's calibration scale landed on one of ~4 values). Its calls see uuids prefixed by the scene order.
+  ['setScene','updateMaterials','updateLights'].forEach(k=>{const f=pt[k];pt[k]=function(...a){return orderedIds(k==='setScene'?a[0]:this.scene,()=>f.apply(this,a));};});
   return pt;
+}
+// Runs fn with every object, geometry, material, texture and texture source in the scene carrying a uuid that sorts
+// in traversal order (index prefix) and stays unique (the original after it: the package's caches key on uuids, a
+// rebuilt mesh must not look unchanged), then puts the originals back. Nested calls reuse the outer ones.
+let idDepth=0;
+function orderedIds(scene,fn){
+  if(idDepth||!scene)return fn();
+  const old=new Map(),tag=o=>{if(o&&!old.has(o)&&typeof o.uuid==='string'){old.set(o,o.uuid);o.uuid=String(old.size).padStart(6,'0')+'-'+o.uuid;}};
+  scene.traverse(o=>{tag(o);if(!o.isMesh)return;tag(o.geometry);
+    (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(!m)return;tag(m);
+      for(const k in m){const t=m[k];if(t&&t.isTexture){tag(t);tag(t.source);}}});});
+  idDepth++;
+  try{return fn();}
+  finally{idDepth--;old.forEach((u,o)=>{o.uuid=u;});}
 }
 // Prepares the live scene for path tracing; returns the function that undoes it.
 function setupStudio(env){
