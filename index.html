@@ -139,7 +139,7 @@
       <div class="tl-body" id="tlBody">
         <div class="tl-names" id="tlNames"></div>
         <div class="tl-lanes" id="tlLanes"></div>
-        <p class="tl-empty" id="tlEmpty">Bir cihaz seç ve <b>◆ Anahtar kare</b> ile ilk kareyi ekle ya da <b>Hazır hareket ekle</b> ile başla. İmleç neredeyse yaptığın değişiklik o ana kaydedilir.</p>
+        <p class="tl-empty" id="tlEmpty">Bir cihaz, ışık ya da artboard'u (kamera) seç ve <b>◆ Anahtar kare</b> ile ilk kareyi ekle ya da <b>Hazır hareket ekle</b> ile başla. İmleç neredeyse yaptığın değişiklik o ana kaydedilir.</p>
       </div>
     </section>
     </div>
@@ -161,7 +161,7 @@
           <div class="row" id="artboard"><span class="lbl">Piksel</span><span class="cells"><label class="fld"><span class="k">G</span><input type="number" id="customW" min="64" max="8192" step="1" inputmode="numeric" aria-label="Genişlik (px)"></label><label class="fld"><span class="k">Y</span><input type="number" id="customH" min="64" max="8192" step="1" inputmode="numeric" aria-label="Yükseklik (px)"></label></span></div>
         </section>
         <section class="sec" data-sec="board-camera">
-          <h3 class="sh">Kamera<span class="sh-acts"><button class="menu-btn" type="button" data-chips="lenses" aria-haspopup="menu">Objektif<span data-icon="alt-arrow-down" data-size="12"></span></button><button class="menu-btn" type="button" data-chips="presets" aria-haspopup="menu">Açılar<span data-icon="alt-arrow-down" data-size="12"></span></button></span></h3>
+          <h3 class="sh">Kamera<span class="sh-acts"><button class="keybtn anim-only" type="button" id="camPoseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Kameranın tüm değerleri için bu anda anahtar kare <kbd>K</kbd></span></button><button class="menu-btn" type="button" data-chips="lenses" aria-haspopup="menu">Objektif<span data-icon="alt-arrow-down" data-size="12"></span></button><button class="menu-btn" type="button" data-chips="presets" aria-haspopup="menu">Açılar<span data-icon="alt-arrow-down" data-size="12"></span></button></span></h3>
           <div class="chips" id="presets" hidden></div>
           <div class="chips" id="lenses" hidden></div>
           <div id="angleSliders" class="slgrid"></div>
@@ -176,6 +176,10 @@
           </div>
           </div>
           <details class="more"><summary>Kayma</summary><div id="panSliders" class="slgrid"></div></details>
+        </section>
+        <section class="sec anim-only" data-sec="board-presets">
+          <h3 class="sh">Kamera hareketi</h3>
+          <div class="chips" id="camPresetChips"></div>
         </section>
         <section class="sec" data-sec="board-bg">
           <h3 class="sh">Arka plan</h3>
@@ -407,11 +411,15 @@
             <div class="row"><label class="lbl" for="lightColor">Renk</label><input type="color" id="lightColor"></div>
           </section>
           <section class="sec" data-sec="light-char">
-            <h3 class="sh">Konum ve karakter</h3>
+            <h3 class="sh">Konum ve karakter<span class="sh-acts"><button class="keybtn anim-only" type="button" id="lightPoseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Işığın tüm değerleri için bu anda anahtar kare <kbd>K</kbd></span></button></span></h3>
             <div class="dome-slot" id="domeSlotLight"></div>
             <div id="lightSliders" class="slgrid"></div>
             <div class="row"><span class="lbl">Gölge düşür</span><label class="switch"><input type="checkbox" id="lightShadow" aria-label="Bu ışık gölge düşürsün"><span></span></label></div>
             <div id="lightShadowSlot"><p class="charnote" id="lightChar"></p></div>
+          </section>
+          <section class="sec anim-only" data-sec="light-presets">
+            <h3 class="sh">Hazır hareket</h3>
+            <div class="chips" id="lightPresetChips"></div>
           </section>
         </div>
       </div>

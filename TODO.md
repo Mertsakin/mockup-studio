@@ -63,8 +63,9 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [ ] İlk 60 saniye: boş tuval yerine "URL ver → hazır görsel" karşılama akışı.
 - [ ] Jenerik cihaz algısı: "Neden iPhone gibi değil?" sorusuna GLB içe aktarma ve "Kendi çerçeven" ile net cevap.
 
-## Son eklenenler (9–13 Ekim 2026)
+## Son eklenenler (9–17 Ekim 2026)
 
+- [x] **Kamera ve ışık animasyonu** (17 Ekim): Canlandır'da kamera (açılar, Yakınlık, objektif, kayma) ve ışıklar (yön, yükseklik, uzaklık, yoğunluk, boyut, huzme) cihazlar gibi anahtar kare alır; zaman çizelgesinde Kamera ve ışık satırları, panellerde ◆ ve "Anahtar kare", kamera ve ışık hazır hareketleri; videoda kamera/ışık hareketine bulanıklık, ışık hareketinde yansımalar kare kare.
 - [x] Yol izleme: kalibre edilmiş gölge yakalayıcı zemin diski, parlak stüdyo ortamı, fon duvarı kaldırıldı; fon rengi birebir.
 - [x] Yol izleme hız/kalite: 4096 px dokular, Neutral ton eşleme, sakin ekran camı, karolu örnekleme ve OIDN (3840×4800 ≈ 25 sn, eskiden 116 sn), bantlı aux geçişleri; dışa aktarımda keskin ekranlar (`crispScreens`).
 - [x] Dışa aktarım varsayılanı 3840 px; canlı görüntü dışa aktarımdan keskinse uyarı.

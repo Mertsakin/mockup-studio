@@ -25,6 +25,9 @@ const copy=o=>JSON.parse(JSON.stringify(o));
 function snapshot(){
   const images={},st={};
   for(const k in state)if(!SKIP_STATE.has(k))st[k]=copy(state[k]);
+  // the camera (state.scene) and the lights animate like the devices: stored at their design frames
+  tracked(state.scene).forEach(k=>{st.scene[k]=interp(state.scene.tracks[k],designT(state.scene));});
+  const lights=state.lights.map(L=>{const o=copy(L);tracked(L).forEach(k=>{o[k]=interp(L.tracks[k],designT(L));});return o;});
   st.bgImg=imgKey(state.bgImg);if(state.bgImg)images[st.bgImg]=state.bgImg;
   // text items have no image (kind 'text'): their content is plain data
   st.items=state.items.map(it=>{
@@ -35,7 +38,7 @@ function snapshot(){
     // animated values are stored at the design frame, not at the editor's playhead (moving the playhead is not an edit)
     tracked(d).forEach(k=>{o[k]=interp(d.tracks[k],designT(d));});
     if(d.img){o.img=imgKey(d.img);images[o.img]=d.img;}if(d.frameImg){o.frameImg=imgKey(d.frameImg);images[o.frameImg]=d.frameImg;}return o;});
-  return {v:1,state:st,devices,lights:copy(state.lights),selected:state.selected,selLight:state.selLight,
+  return {v:1,state:st,devices,lights,selected:state.selected,selLight:state.selLight,
     frame:{comp:comp.position.toArray(),fitRadius:view.fitRadius},images};
 }
 // what history compares: everything but the image elements themselves (their keys are in the device data)
@@ -56,7 +59,8 @@ function restore(s){
   for(const k in DEF)if(!(k in s.state))state[k]=copy(DEF[k]);
   // the export size used to be the long edge (1080 / 2160 / 3840); now it is the width (the #size options in index.html)
   if(![1080,1920,3840].includes(state.size))state.size=1920;
-  Object.assign(state.scene,copy(s.state.scene));
+  // the scene object stays (modules hold it); its animation goes if the snapshot has none
+  delete state.scene.tracks;delete state.scene.designT;Object.assign(state.scene,copy(s.state.scene));
   state.devices=s.devices.map(o=>Object.assign({},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null}));
   state.lights=copy(s.lights);
   reserveDeviceIds(Math.max(0,...state.devices.map(d=>d.id)));reserveLightIds(Math.max(0,...state.lights.map(l=>l.id)));

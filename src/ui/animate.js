@@ -1,15 +1,16 @@
 import {scrollScreen,setScreenTexture} from '../devices/screen.js';
 import {onChange} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
-import {MAX_DUR,designT,halfFrame,hasAnim,interp,isDevice,keyIn,propsOf,refOf,snapT,sortKeys,timesOf,tracked,valuesAt} from '../state/anim.js';
+import {MAX_DUR,WRAPS,designT,halfFrame,hasAnim,interp,keyIn,kindOf,propsOf,refOf,snapT,sortKeys,timesOf,tracked,valuesAt} from '../state/anim.js';
 import {state} from '../state/state.js';
 import {onBoards} from './boards.js';
 import {onItems,renderItems,setItemClock} from './layout.js';
 import {syncSliders} from './sliders.js';
 import {setUi,ui} from './ui-state.js';
 
-/* Animation editing. Data: state/anim.js (o.tracks, o.designT, state.anim). Targets are the devices and the 2D items
-   (state.items); they are told apart by their reference (refOf: 'd3', 'i2').
+/* Animation editing. Data: state/anim.js (o.tracks, o.designT, state.anim). Targets are the camera (state.scene), the
+   devices, the 2D items (state.items) and the lights; they are told apart by their reference (refOf: 'cam', 'd3',
+   'i2', 'l1').
    Tasarla shows every target at its design frame (o.designT, 0 s unless an intro preset moved it to its end): the
    still image, thumbnails and snapshots are that frame. Canlandır shows the playhead (A.t, editor state).
    Edits are not hooked control by control: after every change (renderer onChange for devices, item redraws for items)
@@ -20,14 +21,17 @@ import {setUi,ui} from './ui-state.js';
    - Canlandır: the changed value gets a key at the playhead (only that value). A value animated for the first time
      also gets a key at the design frame holding its previous value, so the design frame does not change unless the
      playhead is on it.
-   Text effects (it.fx, render/text.js) are not keys: they draw from the time the layout's clock gives (setItemClock). */
+   Text effects (it.fx, render/text.js) are not keys: they draw from the time the layout's clock gives (setItemClock).
+   The camera and the lights record through the same path: their edits (fields, light map, orbit drag, angle presets)
+   end in applyTransform → req, like a device's. */
 const A={t:0,playing:false,sel:null};  // sel: selected key {ref, t, prop|null} (null prop = summary key: every value at t)
 const subs=[];
 function onAnim(fn){subs.push(fn);}
 const emit=()=>subs.forEach(f=>f());
 const fps=()=>state.anim.fps||30;
 const applied=new Map();  // target ref -> {prop: value last applied or seen}
-const targets=()=>state.devices.concat(state.items);
+// in timeline order: the camera, the devices, the 2D items, the lights
+const targets=()=>[state.scene].concat(state.devices,state.items,state.lights);
 const byRef=ref=>ref?targets().find(o=>refOf(o)===ref):undefined;
 const hasFx=it=>!!(it.fx&&(it.fx.in||it.fx.out||it.fx.loop));
 
@@ -38,10 +42,10 @@ function applyAt(t,opts){
   const syncScroll=opts&&opts.sync,doScroll=!(opts&&opts.scroll===false);
   let moved=false,items=false;
   targets().forEach(o=>{
-    const ref=refOf(o),v=valuesAt(o,typeof t==='function'?t(o):t),seen=applied.get(ref)||{},dev=isDevice(o);
+    const ref=refOf(o),v=valuesAt(o,typeof t==='function'?t(o):t),seen=applied.get(ref)||{},item=kindOf(o)==='item';
     for(const k in v){
       if(k==='scroll'){if(doScroll&&Math.abs(o.scroll-v[k])>1e-6){if(syncScroll){o.scroll=v[k];setScreenTexture(o);}else scrollScreen(o,v[k]);}}
-      else if(o[k]!==v[k]){o[k]=v[k];if(dev)moved=true;else items=true;}
+      else if(o[k]!==v[k]){o[k]=v[k];if(item)items=true;else moved=true;}
       seen[k]=o[k];
     }
     applied.set(ref,seen);
@@ -87,13 +91,17 @@ function put(o,k,t,v){
 function record(o,k,prev,cur){
   if(A.playing)stop();
   const tr=o.tracks&&o.tracks[k],dt=designT(o);
+  if(ui.mode!=='animate'&&!(tr&&tr.length))return;
+  // a wrapped angle (the orbit drag and the light map keep them within ±180°): the key takes the turn nearest the
+  // previous value, so 170° → −170° is a 20° move, not a 340° one; the field follows (181° renders like −179°)
+  if(WRAPS[kindOf(o)].includes(k)){let c=cur;while(c-prev>180)c-=360;while(c-prev<-180)c+=360;
+    if(c!==cur){cur=c;o[k]=c;const seen=applied.get(refOf(o));if(seen)seen[k]=c;}}
   if(ui.mode==='animate'){
     const t=snapT(A.t,fps());
     // first key of this value: its design-frame value stays as it was
     if((!tr||!tr.length)&&Math.abs(t-dt)>=halfFrame(fps()))put(o,k,dt,prev);
     const key=put(o,k,t,cur);A.sel={ref:refOf(o),t:key.t,prop:null};
-  } else if(tr&&tr.length)put(o,k,dt,cur);
-  else return;
+  } else put(o,k,dt,cur);
   if(!emitQueued){emitQueued=true;requestAnimationFrame(()=>{emitQueued=false;emit();});}
 }
 let emitQueued=false;
@@ -161,7 +169,22 @@ const ITEM_PRESETS=[
   {id:'i-pop',n:'Büyüyerek gel',hint:'0,8 sn',end:.8,make:(D,o)=>({[sizeKey(o)]:[[0,D[sizeKey(o)]*.4,'back'],[.8,D[sizeKey(o)],'smooth']],opacity:[[0,0,'smooth'],[.3,D.opacity,'smooth']]})},
   {id:'i-float',n:'Süzülme',hint:'tüm süre',make:D=>{const y=[];for(let i=0;i<=4;i++)y.push([state.anim.dur*i/4,D.y+(i%2?.012:0),'smooth']);return {y};}}
 ];
-const presetsFor=o=>o&&!isDevice(o)?ITEM_PRESETS:PRESETS;
+// the camera: the whole view moves (a push-in intro ends on the framed shot; the slow moves keep the design frame)
+const CAM_PRESETS=[
+  {id:'c-push',n:'Yaklaşarak gir',hint:'1,5 sn',end:1.5,make:D=>({zoom:[[0,D.zoom*.8,'smooth'],[1.5,D.zoom,'smooth']]})},
+  {id:'c-drift',n:'Yavaş yaklaşma',hint:'tüm süre',make:D=>({zoom:[[0,D.zoom,'linear'],[state.anim.dur,D.zoom*1.15,'linear']]})},
+  {id:'c-sweep',n:'Hafif dönüş',hint:'tüm süre',make:D=>({ry:[[0,D.ry,'linear'],[state.anim.dur,D.ry+20,'linear']]})},
+  {id:'c-orbit',n:'Yörünge turu',hint:'tüm süre',make:D=>({ry:[[0,D.ry,'linear'],[state.anim.dur,D.ry+360,'linear']]})},
+  {id:'c-float',n:'Süzülme',hint:'tüm süre',make:D=>{const rx=[],ry=[];for(let i=0;i<=4;i++){const t=state.anim.dur*i/4;rx.push([t,D.rx+(i%2?2:0),'smooth']);ry.push([t,D.ry+(i%2?-3:0),'smooth']);}return {rx,ry};}}
+];
+// a light: fades, a walk around the subject, a pulse
+const LIGHT_ANIM=[
+  {id:'l-fade',n:'Solarak yan',hint:'1 sn',end:1,make:D=>({intensity:[[0,0,'smooth'],[1,D.intensity,'smooth']]})},
+  {id:'l-sweep',n:'Yandan geç',hint:'tüm süre',make:D=>({az:[[0,D.az,'linear'],[state.anim.dur,D.az+60,'linear']]})},
+  {id:'l-orbit',n:'Işık turu',hint:'tüm süre',make:D=>({az:[[0,D.az,'linear'],[state.anim.dur,D.az+360,'linear']]})},
+  {id:'l-pulse',n:'Nabız',hint:'tüm süre',make:D=>{const v=[];for(let i=0;i<=4;i++)v.push([state.anim.dur*i/4,D.intensity*(i%2?.6:1),'smooth']);return {intensity:v};}}
+];
+const presetsFor=o=>{switch(o?kindOf(o):'device'){case 'camera':return CAM_PRESETS;case 'light':return LIGHT_ANIM;case 'item':return ITEM_PRESETS;default:return PRESETS;}};
 function applyPreset(id,o){
   const p=presetsFor(o).find(x=>x.id===id);if(!p||!o||(p.ok&&!p.ok(o)))return [];
   const v=valuesAt(o,designT(o)),D={};propsOf(o).forEach(k=>{D[k]=k in v?v[k]:o[k];});
@@ -208,5 +231,5 @@ onBoards(()=>{
 });
 
 const anyAnim=()=>targets().some(hasAnim)||state.items.some(hasFx);
-export {A,ITEM_PRESETS,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,deleteSelected,hasFx,keyProp,keysAt,moveSelected,
-  onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop};
+export {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,deleteSelected,hasFx,keyProp,keysAt,moveSelected,
+  onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets};

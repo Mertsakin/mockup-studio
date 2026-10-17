@@ -81,7 +81,8 @@ function renderTree(){
   tree.innerHTML='';
   doc.boards.forEach(b=>{
     const live=b.id===doc.active,open=live||expanded.has(b.id);
-    tree.appendChild(node({name:b.name,icon:'frame',open,sel:live&&ui.kind==='board',
+    const cam=live?state.scene:b.snap.state.scene||{};
+    tree.appendChild(node({name:b.name,icon:'frame',open,sel:live&&ui.kind==='board',anim:hasAnim(cam),
       toggle:()=>{if(live)return;expanded.has(b.id)?expanded.delete(b.id):expanded.add(b.id);renderTree();},
       pick:()=>{activate(b.id);setUi({kind:'board'});},rename:el=>startRename(el,b),
       actions:[['pen-2','Yeniden adlandır (F2)',el=>startRename(el,b)],['copy','Kopyasını oluştur',()=>{duplicateBoard(b.id);fitAll();}],['trash-bin-minimalistic','Sil',()=>removeBoard(b.id)]]}));
@@ -104,7 +105,7 @@ function renderTree(){
         pick:e=>{if(!multiPick(e,d))go(()=>{state.selected=d.id;syncAll();setUi({kind:'device'});syncTool();});},
         actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selected=d.id;syncAll();$('#removeDevice').click();}]]:[]}));});
     lightNames(lights).forEach((n,i)=>{const L=lights[i];
-      tree.appendChild(node({child:true,name:n,dot:L.color,sel:live&&ui.kind==='light'&&state.selLight===L.id,
+      tree.appendChild(node({child:true,name:n,dot:L.color,anim:hasAnim(L),sel:live&&ui.kind==='light'&&state.selLight===L.id,
         pick:()=>go(()=>{state.selLight=L.id;syncAll();setUi({kind:'light'});}),
         actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selLight=L.id;syncAll();$('#removeLight').click();}]]:[]}));});
     items.filter(it=>!it.front&&isRoot(it)).reverse().forEach(it=>itemNode(it));

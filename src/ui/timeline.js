@@ -1,8 +1,11 @@
 import {TYPES} from '../state/constants.js';
 import {FX} from '../render/text-fx.js';
-import {designT,halfFrame,hasAnim,isDevice,keyIn,propsOf,refOf,timesOf,tracked} from '../state/anim.js';
+import {modOf} from '../lights/mods.js';
+import {selLight} from '../lights/runtime.js';
+import {mmFromFov} from '../render/lens.js';
+import {designT,halfFrame,hasAnim,isDevice,keyIn,kindOf,propsOf,refOf,timesOf,tracked} from '../state/anim.js';
 import {sel,selItem,state} from '../state/state.js';
-import {A,ITEM_PRESETS,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,hasFx,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop} from './animate.js';
+import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,hasFx,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets} from './animate.js';
 import {sizeOf} from './boards.js';
 import {icon} from './icons.js';
 import {renderItems} from './layout.js';
@@ -12,28 +15,48 @@ import {toast} from './toast.js';
 import {setUi,ui} from './ui-state.js';
 import {$,$$} from '../util.js';
 
-/* Canlandır mode UI: the timeline under the stage (rows = devices, then 2D items, with summary diamonds; unfolded = one
-   sub-row per animated value; a text item's effects are bars on its row, dragged to move them), the mode switch, the
-   animation parts of the device and item inspectors (key panel, ◆ buttons beside the sliders, presets) and the keys
-   (Space plays, K keys a pose, ← / → frame, Shift a second, Home, Delete). The selected target is the item when the
-   inspector shows one, else the selected device. */
+/* Canlandır mode UI: the timeline under the stage (rows = the camera, the devices, the 2D items, the lights, with
+   summary diamonds; unfolded = one sub-row per animated value; a text item's effects are bars on its row, dragged to
+   move them), the mode switch, the animation parts of the inspectors (key panel, ◆ buttons beside the value fields,
+   presets) and the keys (Space plays, K keys a pose, ← / → frame, Shift a second, Home, Delete). The selected target
+   follows the inspector: the item, the light, the camera (artboard panel) or the selected device. */
 const tl=$('#timeline'),names=$('#tlNames'),lanes=$('#tlLanes');
 const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Yatış',scale:'Ölçek',lidAngle:'Kapak açısı',scroll:'Kaydırma',
-  x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık'};
-const SLIDER={px:'s-d-px',py:'s-d-py',pz:'s-d-pz',ry:'s-d-ry',rx:'s-d-rx',rz:'s-d-rz',scale:'s-d-scale',lidAngle:'s-d-lid',scroll:'s-d-scroll',
-  x:'nf-x',y:'nf-y',w:'nf-w',h:'nf-h',size:'nf-fs',rot:'nf-r',opacity:'nf-op'};
+  x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık',
+  zoom:'Yakınlık',fov:'Objektif',panX:'Yatay kayma',panY:'Dikey kayma',
+  az:'Yön',el:'Yükseklik',dist:'Uzaklık',intensity:'Yoğunluk',angle:'Huzme açısı',penumbra:'Huzme kenarı'};
+// the value field of each animatable value, per target kind (the ◆ attaches to its label)
+const SLIDER={
+  device:{px:'s-d-px',py:'s-d-py',pz:'s-d-pz',ry:'s-d-ry',rx:'s-d-rx',rz:'s-d-rz',scale:'s-d-scale',lidAngle:'s-d-lid',scroll:'s-d-scroll'},
+  item:{x:'nf-x',y:'nf-y',w:'nf-w',h:'nf-h',size:'nf-fs',rot:'nf-r',opacity:'nf-op'},
+  camera:{ry:'s-g-ry',rx:'s-g-rx',rz:'s-g-rz',zoom:'s-g-zoom',fov:'s-g-mm',panX:'s-g-panX',panY:'s-g-panY'},
+  light:{intensity:'s-l-int',az:'s-l-az',el:'s-l-el',dist:'s-l-dist',size:'s-l-size',angle:'s-l-angle',penumbra:'s-l-pen'}};
+const POSE_BTN={device:'#poseKey',item:'#itemPoseKey',camera:'#camPoseKey',light:'#lightPoseKey'};
 const EASES=[['smooth','Yumuşak','M2 20 C 14 20, 22 2, 34 2'],['linear','Doğrusal','M2 20 L 34 2'],['hold','Ani','M2 20 L 30 20 L 30 2 L 34 2'],['back','Geri tepme','M2 20 C 12 20, 18 -6, 34 2']];
 const DEV_ICON={phone:'smartphone',tablet:'tablet',laptop:'laptop',monitor:'monitor',browser:'window-frame',page:'display',custom:'gallery-wide'};
 const fmtT=t=>t.toFixed(2).replace('.',',');
-const fmtV=(k,v)=>/^(scroll|x|y|opacity)$/.test(k)?Math.round(v*100)+'%':/^(size|w|h)$/.test(k)?Math.round(v*sizeOf(state)[0])+' px':k==='scale'?v.toFixed(2)+'×':/^r|lid/.test(k)?Math.round(v)+'°':v.toFixed(1);
-function devNames(){const n={},seen={};state.devices.forEach(d=>{const b=TYPES[d.type]||'Cihaz';n[b]=(n[b]||0)+1;});
-  return state.devices.map(d=>{const b=TYPES[d.type]||'Cihaz';seen[b]=(seen[b]||0)+1;return n[b]>1?b+' '+seen[b]:b;});}
+const deg=v=>Math.round(v)+'°',pct=v=>Math.round(v*100)+'%';
+function fmtV(o,k,v){
+  switch(kindOf(o)){
+    case 'camera':return k==='zoom'?v.toFixed(2)+'×':k==='fov'?Math.round(mmFromFov(v))+' mm':/^pan/.test(k)?pct(v):deg(v);
+    case 'light':return k==='intensity'?v.toFixed(2):k==='dist'?v.toFixed(2)+'×':k==='size'||k==='penumbra'?pct(v):deg(v);
+    default:return /^(scroll|x|y|opacity)$/.test(k)?pct(v):/^(size|w|h)$/.test(k)?Math.round(v*sizeOf(state)[0])+' px':k==='scale'?v.toFixed(2)+'×':/^r|lid/.test(k)?deg(v):v.toFixed(1);
+  }
+}
+// names like the layer tree's: the base name, numbered when it repeats
+function labels(list,base){const n={},seen={};list.forEach(x=>{const b=base(x);n[b]=(n[b]||0)+1;});
+  return list.map(x=>{const b=base(x);seen[b]=(seen[b]||0)+1;return n[b]>1?b+' '+seen[b]:b;});}
+const devNames=()=>labels(state.devices,d=>TYPES[d.type]||'Cihaz');
+const lightNames=()=>labels(state.lights,L=>L.mod==='custom'?'Işık':modOf(L.mod).n);
+function nameOf(o){
+  switch(kindOf(o)){case 'camera':return 'Kamera';case 'light':return lightNames()[state.lights.indexOf(o)];case 'device':return devNames()[state.devices.indexOf(o)];default:return o.name;}
+}
 const fps=()=>state.anim.fps||30;
 const open=new Set();  // target refs whose value rows are unfolded
-const targets=()=>state.devices.concat(state.items);
-// the target the inspector shows (an item, else the selected device)
-const cur=()=>ui.kind==='item'?selItem():sel();
+// the target the inspector shows: the item, the light, the camera (artboard panel), else the selected device
+const cur=()=>ui.kind==='item'?selItem():ui.kind==='light'?selLight():ui.kind==='board'?state.scene:sel();
 const itemIcon=it=>it.kind==='text'?'text-square':it.kind==='frame'?'hashtag':'gallery';
+const iconOf=o=>{switch(kindOf(o)){case 'camera':return 'camera';case 'light':return 'lamp';case 'device':return DEV_ICON[o.type]||'smartphone';default:return itemIcon(o);}};
 
 /* ---------- geometry */
 const W=()=>Math.max(40,lanes.clientWidth-44);
@@ -42,17 +65,18 @@ const xOf=t=>12+t/state.anim.dur*W(),tOf=x=>Math.max(0,Math.min(state.anim.dur,(
 /* ---------- drawing: the structure is rebuilt only when it changes; the playhead moves every frame */
 let sig='';
 function structure(){
-  return JSON.stringify([state.anim.dur,ui.kind,state.selected,state.selItem,A.sel,[...open],devNames(),state.items.map(it=>[it.name,it.fx||0]),
+  return JSON.stringify([state.anim.dur,ui.kind,state.selected,state.selItem,state.selLight,A.sel,[...open],devNames(),lightNames(),state.items.map(it=>[it.name,it.fx||0]),
     targets().map(o=>[refOf(o),designT(o),o.tracks?tracked(o).map(k=>[k,o.tracks[k].map(x=>[x.t,x.ease])]):0])]);
 }
-function rows(){const r=[],nm=devNames();
-  targets().forEach(o=>{const dev=isDevice(o),name=dev?nm[state.devices.indexOf(o)]:o.name;
+function rows(){const r=[];
+  targets().forEach(o=>{const name=nameOf(o);
     r.push({d:o,name,prop:null});
     // a text item's effects get their own row under it (always shown)
-    if(!dev&&hasFx(o)&&(o.fx.in||o.fx.out))r.push({d:o,name,prop:FXROW});
+    if(kindOf(o)==='item'&&hasFx(o)&&(o.fx.in||o.fx.out))r.push({d:o,name,prop:FXROW});
     if(open.has(refOf(o)))tracked(o).forEach(k=>r.push({d:o,name,prop:k}));});return r;}
 const FXROW='@fx';
-const isSel=o=>isDevice(o)?ui.kind==='device'&&o.id===state.selected:ui.kind==='item'&&o.id===state.selItem;
+const isSel=o=>{switch(kindOf(o)){case 'camera':return ui.kind==='board';case 'light':return ui.kind==='light'&&o.id===state.selLight;
+  case 'device':return ui.kind==='device'&&o.id===state.selected;default:return ui.kind==='item'&&o.id===state.selItem;}};
 function build(){
   const R=rows(),dur=state.anim.dur;
   names.innerHTML='<div class="ruler-pad"></div>';lanes.innerHTML='';
@@ -69,7 +93,7 @@ function build(){
     if(prop===FXROW){n.innerHTML='<span class="nm">Metin efekti</span>';}
     else if(prop){n.innerHTML='<span class="nm"></span><span class="sub"></span>';n.firstChild.textContent=LABEL[prop];n.dataset.prop=prop;}
     else{
-      const anim=hasAnim(d),fx=!isDevice(d)&&hasFx(d),ic=isDevice(d)?DEV_ICON[d.type]||'smartphone':itemIcon(d);n.setAttribute('aria-selected',String(isSel(d)));
+      const anim=hasAnim(d),fx=kindOf(d)==='item'&&hasFx(d),ic=iconOf(d);n.setAttribute('aria-selected',String(isSel(d)));
       n.innerHTML='<button type="button" class="caret" aria-label="Değerleri göster" aria-expanded="'+open.has(ref)+'"'+(anim?'':' disabled')+'>'+icon(open.has(ref)?'alt-arrow-down':'alt-arrow-right',12)+'</button>'+icon(ic,14)+'<span class="nm"></span><span class="sub">'+(anim?tracked(d).length+' değer':fx?'efekt':'')+'</span>';
       n.querySelector('.nm').textContent=name;
       n.querySelector('.caret').addEventListener('click',e=>{e.stopPropagation();open.has(ref)?open.delete(ref):open.add(ref);draw(true);});
@@ -107,7 +131,7 @@ function build(){
 function moveHead(){
   const ph=$('#tlPh');if(ph)ph.style.left=xOf(A.t)+'px';
   $('#tlTime').innerHTML=fmtT(A.t)+' <span>/ '+fmtT(state.anim.dur)+' sn</span>';
-  names.querySelectorAll('.subrow[data-prop]').forEach(n=>{const d=byRef(n.dataset.ref);if(d)n.querySelector('.sub').textContent=fmtV(n.dataset.prop,d[n.dataset.prop]);});
+  names.querySelectorAll('.subrow[data-prop]').forEach(n=>{const d=byRef(n.dataset.ref);if(d)n.querySelector('.sub').textContent=fmtV(d,n.dataset.prop,d[n.dataset.prop]);});
 }
 function draw(force){
   if(tl.hidden)return;
@@ -122,8 +146,12 @@ new ResizeObserver(()=>draw(true)).observe(lanes);
 
 /* ---------- interaction */
 function pickTarget(o,keepKey){
-  if(isDevice(o)){if(state.selected!==o.id){state.selected=o.id;syncAll();}setUi({kind:'device'});}
-  else selectItem(o.id);
+  switch(kindOf(o)){
+    case 'camera':setUi({kind:'board'});break;
+    case 'light':if(state.selLight!==o.id){state.selLight=o.id;syncAll();}setUi({kind:'light'});break;
+    case 'device':if(state.selected!==o.id){state.selected=o.id;syncAll();}setUi({kind:'device'});break;
+    default:selectItem(o.id);
+  }
   if(!keepKey)selectKey(null);else draw();
 }
 function loop(e,move,up){
@@ -176,7 +204,7 @@ function runPreset(id){
 const presetOk=(p,d)=>!!d&&(!p.ok||p.ok(d));
 $('#tlPresetBtn').addEventListener('click',e=>{
   e.stopPropagation();if(!menu.hidden){menu.hidden=true;return;}
-  const d=cur(),nm=!d?'':isDevice(d)?devNames()[state.devices.indexOf(d)]:d.name;menu.innerHTML='';
+  const d=cur(),nm=d?nameOf(d):'';menu.innerHTML='';
   presetsFor(d).forEach(p=>{const b=document.createElement('button');b.type='button';b.className='mi';b.setAttribute('role','menuitem');b.disabled=!presetOk(p,d);
     b.innerHTML='<span></span><kbd></kbd>';b.firstChild.textContent=p.n+' · '+nm;b.lastChild.textContent=p.hint;b.addEventListener('click',()=>{menu.hidden=true;runPreset(p.id);});menu.appendChild(b);});
   menu.hidden=false;const r=e.currentTarget.getBoundingClientRect();
@@ -185,7 +213,7 @@ $('#tlPresetBtn').addEventListener('click',e=>{
 });
 document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target))menu.hidden=true;});
 const chips=$('#presetChips'),itemChips=$('#itemPresetChips');
-[[chips,PRESETS],[itemChips,ITEM_PRESETS]].forEach(([el,list])=>list.forEach(p=>{const b=document.createElement('button');b.type='button';b.dataset.preset=p.id;b.textContent=p.n;b.title=p.hint;b.addEventListener('click',()=>runPreset(p.id));el.appendChild(b);}));
+[[chips,PRESETS],[itemChips,ITEM_PRESETS],[$('#camPresetChips'),CAM_PRESETS],[$('#lightPresetChips'),LIGHT_ANIM]].forEach(([el,list])=>list.forEach(p=>{const b=document.createElement('button');b.type='button';b.dataset.preset=p.id;b.textContent=p.n;b.title=p.hint;b.addEventListener('click',()=>runPreset(p.id));el.appendChild(b);}));
 
 /* ---------- inspector: key panel, ◆ beside the sliders, pose key */
 const easeGrid=$('#easeGrid');
@@ -195,14 +223,16 @@ $('#keyDelete').addEventListener('click',()=>deleteSelected());
 $('#keyDesign').addEventListener('click',()=>setDesignFrame());
 $('#poseKey').addEventListener('click',()=>addPoseKey(sel()));
 $('#itemPoseKey').addEventListener('click',()=>addPoseKey(selItem()));
-const dots={};
+$('#camPoseKey').addEventListener('click',()=>addPoseKey(state.scene));
+$('#lightPoseKey').addEventListener('click',()=>addPoseKey(selLight()));
+const dots=[];  // {kind, prop, el}
 function ensureDots(){
-  for(const k in SLIDER){
-    if(dots[k]&&dots[k].isConnected)continue;
-    const lab=document.querySelector('label[for="'+SLIDER[k]+'"]');if(!lab)continue;
+  for(const kind in SLIDER)for(const k in SLIDER[kind]){
+    if(dots.some(x=>x.kind===kind&&x.prop===k&&x.el.isConnected))continue;
+    const lab=document.querySelector('label[for="'+SLIDER[kind][k]+'"]');if(!lab)continue;
     const b=document.createElement('button');b.type='button';b.className='kdot anim-only';b.dataset.prop=k;b.setAttribute('aria-label',LABEL[k]+': bu anda anahtar kare');
-    b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();keyProp(cur(),k);});
-    lab.prepend(b);dots[k]=b;
+    b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const o=cur();if(o&&kindOf(o)===kind)keyProp(o,k);});
+    lab.prepend(b);dots.push({kind,prop:k,el:b});
   }
 }
 // lid angle and scroll live in other sections; in Canlandır they move next to the transform sliders
@@ -210,22 +240,26 @@ const moved=[['lidSlot'],['scrollSlot']].map(([id])=>{const el=$('#'+id),mark=do
 function placeSlots(animate){moved.forEach(({el,mark})=>{if(animate){if(el.parentNode!==$('#animSlots'))$('#animSlots').appendChild(el);}else if(el.previousSibling!==mark)mark.parentNode.insertBefore(el,mark.nextSibling);});}
 $('#devSliders').closest('.sec').classList.add('anim-keep');
 $('#keySec').classList.add('anim-keep');$('#presetChips').closest('.sec').classList.add('anim-keep');
-// the key panel follows the inspector: under the item's header when an item is selected
+// the key panel follows the inspector: under the header of the panel that shows the target
 const keySec=$('#keySec'),keyMark=document.createComment('keySec');keySec.parentNode.insertBefore(keyMark,keySec);
-function placeKeySec(item){
-  if(item){const h=$('#inspItem>.head');if(keySec.previousSibling!==h)h.after(keySec);}
+const KEY_HOME={item:'#inspItem>.head',camera:'#inspBoard>.head',light:'#inspLight>.head'};
+function placeKeySec(kind){
+  const h=KEY_HOME[kind]&&$(KEY_HOME[kind]);
+  if(h){if(keySec.previousSibling!==h)h.after(keySec);}
   else if(keySec.previousSibling!==keyMark)keyMark.after(keySec);
 }
 function syncInspector(){
   ensureDots();
-  const d=cur(),animate=ui.mode==='animate';placeKeySec(ui.kind==='item');
+  const d=cur(),animate=ui.mode==='animate',kind=d?kindOf(d):null;placeKeySec(kind);
   $('#animNote').hidden=!(d&&isDevice(d)&&!animate&&hasAnim(d));
   if(!d)return;
   $('#animNoteT').textContent=fmtT(designT(d));
   const t=Math.round(A.t*fps())/fps();
-  for(const k in dots){const tr=d.tracks&&d.tracks[k],at=animate&&!!keyIn(tr,t,fps()),an=!!tr&&tr.length>1&&tr.some(x=>Math.abs(x.v-tr[0].v)>1e-9);
-    dots[k].classList.toggle('at',at);dots[k].classList.toggle('anim',an&&!at);dots[k].hidden=!propsOf(d).includes(k);}
-  const pose=keysAt(d,t,null);$(isDevice(d)?'#poseKey':'#itemPoseKey').classList.toggle('at',animate&&pose.length>0&&pose.length>=propsOf(d).length);
+  dots.forEach(({kind:dk,prop:k,el})=>{
+    if(dk!==kind){el.hidden=true;return;}
+    const tr=d.tracks&&d.tracks[k],at=animate&&!!keyIn(tr,t,fps()),an=!!tr&&tr.length>1&&tr.some(x=>Math.abs(x.v-tr[0].v)>1e-9);
+    el.classList.toggle('at',at);el.classList.toggle('anim',an&&!at);el.hidden=!propsOf(d).includes(k);});
+  const pose=keysAt(d,t,null);$(POSE_BTN[kind]).classList.toggle('at',animate&&pose.length>0&&pose.length>=propsOf(d).length);
   // key panel: the selected key of this target
   const ks=animate&&A.sel&&A.sel.ref===refOf(d)?selectedKeys():[];
   $('#keySec').hidden=!ks.length;

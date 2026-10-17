@@ -1,19 +1,36 @@
-/* Animation data (no three, no DOM): devices and 2D items (state.items) animate the same way.
-   A device animates through `d.tracks`: one track per value, tracks[prop] = keys [{t (s), v, ease}], where ease
-   shapes the move from that key to the next. Values without a track keep the device's own field. The animatable
-   values are the Dönüşüm set (position, rotation, scale), the laptop lid angle and the screenshot scroll.
-   The artboard's timing is state.anim {dur (s, 1–30), fps, loop}. While a board has tracks, the devices' fields
-   hold the values the editor shows (ui/animate.js writes them). d.designT is the device's design frame (default 0 s):
+/* Animation data (no three, no DOM): devices, 2D items (state.items), the camera (state.scene) and the lights
+   (state.lights) animate the same way. A target animates through `o.tracks`: one track per value, tracks[prop] = keys
+   [{t (s), v, ease}], where ease shapes the move from that key to the next. Values without a track keep the target's
+   own field. The animatable values: a device's Dönüşüm set (position, rotation, scale), the laptop lid angle and the
+   screenshot scroll; an item's place, size, rotation and opacity; the camera's angles, Yakınlık, lens and shift; a
+   light's direction, height, distance, intensity, source size and beam.
+   The artboard's timing is state.anim {dur (s, 1–30), fps, loop}. While a board has tracks, the targets' fields
+   hold the values the editor shows (ui/animate.js writes them). o.designT is the target's design frame (default 0 s):
    what Tasarla, the still image and snapshots show; editing in Tasarla rewrites the keys at that time. */
 const ANIM_PROPS=['px','py','pz','ry','rx','rz','scale','lidAngle','scroll'];
+// the camera (state.scene): the view angles, Yakınlık, the lens (fov: the UI shows mm) and the shift
+const CAM_PROPS=['ry','rx','rz','zoom','fov','panX','panY'];
+// a light: direction and height (camera relative), distance, intensity, source size, spot beam
+const LIGHT_PROPS=['az','el','dist','intensity','size','angle','penumbra'];
 // 2D items: position (in the parent), width (a frame also height; fractions of the board width), rotation, opacity;
 // a text item's size is its font size
 const ITEM_PROPS=['x','y','w','h','size','rot','opacity'];
 const MAX_DUR=30;
-const isDevice=o=>!!o.type;
-const propsOf=o=>isDevice(o)?ANIM_PROPS.filter(k=>k!=='lidAngle'||o.type==='laptop'):ITEM_PROPS.filter(k=>o.kind==='text'?k!=='w'&&k!=='h':o.kind==='frame'?k!=='size':k!=='size'&&k!=='h');
-// a target's reference in the editor's selection / maps (device and item ids are separate counters)
-const refOf=o=>(isDevice(o)?'d':'i')+o.id;
+// what a target is: the camera has a lens, a light a direction, a device a type; the rest are 2D items
+const kindOf=o=>o.fov!==undefined?'camera':o.az!==undefined?'light':o.type?'device':'item';
+const isDevice=o=>kindOf(o)==='device';
+function propsOf(o){
+  switch(kindOf(o)){
+    case 'camera':return CAM_PROPS;
+    case 'light':return LIGHT_PROPS.filter(k=>(k!=='dist'&&k!=='size'||o.mod!=='sun')&&(k!=='angle'&&k!=='penumbra'||o.type==='spot'));
+    case 'device':return ANIM_PROPS.filter(k=>k!=='lidAngle'||o.type==='laptop');
+    default:return ITEM_PROPS.filter(k=>o.kind==='text'?k!=='w'&&k!=='h':o.kind==='frame'?k!=='size':k!=='size'&&k!=='h');
+  }
+}
+// angles the editor wraps to ±180°: their keys are unwrapped when recorded, so a turn through 180° takes the short way
+const WRAPS={camera:['ry','rz'],light:['az'],device:[],item:[]};
+// a target's reference in the editor's selection / maps (device, item and light ids are separate counters)
+const refOf=o=>{const k=kindOf(o);return k==='camera'?'cam':(k==='device'?'d':k==='light'?'l':'i')+o.id;};
 const EASE={
   smooth:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,
   linear:x=>x,
@@ -44,4 +61,4 @@ const designT=d=>d.designT||0;
 const keyIn=(tr,t,fps)=>tr?tr.find(k=>Math.abs(k.t-t)<halfFrame(fps)):undefined;
 const snapT=(t,fps)=>Math.round(t*(fps||30))/(fps||30);
 
-export {ANIM_PROPS,EASE,ITEM_PROPS,MAX_DUR,designT,isDevice,refOf,halfFrame,hasAnim,interp,keyIn,propsOf,snapT,sortKeys,timesOf,tracked,valuesAt};
+export {ANIM_PROPS,CAM_PROPS,EASE,ITEM_PROPS,LIGHT_PROPS,MAX_DUR,WRAPS,designT,isDevice,kindOf,refOf,halfFrame,hasAnim,interp,keyIn,propsOf,snapT,sortKeys,timesOf,tracked,valuesAt};

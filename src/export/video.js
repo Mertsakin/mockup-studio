@@ -4,9 +4,9 @@ import {pauseLive,renderNow} from '../render/accumulation.js';
 import {fontsReady} from '../render/text.js';
 import {canvas,overlays,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
-import {hasAnim} from '../state/anim.js';
+import {hasAnim,kindOf} from '../state/anim.js';
 import {state,view} from '../state/state.js';
-import {anyAnim,applyAt,applyNow,onAnim,stop} from '../ui/animate.js';
+import {anyAnim,applyAt,applyNow,onAnim,stop,targets} from '../ui/animate.js';
 import {invalidateLayout,layout,paintBg,paintItems} from '../ui/layout.js';
 import {toast} from '../ui/toast.js';
 import {ui} from '../ui/ui-state.js';
@@ -14,6 +14,7 @@ import {$,$$,mkCanvas} from '../util.js';
 import {exportSize,offer} from './export.js';
 
 import {dofOn} from '../render/lens.js';
+import {scheduleEnv} from '../render/environment.js';
 /* Video export (Canlandır): every frame is set up at its time and rendered like the fast still export (progressive
    samples, background and 2D items composited), then encoded to H.264 with WebCodecs and muxed into an MP4.
    Deterministic: frame i shows t = i / fps whatever the machine's speed.
@@ -50,12 +51,13 @@ async function renderVideo(onProgress){
   pauseLive(true);
   try{
     setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
-    const moving=state.devices.some(hasAnim),dt=1/X.fps,S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
+    // anything in 3D moving (devices, camera, lights) gets motion blur; moving lights also rebuild the reflections per frame
+    const moving=targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove=state.lights.some(hasAnim),dt=1/X.fps,S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
     for(let i=0;i<n;i++){
       if(cancel)return null;
       if(failed)throw failed;
       const t=i*dt;
-      applyAt(t,{sync:true});
+      applyAt(t,{sync:true});if(lightsMove)scheduleEnv(true);
       if(X.blur&&moving)renderNow(S,j=>{applyAt(Math.max(0,Math.min(state.anim.dur,t+((j+.5)/S-.5)*SHUTTER*dt)),{scroll:false});});
       else renderNow(S);
       g.clearRect(0,0,W,H);
