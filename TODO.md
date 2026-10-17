@@ -101,7 +101,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] **Yol izleme (Fotoğraf kalitesi):** three-gpu-pathtracer, OIDN (kendi karolamamız, albedo + normal), zaman bütçesi, ilerleme göstergesi, gölge yakalayıcı zemin, stüdyo HDRI'ı.
 - [x] **Canlı fotoğraf önizlemesi:** isteğe bağlı anahtar; kamera 700 ms durunca yol izlemeye geçer.
 - [x] **Telefon, tablet, monitör:** eloksal kasa, 2.5D ön cam, temas gölgesi, cam arka (mat/parlak), eş merkezli köşeler; monitörde yeni arka gövde, ayak ve taban.
-- [ ] **Zemin kalibrasyonunu kararlı yap** (yol izleme, tahmini 1–2 saat): `calibrateFloor` (64 px / 24 örnek ön geçiş) aynı kodla çalıştırmadan çalıştırmaya ±10 seviye oynuyor; zeminden yansıyan ışıkla cihaz gövdesi de değişiyor (1920 px telefon sahnesinde gövde 171 ↔ 189). Önce/sonra karşılaştırmalarını da güvenilmez yapıyor. Denenecekler: sabit gürültü tohumu (`stableNoise`), daha fazla kalibrasyon örneği/pikseli, daha kararlı tahmin; maliyeti ölç. Bitti = 3 tekrarda yayılım ~2 seviyenin altında (telefon + koyu fonlu dizüstü sahnesi, `PT_DEBUG=1`).
+- [x] **Zemin kalibrasyonu kararlı** (15 Ekim): `calibrateFloor` sabit tohumla (`stableNoise`) 64 örnek alır, ana render da sabit tohumla; `ensurePT` paketin rastgelelik kaynaklarını (mavi gürültü ofsetleri, örnekleyici sıfırlaması, uuid sırası) sabitler. Ölçek çalıştırmalar arasında ≈ %2–3, zemin ±1 seviye; telefon ve dizüstü sabit örnek sayısında bayt bayt aynı.
 - [ ] **Şeffaf arka planda zemin gölgesi** (yol izleme): şu an gölge yalnızca düz/gradyan fonda var; iki geçişli gölge yakalayıcı ya da gölgeyi alfa olarak çıkarma.
 - [ ] **Alan ışıkları (raster):** `RectAreaLight` ile softbox/strip/pencere; parlak yüzeylerde doğru şekilli vurgu.
 - [ ] Ekranın gövdeye yansıyan ışığı (`SCREEN_GLOW`) ve ortam kalibrasyonu: farklı sahnelerle ince ayar.
@@ -129,8 +129,8 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] **Çoklu seçim:** Shift/⌘ ile cihaz ve 2B öğe seçip birlikte taşıma, silme, çoğaltma, kopyalama. (Grubu birlikte döndürme / ölçekleme ve sürükleyerek kutu seçimi henüz yok.)
 - [x] **Sağ tık bağlam menüsü:** kopyala, yapıştır, çoğalt, sil, katman sırası, odakla, metni düzenle. (Katman ağacında sağ tık henüz yok.)
 - [x] Artboard'lar arası cihaz ve öğe kopyalama (⌘C → başka artboard → ⌘V). [ ] Artboard çoğaltırken yerleşim seçimi.
-- [ ] **Metin katmanı:** bkz. "Sıradaki yol" 1.
-- [ ] **Mağaza görseli üretici:** bkz. "Sıradaki yol" 4.
+- [x] **Metin katmanı** (14 Ekim): bkz. "Sıradaki yol" 1.
+- [x] **Mağaza görseli üretici** (14 Ekim; yerelleştirme hariç): bkz. "Sıradaki yol" 4.
 - [ ] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP).
 - [ ] Video: WebM/GIF seçeneği, video için fotoğraf kalitesi (yavaş ama mümkün), ses yok.
 - [ ] Mobil düzen: sol panel 820 px altında gizli; çekmece olarak açılmalı.
