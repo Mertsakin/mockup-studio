@@ -187,7 +187,7 @@ async function importFiles(files){
       const d=await fromProjectFile(f),b=d.boards[0];if(!b)continue;
       const drop=new Set(),devices=(b.snap.devices||[]).map(x=>{if(x.img)drop.add(x.img);if(x.video)drop.add(x.video);return Object.assign({},x,{img:null,imgName:'',video:null,videoName:'',scroll:0,siteUrl:''});});
       const images={};for(const k in b.snap.images)if(!drop.has(k))images[k]=b.snap.images[k];
-      const name=(b.name&&!/^Artboard \\d+$/.test(b.name)?b.name:f.name.replace(/\.mockup(-sablon)?\.(json|zip)$/i,'').replace(/\.(json|zip)$/i,''))||'Şablon';
+      const name=(b.name&&!/^Artboard \d+$/.test(b.name)?b.name:f.name.replace(/\.mockup(-sablon)?\.(json|zip)$/i,'').replace(/\.(json|zip)$/i,''))||'Şablon';
       const doc={v:2,layout:'max',active:1,boards:[{id:1,name,x:0,y:0,snap:Object.assign({},b.snap,{devices,images}),thumb:b.thumb||null}],fonts:d.fonts||[]};
       const pf=await toProjectFile(doc);
       await tx('readwrite',st=>st.put({id:'u'+Date.now()+'-'+n,name,created:Date.now(),thumb:b.thumb||null,blob:pf.blob,zip:pf.zip}));n++;
