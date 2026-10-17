@@ -111,7 +111,16 @@ function addBoard(snap,name){
   b.snap.images=(snap||DEFAULT).images;  // images are shared elements, not copied
   doc.boards.push(b);show(b);return b;
 }
-function duplicateBoard(id){const src=boardById(id||doc.active);if(!src)return;if(src.id===doc.active)store();const b=addBoard(src.snap,src.name+' kopya');b.thumb=src.thumb;emit();}
+// where: 'right' (next to the source) or 'below' it; when that place is taken, the copy moves on in the same
+// direction until it is free (it never lands on another board)
+function duplicateBoard(id,where='right'){
+  const src=boardById(id||doc.active);if(!src)return;if(src.id===doc.active)store();
+  const [sw,sh]=boardSize(src),b=addBoard(src.snap,src.name+' kopya');b.thumb=src.thumb;
+  const [w,h]=boardSize(b),hit=(x,y)=>doc.boards.some(o=>o!==b&&x<o.x+boardSize(o)[0]+GAP/2&&x+w>o.x-GAP/2&&y<o.y+boardSize(o)[1]+GAP/2&&y+h>o.y-GAP/2);
+  let x=where==='below'?src.x:src.x+sw+GAP,y=where==='below'?src.y+sh+GAP:src.y;
+  for(let i=0;i<200&&hit(x,y);i++){if(where==='below')y+=h+GAP;else x+=w+GAP;}
+  b.x=Math.round(x);b.y=Math.round(y);emit();
+}
 function removeBoard(id){
   const i=doc.boards.findIndex(b=>b.id===id);if(i<0)return false;
   if(doc.boards.length===1){clearAll();return true;}
