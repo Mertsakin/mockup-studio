@@ -1,11 +1,12 @@
 import {buildRT,rebuild} from '../devices/runtime.js';
 import {scrollScreen,setScreenTexture,updateChrome} from '../devices/screen.js';
+import {followVideos,playVideos,setVideoClock,showFrames,videoDevices} from '../devices/video.js';
 import {fromProjectFile,restore} from '../io/project.js';
 import {setFirstSamples,startLoop} from '../render/accumulation.js';
 import {gradCss} from '../render/backgrounds.js';
-import {canvas,renderer,setCrop} from '../render/renderer.js';
+import {canvas,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform,camDist} from '../render/transform.js';
-import {valuesAt} from '../state/anim.js';
+import {designT,valuesAt} from '../state/anim.js';
 import {state,view} from '../state/state.js';
 
 /* The embed player: one artboard of a project file, drawn by the studio's own core (devices, lights, PCSS
@@ -20,6 +21,7 @@ const q=new URLSearchParams(location.search);
 const mode=q.get('mode')||'mouse',range=+q.get('range')||14,bgMode=q.get('bg')||'scene';
 
 let base=null;  // the camera as designed; interaction adds to it
+let t0=0;  // when the scene came up (the videos' clock starts there)
 const off={ry:0,rx:0},want={ry:0,rx:0};
 let zoom=1,fitK=1;  // the designed Yakınlık (or the animated one) and the embed's framing factor on it
 
@@ -65,12 +67,25 @@ function budget(now){
   slow=slow*.9+dt*.1;  // smoothed frame time
   const n=slow>28?1:slow>22?2:slow>18?3:4;setFirstSamples(n);
 }
+/* Screen videos (devices/video.js does the timing): they play muted on the artboard's clock; in 'loop' that clock
+   also drives the animation, in 'scroll' the page does (a seek per change), with reduced motion the poster frame
+   stays. The screen is redrawn every frame while one plays. */
+let vt=0,videos=false;
+const clockT=()=>vt;
+function startVideos(){
+  videos=videoDevices().length>0;if(!videos)return;
+  if(reduced){showFrames(designT);return;}  // no clock: each screen's design (poster) frame
+  setVideoClock(clockT);
+  if(mode!=='scroll'){vt=0;playVideos(0);}
+}
 // one frame of interaction: eases the offset towards its target and turns the camera by it
 function tick(now){
   requestAnimationFrame(tick);
   budget(now||performance.now());
   if(!base)return;
-  if(mode==='loop'&&hasAnim()){const d=state.anim.dur||5;at((performance.now()/1000)%d);}
+  const dur=state.anim.dur||5,sec=(now||performance.now())/1000;
+  if(mode==='loop'&&hasAnim())at(sec%dur);
+  if(videos&&!reduced&&mode!=='scroll'){vt=mode==='loop'?sec%dur:sec-t0;followVideos(vt);req();moving=8;}
   const k=.12;let moved=false;
   for(const a of ['ry','rx']){const d=want[a]-off[a];if(Math.abs(d)>.01){off[a]+=d*k;moved=true;}}
   moving=moved||mode==='loop'?8:Math.max(0,moving-1);  // a few frames of grace after moving stops
@@ -81,8 +96,10 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function pointer(x,y){if(reduced)return;want.ry=x*range;want.rx=-y*range*.5;}
 function scrolled(p){
   if(reduced)return;
-  if(hasAnim()){at(Math.max(0,Math.min(1,p))*(state.anim.dur||5));state.scene.ry=base.ry+off.ry;moving=8;applyTransform();}
-  else want.ry=(p-.5)*2*range*2;  // no animation: the scene turns as the page scrolls
+  const t=Math.max(0,Math.min(1,p))*(state.anim.dur||5);
+  if(videos){vt=t;showFrames(t);}
+  if(hasAnim()){at(t);state.scene.ry=base.ry+off.ry;moving=8;applyTransform();}
+  else if(!videos)want.ry=(p-.5)*2*range*2;  // no animation: the scene turns as the page scrolls
 }
 
 // pointer inside the frame (the loader's messages cover the whole page)
@@ -106,6 +123,7 @@ async function load(){
   state.selected=null;state.selLight=null;state.showDome=false;state.markers=false;
   zoom=state.scene.zoom;paintBg();size();
   base={ry:state.scene.ry,rx:state.scene.rx};
+  t0=performance.now()/1000;startVideos();
   // fonts for the laptop's key legends and the browser bar arrive late: redraw like the studio does
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{state.devices.forEach(d=>{if(d.type==='laptop'){rebuild(d,false);return;}if(!d.img)setScreenTexture(d);if(d.type==='browser')updateChrome(d);});});
   // ready once the first frame is on the canvas (the loader fades the poster out then)
