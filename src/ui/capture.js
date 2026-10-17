@@ -27,6 +27,34 @@ function viewport(d){
 }
 // no scheme: assume https; other schemes go to the server, which refuses them
 const normalizeUrl=raw=>/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)?raw:'https://'+raw;
+const siteName=url=>new URL(url).hostname.replace(/^www\./,'');
+// an error whose message is meant for the user as it is (e.user)
+const userError=m=>Object.assign(new Error(m),{user:true});
+/* One request to the dev server's endpoint: a full-page shot per target ({id, width, height, mobile, dpr}) ->
+   {shots: {id: data URL}, finalUrl}. Shared by this panel and the welcome card (welcome.js), which sends one request
+   per viewport to show each device's progress. */
+async function captureShots(url,targets){
+  let r;
+  try{r=await fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,targets})});}
+  // no answer at all: the dev server has stopped (or the page was opened from the build / a file)
+  catch(e){throw userError('Yakalama sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.');}
+  // a static deployment has no capture endpoint: 404, or an HTML fallback page instead of JSON
+  if(r.status===404||!(r.headers.get('content-type')||'').includes('application/json'))throw userError('Web sitesinden yakalama yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).');
+  const res=await r.json();if(!r.ok)throw userError('Yakalanamadı: '+(res.error||r.statusText));
+  return res;
+}
+// whether this page can capture at all: the endpoint answers a GET with 405 (JSON) on the dev server only
+let avail=null;
+const captureAvailable=()=>avail||(avail=fetch('/api/capture').then(r=>r.status===405&&(r.headers.get('content-type')||'').includes('application/json')).catch(()=>false));
+const shotImage=src=>new Promise((ok,fail)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>fail(userError('Yakalanan görüntü açılamadı.'));img.src=src;});
+// puts a captured page on a device's screen, scrolled to the top (siteUrl: the address as the user typed it)
+function putShot(d,img,url,siteUrl){
+  const final=new URL(url),name=siteName(url);
+  if(d.video){d.video.pause();d.video=null;d.videoName='';if(d.tracks)delete d.tracks.scroll;}  // a screen video gives way to the shot (one or the other)
+  d.img=img;d.imgName=name;d.scroll=0;d.fit='cover';d.siteUrl=siteUrl;
+  if(d.type==='browser'){d.url=name+(final.pathname!=='/'?final.pathname:'');updateChrome(d);}
+  setScreenTexture(d);
+}
 const input=$('#captureUrl'),one=$('#captureBtn'),all=$('#captureAllBtn');
 // The field shows the selected device's own address; typing stores it on that device.
 input.addEventListener('input',()=>{const d=state.devices.find(x=>x.id===state.selected);if(d)d.siteUrl=input.value.trim();});
@@ -43,24 +71,11 @@ async function capture(everyDevice){
   const btn=everyDevice?all:one,label=btn.textContent;
   one.disabled=all.disabled=true;btn.textContent='Yakalanıyor…'+(groups.size>1?' ('+groups.size+' görünüm)':'');
   try{
-    let r;
-    try{r=await fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:raw,targets:[...groups.values()].map(g=>g.target)})});}
-    // no answer at all: the dev server has stopped (or the page was opened from the build / a file)
-    catch(e){toast('Yakalama sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.');return;}
-    // a static deployment has no capture endpoint: 404, or an HTML fallback page instead of JSON
-    if(r.status===404||!(r.headers.get('content-type')||'').includes('application/json')){toast('Web sitesinden yakalama yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).');return;}
-    const res=await r.json();if(!r.ok)throw new Error(res.error||r.statusText);
-    const final=new URL(res.finalUrl||raw),name=final.hostname.replace(/^www\./,'');
-    for(const g of groups.values()){
-      const img=new Image();img.src=res.shots[g.target.id];await img.decode();
-      g.devices.forEach(d=>{
-        if(d.video){d.video.pause();d.video=null;d.videoName='';if(d.tracks)delete d.tracks.scroll;}  // a screen video gives way to the shot (one or the other)
-        d.img=img;d.imgName=name;d.scroll=0;d.fit='cover';d.siteUrl=input.value.trim();
-        if(d.type==='browser'){d.url=name+(final.pathname!=='/'?final.pathname:'');updateChrome(d);}
-        setScreenTexture(d);});
-    }
+    const res=await captureShots(raw,[...groups.values()].map(g=>g.target));
+    const name=siteName(res.finalUrl||raw);
+    for(const g of groups.values()){const img=await shotImage(res.shots[g.target.id]);g.devices.forEach(d=>putShot(d,img,res.finalUrl||raw,input.value.trim()));}
     syncAll();toast(name+(everyDevice?' tüm cihazlara':' bu cihaza')+' yerleştirildi. Ekranın üzerinde tekerlekle kaydırabilirsin.');
-  }catch(e){toast('Yakalanamadı: '+(e.message||e));}
+  }catch(e){toast(e.user?e.message:'Yakalanamadı: '+(e.message||e));}
   finally{one.disabled=all.disabled=false;btn.textContent=label;}
 }
 one.addEventListener('click',()=>capture(false));
@@ -68,4 +83,4 @@ all.addEventListener('click',()=>capture(true));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();capture(false);}});
 
 // the screen recording (record.js) opens the site at the same viewport
-export {normalizeUrl,viewport};
+export {captureAvailable,captureShots,shotImage,normalizeUrl,putShot,siteName,viewport};
