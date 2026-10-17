@@ -54,9 +54,9 @@ function makeSlider(parent,def,getObj){
 function syncOne(s){if(!s)return;const o=s.getObj();if(!o||o[s.def.k]===undefined||document.activeElement===s.input)return;s.input.value=s.def.f(o[s.def.k]);}
 const G=()=>state.scene;
 [
-  {id:'g-ry',k:'ry',l:'Dönüş',w:3,min:-180,max:180,step:1,reset:0,f:fDeg},
-  {id:'g-rx',k:'rx',l:'Eğim',w:3,min:-90,max:90,step:1,reset:0,f:fDeg},
-  {id:'g-rz',k:'rz',l:'Yatış',w:3,min:-180,max:180,step:1,reset:0,f:fDeg},
+  {id:'g-ry',k:'ry',l:'Dönüş',min:-180,max:180,step:1,reset:0,f:fDeg},
+  {id:'g-rx',k:'rx',l:'Eğim',min:-90,max:90,step:1,reset:0,f:fDeg},
+  {id:'g-rz',k:'rz',l:'Yatış',min:-180,max:180,step:1,reset:0,f:fDeg},
   {id:'g-zoom',k:'zoom',l:'Yakınlık',min:ZOOM_MIN,max:ZOOM_MAX,step:.01,reset:1,f:fX,log:true},
   {id:'g-panX',k:'panX',l:'Yatay kayma',s:'Yatay',min:-.6,max:.6,step:.01,reset:0,f:fPct},
   {id:'g-panY',k:'panY',l:'Dikey kayma',s:'Dikey',min:-.6,max:.6,step:.01,reset:0,f:fPct}
@@ -65,9 +65,9 @@ const G=()=>state.scene;
   {id:'d-px',k:'px',l:'Yatay',s:'X',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
   {id:'d-py',k:'py',l:'Dikey',s:'Y',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
   {id:'d-pz',k:'pz',l:'Derinlik',s:'Z',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
-  {id:'d-ry',k:'ry',l:'Dönüş',w:3,min:-180,max:180,step:1,reset:0,f:fDeg},
-  {id:'d-rx',k:'rx',l:'Eğim',w:3,min:-90,max:90,step:1,reset:0,f:fDeg},
-  {id:'d-rz',k:'rz',l:'Yatış',w:3,min:-180,max:180,step:1,reset:0,f:fDeg},
+  {id:'d-ry',k:'ry',l:'Dönüş',min:-180,max:180,step:1,reset:0,f:fDeg},
+  {id:'d-rx',k:'rx',l:'Eğim',min:-90,max:90,step:1,reset:0,f:fDeg},
+  {id:'d-rz',k:'rz',l:'Yatış',min:-180,max:180,step:1,reset:0,f:fDeg},
   {id:'d-scale',k:'scale',l:'Ölçek',min:SCALE_MIN,max:SCALE_MAX,step:.01,reset:1,f:fX,log:true}
 ].forEach(d=>makeSlider($('#devSliders'),d,sel));
 makeSlider($('#lidSlot'),{id:'d-lid',k:'lidAngle',l:'Kapak açısı',s:'Kapak',min:70,max:170,step:1,reset:112,f:fDeg},sel);

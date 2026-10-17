@@ -232,7 +232,9 @@ function ensureDots(){
     const lab=document.querySelector('label[for="'+SLIDER[kind][k]+'"]');if(!lab)continue;
     const b=document.createElement('button');b.type='button';b.className='kdot anim-only';b.dataset.prop=k;b.setAttribute('aria-label',LABEL[k]+': bu anda anahtar kare');
     b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const o=cur();if(o&&kindOf(o)===kind)keyProp(o,k);});
-    lab.prepend(b);dots.push({kind,prop:k,el:b});
+    // after the value (a value field) or before the label (anything else)
+    if(lab.parentNode.classList.contains('nf'))lab.parentNode.appendChild(b);else lab.prepend(b);
+    dots.push({kind,prop:k,el:b});
   }
 }
 // lid angle and scroll live in other sections; in Canlandır they move next to the transform sliders

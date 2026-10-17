@@ -374,7 +374,8 @@ html[data-mode="animate"] #inspDevice>.sec:not(.anim-keep){display:none}
 html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .center{display:grid;grid-template-rows:minmax(0,1fr) auto;min-width:0;min-height:0}
 .sh-acts{display:flex;align-items:center;gap:4px}
-.keybtn{position:relative;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:5px;background:var(--field);font-weight:500;font-size:11px}
+.keybtn{position:relative;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:5px;background:var(--field);font-weight:500;font-size:11px;white-space:nowrap}
+.keybtn.ic{width:24px;padding:0;justify-content:center}  /* icon only, where the header is full (camera) */
 .keybtn:hover{background:var(--field-hover)}
 .keybtn i{width:9px;height:9px;transform:rotate(45deg);border:1.5px solid var(--key-ink);border-radius:1px}
 .keybtn.at i{background:var(--key);border-color:var(--key)}
@@ -567,11 +568,14 @@ details.more>summary:hover{color:var(--ink-2)}
 .drop{min-height:40px;padding:6px 8px;border-style:solid;border-color:transparent}
 .capture{margin:6px 0 2px}
 .capture-actions .btn{height:26px}
-/* the animation ◆ of a value field sits on the field's corner, so the label keeps its room */
-.nf{position:relative}
-.nf .nfk .kdot{position:absolute;left:-3px;top:-3px;width:9px;height:9px;margin:0;background:var(--panel);z-index:1}
-.nf .nfk .kdot.at{background:var(--key)}
-.nf .nfk .kdot::before{content:"";position:absolute;inset:-5px}  /* a larger hit area */
+/* the animation ◆ of a value field trails the value, in the field's own row: one quiet column per grid column
+   (outline = no animation, accent outline = animated, filled = a key at the playhead) */
+.nf>.kdot{position:relative;flex:none;width:6px;height:6px;margin:0 8px 0 1px;border-color:var(--line-strong);opacity:.75}
+.nf>.kdot:hover,.nf>.kdot.anim,.nf>.kdot.at{opacity:1}
+.nf>.kdot:hover{border-color:var(--key-ink)}
+.nf>.kdot.anim{border-color:var(--key)}
+.nf>.kdot.at{background:var(--key);border-color:var(--key)}
+.nf>.kdot::before{content:"";position:absolute;inset:-7px}  /* a larger hit area */
 
 /* ---------- inspector spacing: one rhythm (sections are vertical stacks) ----------
    between groups in a section 12 px, inside a group 8 px, grid cells 8 px; sections 16 px from the panel's edges.
