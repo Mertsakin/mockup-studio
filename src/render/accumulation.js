@@ -60,7 +60,7 @@ function renderSample(i){
   // sub-pixel jitter (one drawing-buffer pixel wide), combined with the live crop when there is one
   const c=crop.c,jx=halton(2,i)-.5,jy=halton(3,i)-.5;
   if(i>0){if(c)camera.setViewOffset(c.fw,c.fh,c.x+jx*c.w/w,c.y+jy*c.h/h,c.w,c.h);else camera.setViewOffset(w,h,jx,jy,w,h);}
-  seedU.value=(i*0.618034)%1*97.0;
+  seedU.value=i;
   // depth of field: the camera moves within the aperture, the image shifts back so the focus plane stays put
   const lens=dofOn()?lensSample(i):null;
   renderer.setRenderTarget(ACC.frame);renderer.clear();renderer.render(scene,camera);

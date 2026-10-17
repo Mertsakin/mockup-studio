@@ -9,22 +9,27 @@ import * as THREE from 'three';
    Depth 1.0 is a cleared texel (nothing between the light and its far plane) and never counts as a blocker;
    receivers beyond the far plane are still shadowed by blockers in the map. */
 const HELPERS=`
-	uniform float pcssSeed;
-	float pcssNoise() { return fract( 52.9829189 * fract( dot( gl_FragCoord.xy + pcssSeed * vec2( 17.0, 59.0 ), vec2( 0.06711056, 0.00583715 ) ) ) ); }
-	vec2 pcssVogel( int i, float n, float phi ) { float r = sqrt( ( float( i ) + 0.5 ) / n ); float t = float( i ) * 2.39996323 + phi; return r * vec2( cos( t ), sin( t ) ); }
+	uniform float pcssSeed; // progressive sample index
+	// Kernel rotation (x, turns) and radial jitter (y) for this pixel and sample: a per-pixel random offset (hash, no
+	// spatial structure) plus an R2 step per sample, so each pixel's samples spread evenly over rotations and radii.
+	// (Interleaved gradient noise re-seeded per sample gave each pixel its own uneven set of rotations, correlated along
+	// the noise's diagonals: a fine wavy moire on the floor that averaging never removed.)
+	vec2 pcssHash( vec2 p ) { vec3 q = fract( p.xyx * vec3( 0.1031, 0.1030, 0.0973 ) ); q += dot( q, q.yzx + 33.33 ); return fract( ( q.xx + q.yz ) * q.zy ); }
+	vec2 pcssNoise() { return fract( pcssHash( gl_FragCoord.xy ) + pcssSeed * vec2( 0.75487767, 0.56984029 ) ); }
+	vec2 pcssVogel( int i, float n, vec2 j ) { float r = sqrt( ( float( i ) + j.y ) / n ); float t = float( i ) * 2.39996323 + j.x * 6.2831853; return r * vec2( cos( t ), sin( t ) ); }
 	float pcssLin( float z ) { return 10.0 / ( 10.0 - z * 9.0 ); } // view depth / near for far = 10 near; valid for z < 10/9 (beyond far too)
 	float pcssShadow( sampler2D smap, vec2 mapSize, float pk, vec2 uv, float z ) {
 		vec2 texel = vec2( 1.0 ) / mapSize;
 		bool persp = pk < 0.0;
 		float k = abs( pk ) / 1000.0;
-		float phi = pcssNoise() * 6.2831853;
+		vec2 jit = pcssNoise();
 		float zr = persp ? pcssLin( z ) : z;
 		float b0 = max( 1.0, zr * 0.4 );
 		float search = persp ? k * ( zr - b0 ) / ( zr * b0 ) : k * 0.3;
 		search = clamp( search, 2.0 * texel.x, 0.12 );
 		float sum = 0.0; float cnt = 0.0;
 		for ( int i = 0; i < 16; i ++ ) {
-			vec2 o = pcssVogel( i, 16.0, phi ) * search;
+			vec2 o = pcssVogel( i, 16.0, jit ) * search;
 			float d = texture2D( smap, uv + o ).r;
 			float dv = persp ? pcssLin( d ) : d;
 			float zt = persp ? zr * ( 1.0 - length( o ) * 0.6 ) : z - length( o ) * 0.35;
@@ -36,7 +41,7 @@ const HELPERS=`
 		float r = clamp( pen, 1.5 * texel.x, 0.15 );
 		float lit = 0.0;
 		for ( int i = 0; i < 40; i ++ ) {
-			vec2 o = pcssVogel( i, 40.0, phi ) * r;
+			vec2 o = pcssVogel( i, 40.0, jit ) * r;
 			float d = texture2D( smap, uv + o ).r;
 			float dv = persp ? pcssLin( d ) : d;
 			float zt = persp ? zr * ( 1.0 - length( o ) * 0.6 ) : z - length( o ) * 0.35;
@@ -73,11 +78,11 @@ const POINT=`
 		vec3 bd3D = normalize( lightToPosition );
 		vec3 upv = abs( bd3D.y ) < 0.99 ? vec3( 0.0, 1.0, 0.0 ) : vec3( 1.0, 0.0, 0.0 );
 		vec3 tu = normalize( cross( upv, bd3D ) ); vec3 tv = cross( bd3D, tu );
-		float phi = pcssNoise() * 6.2831853;
+		vec2 jit = pcssNoise();
 		float search = clamp( srcSize * 0.6 / distR, 2.0 * texel, 0.3 );
 		float sum = 0.0; float cnt = 0.0;
 		for ( int i = 0; i < 16; i ++ ) {
-			vec2 o = pcssVogel( i, 16.0, phi ) * search;
+			vec2 o = pcssVogel( i, 16.0, jit ) * search;
 			float d = pcssCubeDist( shadowMap, bd3D + tu * o.x + tv * o.y, shadowCameraNear, shadowCameraFar );
 			if ( d < distC - length( o ) * distR * 0.5 ) { sum += d; cnt += 1.0; }
 		}
@@ -86,7 +91,7 @@ const POINT=`
 		float r = clamp( srcSize * ( distR - distB ) / ( distB * distR ), 2.0 * texel, 0.3 );
 		float lit = 0.0;
 		for ( int i = 0; i < 40; i ++ ) {
-			vec2 o = pcssVogel( i, 40.0, phi ) * r;
+			vec2 o = pcssVogel( i, 40.0, jit ) * r;
 			float d = pcssCubeDist( shadowMap, bd3D + tu * o.x + tv * o.y, shadowCameraNear, shadowCameraFar );
 			lit += d < distC - length( o ) * distR * 0.5 ? 0.0 : 1.0;
 		}
