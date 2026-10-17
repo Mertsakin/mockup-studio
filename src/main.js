@@ -42,6 +42,7 @@ import './ui/assets.js';
 import './ui/welcome.js';
 import './ui/timeline.js';
 import './export/video.js';
+import './export/embed.js';
 
 /* ---------- init ---------- */
 bgCss();state.devices.forEach(buildRT);refit();applyLightPreset(LIGHT_PRESETS[0]);renderSaved();initBoards();syncAll();fitAll();layout();

@@ -108,7 +108,8 @@ async function load(){
   base={ry:state.scene.ry,rx:state.scene.rx};
   // fonts for the laptop's key legends and the browser bar arrive late: redraw like the studio does
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{state.devices.forEach(d=>{if(d.type==='laptop'){rebuild(d,false);return;}if(!d.img)setScreenTexture(d);if(d.type==='browser')updateChrome(d);});});
-  parent.postMessage({mockup:'ready'},'*');
+  // ready once the first frame is on the canvas (the loader fades the poster out then)
+  requestAnimationFrame(()=>requestAnimationFrame(()=>parent.postMessage({mockup:'ready'},'*')));
 }
 state.devices.forEach(buildRT);
 startLoop();tick();

@@ -49,6 +49,12 @@
         <button class="btn primary full" id="export" type="button">İndir</button>
         <button class="btn full" id="exportBoards" type="button" hidden>Tüm artboardları indir (ZIP)</button>
         <button class="btn full" id="exportAll" type="button">Kayıtlı açıların hepsi (ZIP)</button>
+        <div class="emb" role="group" aria-labelledby="embTitle">
+          <p class="emb-t" id="embTitle">Web'e göm</p>
+          <div class="row"><label for="embMode">Etkileşim</label><select id="embMode"><option value="mouse">Fareyi izler</option><option value="drag">Sürükleyince döner</option><option value="scroll">Kaydırmayla oynar</option><option value="loop">Döngüde oynar</option><option value="still">Sabit</option></select></div>
+          <div class="row"><label for="embBg">Arka plan</label><select id="embBg"><option value="scene">Artboard'unki</option><option value="transparent">Şeffaf</option></select></div>
+          <button class="btn full" id="exportEmbed" type="button">Web'e göm (ZIP)</button>
+        </div>
       </div>
     </div>
   </header>

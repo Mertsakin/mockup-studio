@@ -824,3 +824,9 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .coach p{margin:0;opacity:.85}
 .coach-foot{display:flex;justify-content:flex-end;margin-top:10px}
 .coach .btn{background:var(--panel);color:var(--ink)}
+/* "Web'e göm" in the export popover (export/embed.js) */
+.emb{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:grid;gap:8px}
+.emb-t{margin:0;font-weight:600}
+.emb-dlg{width:520px}
+.emb-dlg .code{width:100%;min-height:96px;font:11px/16px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;resize:none}
+.emb-dlg ol{margin:0 0 10px;padding-left:18px;color:var(--ink-2);line-height:18px}

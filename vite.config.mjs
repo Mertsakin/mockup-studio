@@ -1,9 +1,12 @@
 import {defineConfig} from 'vite';
 import capture from './tools/capture/vite-plugin.mjs';
+import player from './tools/embed/vite-plugin.mjs';
 
 export default defineConfig({
   base: './',
-  plugins: [capture()],  // dev only: /api/capture (website screenshots via Playwright)            // relative asset paths: the build works from any folder
+  // capture: dev only, /api/capture (website screenshots via Playwright); player: the embed player for "Web'e göm"
+  // (dev /player/, build dist/player/). base './': relative asset paths, the build works from any folder
+  plugins: [capture(), player()],
   server: {port: 5173},
   build: {
     target: 'es2020',
