@@ -82,16 +82,58 @@ function renderNow(samples,beforeSample){
   present(samples);
 }
 renderer.shadowMap.autoUpdate=false;
-function startLoop(){(function loop(){
+/* Low-end hardware: while the scene keeps changing frame after frame (a drag, an orbit, the embed following the
+   pointer), each frame is one fresh sample at full resolution. Where that cannot keep the frame rate, the moving
+   frames are drawn smaller (MOTION.scale of the drawing buffer, down to MIN_SCALE) and stretched onto the canvas;
+   the scale is learned from the frame interval while moving (EMA over rAF deltas, so GPU time counts too) and kept
+   for the next drag. The first still frame is full resolution again and accumulates as before, so the image the
+   user stops on (and every export) is unchanged. While converging, slow frames take one sample instead of two.
+   window.__noAdapt turns it off (measurements). */
+const MOTION={scale:1,ema:0,last:0,lastDirty:-1e9,prev:false,moving:false,lo:null};
+const MIN_SCALE=.5,SLOW_MS=24,FAST_MS=15;
+function loEnsure(w,h){
+  const lo=MOTION.lo;if(lo&&lo.width===w&&lo.height===h)return lo;
+  if(lo)lo.dispose();
+  MOTION.lo=new THREE.WebGLRenderTarget(w,h,{samples:4,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,
+    colorSpace:THREE.SRGBColorSpace,internalFormat:'RGBA8',depthBuffer:true,stencilBuffer:true});
+  MOTION.lo.isXRRenderTarget=true;return MOTION.lo;
+}
+function renderMoving(w,h){
+  const s=MOTION.scale,lo=loEnsure(Math.max(1,Math.round(w*s)),Math.max(1,Math.round(h*s)));
+  hookAll();renderer.shadowMap.needsUpdate=true;seedU.value=0;
+  const lens=dofOn()?lensSample(0):null;
+  renderer.setRenderTarget(lo);renderer.clear();renderer.render(scene,camera);
+  if(lens){camera.position.copy(lens.pos);camera.updateMatrixWorld();shift.dx=0;shift.dy=0;camera.updateProjectionMatrix();}
+  quad.material=showMat;showMat.uniforms.tex.value=lo.texture;showMat.uniforms.count.value=1;
+  renderer.setRenderTarget(null);renderer.clear();renderer.render(quadScene,quadCam);
+}
+function pace(now,dirty){
+  const dt=MOTION.last?now-MOTION.last:16;MOTION.last=now;
+  // moving: changed now and shortly before (pointer events may skip a frame); only those frame intervals say how fast
+  // motion can be drawn (an idle gap is not slowness)
+  MOTION.moving=dirty&&(MOTION.prev||now-MOTION.lastDirty<150);MOTION.prev=dirty;if(dirty)MOTION.lastDirty=now;
+  if(MOTION.moving&&dt<1000){
+    MOTION.ema=MOTION.ema?MOTION.ema*.8+dt*.2:dt;
+    if(MOTION.ema>SLOW_MS)MOTION.scale=Math.max(MIN_SCALE,MOTION.scale*.9);
+    else if(MOTION.ema<FAST_MS)MOTION.scale=Math.min(1,MOTION.scale*1.05);
+  }
+  return dt;
+}
+function startLoop(){(function loop(now){
   requestAnimationFrame(loop);
   if(ACC.paused)return;
-  if(redraw.dirty){redraw.dirty=false;ACC.n=0;}
+  const dirty=redraw.dirty,dt=pace(now||performance.now(),dirty);
+  if(dirty){redraw.dirty=false;ACC.n=0;}
+  // a second changed frame in a row: the scene is moving; draw it small if the hardware needs that
+  if(MOTION.moving&&MOTION.scale<.98&&!window.__noAdapt){
+    renderer.getDrawingBufferSize(dbs);if(ACC.type){renderMoving(dbs.x,dbs.y);return;}
+  }
   // the depth of field needs more samples for smooth blur (the aperture is sampled by them)
   const max=dofOn()?DOF_SAMPLES:ACC.max;
   if(ACC.n>=max){onIdle.forEach(f=>f());return;}
   renderer.getDrawingBufferSize(dbs);
   if(!accEnsure(dbs.x,dbs.y)){hookAll();renderer.shadowMap.needsUpdate=true;renderer.setRenderTarget(null);renderer.render(scene,camera);ACC.n=ACC.max;return;}
-  const per=ACC.n===0?ACC.first:2;
+  const per=ACC.n===0?ACC.first:(dt>SLOW_MS*1.5&&!window.__noAdapt?1:2);
   for(let k=0;k<per&&ACC.n<max;k++){renderSample(ACC.n);ACC.n++;}
   present(ACC.n);
 })();}
@@ -99,4 +141,6 @@ function startLoop(){(function loop(){
 const DOF_SAMPLES=192;
 const pauseLive=on=>{ACC.paused=on;if(!on)redraw.dirty=true;};
 const setFirstSamples=n=>{ACC.first=Math.max(1,Math.min(8,Math.round(n)));};
-export {DOF_SAMPLES,pauseLive,renderNow,setFirstSamples,startLoop};
+// motionScale(): the current scale of moving frames (1 = full resolution; the debug harness reads it)
+const motionScale=()=>MOTION.scale;
+export {DOF_SAMPLES,motionScale,pauseLive,renderNow,setFirstSamples,startLoop};
