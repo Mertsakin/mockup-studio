@@ -10,7 +10,7 @@ import {offer} from './export.js';
    mockup-view.js; the scene as a project file; a poster still), an example page and a README with the code to
    paste. The site serves the folder itself; nothing is hosted by us yet. */
 const DIR='mockup/';
-const MODES={mouse:'Fareyi izler',drag:'Sürükleyince döner',scroll:'Kaydırmayla oynar',loop:'Döngüde oynar',still:'Sabit'};
+const MODES={mouse:'Fareyi izler',drag:'Sürükleyince döner',scroll:'Kaydırmayla oynar',loop:'Döngüde oynar',still:'Sabit','mouse+scroll':'Fareyi izler, kaydırmayla oynar','mouse+loop':'Fareyi izler, döngüde oynar'};
 
 // the active board only, without thumbnails or the asset library: what the player reads
 function sceneDoc(){
@@ -43,7 +43,8 @@ const README=snippet=>`Mockup stüdyosu · Web'e göm
 
 ${snippet}
 
-- mode: mouse (fareyi izler), drag (sürükleyince döner), scroll (kaydırmayla oynar), loop (döngüde oynar), still (sabit).
+- mode: mouse (fareyi izler), drag (sürükleyince döner), scroll (kaydırmayla oynar), loop (döngüde oynar), still (sabit);
+  ikisi + ile birleşebilir: mouse+scroll, mouse+loop.
 - ratio: kutunun oranı; genişliği sayfan belirler. Yüksekliği CSS ile de verebilirsin.
 - Dosyalar bir sunucudan açılmalı (http/https). Dosyayı çift tıklayıp açınca (file://) tarayıcı sahneyi yüklemez;
   denemek için bu klasörde: npx serve  ya da  python3 -m http.server

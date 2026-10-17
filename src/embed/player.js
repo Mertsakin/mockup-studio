@@ -16,11 +16,17 @@ import {state,view} from '../state/state.js';
    so every embed has its own copy of the core's singletons and nothing of the host page's CSS.
 
    Parameters (query string): src (project file), board (artboard name or index, default: the active one),
-   mode: still | mouse | drag | scroll | loop, range (degrees the mouse / drag may turn, default 14), bg: scene |
-   transparent. The host page's loader sends the scroll progress and the pointer as messages
+   mode: still |// mode: one of still | mouse | drag | scroll | loop, or two joined with '+' (a raw '+' in a query string reads as a
+// space, so spaces and commas split too; mouse+scroll: the pointer tilts the| drag | scroll | loop, range (degrees the mouse / drag may turn, default 14), bg: scene |
+   transparent. The host page's loader sends the// mode: one of still | mouse | drag | scroll | loop, or two joined with '+' (a raw '+' in a query string reads as a
+// space, so spaces and commas split too; mouse+scroll: the pointer tilts theprogress and the pointer as messages
    ({mockup: 'scroll', p} with p 0..1 while the embed crosses the viewport; {mockup: 'pointer', x, y} in -1..1). */
 const q=new URLSearchParams(location.search);
-const mode=q.get('mode')||'mouse',range=+q.get('range')||14,bgMode=q.get('bg')||'scene';
+// mode: one of still | mouse | drag | scroll | loop, or two joined with '+' (a raw '+' in a query string reads as a
+// space, so spaces and commas split too; mouse+scroll: the pointer tilts the| mouse | drag | scroll | loop, or two joined with '+' (mouse+scroll: the pointer tilts the
+// scene while the page's// mode: one of still | mouse | drag | scroll | loop, or two joined with '+' (a raw '+' in a query string reads as a
+// space, so spaces and commas split too; mouse+scroll: the pointer tilts theplays the animation; mouse+loop)
+const mode=q.get('mode')||'mouse',MODES=new Set(mode.split(/[+ ,]+/)),has=k=>MODES.has(k),range=+q.get('range')||14,bgMode=q.get('bg')||'scene';
 
 let base=null;  // the camera as designed; interaction adds to it
 let t0=0;  // when the scene came up (the videos' clock starts there)
@@ -100,7 +106,7 @@ function startVideos(){
   videos=videoDevices().length>0;if(!videos)return;
   if(reduced){showFrames(designT);return;}  // no clock: each screen's design (poster) frame
   setVideoClock(clockT);
-  if(mode!=='scroll'){vt=0;playVideos(0);}
+  if(!has('scroll')){vt=0;playVideos(0);}
 }
 // one frame of interaction: eases the offset towards its target and turns the camera by it
 function tick(now){
@@ -108,13 +114,13 @@ function tick(now){
   budget(now||performance.now());
   if(!base)return;
   const dur=state.anim.dur||5,sec=(now||performance.now())/1000;
-  if(mode==='loop'&&hasAnim())at(sec%dur);
-  if(videos&&!reduced&&mode!=='scroll'){vt=mode==='loop'?sec%dur:sec-t0;followVideos(vt);req();moving=8;}
+  if(has('loop')&&hasAnim())at(sec%dur);
+  if(videos&&!reduced&&!has('scroll')){vt=has('loop')?sec%dur:sec-t0;followVideos(vt);req();moving=8;}
   const k=.12;let moved=false;
   for(const a of ['ry','rx']){const d=want[a]-off[a];if(Math.abs(d)>.01){off[a]+=d*k;moved=true;}}
-  moving=moved||mode==='loop'?8:Math.max(0,moving-1);  // a few frames of grace after moving stops
+  moving=moved||has('loop')?8:Math.max(0,moving-1);  // a few frames of grace after moving stops
   if(!moving)setFirstSamples(1);
-  if(moved||mode==='loop'){state.scene.ry=base.ry+off.ry;state.scene.rx=base.rx+off.rx;applyTransform();}
+  if(moved||has('loop')){state.scene.ry=base.ry+off.ry;state.scene.rx=base.rx+off.rx;applyTransform();}
 }
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function pointer(x,y){if(reduced)return;want.ry=x*range;want.rx=-y*range*.5;}
@@ -122,21 +128,21 @@ function scrolled(p){
   if(reduced)return;
   const t=Math.max(0,Math.min(1,p))*(state.anim.dur||5);
   if(videos){vt=t;showFrames(t);}
-  if(hasAnim()){at(t);state.scene.ry=base.ry+off.ry;moving=8;applyTransform();}
+  if(hasAnim()){at(t);state.scene.ry=base.ry+off.ry;state.scene.rx=base.rx+off.rx;moving=8;applyTransform();}
   else if(!videos)want.ry=(p-.5)*2*range*2;  // no animation: the scene turns as the page scrolls
 }
 
 // pointer inside the frame (the loader's messages cover the whole page)
-if(mode==='mouse')canvas.addEventListener('pointermove',e=>pointer(e.clientX/innerWidth*2-1,e.clientY/innerHeight*2-1));
-if(mode==='drag'){
+if(has('mouse'))canvas.addEventListener('pointermove',e=>pointer(e.clientX/innerWidth*2-1,e.clientY/innerHeight*2-1));
+if(has('drag')){
   let d=null;
   canvas.addEventListener('pointerdown',e=>{d={x:e.clientX,ry:want.ry};canvas.setPointerCapture(e.pointerId);canvas.classList.add('drag');});
   canvas.addEventListener('pointermove',e=>{if(d)want.ry=Math.max(-range*3,Math.min(range*3,d.ry+(e.clientX-d.x)*.4));});
   const end=()=>{d=null;canvas.classList.remove('drag');};canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
 }else canvas.classList.add('still');
 addEventListener('message',e=>{const m=e.data;if(!m||typeof m!=='object')return;
-  if(m.mockup==='pointer'&&mode==='mouse')pointer(m.x,m.y);
-  else if(m.mockup==='scroll'&&mode==='scroll')scrolled(m.p);});
+  if(m.mockup==='pointer'&&has('mouse'))pointer(m.x,m.y);
+  else if(m.mockup==='scroll'&&has('scroll'))scrolled(m.p);});
 addEventListener('resize',size);
 
 async function load(){
