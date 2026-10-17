@@ -90,6 +90,15 @@
         </section>
       </div>
       <div id="paneTpl" class="lpane" role="tabpanel" aria-labelledby="tabTpl" hidden>
+        <section class="sec" data-sec="tpl-grid">
+          <h3 class="sh">Şablonlar</h3>
+          <div class="tpl-goals" id="tplGoals" role="group" aria-label="Amaç">
+            <button type="button" data-goal="all" aria-pressed="true">Tümü</button><button type="button" data-goal="land" aria-pressed="false">Açılış</button><button type="button" data-goal="store" aria-pressed="false">Mağaza</button><button type="button" data-goal="social" aria-pressed="false">Sosyal</button><button type="button" data-goal="video" aria-pressed="false">Video</button>
+          </div>
+          <div class="seg tpl-variant" id="tplVariant" role="group" aria-label="Renk"><button type="button" data-v="light" aria-pressed="true">Açık</button><button type="button" data-v="dark" aria-pressed="false">Koyu</button></div>
+          <div class="tpl-grid" id="tplGrid"></div>
+          <p class="empty tpl-empty" id="tplEmpty" hidden>Şablonlar yüklenemedi.</p>
+        </section>
         <section class="sec" data-sec="tpl-store">
           <h3 class="sh">Mağaza görselleri</h3>
           <button class="btn full" type="button" id="storeSetBtn">Mağaza seti oluştur…</button>
@@ -98,11 +107,6 @@
         <section class="sec" data-sec="tpl-comps">
           <h3 class="sh">Hazır kompozisyonlar</h3>
           <div class="chips" id="comps"></div>
-        </section>
-        <section class="sec" data-sec="tpl-grid">
-          <h3 class="sh">Şablonlar</h3>
-          <div class="tpl-grid" id="tplGrid"></div>
-          <p class="empty tpl-empty" id="tplEmpty">Henüz şablon yok. Yeni şablonlar burada görünecek.</p>
         </section>
       </div>
     </aside>

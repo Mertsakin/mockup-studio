@@ -2,7 +2,6 @@ import {exportSize,offer,renderExport} from '../export/export.js';
 import {busy,isCancel,paint} from './busy.js';
 import {MODS,modOf} from '../lights/mods.js';
 import {TYPES,typeName} from '../state/constants.js';
-import {TEMPLATES} from '../state/templates.js';
 import {hasAnim} from '../state/anim.js';
 import {selItem,state} from '../state/state.js';
 import {activate,activeBoard,addBoard,doc,duplicateBoard,ensureBoard,hasBoard,onBoards,removeBoard,renameBoard} from './boards.js';
@@ -12,7 +11,6 @@ import {hydrateIcons,icon} from './icons.js';
 import {removeItem,selectItem} from './items.js';
 import {isMulti,selection,toggle} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
-import {applyTemplate} from './templates.js';
 import {boardScreen} from './layout.js';
 import {toast} from './toast.js';
 import {onUi,setUi,ui} from './ui-state.js';
@@ -231,13 +229,7 @@ function selectTab(k){
   for(const t in TABS){const on=t===k;$(TABS[t][0]).setAttribute('aria-selected',String(on));$(TABS[t][1]).hidden=!on;}
 }
 for(const t in TABS)$(TABS[t][0]).addEventListener('click',()=>selectTab(t));
-const tplGrid=$('#tplGrid');
-// the template list (empty for now: state/templates.js); each one opens as a new artboard
-$('#tplEmpty').hidden=TEMPLATES.length>0;
-TEMPLATES.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='tpl';b.title=t.name+': yeni artboard olarak ekle';
-  b.innerHTML='<img loading="lazy" alt=""><span></span>';b.querySelector('img').src='showcases/'+t.id+'.jpg';b.querySelector('span').textContent=t.name;
-  b.addEventListener('click',()=>{addBoard(null,t.name);applyTemplate(t);setUi({kind:'board'});fitAll();toast(t.name+' yeni artboard olarak eklendi');});
-  tplGrid.appendChild(b);});
+// the template gallery lives in template-gallery.js
 
 /* ---------- theme ---------- */
 const THEME_KEY='mockup-studio-theme';

@@ -830,3 +830,13 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .emb-dlg{width:520px}
 .emb-dlg .code{width:100%;min-height:96px;font:11px/16px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;resize:none}
 .emb-dlg ol{margin:0 0 10px;padding-left:18px;color:var(--ink-2);line-height:18px}
+/* template gallery (ui/template-gallery.js) */
+.tpl-goals{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.tpl-goals button{height:22px;padding:0 8px;border-radius:11px;background:var(--field);color:var(--ink-2);font-weight:500;font-size:11px}
+.tpl-goals button:hover{background:var(--field-hover)}
+.tpl-goals button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.tpl-variant{width:100%;margin-bottom:10px}
+.tpl .tpl-im{position:relative;display:block}
+.tpl .tpl-im img{display:block}
+.tpl .tpl-b{position:absolute;left:4px;bottom:4px;font-size:10px;line-height:14px;padding:0 5px;border-radius:4px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
+.tpl .tpl-n{font-size:11px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
