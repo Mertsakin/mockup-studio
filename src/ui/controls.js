@@ -1,4 +1,3 @@
-import {M} from '../devices/materials.js';
 import {RT} from '../devices/rt.js';
 import {req} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
@@ -30,7 +29,7 @@ const bindColor=(id,key,fn)=>{const el=$('#'+id);el.value=state[key];el.addEvent
 bindColor('solid','solid',bgCss);bindColor('bg1','bg1',bgCss);bindColor('bg2','bg2',bgCss);
 const bindSwitch=(id,key,fn)=>{const el=$('#'+id);el.checked=state[key];el.addEventListener('change',()=>{state[key]=el.checked;if(fn)fn();applyTransform();syncUI();});};
 bindSwitch('showDome','showDome',()=>renderDome());bindSwitch('floor','floor');bindSwitch('wall','wall');bindSwitch('markers','markers');
-bindSwitch('selfShadow','selfShadow',()=>RT.forEach(o=>o.holder.traverse(x=>{if(x.isMesh)x.receiveShadow=state.selfShadow&&x.material!==M.glare;})));
+bindSwitch('selfShadow','selfShadow',()=>RT.forEach(o=>o.holder.traverse(x=>{if(x.isMesh)x.receiveShadow=state.selfShadow&&!x.material.userData.glare;})));
 bindColor('shadowColor','shadowColor',applyTransform);
 bindSwitch('worldLights','worldLights');
 const sizeEl=$('#size'),formatEl=$('#format');

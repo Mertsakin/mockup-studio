@@ -15,7 +15,7 @@ const M={
   lens:new THREE.MeshStandardMaterial({color:lin(0x07080a),roughness:.04,metalness:.6}),
   flash:new THREE.MeshStandardMaterial({color:lin(0xf1ead8),roughness:.3,metalness:0}),
   glare:new THREE.MeshPhysicalMaterial({color:0x000000,metalness:0,roughness:.035,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,envMapIntensity:.45,
-    polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-6}),
+    polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-6,userData:{glare:true}}),  // userData.glare: also on a device's own copy (runtime.js applyGlare)
   // matte PBT caps; low env reflection keeps them charcoal under a bright studio environment
   keycap:new THREE.MeshPhysicalMaterial({color:lin(0x0d0e10),roughness:.62,metalness:0,envMapIntensity:.35}),
   well:new THREE.MeshStandardMaterial({color:lin(0x0b0c0e),roughness:.9,metalness:0}),

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {FINISHES,applyColorTo} from '../devices/materials.js';
 import {fmtMB,realSizeCm} from '../devices/model.js';
-import {RT,setHolder} from '../devices/rt.js';
-import {buildRT,disposeRT,rebuild} from '../devices/runtime.js';
+import {RT,glareAmt,setHolder} from '../devices/rt.js';
+import {applyGlare,buildRT,disposeRT,rebuild} from '../devices/runtime.js';
 import {scrollScreen,scrollScreens,setScreenTexture,updateChrome} from '../devices/screen.js';
 import {camera,canvas,req} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
@@ -174,7 +174,9 @@ function onDevice(key,d){
   syncUI();
 }
 const screenBgEl=$('#screenBg');screenBgEl.addEventListener('input',()=>{const d=sel();d.screenBg=screenBgEl.value;setScreenTexture(d);});
-const glareEl=$('#glare');glareEl.addEventListener('change',()=>{const d=sel();d.glare=glareEl.checked;const o=RT.get(d.id);if(o.glare)o.glare.visible=d.glare;req();});
+// the cover glass reflection's amount (runtime.js applyGlare; 0 = off)
+makeSlider($('#glareSlot'),{id:'d-glare',k:'glareAmt',l:'Cam yansıması',s:'Yansıma',min:0,max:1.5,step:.05,reset:1,f:fPct,w:6,
+  after:()=>{const d=sel();d.glare=d.glareAmt>0;applyGlare(RT.get(d.id),d);req();}},()=>{const d=sel();if(d&&d.glareAmt===undefined)d.glareAmt=glareAmt(d);return d;});
 const urlEl=$('#url');let urlT=null;
 urlEl.addEventListener('input',()=>{const d=sel();d.url=urlEl.value;clearTimeout(urlT);urlT=setTimeout(()=>updateChrome(d),120);});
 onSyncUI(d=>{
@@ -190,7 +192,7 @@ onSyncUI(d=>{
   swWrap.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===d.colorKey)));
   finishSel.value=d.finish||'';
   customInput.value=d.custom;custom.style.background=d.colorKey==='custom'?d.custom:'';
-  screenBgEl.value=d.screenBg;glareEl.checked=d.glare;if(document.activeElement!==urlEl)urlEl.value=d.url;
+  screenBgEl.value=d.screenBg;if(document.activeElement!==urlEl)urlEl.value=d.url;
   $('#selTitle').textContent=devLabel(d);
   $('#removeDevice').disabled=false;
   $('#scrollSlot').hidden=!scrollScreens(d);

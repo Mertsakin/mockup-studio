@@ -17,4 +17,7 @@ function fitModel(o,d){
   o.fit.scale.setScalar(s);o.fit.position.copy(o.asset.center).multiplyScalar(-s);
 }
 
-export {RT,fitModel,setHolder};
+// the cover glass reflection's amount (0-1.5; 1 = the studio's look; older documents: glare false = 0)
+const glareAmt=d=>d.glareAmt??(d.glare===false?0:1);
+
+export {RT,fitModel,setHolder,glareAmt};
