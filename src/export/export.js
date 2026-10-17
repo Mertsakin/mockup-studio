@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {RT} from '../devices/rt.js';
-import {mediaSize,screenSrc} from '../devices/screen.js';
+import {mediaSize,screenSrc,setScreenTexture} from '../devices/screen.js';
 import {LRT} from '../lights/runtime.js';
 import {DOF_SAMPLES,renderNow} from '../render/accumulation.js';
 import {dofOn} from '../render/lens.js';
@@ -118,6 +118,42 @@ exportAllBtn.addEventListener('click',async()=>{
     toast('İndirildi');
   }catch(e){Object.assign(state.scene,keep);applyTransform();syncSliders();toast(isCancel(e)?'Dışa aktarım durduruldu':'Görseller oluşturulamadı. Daha küçük bir çözünürlük dene.');}
   finally{bz.close();exportAllBtn.disabled=false;}
+});
+
+/* ---------- one image per screenshot: the same scene with each screenshot on the devices of its shape (tall on
+   phones and tablets, wide on laptops, monitors and browser windows; when no device fits, the selected one),
+   exported in turn and zipped under the screenshots' own names. The screens are put back afterwards. */
+const MOBILE=new Set(['phone','tablet']);
+const batchBtn=$('#exportBatch'),batchFile=$('#batchFile');
+batchBtn.addEventListener('click',()=>batchFile.click());
+batchFile.addEventListener('change',async()=>{
+  const files=[...batchFile.files].filter(f=>/^image\//.test(f.type));batchFile.value='';if(!files.length)return;
+  const devs=state.devices.filter(d=>d.type!=='model'&&(d.type!=='custom'||d.frameImg));
+  if(!devs.length){toast('Bu artboard\'da ekranı olan cihaz yok.');return;}
+  const keep=devs.map(d=>({d,img:d.img,imgName:d.imgName,video:d.video,videoName:d.videoName,scroll:d.scroll,fit:d.fit}));
+  batchBtn.disabled=true;const bz=busy('Görseller hazırlanıyor'),out=[];
+  try{
+    const JSZip=await loadJSZip(),zip=JSZip?new JSZip():null,used={};
+    for(let i=0;i<files.length;i++){
+      bz.step(i,files.length,files[i].name);
+      const img=await new Promise((ok,fail)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>fail(new Error(files[i].name));im.src=URL.createObjectURL(files[i]);});
+      // every image starts from the scene as it was: the previous image does not stay on the other devices
+      keep.forEach(k=>{Object.assign(k.d,{img:k.img,imgName:k.imgName,video:k.video,videoName:k.videoName,scroll:k.scroll,fit:k.fit});});
+      const wide=img.naturalWidth>img.naturalHeight;
+      let on=devs.filter(d=>MOBILE.has(d.type)!==wide);if(!on.length)on=[devs.find(d=>d.id===state.selected)||devs[0]];
+      on.forEach(d=>{d.img=img;d.imgName=files[i].name;d.video=null;d.videoName='';d.scroll=0;d.fit='cover';});devs.forEach(setScreenTexture);
+      await paint();const b=await renderExport(bz.progress);
+      let base=slug(files[i].name.replace(/\.[a-z0-9]+$/i,''));if(used[base])base+='-'+(++used[base]);else used[base]=1;
+      out.push([base+'.'+ext(),b]);if(zip)zip.file(base+'.'+ext(),b);
+    }
+    if(zip){offer('mockup-toplu-'+stamp()+'.zip',await zip.generateAsync({type:'blob'}));}
+    else for(const [n,b] of out){offer(n,b);await wait(250);}
+    toast(files.length+' görsel indirildi');
+  }catch(e){toast(isCancel(e)?'Dışa aktarım durduruldu':'Görseller oluşturulamadı: '+(e.message||e));}
+  finally{
+    keep.forEach(k=>{Object.assign(k.d,{img:k.img,imgName:k.imgName,video:k.video,videoName:k.videoName,scroll:k.scroll,fit:k.fit});setScreenTexture(k.d);});
+    req();bz.close();batchBtn.disabled=false;
+  }
 });
 
 export {exportSize,offer,renderExport};
