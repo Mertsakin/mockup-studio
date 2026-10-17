@@ -256,6 +256,7 @@
             <div class="capture-actions">
               <button class="btn" id="captureBtn" type="button" title="Adresi yalnızca seçili cihazın ekran genişliğinde yakalar">Yakala</button>
               <button class="btn" id="captureAllBtn" type="button" title="Aynı adresi her cihaza, kendi ekran genişliğinde yakalar">Tüm cihazlara</button>
+              <button class="btn rec-btn" id="recordBtn" type="button" title="Siteyi stüdyonun içinde canlı aç, gez (giriş yap, bannerları kapat) ve ekranını kaydet; kayıt cihaz ekranına video olarak gömülür"><span data-icon="record-circle" data-size="14"></span>Ekran kaydı…</button>
             </div>
           </div>
           <div class="row"><span class="lbl">Yerleşim</span>
@@ -449,6 +450,30 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module" src="/src/main.js"></script>
+<div class="scrim rec" id="recScrim" hidden>
+  <div class="rec-box" id="recBox" role="dialog" aria-modal="true" aria-label="Ekran kaydı">
+    <div class="rec-bar">
+      <button class="ib sm" type="button" id="recBack" aria-label="Geri" title="Geri"><span data-icon="arrow-left" data-size="16"></span></button>
+      <button class="ib sm" type="button" id="recReload" aria-label="Yenile" title="Yenile"><span data-icon="refresh" data-size="16"></span></button>
+      <label class="fld rec-url"><span data-icon="global" data-size="14"></span><input type="url" id="recUrl" placeholder="https://siteadi.com" aria-label="Adres (Enter: git)" spellcheck="false" autocomplete="url"></label>
+      <div class="seg rec-target" id="recTarget" role="group" aria-label="Kayıt hangi cihazlara gömülsün"><button type="button" data-v="one" title="Yalnızca seçili cihaz">Bu cihaz</button><button type="button" data-v="all" title="Belgedeki her cihaz (aynı ölçüdekiler aynı kaydı paylaşır)">Tümü</button></div>
+      <span class="rec-vp" id="recVp"></span>
+      <span class="rec-status" id="recStatus" role="status" aria-live="polite"></span>
+      <span class="vr"></span>
+      <label class="rec-auto" title="Başlat’tan sonra sayfa bu sürede yumuşakça sona kayar"><input type="checkbox" id="recAuto"><span>Otomatik kaydır</span></label>
+      <label class="rec-auto"><input type="number" id="recAutoDur" min="1" max="30" step="1" value="8" aria-label="Kaydırma süresi (saniye)"><span>sn</span></label>
+      <span class="vr"></span>
+      <span class="rec-time" id="recTime"></span>
+      <button class="btn rec-start" type="button" id="recStart"><span class="rec-dot"></span><span>Başlat</span></button>
+      <button class="btn" type="button" id="recWindow" title="Siteyi aynı profille ayrı bir Chrome penceresinde aç (bir doğrulama burada geçmezse); kayıt sürer"><span data-icon="square-top-down" data-size="14"></span>Ayrı pencerede aç</button>
+      <button class="ib sm" type="button" id="recClose" aria-label="Kapat (Esc)" title="Kapat (Esc)"><span data-icon="close-circle"></span></button>
+    </div>
+    <div class="rec-stage" id="recStage">
+      <canvas id="recCanvas" tabindex="0" aria-label="Site görüntüsü: fare ve klavye siteye gider"></canvas>
+      <div class="rec-note" id="recNote" hidden></div>
+    </div>
+  </div>
+</div>
 <div class="scrim" id="videoScrim" hidden>
   <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="videoTitle">
     <div class="dh"><span id="videoTitle">Video dışa aktar</span><button class="ib sm" type="button" id="videoX" aria-label="Kapat"><span data-icon="close-circle"></span></button></div>

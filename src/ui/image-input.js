@@ -135,4 +135,4 @@ onSyncUI(d=>{
   else{$('#frameMain').textContent='Çerçeve PNG\u2019si seç';$('#frameSub').textContent='Ekran bölümü şeffaf bir cihaz çerçevesi. Ekran görüntün o alana yerleşir.';frameDrop.classList.remove('has');}
 });
 
-export {loadShot};
+export {loadShot,loadShotVideo};

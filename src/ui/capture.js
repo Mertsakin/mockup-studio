@@ -25,6 +25,8 @@ function viewport(d){
   const dpr=Math.min(DPR_MAX,Math.max(1,Math.ceil(screenPixelWidth(d)/width*4)/4));
   return {width,height:Math.round(width/a),mobile,dpr};
 }
+// no scheme: assume https; other schemes go to the server, which refuses them
+const normalizeUrl=raw=>/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)?raw:'https://'+raw;
 const input=$('#captureUrl'),one=$('#captureBtn'),all=$('#captureAllBtn');
 // The field shows the selected device's own address; typing stores it on that device.
 input.addEventListener('input',()=>{const d=state.devices.find(x=>x.id===state.selected);if(d)d.siteUrl=input.value.trim();});
@@ -32,7 +34,7 @@ onSyncUI(d=>{if(d&&document.activeElement!==input)input.value=d.siteUrl||'';});
 // everyDevice=false: only the selected device; true: the same address on every device
 async function capture(everyDevice){
   let raw=input.value.trim();if(!raw){input.focus();return;}
-  if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw))raw='https://'+raw;  // no scheme: assume https; other schemes go to the server, which refuses them
+  raw=normalizeUrl(raw);
   const devices=everyDevice?state.devices:state.devices.filter(d=>d.id===state.selected);
   const groups=new Map();
   devices.forEach(d=>{const v=viewport(d);if(!v)return;const id=[v.width,v.height,v.mobile?'m':'d',v.dpr].join('-');
@@ -51,7 +53,9 @@ async function capture(everyDevice){
     const final=new URL(res.finalUrl||raw),name=final.hostname.replace(/^www\./,'');
     for(const g of groups.values()){
       const img=new Image();img.src=res.shots[g.target.id];await img.decode();
-      g.devices.forEach(d=>{d.img=img;d.imgName=name;d.scroll=0;d.fit='cover';d.siteUrl=input.value.trim();
+      g.devices.forEach(d=>{
+        if(d.video){d.video.pause();d.video=null;d.videoName='';if(d.tracks)delete d.tracks.scroll;}  // a screen video gives way to the shot (one or the other)
+        d.img=img;d.imgName=name;d.scroll=0;d.fit='cover';d.siteUrl=input.value.trim();
         if(d.type==='browser'){d.url=name+(final.pathname!=='/'?final.pathname:'');updateChrome(d);}
         setScreenTexture(d);});
     }
@@ -62,3 +66,6 @@ async function capture(everyDevice){
 one.addEventListener('click',()=>capture(false));
 all.addEventListener('click',()=>capture(true));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();capture(false);}});
+
+// the screen recording (record.js) opens the site at the same viewport
+export {normalizeUrl,viewport};

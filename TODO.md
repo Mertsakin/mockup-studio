@@ -10,7 +10,7 @@ Stüdyo uçtan uca kullanılabilir durumda: boş belgeyle açılır (ya da son �
 
 - **Render:** three r186, PCSS gölgeler, ilerlemeli raster ("Hızlı", varsayılan) ve yol izleme ("Fotoğraf": 64 örnek / 30 sn, karolu örnekleme, kendi OIDN karolamamız, albedo + normal yardımcı girdileri, Neutral ton eşleme, kalibre edilmiş gölge yakalayıcı zemin, stüdyo HDRI'ı).
 - **Editör:** Figma benzeri kabuk, sonsuz tuval, çoklu artboard, katman ağacı, gizmo, serbest dönüştürme kutusu, görünüm küpü, geri al/yinele, proje dosyası (sistem kaydet/aç pencereleri) + IndexedDB otomatik kayıt.
-- **İçerik:** 7 cihaz tipi, 20 şablon, 2B öğeler ve varlık kütüphanesi, arka plan (şeffaf / düz / gradyan / görsel), web sitesi yakalama (yalnızca dev sunucusunda).
+- **İçerik:** 7 cihaz tipi, 20 şablon, 2B öğeler ve varlık kütüphanesi, arka plan (şeffaf / düz / gradyan / görsel), web sitesi yakalama ve etkileşimli ekran kaydı (yalnızca dev sunucusunda).
 - **Animasyon:** Tasarla / Canlandır modları, zaman çizelgesi, anahtar kareler, hazır hareketler, MP4 dışa aktarım.
 - **Pazarlama:** `landing/` örnek SaaS açılış sayfası; görselleri stüdyonun kendisiyle üretiliyor.
 - Açık dal / bekleyen iş yok; `main` temiz ve GitHub'a gönderilmiş.
@@ -50,7 +50,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 2. [ ] **Mağaza görseli üretici + yerelleştirme:** metin katmanı, marka yazı tipleri, App Store / Play Store ölçüleri, dil başına toplu çıktı (10 dil × 8 ekran = 80 görsel tek seferde).
 3. [ ] **Gömülebilir etkileşimli 3B mockup:** açılış sayfasına PNG yerine döndürülebilen, kaydırılabilen hafif bir web bileşeni.
 4. [ ] **Yapay zekâ ile sahne:** 3B cihazı yapay zekâyla üretilmiş ortama ışığı ve gölgesi tutarlı oturtma (ortamdan HDRI / ışık yönü tahmini → yol izleyici); referans fotoğrafın ışığını taklit; istemden kompozisyon önerisi.
-5. [ ] **Ekranda video:** [x] v1 (17 Ekim): cihaz ekranında MP4/WebM, sessiz; Canlandır'da imleçle senkron, Tasarla'da poster karesi; video dışa aktarımında kare kare; otomatik kayıt ve `.mockup.zip`. [ ] Sonra: ses, WebCodecs ile kare çözme (seek yerine), Fotoğraf kalitesinde video, 9:16 ve 1:1 sosyal formatlar, artboard'lar arası kamera geçişleri, WebM/GIF çıktı.
+5. [ ] **Ekranda video:** [x] v1 (17 Ekim): cihaz ekranında MP4/WebM, sessiz; Canlandır'da imleçle senkron, Tasarla'da poster karesi; video dışa aktarımında kare kare; otomatik kayıt ve `.mockup.zip`. [x] **Etkileşimli ekran kaydı** (17 Ekim): site stüdyonun içindeki lightbox'ta canlı (dev sunucusunun Chrome'u, kalıcı profil, CDP screencast), kullanıcı gezer / giriş yapar / doğrulamayı geçer, Başlat–Durdur ile en çok 30 sn kayıt MP4 olarak cihaz ekranlarına gömülür; otomatik kaydırma; "Ayrı pencerede aç" yedeği. [ ] Sonra: kaydı yayınlanmış sürümde de sunmak (yakalama servisiyle birlikte), kayıtta ses, imleç görünümü, 30 sn üstü kayıt (kareleri diske/IndexedDB'ye akıtarak). [ ] Sonra: ses, WebCodecs ile kare çözme (seek yerine), Fotoğraf kalitesinde video, 9:16 ve 1:1 sosyal formatlar, artboard'lar arası kamera geçişleri, WebM/GIF çıktı.
 6. [ ] **Gerçekçilikte son mil:** ~~alan derinliği~~ (bitti), yansıtıcı/dokulu zemin, jenerik 3B eller (telefonu tutan el), dekor nesneleri, GLB içe aktarma.
 7. [ ] **Ekip ve bulut:** bulut proje, paylaşım linki, yorumlar, ekip kütüphanesi (marka kiti, ortak şablonlar); ücretli ekip planının dayanağı.
 

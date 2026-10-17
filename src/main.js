@@ -19,6 +19,7 @@ import './ui/devices-panel.js';
 import './ui/lights-panel.js';
 import './ui/image-input.js';
 import './ui/capture.js';
+import './ui/record.js';
 import './ui/layers.js';
 import './ui/navigator.js';
 import './ui/arrange.js';

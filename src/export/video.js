@@ -1,4 +1,3 @@
-import {ArrayBufferTarget,Muxer} from 'mp4-muxer';
 import {hasVideo,showFrames} from '../devices/video.js';
 import {LRT} from '../lights/runtime.js';
 import {pauseLive,renderNow} from '../render/accumulation.js';
@@ -13,6 +12,7 @@ import {toast} from '../ui/toast.js';
 import {ui} from '../ui/ui-state.js';
 import {$,$$,mkCanvas} from '../util.js';
 import {exportSize,offer} from './export.js';
+import {bitrate as bps,mp4Encoder} from './mp4.js';
 
 import {dofOn} from '../render/lens.js';
 import {scheduleEnv} from '../render/environment.js';
@@ -21,32 +21,17 @@ import {scheduleEnv} from '../render/environment.js';
    Deterministic: frame i shows t = i / fps whatever the machine's speed.
    Motion blur: the frame's samples are spread over half a frame interval around t (a 180° shutter), so only what
    moves blurs, like a real camera. The screenshot scroll is set once per frame (redrawing it per sample is costly). */
-const SAMPLES=16,DOF_SAMPLES=64,SHUTTER=.5,BPP=.16;  // bits per pixel per frame
+const SAMPLES=16,DOF_SAMPLES=64,SHUTTER=.5;
 const X={res:1920,fps:30,blur:true};
 const scrim=$('#videoScrim');
 const size=()=>{const [w,h]=exportSize(X.res,X.res);return [w-w%2,h-h%2];};  // H.264 wants even sizes
 const frames=()=>Math.round(state.anim.dur*X.fps);
-const bitrate=(w,h)=>Math.round(w*h*X.fps*BPP);
-
-async function pickConfig(w,h){
-  if(typeof VideoEncoder==='undefined')return null;
-  for(const codec of ['avc1.640034','avc1.640033','avc1.64002a','avc1.4d0034','avc1.42003e']){
-    const c={codec,width:w,height:h,bitrate:bitrate(w,h),framerate:X.fps,avc:{format:'avc'}};
-    try{const r=await VideoEncoder.isConfigSupported(c);if(r.supported)return r.config;}catch(e){/* next */}
-  }
-  return null;
-}
+const bitrate=(w,h)=>bps(w,h,X.fps);
 
 let cancel=false;
 async function renderVideo(onProgress){
   await fontsReady(state.items);
-  const [W,H]=size(),n=frames(),config=await pickConfig(W,H);
-  if(!config)throw new Error('codec');
-  const target=new ArrayBufferTarget();
-  const muxer=new Muxer({target,video:{codec:'avc',width:W,height:H,frameRate:X.fps},fastStart:'in-memory',firstTimestampBehavior:'offset'});
-  let failed=null;
-  const enc=new VideoEncoder({output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta),error:e=>{failed=e;}});
-  enc.configure(config);
+  const [W,H]=size(),n=frames(),enc=await mp4Encoder(W,H,X.fps);  // throws 'codec' when the size cannot be encoded
   const pr=renderer.getPixelRatio(),out=mkCanvas(W,H),g=out.getContext('2d');
   const hidden=[];LRT.forEach(o=>{if(o.marker.visible){o.marker.visible=false;hidden.push(o.marker);}});overlays.forEach(o=>{if(o.visible){o.visible=false;hidden.push(o);}});
   pauseLive(true);
@@ -56,7 +41,6 @@ async function renderVideo(onProgress){
     const moving=targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove=state.lights.some(hasAnim),video=state.devices.some(hasVideo),dt=1/X.fps,S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
     for(let i=0;i<n;i++){
       if(cancel)return null;
-      if(failed)throw failed;
       const t=i*dt;
       applyAt(t,{sync:true});if(video)await showFrames(t);if(lightsMove)scheduleEnv(true);  // screen videos: the exact frame, drawn before the samples
       if(X.blur&&moving)renderNow(S,j=>{applyAt(Math.max(0,Math.min(state.anim.dur,t+((j+.5)/S-.5)*SHUTTER*dt)),{scroll:false});});
@@ -64,18 +48,13 @@ async function renderVideo(onProgress){
       g.clearRect(0,0,W,H);
       if(state.bg==='transparent'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}  // MP4 has no alpha
       paintBg(g,W,H);paintItems(g,W,H,false,t);g.drawImage(canvas,0,0,W,H);paintItems(g,W,H,true,t);
-      const f=new VideoFrame(out,{timestamp:Math.round(i*1e6/X.fps),duration:Math.round(1e6/X.fps)});
-      enc.encode(f,{keyFrame:i%(X.fps*2)===0});f.close();
-      while(enc.encodeQueueSize>2)await new Promise(r=>setTimeout(r,2));
+      await enc.add(out,i);
       onProgress(i+1,n);
       await new Promise(r=>setTimeout(r,0));  // let the page breathe (progress, cancel)
     }
-    await enc.flush();
-    if(failed)throw failed;
-    muxer.finalize();
-    return new Blob([target.buffer],{type:'video/mp4'});
+    return await enc.finish();
   }finally{
-    try{if(enc.state!=='closed')enc.close();}catch(e){/* closed */}
+    enc.close();
     hidden.forEach(o=>{o.visible=true;});
     pauseLive(false);renderer.setPixelRatio(pr);invalidateLayout();layout();
     applyNow();req();
