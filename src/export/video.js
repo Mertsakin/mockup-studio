@@ -22,7 +22,14 @@ import {scheduleEnv} from '../render/environment.js';
    Motion blur: the frame's samples are spread over half a frame interval around t (a 180° shutter), so only what
    moves blurs, like a real camera. The screenshot scroll is set once per frame (redrawing it per sample is costly). */
 const SAMPLES=16,DOF_SAMPLES=64,SHUTTER=.5;
-const X={res:1920,fps:30,blur:true,format:'mp4'};
+const X={res:1920,fps:30,blur:true,format:'mp4',quality:'fast'};
+/* Photo quality: every frame goes through the path tracer like the still photo export (render/pathtrace.js
+   renderPathTraced: studio set-up, BVH, floor calibration, OIDN), with few samples. The fixed seed hands every frame
+   the same samples, so what is left of the noise stays put instead of crawling. No motion blur here. Slow: the
+   dialog says how slow before it starts, and the estimate is replaced by the measured pace after the first frame. */
+const PHOTO_SAMPLES=12,PHOTO_FRAME_MS=20000;
+// seconds per frame on an M1 Pro (measured at 1080 x 1080: 0.17 s a sample, 2.6 s OIDN, 0.7 s preparation; ~linear in pixels)
+const photoFrameSec=(W,H)=>W*H/1.17e6*(.17*PHOTO_SAMPLES+2.6)+.7;
 const GIF_W=720,GIF_FPS=15;  // a GIF is a palette per frame: past these it gets large and slow for little gain
 const scrim=$('#videoScrim');
 const fps=()=>X.format==='gif'?GIF_FPS:X.fps;
@@ -51,11 +58,19 @@ async function renderVideo(onProgress){
       applyAt(t,{sync:true});if(video)await showFrames(t);if(lightsMove)scheduleEnv(true);  // screen videos: the exact frame, drawn before the samples
       // the focus is the frame's own (its time): the motion blur sub-samples keep it (render/lens.js)
       holdFocus(true);
-      if(X.blur&&moving)renderNow(S,j=>{applyAt(Math.max(0,Math.min(state.anim.dur,t+((j+.5)/S-.5)*SHUTTER*dt)),{scroll:false});});
-      else renderNow(S);
-      holdFocus(false);
-      g.clearRect(0,0,W,H);
-      paintBg(g,W,H);paintItems(g,W,H,false,t);g.drawImage(canvas,0,0,W,H);paintItems(g,W,H,true,t);
+      if(X.quality==='photo'){
+        // the background and the items behind go under the render before denoising (as in the still photo export)
+        const back=mkCanvas(W,H),bg=back.getContext('2d');paintBg(bg,W,H);paintItems(bg,W,H,false,t);
+        const raw=await (await import('../render/pathtrace.js')).renderPathTraced(PHOTO_SAMPLES,null,PHOTO_FRAME_MS,back);
+        holdFocus(false);
+        g.clearRect(0,0,W,H);g.drawImage(raw,0,0,W,H);paintItems(g,W,H,true,t);
+      }else{
+        if(X.blur&&moving)renderNow(S,j=>{applyAt(Math.max(0,Math.min(state.anim.dur,t+((j+.5)/S-.5)*SHUTTER*dt)),{scroll:false});});
+        else renderNow(S);
+        holdFocus(false);
+        g.clearRect(0,0,W,H);
+        paintBg(g,W,H);paintItems(g,W,H,false,t);g.drawImage(canvas,0,0,W,H);paintItems(g,W,H,true,t);
+      }
       await enc.add(out,i);
       onProgress(i+1,n);
       await new Promise(r=>setTimeout(r,0));  // let the page breathe (progress, cancel)
@@ -89,6 +104,9 @@ function syncSetup(){
     else webmAlpha().then(ok=>{if(X.format==='webm')$('#vFmtNote').textContent=note+(ok?'. Şeffaf arka plan korunur.':'. Bu tarayıcı şeffaf WebM kodlayamıyor; arka plan beyaz olur. Şeffaf için GIF.');});
   }
   $$('#vFps button').forEach(b=>{b.disabled=X.format==='gif';});
+  $$('#vQuality button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===X.quality)));
+  const photo=X.quality==='photo';$('#vBlurRow').hidden=photo;$('#vQualityNote').hidden=!photo;
+  if(photo){const sec=photoFrameSec(w,h)*frames();$('#vQualityNote').textContent='Her kare yol izlemeyle: kare başına ~'+Math.round(photoFrameSec(w,h))+' sn, bu video için yaklaşık '+(sec<90?Math.round(sec)+' sn':Math.round(sec/60)+' dk')+'. Hareket bulanıklığı yok; uzun sürer, sekmeyi açık tut.';}
   $('#vSave').textContent=FORMATS[X.format].n+' indir';
   const no=typeof VideoEncoder==='undefined'&&X.format!=='gif';  // a GIF needs no WebCodecs
   $('#vWarn').hidden=!no;$('#vWarn').textContent='Bu tarayıcı video kodlamayı desteklemiyor. Chrome, Edge ya da Safari’yi dene.';
@@ -130,6 +148,7 @@ $('#vCancel').addEventListener('click',close);$('#videoX').addEventListener('cli
 $('#vStop').addEventListener('click',()=>{if(running)cancel=true;else close();});
 $('#vSave').addEventListener('click',()=>{if(blob)offer('mockup-animasyon-'+stamp()+'.'+FORMATS[X.format].ext,blob);toast('İndirildi');close();});
 $$('#vFmt button').forEach(b=>b.addEventListener('click',()=>{X.format=b.dataset.v;syncSetup();}));
+$$('#vQuality button').forEach(b=>b.addEventListener('click',()=>{X.quality=b.dataset.v;syncSetup();}));
 scrim.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}});
 // in Canlandır the export button opens this dialog instead of the image export popover
 $('#exportMenuBtn').addEventListener('click',e=>{if(ui.mode!=='animate')return;e.preventDefault();e.stopImmediatePropagation();openDialog();},true);

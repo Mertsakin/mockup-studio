@@ -555,9 +555,11 @@
     <div class="db" id="videoSetup">
       <div class="row"><span class="lbl">Biçim</span><div class="seg" id="vFmt" role="group" aria-label="Biçim"><button type="button" data-v="mp4">MP4</button><button type="button" data-v="webm">WebM</button><button type="button" data-v="gif">GIF</button></div></div>
       <p class="hint-sm" id="vFmtNote"></p>
-      <div class="row"><span class="lbl">Çözünürlük</span><div class="seg" id="vRes" role="group" aria-label="Genişlik"><button type="button" data-v="1920">1920 px</button><button type="button" data-v="3840">3840 px</button></div></div>
+      <div class="row"><span class="lbl">Çözünürlük</span><div class="seg" id="vRes" role="group" aria-label="Genişlik"><button type="button" data-v="1080">1080 px</button><button type="button" data-v="1920">1920 px</button><button type="button" data-v="3840">3840 px</button></div></div>
       <div class="row"><span class="lbl">Kare hızı</span><div class="seg" id="vFps" role="group" aria-label="Kare hızı"><button type="button" data-v="30">30 fps</button><button type="button" data-v="60">60 fps</button></div></div>
-      <div class="row"><span class="lbl" title="Hareket eden cihazda gerçek kamera gibi bulanıklık">Hareket bulanıklığı</span><label class="switch"><input type="checkbox" id="vBlur" aria-label="Hareket bulanıklığı"><span></span></label></div>
+      <div class="row"><span class="lbl">Kalite</span><div class="seg" id="vQuality" role="group" aria-label="Kalite"><button type="button" data-v="fast">Hızlı</button><button type="button" data-v="photo">Fotoğraf</button></div></div>
+      <p class="hint-sm" id="vQualityNote" hidden></p>
+      <div class="row" id="vBlurRow"><span class="lbl" title="Hareket eden cihazda gerçek kamera gibi bulanıklık">Hareket bulanıklığı</span><label class="switch"><input type="checkbox" id="vBlur" aria-label="Hareket bulanıklığı"><span></span></label></div>
       <div class="row"><span class="lbl">Süre</span><span id="vDur"></span></div>
       <div class="est"><div><b id="vFrames"></b><span>kare</span></div><div><b id="vSize"></b><span>boyut (px)</span></div><div><b id="vMb"></b><span>dosya</span></div></div>
       <p class="hint-sm" id="vWarn" hidden></p>
