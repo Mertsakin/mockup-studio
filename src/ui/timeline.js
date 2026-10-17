@@ -207,7 +207,7 @@ const presetOk=(p,d)=>!!d&&(!p.ok||p.ok(d));
 $('#tlPresetBtn').addEventListener('click',e=>{
   e.stopPropagation();if(!menu.hidden){menu.hidden=true;return;}
   const d=cur(),nm=d?nameOf(d):'';menu.innerHTML='';
-  presetsFor(d).forEach(p=>{const b=document.createElement('button');b.type='button';b.className='mi';b.setAttribute('role','menuitem');b.disabled=!presetOk(p,d);
+  presetsFor(d).filter(p=>!d||!p.ok||p.ok(d)).forEach(p=>{const b=document.createElement('button');b.type='button';b.className='mi';b.setAttribute('role','menuitem');b.disabled=!presetOk(p,d);
     b.innerHTML='<span></span><kbd></kbd>';b.firstChild.textContent=p.n+' · '+nm;b.lastChild.textContent=p.hint;b.addEventListener('click',()=>{menu.hidden=true;runPreset(p.id);});menu.appendChild(b);});
   menu.hidden=false;const r=e.currentTarget.getBoundingClientRect();
   menu.style.left=Math.min(r.left,innerWidth-menu.offsetWidth-8)+'px';menu.style.top=(r.top-menu.offsetHeight-6)+'px';
@@ -277,7 +277,8 @@ function syncInspector(){
     const es=new Set(ks.map(k=>k.ease));$('#keyEaseLbl').textContent='Sonraki kareye geçiş'+(es.size>1?' (karışık)':'');
     easeGrid.querySelectorAll('.ease').forEach(b=>b.setAttribute('aria-pressed',String(es.size===1&&es.has(b.dataset.ease))));
   }
-  if(isDevice(d))chips.querySelectorAll('button').forEach(b=>{b.disabled=!presetOk(PRESETS.find(p=>p.id===b.dataset.preset),d);});
+  // a move this device type cannot make (lid on a phone) is left out, not greyed out
+  if(isDevice(d))chips.querySelectorAll('button').forEach(b=>{b.hidden=!presetOk(PRESETS.find(p=>p.id===b.dataset.preset),d);});
 }
 
 /* ---------- mode */
