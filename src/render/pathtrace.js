@@ -195,7 +195,10 @@ function setupStudio(env){
   });
   // the render is always transparent and composited over the chosen background (image backgrounds and 2D items
   // behind the devices show through); the floor disc only comes with a solid / gradient colour it can be painted in
-  const floorOn=floorShown()&&(state.bg==='solid'||state.bg==='gradient')&&!state.items.some(i=>!i.front);
+  // a transparent background gets the disc too, calibrated to a neutral grey (CATCH_GREY): afterwards the floor's
+  // pixels become the shadow colour with alpha = how much darker than that grey they came out (shadowToAlpha)
+  const clearBg=state.bg==='transparent';
+  const floorOn=floorShown()&&(state.bg==='solid'||state.bg==='gradient'||clearBg)&&!state.items.some(i=>!i.front);
   set(scene,'environment',env);set(scene,'environmentIntensity',ENV_SCALE*(.25+.75*state.ambient));
   set(scene,'background',null);
   const extra=new THREE.Group();scene.add(extra);
@@ -210,8 +213,8 @@ function setupStudio(env){
     floor.rotation.x=-Math.PI/2;floor.position.set(pivot.position.x,ground.position.y,0);extra.add(floor);added.push(mat,floor.geometry,albedo,glow);
     // the background as painted behind the render, small, to sample where each floor point lands on screen
     const bw=BG_N,bh=Math.max(1,Math.round(BG_N/view.aspect)),bc=mkCanvas(bw,bh),bgc=bc.getContext('2d');
-    if(state.bg==='solid'){bgc.fillStyle=state.solid;bgc.fillRect(0,0,bw,bh);}else paintGradient(bgc,bw,bh,state);
-    floorCal={mesh:floor,mat,albedo,glow,disc:R*FLOOR_FADE,bgPx:bgc.getImageData(0,0,bw,bh).data,bw,bh,le:envUp(env)*scene.environmentIntensity};
+    if(clearBg||state.bg==='solid'){bgc.fillStyle=clearBg?CATCH_GREY:state.solid;bgc.fillRect(0,0,bw,bh);}else paintGradient(bgc,bw,bh,state);
+    floorCal={mesh:floor,mat,albedo,glow,disc:R*FLOOR_FADE,bgPx:bgc.getImageData(0,0,bw,bh).data,bw,bh,le:envUp(env)*scene.environmentIntensity,clear:clearBg};
   }else floorCal=null;
   studioLights().forEach(l=>extra.add(l));
   return ()=>{floorCal=null;scene.remove(extra);for(let i=undo.length-1;i>=0;i--){const [o,k,v]=undo[i];o[k]=v;}added.forEach(a=>a.dispose&&a.dispose());};
@@ -284,7 +287,7 @@ function fixFloorMask(){
   if(!floorCal)return null;
   const fc=floorCal,W=renderer.domElement.width,H=renderer.domElement.height,m0=fc.mat.alphaMap;
   fc.mat.alphaMap=null;  // the rim counts as floor too (a ratio of about 1 does no harm where it is mostly background)
-  try{return {mask:floorMask(fc.mesh,W,H,true),bgPx:fc.bgPx,bw:fc.bw,bh:fc.bh,W,H};}finally{fc.mat.alphaMap=m0;}
+  try{return {mask:floorMask(fc.mesh,W,H,true),bgPx:fc.bgPx,bw:fc.bw,bh:fc.bh,W,H,clear:fc.clear};}finally{fc.mat.alphaMap=m0;}
 }
 function fixFloor(c,fx){
   const {mask,bgPx,bw,bh,W,H}=fx,g=c.getContext('2d'),img=g.getImageData(0,0,W,H),a=img.data,ratios=new Map(),bg=new THREE.Color(),ex=renderer.toneMappingExposure;
@@ -294,6 +297,20 @@ function fixFloor(c,fx){
     let r=ratios.get(key);
     if(!r){bg.setRGB(S2L[bgPx[bi]],S2L[bgPx[bi+1]],S2L[bgPx[bi+2]]);const o=neutral(preTone(bg),ex);r=[bg.r/Math.max(1e-4,o[0]),bg.g/Math.max(1e-4,o[1]),bg.b/Math.max(1e-4,o[2])].map(v=>Math.min(1.2,Math.max(1,v)));ratios.set(key,r);}
     const i=(y*W+x)*4;for(let k=0;k<3;k++){const v=S2L[a[i+k]]*r[k];a[i+k]=L2S8[v>=1?4095:Math.round(v*4095)];}
+  }
+  g.putImageData(img,0,0);
+}
+/* Transparent background: the floor was a grey catcher (CATCH_GREY). Its pixels become the shadow colour with alpha =
+   1 - their brightness over the grey's (linear), times the alpha they already had (the disc's fading rim). Devices
+   are not in the mask (floorMask leaves out what is in front of the floor) and stay as rendered. */
+const CATCH_GREY='#bcbcbc';
+function shadowToAlpha(c,fx){
+  const {mask,W,H}=fx,g=c.getContext('2d'),img=g.getImageData(0,0,W,H),a=img.data,ref=S2L[0xbc];
+  const hx=/^#?([0-9a-f]{6})$/i.exec(state.shadowColor||'')?.[1]||'000000',sr=parseInt(hx.slice(0,2),16),sg=parseInt(hx.slice(2,4),16),sb=parseInt(hx.slice(4,6),16);  // the CSS colour as given (sRGB bytes)
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    if(!mask[(H-1-y)*W+x])continue;
+    const i=(y*W+x)*4,lum=(S2L[a[i]]+S2L[a[i+1]]+S2L[a[i+2]])/3,s=Math.max(0,Math.min(1,1-lum/ref));
+    a[i]=sr;a[i+1]=sg;a[i+2]=sb;a[i+3]=Math.round(a[i+3]*s);
   }
   g.putImageData(img,0,0);
 }
@@ -430,6 +447,7 @@ async function renderPathTraced(samples,onProgress,budgetMs=60000,backdrop=null)
   if(!window.__noOidn)try{await denoiseCanvas(raw,aux,p=>{if(onProgress)onProgress(.9+.1*p);});console.info('OIDN '+Math.round(performance.now()-tn)+' ms, '+Math.floor(pt.samples)+' örnek'+(aux?', albedo + normal':''));}
     catch(e){console.warn('OIDN kullanılamadı, basit gürültü giderme ile devam:',e);}
   if(fix)fixFloor(raw,fix);
+  if(fix&&fix.clear)shadowToAlpha(raw,fix);
   if(onProgress)onProgress(1);
   return raw;
 }

@@ -103,15 +103,15 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] **Telefon, tablet, monitör:** eloksal kasa, 2.5D ön cam, temas gölgesi, cam arka (mat/parlak), eş merkezli köşeler; monitörde yeni arka gövde, ayak ve taban.
 - [x] **Zemin kalibrasyonu kararlı** (15 Ekim): `calibrateFloor` sabit tohumla (`stableNoise`) 64 örnek alır, ana render da sabit tohumla; `ensurePT` paketin rastgelelik kaynaklarını (mavi gürültü ofsetleri, örnekleyici sıfırlaması, uuid sırası) sabitler. Ölçek çalıştırmalar arasında ≈ %2–3, zemin ±1 seviye; telefon ve dizüstü sabit örnek sayısında bayt bayt aynı.
 - [x] **Zeminde ince dalgalı çizgiler (raster PCSS)** (18 Ekim, `dfd78bf`): zemin gölgesinin yarı gölgesindeki sabit moiré; PCSS çekirdek döndürmeleri piksel başına eşit dağıtıldı (`render/pcss.js`), stüdyo, dışa aktarım ve gömmede.
-- [ ] **Şeffaf arka planda zemin gölgesi** (yol izleme): şu an gölge yalnızca düz/gradyan fonda var; iki geçişli gölge yakalayıcı ya da gölgeyi alfa olarak çıkarma.
-- [ ] **Alan ışıkları (raster):** `RectAreaLight` ile softbox/strip/pencere; parlak yüzeylerde doğru şekilli vurgu.
-- [ ] Ekranın gövdeye yansıyan ışığı (`SCREEN_GLOW`) ve ortam kalibrasyonu: farklı sahnelerle ince ayar.
-- [ ] Ekran camı yansımasına kullanıcı ayarı (yoğunluk); sıyırma açısında ekranı soldurmasın.
+- [x] **Şeffaf arka planda zemin gölgesi** (yol izleme, 18 Ekim): gri yakalayıcı disk, render sonrası gölge alfaya çevrilir.
+- [ ] **Alan ışıkları (raster)** (v2): `RectAreaLight` ile softbox/strip/pencere; parlak yüzeylerde doğru şekilli vurgu.
+- [ ] Ekranın gövdeye yansıyan ışığı (`SCREEN_GLOW`) ve ortam kalibrasyonu: farklı sahnelerle ince ayar (v2).
+- [x] Ekran camı yansımasına kullanıcı ayarı (yoğunluk %0–150, 18 Ekim). [ ] Sıyırma açısında ekranı soldurmasın (v2).
 - [x] **Alan derinliği (bokeh)** ve odak noktası seçimi: objektif hazırları (24–200 mm), mm alanı, Bokeh anahtarı (diyafram, odak: cihaz ya da sahneden nokta, diyafram şekli, arka planı bulanıklaştır); Hızlı ve Fotoğraf kalitesinde, videoda.
 - [x] **Kameraya bağlı odak kipleri** (17 Ekim): Odak segmenti Hedef / Kadraj noktası (tuvalde sürüklenen artı; altındaki cihaz netleşir, kamera animasyonunda öne gelen netleşir, kare üretmez) / Uzaklık (`scene.focusDist`, m olarak; "Buna odakla" ile odak çekme anahtar kareleri); diyafram da kameranın animasyonlanabilir alanı. Odak etiketi tuvalde. [ ] Sonra: kadraj kipinde boş alanda yumuşak geçiş (şu an en yakın cihaza atlıyor), odak çekme için hazır hareket çipi, Kayıtlı açılarda diyafram/odak.
-- [ ] **Yansıtıcı / dokulu zemin:** parlak masa, mermer, ahşap, beton.
+- [ ] **Yansıtıcı / dokulu zemin** (v2): parlak masa, mermer, ahşap, beton; raster'da ayna geçişi + lisanslı/prosedürel dokular.
 - [x] **GLB içe aktarma** (17 Ekim): Varlıklar sekmesine ya da cihaz menüsünden `.glb` yüklenir, cihaz gibi yerleşir (gizmo, kaydırıcılar, katman ağacı, Zemine oturt, Odakla, animasyon izleri), Boyut (cm) + "Gerçek ölçü", malzemeler dosyadan, Hızlı ve Fotoğraf kalitesinde; `.mockup.zip` içinde saklanır. [ ] Sonra: ekran malzemesini işaretleme (GLB'deki bir yüzeye ekran görüntüsü), modelden gölge/temas ayarı, büyük dosyalarda ilerleme göstergesi.
-- [ ] Cihaz detayları devamı: jenerik kamera lensleri, monitör ayağı formu.
+- [ ] Cihaz detayları devamı (v2): jenerik kamera lensleri, monitör ayağı formu.
 - [ ] Blender modelleri (`tools/blender/phone.py`, deneysel): yalnızca yakın çekim kazancı görülürse.
 - [ ] WebGPU yol izleyici (`WebGPUPathTracer`) denemesi.
 
