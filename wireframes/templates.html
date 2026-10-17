@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Şablon seti</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Prototype of the new template set. Tokens copied from src/style.css; images are studio renders
+   (tools/render-harness/scenes/tpl.js, EXPORT=1 GPU=1) with the landing's sample app screens. */
+:root{
+  --canvas:#efeff0;--panel:#ffffff;--field:#f4f4f5;--field-hover:#ebebed;--line:#e6e6e9;--line-strong:#d2d2d7;
+  --ink:#18181b;--ink-2:#52525b;--muted:#8a8a93;--accent:#0b68f5;--accent-soft:#e8f0fe;--accent-ink:#0a56cc;--on-accent:#fff;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);--r:6px;color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font:13px/19px Inter,system-ui,sans-serif;color:var(--ink);background:var(--canvas)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+h1,h2,h3,p{margin:0}
+.page{max-width:1200px;margin:0 auto;padding:28px 16px 56px}
+.intro{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:20px}
+.intro h1{font-size:22px;line-height:28px;font-weight:600}
+.intro p{color:var(--ink-2);margin-top:6px;max-width:72ch}
+.theme{height:28px;padding:0 10px;border-radius:var(--r);background:var(--panel);box-shadow:0 0 0 1px var(--line);font-weight:500;flex:none}
+h2{font-size:15px;font-weight:600;margin:28px 0 10px}
+
+/* principles */
+.rules{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rule{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:12px 14px}
+.rule b{display:block;font-weight:600;margin-bottom:2px}
+.rule span{color:var(--ink-2);font-size:12px;line-height:17px}
+.rule .sw{display:flex;gap:4px;margin-top:8px}
+.rule .sw i{width:18px;height:18px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+
+/* gallery */
+.filters{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.f{height:28px;padding:0 12px;border-radius:14px;background:var(--panel);box-shadow:0 0 0 1px var(--line);color:var(--ink-2);font-weight:500}
+.f[aria-pressed="true"]{background:var(--ink);color:var(--panel);box-shadow:none}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}
+.card{background:var(--panel);border-radius:12px;box-shadow:0 0 0 1px var(--line);padding:8px;text-align:left;width:100%}
+.card:hover{box-shadow:0 0 0 1px var(--line-strong),var(--shadow)}
+.card .im{position:relative;border-radius:8px;overflow:hidden;background:var(--field)}
+.card img{display:block;width:100%;height:auto}
+.card .ratio{position:absolute;right:8px;top:8px;background:rgba(255,255,255,.88);color:#18181b;font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px}
+.card b{display:block;font-weight:600;margin:8px 4px 2px}
+.card small{display:block;color:var(--muted);margin:0 4px 4px;font-size:12px;line-height:16px}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin:0 4px 4px}
+.tags span{font-size:11px;line-height:18px;padding:0 6px;border-radius:9px;background:var(--field);color:var(--ink-2)}
+
+/* where it shows: studio tab + welcome */
+.where{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;align-items:start}
+.mock{background:var(--panel);border-radius:12px;box-shadow:0 0 0 1px var(--line-strong),var(--shadow);overflow:hidden}
+.mh{display:flex;gap:2px;padding:10px 12px 8px;border-bottom:1px solid var(--line)}
+.mh span{height:24px;padding:0 8px;border-radius:5px;color:var(--muted);font-weight:500;font-size:12px;line-height:24px}
+.mh span.on{background:var(--field);color:var(--ink)}
+.mb{padding:10px 12px 14px}
+.sec{font-weight:600;font-size:12px;margin:6px 0 8px;display:flex;justify-content:space-between}
+.sec em{font-style:normal;color:var(--muted);font-weight:500}
+.chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.chips span{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--field);color:var(--ink-2)}
+.chips span.on{background:var(--accent-soft);color:var(--accent-ink)}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tg div{border-radius:6px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.tg img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.tg p{font-size:11px;line-height:14px;padding:4px 6px;color:var(--ink-2)}
+.wl{padding:16px}
+.wl h3{font-size:14px;font-weight:600}
+.wl .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
+.wg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.wg div{border-radius:8px;box-shadow:0 0 0 1px var(--line);padding:5px;position:relative}
+.wg div.on{box-shadow:0 0 0 2px var(--accent)}
+.wg img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:5px}
+.wg p{font-size:12px;font-weight:500;margin:5px 2px 0}
+.wg small{display:block;font-size:11px;color:var(--muted);margin:0 2px}
+.note{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:12px 14px;margin-top:10px;color:var(--ink-2)}
+.note b{color:var(--ink);font-weight:600}
+ol.q{margin:0;padding-left:20px;color:var(--ink-2)}
+ol.q li{margin:6px 0}
+ol.q b{color:var(--ink);font-weight:600}
+
+@media (max-width:980px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rules{grid-template-columns:repeat(2,minmax(0,1fr))}.where{grid-template-columns:1fr}.wg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.grid,.rules{grid-template-columns:1fr}.intro{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="intro">
+    <div>
+      <h1>Yeni şablon seti · prototip</h1>
+      <p>Sekiz aday, hepsi stüdyonun kendisiyle render edildi (Hızlı kalite, gerçek dışa aktarım yolu; ekranlar açılış sayfasının örnek uygulamasından). İlk set dekoratif desenler ve doygun renklerle stüdyoya uymamıştı; bu set stüdyo fotoğrafçılığı dilinde: nötr fon, yumuşak ışık, tek vurgu, az ve sakin yazı. Şablonlar karşılama kartındaki amaçlara göre gruplu.</p>
+    </div>
+    <button class="theme" id="theme" type="button">Koyu tema</button>
+  </div>
+
+  <h2>Setin dili</h2>
+  <div class="rules">
+    <div class="rule"><b>Kesintisiz stüdyo fonu</b><span>Düz ya da çok hafif gradyan, desen yok. Fon cihazın gölgesini taşır; renk ürünün önüne geçmez.</span>
+      <div class="sw"><i style="background:#efeeeb"></i><i style="background:#f4f3f0"></i><i style="background:#e9ebef"></i><i style="background:#ecebe7"></i><i style="background:#1a1b1f"></i><i style="background:#0c0d0f"></i></div></div>
+    <div class="rule"><b>Gerçek ışık hazırları</b><span>Yumuşak tavan, Stüdyo, Pencere ışığı, Dramatik: her şablon bir ışık kurulumu taşır, ekranla birlikte değişmez.</span></div>
+    <div class="rule"><b>Tek vurgu, iki yazı tipi</b><span>Başlık Plus Jakarta Sans 800, gövde Inter 500. Renk yalnızca küçük bir üst başlıkta (stüdyonun mavisi).</span>
+      <div class="sw"><i style="background:#14161c"></i><i style="background:#5a5f6b"></i><i style="background:#0b68f5"></i><i style="background:#ffffff"></i></div></div>
+    <div class="rule"><b>Fotoğrafçı açısı</b><span>Hafif yukarıdan, ¾ dönüş; 48 mm varsayılan, portrede 85 mm ve bokeh. Cihazlar zemine oturur.</span></div>
+  </div>
+
+  <h2>Galeri</h2>
+  <div class="filters" role="group" aria-label="Amaç">
+    <button class="f" type="button" data-f="all" aria-pressed="true">Tümü · 8</button>
+    <button class="f" type="button" data-f="land" aria-pressed="false">Açılış görseli · 4</button>
+    <button class="f" type="button" data-f="store" aria-pressed="false">Mağaza seti · 2</button>
+    <button class="f" type="button" data-f="social" aria-pressed="false">Sosyal · 2</button>
+    <button class="f" type="button" data-f="video" aria-pressed="false">Video · sonra</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <p class="note" id="videoNote" hidden><b>Video şablonları</b> bu setin üzerine hareket ekler (ör. Stüdyo beyazı + "Yaklaşarak gir", Kare üçlü + "Ekranı kaydır", Başlıklı hero + metin efektleri). Kartlarda kısa döngü önizlemesi olur. Onayınızdan sonra hazırlanacak.</p>
+
+  <h2>Stüdyoda nerede görünür</h2>
+  <div class="where">
+    <div class="mock" aria-label="Şablonlar sekmesi taslağı">
+      <div class="mh"><span>Katmanlar</span><span>Varlıklar</span><span class="on">Şablonlar</span></div>
+      <div class="mb">
+        <div class="sec">Şablonlar <em>8</em></div>
+        <div class="chips"><span class="on">Tümü</span><span>Açılış</span><span>Mağaza</span><span>Sosyal</span></div>
+        <div class="tg" id="tabGrid"></div>
+        <div class="sec" style="margin-top:14px">Kendi şablonların <em>Kaydet…</em></div>
+        <p style="font-size:11px;color:var(--muted);line-height:15px">Bir artboard'u şablon olarak kaydet; ekranlar boşaltılır, sahne, ışık ve yazılar kalır.</p>
+      </div>
+    </div>
+    <div class="mock" aria-label="Karşılama kartı taslağı">
+      <div class="wl">
+        <h3>4 sahne</h3>
+        <p class="sub">siten.com · Açılış görseli için önerilen şablonlar; seçtiklerin artboard olur</p>
+        <div class="wg" id="wlGrid"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Karşılama kartıyla bağı:</b> bugün öneriler hazır kompozisyonlardan geliyor. Şablonlar gelince seçilen amacın şablonları önerilir (Açılış görseli → bu dört). Kullanıcının ekranları şablonun cihazlarına yerleşir; başlıklar düzenlenebilir örnek metin olarak gelir.</p>
+
+  <h2>Karar vermemiz gerekenler</h2>
+  <ol class="q">
+    <li><b>Dil:</b> bu yön (nötr stüdyo, tek vurgu) doğru mu, yoksa daha renkli / markalı bir varyant mı istersiniz?</li>
+    <li><b>Kapsam:</b> ilk sürümde amaç başına kaç şablon? Önerim: açılış 4, mağaza 2 (açık/koyu, her biri 5 ekranlık set), sosyal 3, video 3 = 12.</li>
+    <li><b>Renk varyantı:</b> her şablon tek renk mi, yoksa kartta açık / koyu (ve vurgu rengi) seçimi mi olsun? Önerim: açık/koyu anahtarı.</li>
+    <li><b>Şablon biçimi:</b> bugünkü biçim metin, öğe, objektif/bokeh ve animasyon taşımıyor; genişletilmesi gerekiyor (aynı belge anlık görüntüsü kullanılabilir: şablon = ekranları boşaltılmış bir artboard).</li>
+    <li><b>Kendi şablonun:</b> ilk sürüme girsin mi? (Kaydet → Şablonlar sekmesinde "Kendi şablonların".)</li>
+  </ol>
+</div>
+<script>
+const A='assets/tpl/';
+const T=[
+  {id:'studio-white',n:'Stüdyo beyazı',d:'Dizüstü ve telefon, kırık beyaz fon',r:'16:9',g:'land',tags:['Açık','İki cihaz']},
+  {id:'hero-headline',n:'Başlıklı hero',d:'Solda başlık, sağda telefon',r:'16:9',g:'land',tags:['Açık','Metinli']},
+  {id:'night-studio',n:'Gece stüdyosu',d:'Koyu dairesel fon, dramatik ışık',r:'16:9',g:'land',tags:['Koyu','İki cihaz']},
+  {id:'browser-window',n:'Tarayıcı penceresi',d:'Sitenin kendisi, sade fon',r:'16:9',g:'land',tags:['Açık','Web']},
+  {id:'store-light',n:'Mağaza · açık',d:'Başlık ve telefon, 9:16',r:'9:16',g:'store',tags:['Açık','Metinli','Set']},
+  {id:'store-dark',n:'Mağaza · koyu',d:'Koyu tema ekranları için',r:'9:16',g:'store',tags:['Koyu','Metinli','Set']},
+  {id:'square-trio',n:'Kare üçlü',d:'Üç ekran yelpaze, sıcak nötr',r:'1:1',g:'social',tags:['Açık','Üç ekran']},
+  {id:'portrait-bokeh',n:'Portre · bokeh',d:'85 mm f/2, arkada tablet',r:'4:5',g:'social',tags:['Açık','Bokeh']},
+];
+const card=t=>`<button class="card" type="button" data-g="${t.g}"><div class="im"><img src="${A+t.id}.jpg" alt="${t.n} şablonu" loading="lazy"><span class="ratio">${t.r}</span></div><b>${t.n}</b><small>${t.d}</small><div class="tags">${t.tags.map(x=>'<span>'+x+'</span>').join('')}</div></button>`;
+document.getElementById('grid').innerHTML=T.map(card).join('');
+document.getElementById('tabGrid').innerHTML=T.slice(0,6).map(t=>`<div><img src="${A+t.id}.jpg" alt=""><p>${t.n}</p></div>`).join('');
+document.getElementById('wlGrid').innerHTML=T.filter(t=>t.g==='land').map((t,i)=>`<div class="${i<2?'on':''}"><img src="${A+t.id}.jpg" alt=""><p>${t.n}</p><small>${t.r}</small></div>`).join('');
+document.querySelectorAll('.f').forEach(b=>b.addEventListener('click',()=>{
+  const f=b.dataset.f;document.querySelectorAll('.f').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  document.querySelectorAll('#grid .card').forEach(c=>{c.hidden=!(f==='all'||c.dataset.g===f);});
+  document.getElementById('videoNote').hidden=f!=='video';
+}));
+const th=document.getElementById('theme');
+th.addEventListener('click',()=>{const r=document.documentElement,d=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);r.dataset.theme=d?'light':'dark';th.textContent=d?'Koyu tema':'Açık tema';});
+if(matchMedia('(prefers-color-scheme: dark)').matches)th.textContent='Açık tema';
+</script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+{
+ "templates": [
+  {
+   "id": "studio",
+   "name": "Stüdyo",
+   "goal": "land",
+   "goalName": "Açılış görseli",
+   "desc": "Dizüstü ve telefon, kesintisiz fon",
+   "ratio": "16:9",
+   "boards": 1,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "studio-light.mockup.json",
+     "thumb": "studio-light.jpg"
+    },
+    "dark": {
+     "file": "studio-dark.mockup.json",
+     "thumb": "studio-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "hero",
+   "name": "Başlıklı hero",
+   "goal": "land",
+   "goalName": "Açılış görseli",
+   "desc": "Solda başlık, sağda telefon",
+   "ratio": "16:9",
+   "boards": 1,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "hero-light.mockup.json",
+     "thumb": "hero-light.jpg"
+    },
+    "dark": {
+     "file": "hero-dark.mockup.json",
+     "thumb": "hero-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "browser",
+   "name": "Tarayıcı penceresi",
+   "goal": "land",
+   "goalName": "Açılış görseli",
+   "desc": "Sitenin kendisi, sade fon",
+   "ratio": "16:9",
+   "boards": 1,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "browser-light.mockup.json",
+     "thumb": "browser-light.jpg"
+    },
+    "dark": {
+     "file": "browser-dark.mockup.json",
+     "thumb": "browser-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "desk",
+   "name": "Masa başı",
+   "goal": "land",
+   "goalName": "Açılış görseli",
+   "desc": "Monitör, dizüstü ve telefon",
+   "ratio": "16:9",
+   "boards": 1,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "desk-light.mockup.json",
+     "thumb": "desk-light.jpg"
+    },
+    "dark": {
+     "file": "desk-dark.mockup.json",
+     "thumb": "desk-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "store-classic",
+   "name": "Mağaza · klasik",
+   "goal": "store",
+   "goalName": "Mağaza seti",
+   "desc": "Beş ekran, başlık üstte",
+   "ratio": "9:19.5",
+   "boards": 5,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "store-classic-light.mockup.json",
+     "thumb": "store-classic-light.jpg"
+    },
+    "dark": {
+     "file": "store-classic-dark.mockup.json",
+     "thumb": "store-classic-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "store-tilt",
+   "name": "Mağaza · dönüşümlü",
+   "goal": "store",
+   "goalName": "Mağaza seti",
+   "desc": "Beş ekran, sırayla eğik",
+   "ratio": "9:19.5",
+   "boards": 5,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "store-tilt-light.mockup.json",
+     "thumb": "store-tilt-light.jpg"
+    },
+    "dark": {
+     "file": "store-tilt-dark.mockup.json",
+     "thumb": "store-tilt-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "trio",
+   "name": "Kare üçlü",
+   "goal": "social",
+   "goalName": "Sosyal",
+   "desc": "Üç ekran yelpaze, 1:1",
+   "ratio": "1:1",
+   "boards": 1,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "trio-light.mockup.json",
+     "thumb": "trio-light.jpg"
+    },
+    "dark": {
+     "file": "trio-dark.mockup.json",
+     "thumb": "trio-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "bokeh",
+   "name": "Portre · bokeh",
+   "goal": "social",
+   "goalName": "Sosyal",
+   "desc": "85 mm f/2, arkada tablet, 4:5",
+   "ratio": "4:5",
+   "boards": 1,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "bokeh-light.mockup.json",
+     "thumb": "bokeh-light.jpg"
+    },
+    "dark": {
+     "file": "bokeh-dark.mockup.json",
+     "thumb": "bokeh-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "story",
+   "name": "Story",
+   "goal": "social",
+   "goalName": "Sosyal",
+   "desc": "Büyük telefon, altta başlık, 9:16",
+   "ratio": "9:16",
+   "boards": 1,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "story-light.mockup.json",
+     "thumb": "story-light.jpg"
+    },
+    "dark": {
+     "file": "story-dark.mockup.json",
+     "thumb": "story-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "push-in",
+   "name": "Yaklaşarak giriş",
+   "goal": "video",
+   "goalName": "Video",
+   "desc": "Kamera yaklaşır, cihazlar sahnede",
+   "ratio": "16:9",
+   "boards": 1,
+   "motion": true,
+   "variants": {
+    "light": {
+     "file": "push-in-light.mockup.json",
+     "thumb": "push-in-light.jpg"
+    },
+    "dark": {
+     "file": "push-in-dark.mockup.json",
+     "thumb": "push-in-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "float-title",
+   "name": "Süzülen başlık",
+   "goal": "video",
+   "goalName": "Video",
+   "desc": "Telefon süzülür, başlık kelime kelime gelir",
+   "ratio": "9:16",
+   "boards": 1,
+   "motion": true,
+   "variants": {
+    "light": {
+     "file": "float-title-light.mockup.json",
+     "thumb": "float-title-light.jpg"
+    },
+    "dark": {
+     "file": "float-title-dark.mockup.json",
+     "thumb": "float-title-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "turntable",
+   "name": "Döner tabla",
+   "goal": "video",
+   "goalName": "Video",
+   "desc": "Telefon kendi çevresinde döner, 1:1",
+   "ratio": "1:1",
+   "boards": 1,
+   "motion": true,
+   "variants": {
+    "light": {
+     "file": "turntable-light.mockup.json",
+     "thumb": "turntable-light.jpg"
+    },
+    "dark": {
+     "file": "turntable-dark.mockup.json",
+     "thumb": "turntable-dark.jpg"
+    }
+   }
+  }
+ ]
+}
