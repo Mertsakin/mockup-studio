@@ -12,6 +12,7 @@ import {startHistory} from './ui/history.js';
 import {templateFromUrl} from './ui/templates.js';
 import {initBoards} from './ui/boards.js';
 import {fitAll} from './ui/workspace.js';
+import {urlTemplate} from './ui/template-gallery.js';
 
 // panels wire their DOM listeners and register their syncUI parts on import
 import './ui/controls.js';
@@ -50,5 +51,5 @@ bgCss();state.devices.forEach(buildRT);refit();applyLightPreset(LIGHT_PRESETS[0]
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{state.devices.forEach(d=>{if(d.type==='laptop'){rebuild(d,false);return;}if(!d.img||d.type==='custom')setScreenTexture(d);if(d.type==='browser')updateChrome(d);});});
 const fromTemplate=templateFromUrl();
 startLoop();
-startHistory(!!fromTemplate);
+startHistory(!!fromTemplate||!!urlTemplate);  // a template from the address: an empty document, not the last session
 if(import.meta.env.DEV)import('./debug.js').then(m=>m.exposeModules());

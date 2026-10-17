@@ -1,7 +1,7 @@
 import {setScreenTexture} from '../devices/screen.js';
 import {fromProjectFile,toProjectFile} from '../io/project.js';
 import {state} from '../state/state.js';
-import {activate,activeBoard,addBoard,doc as docState,fillThumbs,storeActive} from './boards.js';
+import {activate,activeBoard,addBoard,clearAll,doc as docState,fillThumbs,storeActive} from './boards.js';
 import {holdHistory} from './history.js';
 import {loadShotVideo} from './image-input.js';
 import {toast} from './toast.js';
@@ -149,4 +149,14 @@ $$('#tplGoals button').forEach(b=>b.addEventListener('click',()=>{goal=b.dataset
 $$('#tplVariant button').forEach(b=>b.addEventListener('click',()=>{variant=b.dataset.v;$$('#tplVariant button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderTab();}));
 renderTab();
 
-export {MOBILE,deviceTypes,dressScreens,openTemplate,saveAsTemplate,templates};
+/* ?template=<id>[&v=dark]: the studio opens on that template (main.js starts the document empty instead of restoring
+   the last session); it is added once start-up has settled */
+const urlTemplate=(()=>{try{const q=new URLSearchParams(location.search);return q.get('template')?{id:q.get('template'),v:q.get('v')==='dark'?'dark':'light'}:null;}catch(e){return null;}})();
+if(urlTemplate){
+  const go=async()=>{const t=(await templates()).find(x=>x.id===urlTemplate.id);if(!t){toast('Şablon bulunamadı: '+urlTemplate.id);return;}
+    // the start-up board (the default scene, kept because the last session was not restored) gives way
+    try{clearAll();const ids=await openTemplate(t,urlTemplate.v);activate(ids[0]);setUi({kind:'board'});fitAll();fillThumbs();}catch(e){toast('Şablon açılamadı: '+(e.message||e));}};
+  const wait=()=>{if(document.documentElement.classList.contains('booting'))setTimeout(wait,50);else go();};wait();
+}
+
+export {MOBILE,deviceTypes,dressScreens,openTemplate,saveAsTemplate,templates,urlTemplate};

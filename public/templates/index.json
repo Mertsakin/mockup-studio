@@ -82,7 +82,7 @@
   },
   {
    "id": "store-classic",
-   "name": "Mağaza · klasik",
+   "name": "App Store · klasik",
    "goal": "store",
    "goalName": "Mağaza seti",
    "desc": "Beş ekran, başlık üstte",
@@ -102,7 +102,7 @@
   },
   {
    "id": "store-tilt",
-   "name": "Mağaza · dönüşümlü",
+   "name": "App Store · dönüşümlü",
    "goal": "store",
    "goalName": "Mağaza seti",
    "desc": "Beş ekran, sırayla eğik",
@@ -117,6 +117,46 @@
     "dark": {
      "file": "store-tilt-dark.mockup.json",
      "thumb": "store-tilt-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "play-classic",
+   "name": "Google Play · klasik",
+   "goal": "store",
+   "goalName": "Mağaza seti",
+   "desc": "Beş ekran, 9:16",
+   "ratio": "9:19.5",
+   "boards": 5,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "play-classic-light.mockup.json",
+     "thumb": "play-classic-light.jpg"
+    },
+    "dark": {
+     "file": "play-classic-dark.mockup.json",
+     "thumb": "play-classic-dark.jpg"
+    }
+   }
+  },
+  {
+   "id": "play-tilt",
+   "name": "Google Play · dönüşümlü",
+   "goal": "store",
+   "goalName": "Mağaza seti",
+   "desc": "Beş ekran, 9:16, sırayla eğik",
+   "ratio": "9:19.5",
+   "boards": 5,
+   "motion": false,
+   "variants": {
+    "light": {
+     "file": "play-tilt-light.mockup.json",
+     "thumb": "play-tilt-light.jpg"
+    },
+    "dark": {
+     "file": "play-tilt-dark.mockup.json",
+     "thumb": "play-tilt-dark.jpg"
     }
    }
   },

@@ -42,12 +42,17 @@ const TEMPLATES=[
       devices:[{type:'monitor',img:S+'studio-monitor.png',colorKey:col(v)},{type:'laptop',px:-31,py:-10.25,pz:8,ry:22,img:S+'studio-laptop.png',colorKey:col(v)},
         {type:'phone',px:27,py:-12.6,pz:10,ry:-22,img:phoneShot(v),colorKey:col(v)}]})},
   // ---------- mağaza seti (App Store 6,9", 5 ekran)
-  {id:'store-classic',n:'Mağaza · klasik',goal:'store',d:'Beş ekran, başlık üstte',W:1320,H:2868,set:5,
+  {id:'store-classic',n:'App Store · klasik',goal:'store',d:'Beş ekran, başlık üstte',W:1320,H:2868,set:5,
     v:v=>({store:{size:'ios-69',layout:'classic',theme:v==='dark'?{id:'t-dark',n:'Koyu',c1:'#1a1b1f',c2:'#0b0c0e',ink:DARK_INK,sub:DARK_SUB,dev:'graphite'}:{id:'t-light',n:'Açık',c1:'#f4f3f0',c2:'#ecebe7',ink:LIGHT_INK,sub:'#6a6f7a',dev:'graphite'},
       font:J,shots:[phoneShot(v),S+'app-gallery.png',S+(v==='dark'?'app-light.png':'app-dark.png'),phoneShot(v),S+'app-gallery.png']}})},
-  {id:'store-tilt',n:'Mağaza · dönüşümlü',goal:'store',d:'Beş ekran, sırayla eğik',W:1320,H:2868,set:5,
+  {id:'store-tilt',n:'App Store · dönüşümlü',goal:'store',d:'Beş ekran, sırayla eğik',W:1320,H:2868,set:5,
     v:v=>({store:{size:'ios-69',layout:'tilt',theme:v==='dark'?{id:'t-dark',n:'Koyu',c1:'#1d1f25',c2:'#0e0f12',ink:DARK_INK,sub:DARK_SUB,dev:'graphite'}:{id:'t-light',n:'Açık',c1:'#f3f4f7',c2:'#e4e7ee',ink:LIGHT_INK,sub:'#6a6f7a',dev:'graphite'},
       font:J,shots:[phoneShot(v),S+'app-gallery.png',S+(v==='dark'?'app-light.png':'app-dark.png'),phoneShot(v),S+'app-gallery.png']}})},
+  // Google Play phone screenshots (1080 x 1920, 9:16): the same two sets at Play's size
+  {id:'play-classic',n:'Google Play · klasik',goal:'store',d:'Beş ekran, 9:16',W:1080,H:1920,set:5,
+    v:v=>{const o=TEMPLATES_BY.get('store-classic').v(v);o.store.size='play-phone';return o;}},
+  {id:'play-tilt',n:'Google Play · dönüşümlü',goal:'store',d:'Beş ekran, 9:16, sırayla eğik',W:1080,H:1920,set:5,
+    v:v=>{const o=TEMPLATES_BY.get('store-tilt').v(v);o.store.size='play-phone';return o;}},
   // ---------- sosyal
   {id:'trio',n:'Kare üçlü',goal:'social',d:'Üç ekran yelpaze, 1:1',W:900,H:900,
     v:v=>({ratio:'1:1',bg:v==='dark'?{bg:'gradient',gradType:'linear',gradAngle:160,bg1:'#1d1e24',bg2:'#121316'}:{bg:'gradient',gradType:'linear',gradAngle:160,bg1:'#eeedf4',bg2:'#f4efe9'},lights:lights[v],scene:{rx:-6,ry:0,zoom:1},
@@ -72,6 +77,7 @@ const TEMPLATES=[
     v:v=>({ratio:'1:1',bg:sweep[v],lights:lights[v],settle:true,scene:{rx:-8,ry:0,zoom:.85},devices:[{type:'phone',img:phoneShot(v),colorKey:col(v)}],
       motion:[{to:0,preset:'turn'}]})},
 ];
+const TEMPLATES_BY=new Map(TEMPLATES.map(t=>[t.id,t]));
 const GOALS={land:'Açılış görseli',store:'Mağaza seti',social:'Sosyal',video:'Video'};
 
 export {GOALS,TEMPLATES};
