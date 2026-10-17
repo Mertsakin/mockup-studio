@@ -12,7 +12,7 @@ import {toast} from '../ui/toast.js';
 import {ui} from '../ui/ui-state.js';
 import {$,$$,mkCanvas} from '../util.js';
 import {exportSize,offer} from './export.js';
-import {bitrate as bps,mp4Encoder} from './mp4.js';
+import {FORMATS,encoderFor,estimate,webmAlpha} from './encoders.js';
 
 import {dofOn,holdFocus} from '../render/lens.js';
 import {scheduleEnv} from '../render/environment.js';
@@ -22,23 +22,29 @@ import {scheduleEnv} from '../render/environment.js';
    Motion blur: the frame's samples are spread over half a frame interval around t (a 180° shutter), so only what
    moves blurs, like a real camera. The screenshot scroll is set once per frame (redrawing it per sample is costly). */
 const SAMPLES=16,DOF_SAMPLES=64,SHUTTER=.5;
-const X={res:1920,fps:30,blur:true};
+const X={res:1920,fps:30,blur:true,format:'mp4'};
+const GIF_W=720,GIF_FPS=15;  // a GIF is a palette per frame: past these it gets large and slow for little gain
 const scrim=$('#videoScrim');
-const size=()=>{const [w,h]=exportSize(X.res,X.res);return [w-w%2,h-h%2];};  // H.264 wants even sizes
-const frames=()=>Math.round(state.anim.dur*X.fps);
-const bitrate=(w,h)=>bps(w,h,X.fps);
+const fps=()=>X.format==='gif'?GIF_FPS:X.fps;
+// the file's size: the board's shape at the chosen width (a GIF at most GIF_W wide); even sides (H.264, VP9)
+const size=()=>{let [w,h]=exportSize(X.res,X.res);if(X.format==='gif'&&w>GIF_W){h=Math.round(h*GIF_W/w);w=GIF_W;}return [w-w%2,h-h%2];};
+const frames=()=>Math.round(state.anim.dur*fps());
 
 let cancel=false;
 async function renderVideo(onProgress){
   await fontsReady(state.items);
-  const [W,H]=size(),n=frames(),enc=await mp4Encoder(W,H,X.fps);  // throws 'codec' when the size cannot be encoded
+  // a transparent board stays transparent where the format can carry it (WebM with alpha, GIF); MP4 gets white
+  const [W,H]=size(),n=frames(),enc=await encoderFor(X.format,W,H,fps(),{alpha:state.bg==='transparent'});  // throws 'codec' when the size cannot be encoded
   const pr=renderer.getPixelRatio(),out=mkCanvas(W,H),g=out.getContext('2d');
+  // the background painter whitens empty space for the still export's opaque formats (state.format): the video's own
+  // format decides here (a transparent GIF / WebM must stay transparent whatever the still format is)
+  const stillFormat=state.format;state.format=enc.alpha?'png':'jpg';
   const hidden=[];LRT.forEach(o=>{if(o.marker.visible){o.marker.visible=false;hidden.push(o.marker);}});overlays.forEach(o=>{if(o.visible){o.visible=false;hidden.push(o);}});
   pauseLive(true);
   try{
     setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
     // anything in 3D moving (devices, camera, lights) gets motion blur; moving lights also rebuild the reflections per frame
-    const moving=targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove=state.lights.some(hasAnim),video=state.devices.some(hasVideo),dt=1/X.fps,S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
+    const moving=targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove=state.lights.some(hasAnim),video=state.devices.some(hasVideo),dt=1/fps(),S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
     for(let i=0;i<n;i++){
       if(cancel)return null;
       const t=i*dt;
@@ -49,7 +55,6 @@ async function renderVideo(onProgress){
       else renderNow(S);
       holdFocus(false);
       g.clearRect(0,0,W,H);
-      if(state.bg==='transparent'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}  // MP4 has no alpha
       paintBg(g,W,H);paintItems(g,W,H,false,t);g.drawImage(canvas,0,0,W,H);paintItems(g,W,H,true,t);
       await enc.add(out,i);
       onProgress(i+1,n);
@@ -57,7 +62,7 @@ async function renderVideo(onProgress){
     }
     return await enc.finish();
   }finally{
-    enc.close();holdFocus(false);
+    state.format=stillFormat;enc.close();holdFocus(false);
     hidden.forEach(o=>{o.visible=true;});
     pauseLive(false);renderer.setPixelRatio(pr);invalidateLayout();layout();
     applyNow();req();
@@ -73,8 +78,19 @@ function syncSetup(){
   $('#vBlur').checked=X.blur;
   $('#vDur').textContent=state.anim.dur.toFixed(1).replace('.',',')+' sn';
   $('#vFrames').textContent=String(frames());$('#vSize').textContent=w+' × '+h;
-  $('#vMb').textContent='~'+Math.max(1,Math.round(bitrate(w,h)*state.anim.dur/8e6))+' MB';
-  const no=typeof VideoEncoder==='undefined';
+  $('#vMb').textContent='~'+Math.max(1,Math.round(estimate(X.format,w,h,fps(),state.anim.dur)/1e6))+' MB';
+  $$('#vFmt button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===X.format)));
+  const note=FORMATS[X.format].d+(X.format==='gif'&&state.anim.dur>8?'. '+state.anim.dur.toFixed(0)+' sn uzun bir GIF büyük olur; kısa bir döngü dene.':'');
+  $('#vFmtNote').textContent=note;
+  // a transparent board: which formats keep it (GIF always, WebM where the browser encodes alpha, MP4 never)
+  if(state.bg==='transparent'){
+    if(X.format==='mp4')$('#vFmtNote').textContent=note+'. Şeffaf arka plan beyaz olur; şeffaf için GIF.';
+    else if(X.format==='gif')$('#vFmtNote').textContent=note+'. Şeffaf arka plan korunur (kenarlar keskin).';
+    else webmAlpha().then(ok=>{if(X.format==='webm')$('#vFmtNote').textContent=note+(ok?'. Şeffaf arka plan korunur.':'. Bu tarayıcı şeffaf WebM kodlayamıyor; arka plan beyaz olur. Şeffaf için GIF.');});
+  }
+  $$('#vFps button').forEach(b=>{b.disabled=X.format==='gif';});
+  $('#vSave').textContent=FORMATS[X.format].n+' indir';
+  const no=typeof VideoEncoder==='undefined'&&X.format!=='gif';  // a GIF needs no WebCodecs
   $('#vWarn').hidden=!no;$('#vWarn').textContent='Bu tarayıcı video kodlamayı desteklemiyor. Chrome, Edge ya da Safari’yi dene.';
   $('#vGo').disabled=no;
 }
@@ -112,7 +128,8 @@ $('#vBlur').addEventListener('change',e=>{X.blur=e.target.checked;});
 $('#vGo').addEventListener('click',go);
 $('#vCancel').addEventListener('click',close);$('#videoX').addEventListener('click',close);
 $('#vStop').addEventListener('click',()=>{if(running)cancel=true;else close();});
-$('#vSave').addEventListener('click',()=>{if(blob)offer('mockup-animasyon-'+stamp()+'.mp4',blob);toast('İndirildi');close();});
+$('#vSave').addEventListener('click',()=>{if(blob)offer('mockup-animasyon-'+stamp()+'.'+FORMATS[X.format].ext,blob);toast('İndirildi');close();});
+$$('#vFmt button').forEach(b=>b.addEventListener('click',()=>{X.format=b.dataset.v;syncSetup();}));
 scrim.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}});
 // in Canlandır the export button opens this dialog instead of the image export popover
 $('#exportMenuBtn').addEventListener('click',e=>{if(ui.mode!=='animate')return;e.preventDefault();e.stopImmediatePropagation();openDialog();},true);
