@@ -147,6 +147,7 @@ function confirm(){
   activate(keep[0]);
   picking=null;holdHistory(false);sync();setUi({kind:'board'});
   if(video)setMode('animate');
+  coach();
   requestAnimationFrame(()=>fitAll());
   toast(keep.length+' artboard eklendi');
 }
@@ -222,6 +223,18 @@ file.addEventListener('change',()=>{const fs=[...file.files];file.value='';if(fs
 card.addEventListener('dragover',()=>drop.classList.add('over'));
 card.addEventListener('dragleave',e=>{if(!card.contains(e.relatedTarget))drop.classList.remove('over');});
 card.addEventListener('drop',()=>drop.classList.remove('over'));
+/* ---------- one-time hint: the first scenes made here point at Dışa aktar and the photo quality (remembered in this
+   browser; without storage it may show again, which is harmless) */
+const COACH='mockup.coach.export',tip=$('#coach'),exportBtn=$('#exportMenuBtn');
+function seen(){try{return localStorage.getItem(COACH)==='1';}catch(e){return false;}}
+function place(){const r=exportBtn.getBoundingClientRect();tip.style.top=(r.bottom+10)+'px';tip.style.right=Math.max(8,innerWidth-r.right)+'px';}
+function coach(){if(seen())return;place();tip.hidden=false;}
+function dismiss(){if(tip.hidden)return;tip.hidden=true;try{localStorage.setItem(COACH,'1');}catch(e){/* private mode: shows again next time */}}
+$('#coachOk').addEventListener('click',dismiss);
+exportBtn.addEventListener('click',dismiss);
+window.addEventListener('resize',()=>{if(!tip.hidden)place();});
+window.addEventListener('keydown',e=>{if(e.key==='Escape')dismiss();});
+
 $('#wlBlank').addEventListener('click',()=>$('#emptyAddBoard').click());
 // a store set has its own form (store.js); the set's artboards close the card
 $('#wlStore').addEventListener('click',()=>openStoreDialog());
