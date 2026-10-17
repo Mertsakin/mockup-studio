@@ -47,8 +47,10 @@ async function loadShotVideo(d,file){
   showFrame(d,shownTime(d));
   // the artboard's duration follows the video on loading (a default: changing it later is the user's)
   const dur=duration(v),fps=state.anim.fps||30;
-  if(dur){setDuration(Math.max(1,Math.min(MAX_DUR,Math.round(dur*fps)/fps)));
-    if(dur>MAX_DUR)toast('Video '+fmtDur(dur)+': Canlandır süresi en fazla '+MAX_DUR+' sn, gerisi Başlangıç ile seçilir.');}
+  if(dur){const want=Math.max(1,Math.min(MAX_DUR,Math.round(dur*fps)/fps));setDuration(want);
+    if(dur>MAX_DUR)toast('Video '+fmtDur(dur)+': Canlandır süresi en fazla '+MAX_DUR+' sn, gerisi Başlangıç ile seçilir.');
+    // the duration never cuts keys off: say why it stayed longer than the video
+    else if(state.anim.dur>want+.5/fps)toast('Canlandır süresi '+fmtDur(state.anim.dur)+' kaldı: '+fmtDur(want)+' sonrasında anahtar kare ya da metin efekti var. Onları silersen süre videoya iner.');}
 }
 // "Kaldır": the screen goes back to the placeholder
 $('#shotRemove').addEventListener('click',e=>{
