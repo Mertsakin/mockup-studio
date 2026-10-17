@@ -129,12 +129,12 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 
 - [x] **Çoklu seçim:** Shift/⌘ ile cihaz ve 2B öğe seçip birlikte taşıma, silme, çoğaltma, kopyalama. (Grubu birlikte döndürme / ölçekleme ve sürükleyerek kutu seçimi henüz yok.)
 - [x] **Sağ tık bağlam menüsü:** kopyala, yapıştır, çoğalt, sil, katman sırası, odakla, metni düzenle. (Katman ağacında sağ tık henüz yok.)
-- [x] Artboard'lar arası cihaz ve öğe kopyalama (⌘C → başka artboard → ⌘V). [ ] Artboard çoğaltırken yerleşim seçimi.
+- [x] Artboard'lar arası cihaz ve öğe kopyalama (⌘C → başka artboard → ⌘V). [x] Artboard çoğaltırken yerleşim seçimi (yanına / altına, 18 Ekim).
 - [x] **Metin katmanı** (14 Ekim): bkz. "Sıradaki yol" 1.
 - [x] **Mağaza görseli üretici** (14 Ekim; yerelleştirme hariç): bkz. "Sıradaki yol" 4.
-- [ ] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP).
+- [x] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP) (18 Ekim).
 - [x] Video: WebM/GIF seçeneği ve fotoğraf kalitesi (18 Ekim). Ses yok.
-- [ ] Mobil düzen: sol panel 820 px altında gizli; çekmece olarak açılmalı.
+- [x] Mobil düzen: 820 px altında paneller çekmece, tuval tam genişlik (18 Ekim).
 
 ## Şablonlar
 
@@ -149,7 +149,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] Uzun ekran görüntüsü kaydırma (kaydırıcı, tekerlek, tümünü eşitle) ve kaydırma videosu ("Ekranı kaydır" hareketi).
 - [x] URL ile cihaz başına / tüm cihazlara yakalama; cihaz başına görüntü alanı ve `dpr`.
 - [ ] **Yayınlanmış sürüm için yakalama servisi** (altyapı kararı bekliyor; şu an yalnızca dev sunucusu).
-- [ ] Yakalama seçenekleri: bekleme süresi, belirli bir bölümden (CSS seçici) başlama, koyu tema (`prefers-color-scheme`).
+- [x] Yakalama seçenekleri: bekleme süresi, belirli bir bölümden (CSS seçici) başlama, koyu tema (`prefers-color-scheme`) (18 Ekim).
 
 ## Yayın ve tanıtım
 

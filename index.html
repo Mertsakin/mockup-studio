@@ -332,6 +332,11 @@
               <button class="btn" id="captureAllBtn" type="button" title="Aynı adresi her cihaza, kendi ekran genişliğinde yakalar">Tüm cihazlara</button>
               <button class="btn rec-btn" id="recordBtn" type="button" title="Siteyi stüdyonun içinde canlı aç, gez (giriş yap, bannerları kapat) ve ekranını kaydet; kayıt cihaz ekranına video olarak gömülür"><span data-icon="record-circle" data-size="14"></span>Ekran kaydı…</button>
             </div>
+            <details class="more cap-opts"><summary>Yakalama seçenekleri</summary>
+              <div class="row"><label class="lbl" for="capWait">Bekle</label><input type="number" id="capWait" min="0" max="10" step="0.5" value="0" aria-describedby="capWaitHint"><span class="lbl" id="capWaitHint">sn, yüklendikten sonra</span></div>
+              <div class="row"><label class="lbl" for="capSel">Başlangıç</label><input type="text" id="capSel" placeholder="#fiyatlar" spellcheck="false" title="CSS seçici: yakalama bu öğenin üst kenarından başlar"></div>
+              <div class="row"><span class="lbl" id="capDarkLbl">Koyu tema</span><label class="switch"><input type="checkbox" id="capDark" aria-labelledby="capDarkLbl"><span></span></label></div>
+            </details>
           </div>
           <div class="row"><span class="lbl">Yerleşim</span>
             <div class="seg" data-dkey="fit"><button data-v="cover">Doldur</button><button data-v="contain">Sığdır</button><button data-v="stretch">Esnet</button></div>

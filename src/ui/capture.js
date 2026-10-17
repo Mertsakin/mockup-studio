@@ -33,9 +33,10 @@ const userError=m=>Object.assign(new Error(m),{user:true});
 /* One request to the dev server's endpoint: a full-page shot per target ({id, width, height, mobile, dpr}) ->
    {shots: {id: data URL}, finalUrl}. Shared by this panel and the welcome card (welcome.js), which sends one request
    per viewport to show each device's progress. */
-async function captureShots(url,targets){
+// opts: {wait, dark, selector} (the capture options; defaults: none)
+async function captureShots(url,targets,opts={}){
   let r;
-  try{r=await fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,targets})});}
+  try{r=await fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({url,targets},opts))});}
   // no answer at all: the dev server has stopped (or the page was opened from the build / a file)
   catch(e){throw userError('Yakalama sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.');}
   // a static deployment has no capture endpoint: 404, or an HTML fallback page instead of JSON
@@ -43,6 +44,8 @@ async function captureShots(url,targets){
   const res=await r.json();if(!r.ok)throw userError('Yakalanamadı: '+(res.error||r.statusText));
   return res;
 }
+// the capture options in the Ekran section (editor settings, not part of the document)
+const captureOpts=()=>({wait:+$('#capWait').value||0,dark:$('#capDark').checked,selector:$('#capSel').value.trim()});
 // whether this page can capture at all: only the dev server has the endpoint (a build never asks, so no 404 is logged)
 let avail=null;
 const captureAvailable=()=>avail||(avail=!import.meta.env.DEV?Promise.resolve(false)
@@ -72,10 +75,10 @@ async function capture(everyDevice){
   const btn=everyDevice?all:one,label=btn.textContent;
   one.disabled=all.disabled=true;btn.textContent='Yakalanıyor…'+(groups.size>1?' ('+groups.size+' görünüm)':'');
   try{
-    const res=await captureShots(raw,[...groups.values()].map(g=>g.target));
+    const res=await captureShots(raw,[...groups.values()].map(g=>g.target),captureOpts());
     const name=siteName(res.finalUrl||raw);
     for(const g of groups.values()){const img=await shotImage(res.shots[g.target.id]);g.devices.forEach(d=>putShot(d,img,res.finalUrl||raw,input.value.trim()));}
-    syncAll();toast(name+(everyDevice?' tüm cihazlara':' bu cihaza')+' yerleştirildi. Ekranın üzerinde tekerlekle kaydırabilirsin.');
+    syncAll();toast(res.missing?'Seçici sayfada bulunamadı: sayfa en üstten yakalandı.':name+(everyDevice?' tüm cihazlara':' bu cihaza')+' yerleştirildi. Ekranın üzerinde tekerlekle kaydırabilirsin.');
   }catch(e){toast(e.user?e.message:'Yakalanamadı: '+(e.message||e));}
   finally{one.disabled=all.disabled=false;btn.textContent=label;}
 }
