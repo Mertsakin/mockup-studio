@@ -39,7 +39,7 @@ let lastDevIcon='';
 function syncInspector(){
   if((ui.kind==='light'&&!state.lights.length)||(ui.kind==='item'&&!selItem())||(ui.kind==='device'&&!state.devices.length)||(ui.kind==='multi'&&!isMulti())){setUi({kind:'board'});return;}
   // no artboard: an empty state with a way to make one
-  const none=!hasBoard();$('#inspEmpty').hidden=!none;$('#exportMenuBtn').disabled=none;
+  const none=!hasBoard();$('#inspEmpty').hidden=!none;$('#exportMenuBtn').disabled=none||document.documentElement.classList.contains('wl-on');
   for(const k in insp)insp[k].hidden=none||k!==ui.kind;
   const dome=$('#dome'),slot=ui.kind==='light'?$('#domeSlotLight'):$('#domeSlotBoard');if(dome.parentNode!==slot)slot.appendChild(dome);
   const b=activeBoard();if(b&&document.activeElement!==$('#boardName'))$('#boardName').value=b.name;

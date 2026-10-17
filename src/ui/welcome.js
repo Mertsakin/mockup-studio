@@ -33,6 +33,9 @@ function sync(){
   const on=!hasBoard()||!!picking;
   if(on===shown)return;
   shown=on;card.hidden=!on;root.classList.toggle('wl-on',on);
+  // nothing to design, animate or export while the card shows (also while its scenes are being picked)
+  $$('#modeSeg button').forEach(b=>{b.disabled=on;});$('#exportMenuBtn').disabled=on;
+  if(on)$('#coach').hidden=true;  // the export hint belongs to the editor
   if(on&&!picking){if(ui.mode==='animate')setMode('design');showStart();}  // an empty document is never in Canlandır
 }
 function showStart(){
