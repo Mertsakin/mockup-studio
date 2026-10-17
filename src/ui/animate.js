@@ -1,4 +1,5 @@
 import {scrollScreen,setScreenTexture} from '../devices/screen.js';
+import {followVideos,playVideos,setVideoClock,showFrames,stopVideos} from '../devices/video.js';
 import {onChange} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {MAX_DUR,WRAPS,designT,halfFrame,hasAnim,interp,keyIn,kindOf,propsOf,refOf,snapT,sortKeys,timesOf,tracked,valuesAt} from '../state/anim.js';
@@ -37,9 +38,12 @@ const hasFx=it=>!!(it.fx&&(it.fx.in||it.fx.out||it.fx.loop));
 
 /* ---------- time -> fields */
 // t: a time, or a function of the target. opts.sync: redraw scrolled screens now (video export) instead of on the
-// next animation frame; opts.scroll === false: leave the scroll alone (motion-blur sub-samples within one frame)
+// next animation frame; opts.scroll === false: leave the scroll alone (motion-blur sub-samples within one frame).
+// Screen videos follow the same rule as the scroll (devices/video.js): their frame is seeked asynchronously here
+// (the video export awaits showFrames itself), kept while the timeline plays (the videos play on their own then)
 function applyAt(t,opts){
   const syncScroll=opts&&opts.sync,doScroll=!(opts&&opts.scroll===false);
+  if(doScroll&&!A.playing)showFrames(o=>typeof t==='function'?t(o):t);
   let moved=false,items=false;
   targets().forEach(o=>{
     const ref=refOf(o),v=valuesAt(o,typeof t==='function'?t(o):t),seen=applied.get(ref)||{},item=kindOf(o)==='item';
@@ -58,6 +62,8 @@ const showTime=o=>ui.mode==='animate'?A.t:designT(o);
 const applyNow=opts=>applyAt(showTime,opts);
 // text effects play in Canlandır only; Tasarla (and the still image) shows the settled text
 setItemClock(()=>ui.mode==='animate'?A.t:null);
+// screen videos: the playhead's frame in Canlandır, the device's design (poster) frame in Tasarla
+setVideoClock(()=>ui.mode==='animate'?A.t:null);
 function seek(t){
   if(!Number.isFinite(t))return;A.t=Math.max(0,Math.min(state.anim.dur,t));
   if(ui.mode==='animate'){applyAt(A.t);syncSliders();}
@@ -154,7 +160,7 @@ const PRESETS=[
   {id:'turn',n:'Döner tabla',hint:'tüm süre',make:D=>({ry:[[0,D.ry,'linear'],[state.anim.dur,D.ry+360,'linear']]})},
   {id:'float',n:'Süzülme',hint:'tüm süre',make:D=>{const py=[],rz=[];for(let i=0;i<=4;i++){const t=state.anim.dur*i/4;py.push([t,D.py+(i%2?.8:0),'smooth']);rz.push([t,D.rz+(i%2?1.2:0),'smooth']);}return {py,rz};}},
   {id:'lid',n:'Kapağı aç',hint:'1,5 sn',end:1.5,ok:d=>d.type==='laptop',make:D=>({lidAngle:[[0,72,'smooth'],[1.5,Math.max(100,D.lidAngle),'smooth']]})},
-  {id:'scroll',n:'Ekranı kaydır',hint:'0,5 sn – sona',make:()=>({scroll:[[.5,0,'smooth'],[Math.max(1,state.anim.dur-.5),1,'smooth']]})},
+  {id:'scroll',n:'Ekranı kaydır',hint:'0,5 sn – sona',ok:d=>!d.video,make:()=>({scroll:[[.5,0,'smooth'],[Math.max(1,state.anim.dur-.5),1,'smooth']]})},
   // free motion (best in Uzay, where nothing has to stay on a floor): a slow tumble over two axes, and a full turn with
   // the device tilting towards and away from the camera
   {id:'tumble',n:'Serbest takla',hint:'tüm süre',make:D=>({rx:[[0,D.rx,'linear'],[state.anim.dur,D.rx+360,'linear']],ry:[[0,D.ry,'linear'],[state.anim.dur,D.ry+180,'linear']]})},
@@ -207,15 +213,17 @@ let raf=0,last=0;
 function play(){
   if(A.playing){stop();return;}
   A.playing=true;if(A.t>=state.anim.dur-1e-6)A.t=0;last=performance.now();
+  playVideos(A.t);
   const tick=now=>{
     if(!A.playing)return;
     let t=A.t+(now-last)/1000;last=now;
     if(t>=state.anim.dur){if(state.anim.loop)t%=state.anim.dur;else{t=state.anim.dur;A.playing=false;}}
-    seek(t);if(A.playing)raf=requestAnimationFrame(tick);
+    seek(t);
+    if(A.playing){followVideos(t);raf=requestAnimationFrame(tick);}else stopVideos(t);
   };
   raf=requestAnimationFrame(tick);emit();
 }
-function stop(){if(!A.playing)return;A.playing=false;cancelAnimationFrame(raf);emit();}
+function stop(){if(!A.playing)return;A.playing=false;cancelAnimationFrame(raf);stopVideos(A.t);emit();}
 
 /* ---------- mode */
 function setMode(m){

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {RT} from '../devices/rt.js';
+import {mediaSize,screenSrc} from '../devices/screen.js';
 import {LRT} from '../lights/runtime.js';
 import {DOF_SAMPLES,renderNow} from '../render/accumulation.js';
 import {dofOn} from '../render/lens.js';
@@ -44,7 +45,7 @@ function crispScreens(W){
     for(let i=0;i<8;i++){_c.set(i&1?bb.max.x:bb.min.x,i&2?bb.max.y:bb.min.y,i&4?bb.max.z:bb.min.z).applyMatrix4(mesh.matrixWorld).project(camera);
       x0=Math.min(x0,_c.x);x1=Math.max(x1,_c.x);y0=Math.min(y0,_c.y);y1=Math.max(y1,_c.y);}
     // the detail that can be minified is the screenshot's own resolution (the 4096 px canvas may upscale it)
-    const px=Math.max(x1-x0,y1-y0)/2*W,tex=Math.max(m.image.width,m.image.height),src=d.img?Math.max(d.img.naturalWidth||tex,d.img.naturalHeight||0):tex;
+    const px=Math.max(x1-x0,y1-y0)/2*W,tex=Math.max(m.image.width,m.image.height),shot=screenSrc(d),src=shot?Math.max(...mediaSize(shot)):tex;
     if(!(px>0)||Math.min(tex,src)/px>CRISP_MAX)return;
     maps.push(m);m.generateMipmaps=false;m.minFilter=THREE.LinearFilter;m.needsUpdate=true;
   });

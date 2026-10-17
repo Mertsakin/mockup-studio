@@ -1,4 +1,5 @@
 import {ArrayBufferTarget,Muxer} from 'mp4-muxer';
+import {hasVideo,showFrames} from '../devices/video.js';
 import {LRT} from '../lights/runtime.js';
 import {pauseLive,renderNow} from '../render/accumulation.js';
 import {fontsReady} from '../render/text.js';
@@ -52,12 +53,12 @@ async function renderVideo(onProgress){
   try{
     setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
     // anything in 3D moving (devices, camera, lights) gets motion blur; moving lights also rebuild the reflections per frame
-    const moving=targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove=state.lights.some(hasAnim),dt=1/X.fps,S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
+    const moving=targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove=state.lights.some(hasAnim),video=state.devices.some(hasVideo),dt=1/X.fps,S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
     for(let i=0;i<n;i++){
       if(cancel)return null;
       if(failed)throw failed;
       const t=i*dt;
-      applyAt(t,{sync:true});if(lightsMove)scheduleEnv(true);
+      applyAt(t,{sync:true});if(video)await showFrames(t);if(lightsMove)scheduleEnv(true);  // screen videos: the exact frame, drawn before the samples
       if(X.blur&&moving)renderNow(S,j=>{applyAt(Math.max(0,Math.min(state.anim.dur,t+((j+.5)/S-.5)*SHUTTER*dt)),{scroll:false});});
       else renderNow(S);
       g.clearRect(0,0,W,H);
@@ -97,7 +98,7 @@ function syncSetup(){
 }
 let blob=null;
 function openDialog(){
-  if(!anyAnim()){toast('Henüz animasyon yok: önce bir anahtar kare ya da metin efekti ekle');return;}
+  if(!anyAnim()&&!state.devices.some(hasVideo)){toast('Henüz animasyon yok: önce bir anahtar kare, metin efekti ya da ekran videosu ekle');return;}
   stop();blob=null;$('#videoSetup').hidden=false;$('#videoRun').hidden=true;$('#videoTitle').textContent='Video dışa aktar';
   syncSetup();scrim.hidden=false;$('#vGo').focus();
 }

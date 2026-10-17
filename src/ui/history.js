@@ -1,5 +1,5 @@
 import {offer} from '../export/export.js';
-import {autosave,fromProjectFile,loadAutosave,toProjectFile} from '../io/project.js';
+import {autosave,fromProjectFile,loadAutosave,needsZip,toProjectFile} from '../io/project.js';
 import {applyDoc,changedBoard,clearAll,doc,docSignature as signature,docSnapshot as snapshot,fillThumbs} from './boards.js';
 import {fitAll} from './workspace.js';
 const activeId=()=>doc.active;
@@ -59,18 +59,22 @@ window.addEventListener('keydown',e=>{
 /* Chrome / Edge: the system save / open dialogs (File System Access API) pick the folder and the name, and the file
    is remembered: ⌘S saves over it, "Farklı kaydet…" (⇧⌘S) asks again, "Proje aç…" makes the opened file the current
    one. Elsewhere a small dialog asks for the name and the browser downloads the file. The top bar shows the name. */
+/* Two formats (io/project.js): .mockup.json (images inlined) and, once a screen video is in the document, .mockup.zip
+   (project.json + media files). A file saved as .json that now needs the zip asks for a new name. */
 const FS=typeof window.showSaveFilePicker==='function';
-const FILE_TYPES=[{description:'Mockup stüdyosu projesi',accept:{'application/json':['.json']}}];
-const EXT=/\.mockup\.json$/i;
+const FILE_TYPES=[{description:'Mockup stüdyosu projesi',accept:{'application/json':['.json'],'application/zip':['.zip']}}];
+const EXT=/\.mockup\.(json|zip)$/i,ZIP=/\.zip$/i;
 let fileHandle=null,fileName='',savedSig=null;  // savedSig: the document as last saved to / opened from a file
 const stamp=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes());};
-const withExt=n=>{n=String(n||'').trim().replace(/[\\/:*?"<>|]+/g,'-');if(!n)return '';return EXT.test(n)?n:n.replace(/\.json$/i,'')+'.mockup.json';};
-const suggested=()=>fileName||'mockup-proje-'+stamp()+'.mockup.json';
+const withExt=(n,zip)=>{n=String(n||'').trim().replace(/[\\/:*?"<>|]+/g,'-');if(!n)return '';const want='.mockup.'+(zip?'zip':'json');
+  return n.toLowerCase().endsWith(want)?n:n.replace(EXT,'').replace(/\.(json|zip)$/i,'')+want;};
+const suggested=zip=>withExt(fileName||'mockup-proje-'+stamp(),zip);
 function setFileName(n){
   fileName=n||'';const el=$('#projName');
-  el.textContent=fileName?fileName.replace(EXT,'').replace(/\.json$/i,''):'Mockup stüdyosu';el.title=fileName?fileName+(fileHandle?'':' (indirildi)'):'';
+  el.textContent=fileName?fileName.replace(EXT,'').replace(/\.(json|zip)$/i,''):'Mockup stüdyosu';el.title=fileName?fileName+(fileHandle?'':' (indirildi)'):'';
 }
-async function projectText(){commitNow();return toProjectFile(snapshot());}  // a change made a moment ago is recorded first
+// the document as a file: {blob, zip}; a change made a moment ago is recorded first
+async function projectFile(){commitNow();return toProjectFile(snapshot());}
 async function writable(h){
   // a file opened for reading asks once for permission to write (needs the click / ⌘S that started the save)
   if(h.queryPermission&&(await h.queryPermission({mode:'readwrite'}))!=='granted'&&(await h.requestPermission({mode:'readwrite'}))!=='granted')throw new Error('yazma izni verilmedi');
@@ -78,17 +82,20 @@ async function writable(h){
 }
 async function save(as){
   try{
+    commitNow();const zip=needsZip(snapshot());
     if(FS){
+      // a .json file cannot hold the video: the zip gets a name of its own (a .zip file keeps taking either content)
+      if(fileHandle&&zip&&!ZIP.test(fileHandle.name)){toast('Videolu proje .mockup.zip olarak kaydedilir: yeni bir ad seç.');as=true;}
       if(as||!fileHandle){
-        let h;try{h=await window.showSaveFilePicker({suggestedName:suggested(),types:FILE_TYPES});}
+        let h;try{h=await window.showSaveFilePicker({suggestedName:suggested(zip),types:FILE_TYPES});}
         catch(e){if(e&&e.name==='AbortError')return false;throw e;}
         fileHandle=h;
       }
-      const text=await projectText(),w=await writable(fileHandle);await w.write(text);await w.close();
+      const {blob}=await projectFile(),w=await writable(fileHandle);await w.write(blob);await w.close();
       setFileName(fileHandle.name);savedSig=currentSig;toast(fileHandle.name+' kaydedildi');return true;
     } else {
-      const name=withExt(await askName(suggested()));if(!name)return false;
-      const text=await projectText();offer(name,new Blob([text],{type:'application/json'}));
+      const name=withExt(await askName(suggested(zip)),zip);if(!name)return false;
+      const {blob}=await projectFile();offer(name,blob);
       setFileName(name);savedSig=currentSig;toast(name+' indirildi');return true;
     }
   }catch(e){toast('Proje kaydedilemedi: '+(e.message||e));return false;}
@@ -108,8 +115,9 @@ function askName(def){
 }
 $('#saveProject').addEventListener('click',()=>save(false));
 $('#saveProjectAs').addEventListener('click',()=>save(true));
-async function openText(text,handle,name){
-  const s=await fromProjectFile(text);if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();
+// file: a File / Blob (.mockup.json or .mockup.zip) or the JSON text
+async function openText(file,handle,name){
+  const s=await fromProjectFile(file);if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();
   fileHandle=handle||null;setFileName(name);savedSig=currentSig;toast((name||'Proje')+' açıldı');
 }
 const openEl=$('#openProject');
@@ -117,12 +125,12 @@ $('#openProjectBtn').addEventListener('click',async()=>{
   if(typeof window.showOpenFilePicker!=='function'){openEl.click();return;}
   try{
     let h;try{[h]=await window.showOpenFilePicker({types:FILE_TYPES,multiple:false});}catch(e){if(e&&e.name==='AbortError')return;throw e;}
-    const f=await h.getFile();await openText(await f.text(),h,h.name);
+    const f=await h.getFile();await openText(f,h,h.name);
   }catch(e){toast('Proje açılamadı: '+(e.message||e));}
 });
 openEl.addEventListener('change',async()=>{
   const f=openEl.files[0];openEl.value='';if(!f)return;
-  try{await openText(await f.text(),null,f.name);}catch(e){toast('Proje açılamadı: '+(e.message||e));}
+  try{await openText(f,null,f.name);}catch(e){toast('Proje açılamadı: '+(e.message||e));}
 });
 
 /* Close the project: an empty document (no artboards, no assets), no current file, the autosave emptied, history

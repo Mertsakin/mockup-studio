@@ -50,7 +50,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 2. [ ] **Mağaza görseli üretici + yerelleştirme:** metin katmanı, marka yazı tipleri, App Store / Play Store ölçüleri, dil başına toplu çıktı (10 dil × 8 ekran = 80 görsel tek seferde).
 3. [ ] **Gömülebilir etkileşimli 3B mockup:** açılış sayfasına PNG yerine döndürülebilen, kaydırılabilen hafif bir web bileşeni.
 4. [ ] **Yapay zekâ ile sahne:** 3B cihazı yapay zekâyla üretilmiş ortama ışığı ve gölgesi tutarlı oturtma (ortamdan HDRI / ışık yönü tahmini → yol izleyici); referans fotoğrafın ışığını taklit; istemden kompozisyon önerisi.
-5. [ ] **Ekranda video:** cihaz ekranında MP4 ekran kaydı; 9:16 ve 1:1 sosyal formatlar; artboard'lar arası kamera geçişleri; WebM/GIF.
+5. [ ] **Ekranda video:** [x] v1 (17 Ekim): cihaz ekranında MP4/WebM, sessiz; Canlandır'da imleçle senkron, Tasarla'da poster karesi; video dışa aktarımında kare kare; otomatik kayıt ve `.mockup.zip`. [ ] Sonra: ses, WebCodecs ile kare çözme (seek yerine), Fotoğraf kalitesinde video, 9:16 ve 1:1 sosyal formatlar, artboard'lar arası kamera geçişleri, WebM/GIF çıktı.
 6. [ ] **Gerçekçilikte son mil:** ~~alan derinliği~~ (bitti), yansıtıcı/dokulu zemin, jenerik 3B eller (telefonu tutan el), dekor nesneleri, GLB içe aktarma.
 7. [ ] **Ekip ve bulut:** bulut proje, paylaşım linki, yorumlar, ekip kütüphanesi (marka kiti, ortak şablonlar); ücretli ekip planının dayanağı.
 
@@ -64,6 +64,8 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [ ] Jenerik cihaz algısı: "Neden iPhone gibi değil?" sorusuna GLB içe aktarma ve "Kendi çerçeven" ile net cevap.
 
 ## Son eklenenler (9–17 Ekim 2026)
+
+- [x] **Ekranda video v1** (17 Ekim): Ekran bölümüne MP4/WebM bırakılır (`devices/video.js`); Başlangıç (kırpma) ve Döngü; Canlandır'da imleç ve oynatma videoyla senkron, Tasarla ve durağan görsel poster karesi; video dışa aktarımı her karede `seeked` bekler; otomatik kayıtta blob, proje dosyası videoluyken `.mockup.zip`. Sessiz; ses ve Fotoğraf kalitesinde video v2'ye kaldı.
 
 - [x] **Ekranda titreyen karo deseni düzeltildi** (17 Ekim): uzun objektif + düşük Yakınlık'ta ekran ile ön cam derinlikte yarışıyordu (GPU karosu biçiminde koyu bloklar). Yakın düzlem mesafenin %6'sı, ekran katmanlarına `polygonOffset`.
 - [x] **Kamera ve ışık animasyonu** (17 Ekim): Canlandır'da kamera (açılar, Yakınlık, objektif, kayma) ve ışıklar (yön, yükseklik, uzaklık, yoğunluk, boyut, huzme) cihazlar gibi anahtar kare alır; zaman çizelgesinde Kamera ve ışık satırları, panellerde ◆ ve "Anahtar kare", kamera ve ışık hazır hareketleri; videoda kamera/ışık hareketine bulanıklık, ışık hareketinde yansımalar kare kare.

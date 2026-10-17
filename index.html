@@ -26,7 +26,7 @@
         <div class="mlabel">Tema</div>
         <div class="seg seg-menu" id="themeSeg" role="group" aria-label="Tema"><button type="button" data-theme="system">Sistem</button><button type="button" data-theme="light">Açık</button><button type="button" data-theme="dark">Koyu</button></div>
       </div>
-      <input type="file" id="openProject" accept=".json,application/json" hidden>
+      <input type="file" id="openProject" accept=".json,.zip,application/json,application/zip" hidden>
     </div>
     <button class="ib" type="button" id="undoBtn" aria-label="Geri al"><span data-icon="undo-left"></span><span class="tip">Geri al <kbd>⌘Z</kbd></span></button>
     <button class="ib" type="button" id="redoBtn" aria-label="Yinele"><span data-icon="undo-right"></span><span class="tip">Yinele <kbd>⇧⌘Z</kbd></span></button>
@@ -234,10 +234,14 @@
         <section class="sec" data-sec="dev-screen">
           <h3 class="sh">Ekran</h3>
           <label class="drop" id="drop" tabindex="0">
-            <input type="file" id="file" accept="image/*" hidden>
+            <input type="file" id="file" accept="image/*,video/mp4,video/webm,.mp4,.webm" hidden>
             <span class="drop-ic" data-icon="gallery-add"></span>
             <span class="drop-txt"><span class="drop-main" id="dropMain"></span><span class="drop-sub" id="dropSub"></span></span>
+            <button class="ib sm drop-x" type="button" id="shotRemove" aria-label="Ekrandakini kaldır" title="Kaldır" hidden><span data-icon="trash-bin-minimalistic" data-size="14"></span></button>
           </label>
+          <div id="videoRow" class="slgrid" hidden>
+            <div class="row vrow"><span class="lbl">Döngü</span><label class="switch"><input type="checkbox" id="videoLoop" aria-label="Video bitince başa dönsün"><span></span></label></div>
+          </div>
           <label class="drop" id="frameDrop" tabindex="0" data-for="custom">
             <input type="file" id="frameFile" accept="image/png,image/webp" hidden>
             <span class="drop-ic" data-icon="gallery-wide"></span>

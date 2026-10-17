@@ -29,9 +29,13 @@ function drawPlaceholder(g,x,y,w,h){
   g.fillStyle='rgba(255,255,255,.72)';g.font='400 '+(s*.042)+'px "Instrument Sans", system-ui, sans-serif';
   g.fillText('Görsel seç ya da sürükle bırak',x+w/2,y+h/2+s*.05);
 }
+// pixel size of a screen source: an image or a video element
+const mediaSize=m=>[m.videoWidth||m.naturalWidth||m.width||1,m.videoHeight||m.naturalHeight||m.height||1];
+// what the screen shows: the video when there is one, else the screenshot (video.js keeps the video on its frame)
+const screenSrc=d=>d.video||d.img||null;
 // scroll (0..1): for an image taller than the screen ("Doldur"), how far down the visible window sits
 function drawFit(g,img,x,y,w,h,fit,scroll=0){
-  const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+  const [iw,ih]=mediaSize(img);
   g.save();g.beginPath();g.rect(x,y,w,h);g.clip();g.imageSmoothingQuality='high';
   if(fit==='stretch')g.drawImage(img,x,y,w,h);
   else{const s=fit==='cover'?Math.max(w/iw,h/ih):Math.min(w/iw,h/ih),dw=iw*s,dh=ih*s,dy=dh>h?-(dh-h)*scroll:(h-dh)/2;g.drawImage(img,x+(w-dw)/2,y+dy,dw,dh);}
@@ -39,8 +43,10 @@ function drawFit(g,img,x,y,w,h,fit,scroll=0){
 }
 // Display size of the device's screen canvas (landscape phones / tablets swap it)
 function screenSize(o,d){
-  // 4096 px on the long edge (or the GPU's limit): sharp at 4K export, screenshots are rarely larger
-  const geomA=o.sw/o.sh,land=o.rotatable&&d.landscape,dispA=land?1/geomA:geomA,long=Math.min(4096,MAX_TEX);
+  // 4096 px on the long edge (or the GPU's limit): sharp at 4K export, screenshots are rarely larger. A video is
+  // redrawn every frame while it plays, so its canvas is no larger than the video itself (at least 1024 px)
+  const geomA=o.sw/o.sh,land=o.rotatable&&d.landscape,dispA=land?1/geomA:geomA;
+  const long=Math.min(4096,MAX_TEX,d.video?Math.max(1024,...mediaSize(d.video)):4096);
   return dispA>=1?[long,Math.round(long/dispA)]:[Math.round(long*dispA),long];
 }
 // Width of the device's screen in texture pixels (what a screenshot needs to be to come out sharp)
@@ -76,8 +82,8 @@ function customCanvas(d){
   }
   const iw=fi.naturalWidth,ih=fi.naturalHeight,s=Math.min(1,CUSTOM_MAX/Math.max(iw,ih)),cw=Math.round(iw*s),ch=Math.round(ih*s);
   const c=mkCanvas(cw,ch),g=c.getContext('2d'),r=d.screenRect;
-  if(r){const x=r.x*cw,y=r.y*ch,w=r.w*cw,h=r.h*ch;g.fillStyle=d.screenBg;g.fillRect(x,y,w,h);
-    if(d.img)drawFit(g,d.img,x,y,w,h,d.fit,d.scroll);else drawPlaceholder(g,x,y,w,h);}
+  if(r){const x=r.x*cw,y=r.y*ch,w=r.w*cw,h=r.h*ch,src=screenSrc(d);g.fillStyle=d.screenBg;g.fillRect(x,y,w,h);
+    if(src)drawFit(g,src,x,y,w,h,d.fit,d.scroll);else drawPlaceholder(g,x,y,w,h);}
   g.drawImage(fi,0,0,cw,ch);return c;
 }
 function setScreenTexture(d){
@@ -91,8 +97,8 @@ function setScreenTexture(d){
   const land=o.rotatable&&d.landscape,[cw,ch]=screenSize(o,d),old=o.mats.screen.map;
   // same size as before (e.g. scrolling): redraw into the existing canvas and texture instead of reallocating
   const reuse=old&&old.image&&old.image.width===cw&&old.image.height===ch&&old.userData.land===land;
-  const c=reuse?old.image:mkCanvas(cw,ch),g=c.getContext('2d');
-  if(d.img){g.fillStyle=d.screenBg;g.fillRect(0,0,cw,ch);drawFit(g,d.img,0,0,cw,ch,d.fit,d.scroll);}
+  const c=reuse?old.image:mkCanvas(cw,ch),g=c.getContext('2d'),src=screenSrc(d);
+  if(src){g.fillStyle=d.screenBg;g.fillRect(0,0,cw,ch);drawFit(g,src,0,0,cw,ch,d.fit,d.scroll);}
   else drawPlaceholder(g,0,0,cw,ch);
   if(reuse){old.needsUpdate=true;req();return;}
   const t=tex(c);t.center.set(.5,.5);t.rotation=land?-Math.PI/2:0;t.userData.land=land;
@@ -119,4 +125,4 @@ function detectScreen(img){
   return {x:x0,y:y0,w:Math.min(1-x0,(maxX-minX+3)/w),h:Math.min(1-y0,(maxY-minY+3)/h)};
 }
 
-export {detectScreen,screenPixelWidth,scrollScreen,scrollScreens,setScreenTexture,updateChrome};
+export {detectScreen,mediaSize,screenPixelWidth,screenSrc,scrollScreen,scrollScreens,setScreenTexture,updateChrome};

@@ -1,4 +1,5 @@
 import {RT} from '../devices/rt.js';
+import {loadVideo} from '../devices/video.js';
 import {buildRT,disposeRT} from '../devices/runtime.js';
 import {rebuildLights} from '../lights/actions.js';
 import {reserveLightIds} from '../lights/mods.js';
@@ -13,11 +14,13 @@ import {reserveDeviceIds,reserveItemIds,state,view} from '../state/state.js';
    A snapshot is plain data: the studio state (devices, lights, scene angle, background, artboard…) plus the
    current framing (composition offset and radius, which "Odakla" / "Kadraja sığdır" change). Images are not copied:
    devices refer to them by key, and `images` maps key -> HTMLImageElement in memory. Project files and autosave
-   store the images themselves (see packImages / unpackImages). */
+   store the images themselves (see packImages / unpackImages). Screen videos (d.video, an HTMLVideoElement) travel
+   the same way under 'v…' keys: a blob in the autosave, a media file in a .mockup.zip project. */
 const SKIP_STATE=new Set(['devices','lights','selected','selLight','mode','gizmo','bgImg','items','selItem']);
-const SKIP_DEVICE=new Set(['img','frameImg']);
+const SKIP_DEVICE=new Set(['img','frameImg','video']);
 const ids=new WeakMap();let nextImg=0;
-const imgKey=img=>{if(!img)return null;if(!ids.has(img))ids.set(img,'i'+(++nextImg));return ids.get(img);};
+const imgKey=img=>{if(!img)return null;if(!ids.has(img))ids.set(img,(img.tagName==='VIDEO'?'v':'i')+(++nextImg));return ids.get(img);};
+const isVideoKey=k=>/^v/.test(k);
 // an image loaded back from a file / storage keeps its key, so it is not stored twice
 const adopt=(img,k)=>{ids.set(img,k);const n=+String(k).slice(1);if(n>nextImg)nextImg=n;return img;};
 const copy=o=>JSON.parse(JSON.stringify(o));
@@ -37,7 +40,8 @@ function snapshot(){
   const devices=state.devices.map(d=>{const o={};for(const k in d)if(!SKIP_DEVICE.has(k))o[k]=copy(d[k]);
     // animated values are stored at the design frame, not at the editor's playhead (moving the playhead is not an edit)
     tracked(d).forEach(k=>{o[k]=interp(d.tracks[k],designT(d));});
-    if(d.img){o.img=imgKey(d.img);images[o.img]=d.img;}if(d.frameImg){o.frameImg=imgKey(d.frameImg);images[o.frameImg]=d.frameImg;}return o;});
+    if(d.img){o.img=imgKey(d.img);images[o.img]=d.img;}if(d.frameImg){o.frameImg=imgKey(d.frameImg);images[o.frameImg]=d.frameImg;}
+    if(d.video){o.video=imgKey(d.video);images[o.video]=d.video;}return o;});
   return {v:1,state:st,devices,lights,selected:state.selected,selLight:state.selLight,
     frame:{comp:comp.position.toArray(),fitRadius:view.fitRadius},images};
 }
@@ -61,7 +65,7 @@ function restore(s){
   if(![1080,1920,3840].includes(state.size))state.size=1920;
   // the scene object stays (modules hold it); its animation goes if the snapshot has none
   delete state.scene.tracks;delete state.scene.designT;Object.assign(state.scene,copy(s.state.scene));
-  state.devices=s.devices.map(o=>Object.assign({},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null}));
+  state.devices=s.devices.map(o=>Object.assign({video:null,videoName:'',videoT0:0,videoLoop:true},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null,video:o.video?s.images[o.video]||null:null}));
   state.lights=copy(s.lights);
   reserveDeviceIds(Math.max(0,...state.devices.map(d=>d.id)));reserveLightIds(Math.max(0,...state.lights.map(l=>l.id)));
   state.selected=state.devices.some(d=>d.id===s.selected)?s.selected:(state.devices[0]&&state.devices[0].id);
@@ -76,6 +80,10 @@ function restore(s){
 async function imageBlob(img){const r=await fetch(img.src);return r.blob();}
 const blobToDataUrl=b=>new Promise((res,rej)=>{const f=new FileReader();f.onload=()=>res(f.result);f.onerror=rej;f.readAsDataURL(b);});
 async function loadImage(src){const img=new Image();img.src=src;await img.decode();return img;}
+// an element for a stored key: a video for 'v…' keys, an image otherwise
+const loadMedia=(src,k)=>isVideoKey(k)?loadVideo(src):loadImage(src);
+const extOf=b=>({'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/svg+xml':'svg','image/gif':'gif','video/mp4':'mp4','video/webm':'webm'})[b.type]||'bin';
+const MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',svg:'image/svg+xml',gif:'image/gif',mp4:'video/mp4',webm:'video/webm'};
 
 /* Documents: a list of artboards, each holding one scene snapshot (see ui/boards.js).
    {v:2, active, boards:[{id,name,x,y,snap}]}. Snapshots of one document share one image map. */
@@ -93,16 +101,41 @@ function asDoc(s){
 }
 function attachImages(d,images){d.boards.forEach(b=>{b.snap.images=images;});d.assetImages=images;return d;}
 
-// project file: one JSON with the images inlined as data URLs
+/* Project file. Without video: one JSON with the images inlined as data URLs (.mockup.json, as before). With a screen
+   video: a ZIP (.mockup.zip) holding project.json (no inlined media) and media/<key>.<ext> for every image and video
+   (a video as a data URL would triple the memory and freeze the save). Returns {blob, zip}. */
+const needsZip=d=>Object.keys(docImages(d)).some(isVideoKey);
 async function toProjectFile(d){
-  const all=docImages(d),images={};for(const k in all)images[k]=await blobToDataUrl(await imageBlob(all[k]));
-  return JSON.stringify(Object.assign({app:'mockup-studio'},plainDoc(d),{images}));
+  const all=docImages(d),base=Object.assign({app:'mockup-studio'},plainDoc(d));
+  if(needsZip(d)){
+    const JSZip=(await import('jszip')).default,zip=new JSZip(),media=[];
+    for(const k in all){const b=await imageBlob(all[k]),name='media/'+k+'.'+extOf(b);zip.file(name,b);media.push(name);}
+    zip.file('project.json',JSON.stringify(Object.assign(base,{media})));
+    return {blob:await zip.generateAsync({type:'blob',compression:'STORE'}),zip:true};
+  }
+  const images={};for(const k in all)images[k]=await blobToDataUrl(await imageBlob(all[k]));
+  return {blob:new Blob([JSON.stringify(Object.assign(base,{images}))],{type:'application/json'}),zip:false};
 }
-async function fromProjectFile(text){
+const isZip=u8=>u8.length>3&&u8[0]===0x50&&u8[1]===0x4b&&u8[2]===3&&u8[3]===4;
+// accepts a File / Blob (either format, told apart by its bytes) or the JSON text
+async function fromProjectFile(src){
+  let text=src,media={};  // media: key -> Blob (zip)
+  if(typeof src!=='string'){
+    const buf=await src.arrayBuffer();
+    if(isZip(new Uint8Array(buf,0,4))){
+      const JSZip=(await import('jszip')).default,zip=await JSZip.loadAsync(buf),pj=zip.file('project.json');
+      if(!pj)throw new Error('Bu bir mockup stüdyosu proje dosyası değil.');
+      text=await pj.async('string');
+      for(const f of Object.values(zip.files)){const m=/^media\/([a-z]\d+)\.(\w+)$/.exec(f.name);if(!m||f.dir)continue;
+        media[m[1]]=new Blob([await f.async('arraybuffer')],{type:MIME[m[2].toLowerCase()]||'application/octet-stream'});}
+    } else text=new TextDecoder().decode(buf);
+  }
   const p=JSON.parse(text);
   if(p.app!=='mockup-studio'||!(Array.isArray(p.boards)||Array.isArray(p.devices)))throw new Error('Bu bir mockup stüdyosu proje dosyası değil.');
-  const images={};for(const k in p.images||{})images[k]=adopt(await loadImage(p.images[k]),k);
-  delete p.images;
+  const images={};
+  for(const k in p.images||{})images[k]=adopt(await loadMedia(p.images[k],k),k);
+  for(const k in media)images[k]=adopt(await loadMedia(URL.createObjectURL(media[k]),k),k);
+  delete p.images;delete p.media;
   return attachImages(asDoc(p),images);
 }
 
@@ -128,10 +161,10 @@ async function loadAutosave(){
   try{
     const data=await idb('readonly',st=>st.get('scene'));if(!data||!(Array.isArray(data.boards)||Array.isArray(data.devices)))return null;
     const images={};
-    for(const k of data.images||[]){const b=await idb('readonly',st=>st.get('img:'+k));if(b){images[k]=adopt(await loadImage(URL.createObjectURL(b)),k);stored.add(k);}}
+    for(const k of data.images||[]){const b=await idb('readonly',st=>st.get('img:'+k));if(b){images[k]=adopt(await loadMedia(URL.createObjectURL(b),k),k);stored.add(k);}}
     delete data.images;
     return attachImages(asDoc(data),images);
   }catch(e){return null;}
 }
 
-export {asDoc,autosave,packAssets,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};
+export {asDoc,autosave,needsZip,packAssets,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};

@@ -540,6 +540,7 @@ html[data-env="space"] [data-env="studio"],html:not([data-env="space"]) [data-en
 .slgrid .contents{display:contents}
 .slgrid .contents>.sl{grid-column:span 2}
 .slgrid>.cell3>.nf{width:100%}
+.slgrid>.vrow{grid-column:span 3;margin:0}
 .slgrid>[hidden],.slgrid .contents>[hidden]{display:none}
 .nf.sl .nfk{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62%}
 .nf.sl input{text-align:left}

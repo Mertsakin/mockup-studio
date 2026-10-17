@@ -7,6 +7,7 @@ import {designT,halfFrame,hasAnim,isDevice,keyIn,kindOf,propsOf,refOf,timesOf,tr
 import {sel,selItem,state} from '../state/state.js';
 import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,hasFx,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets} from './animate.js';
 import {sizeOf} from './boards.js';
+import {duration,fmtDur,hasVideo} from '../devices/video.js';
 import {icon} from './icons.js';
 import {renderItems} from './layout.js';
 import {selectItem} from './items.js';
@@ -124,9 +125,10 @@ function build(){
     lanes.appendChild(lane);
   });
   const end=document.createElement('div');end.className='end';end.style.left=xOf(dur)+'px';end.innerHTML='<span>'+String(dur).replace('.',',')+' sn</span>';
-  end.title='Süreyi değiştirmek için sürükle (en fazla 30 sn)';end.addEventListener('pointerdown',dragEnd);lanes.appendChild(end);
+  const vids=state.devices.filter(hasVideo).map(d=>duration(d.video)).filter(Boolean);
+  end.title='Süreyi değiştirmek için sürükle (en fazla 30 sn)'+(vids.length?'. Ekran videosu: '+vids.map(fmtDur).join(', '):'');end.addEventListener('pointerdown',dragEnd);lanes.appendChild(end);
   const ph=document.createElement('div');ph.className='ph';ph.id='tlPh';lanes.appendChild(ph);
-  $('#tlEmpty').hidden=anyAnim();
+  $('#tlEmpty').hidden=anyAnim()||state.devices.some(hasVideo);
 }
 function moveHead(){
   const ph=$('#tlPh');if(ph)ph.style.left=xOf(A.t)+'px';
