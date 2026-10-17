@@ -134,8 +134,8 @@ kbd{font:inherit;color:var(--muted)}
 .chip button{height:24px;padding:0 4px 0 8px}
 .chip button.x{padding:0 6px 0 2px;color:var(--muted)}
 .chip button.x:hover{color:var(--ink)}
-.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px}
-.tpl{display:flex;flex-direction:column;gap:4px;text-align:left;color:var(--ink-2);border-radius:6px}
+.tpl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 16px}
+.tpl{display:flex;flex-direction:column;gap:4px;min-width:0;text-align:left;color:var(--ink-2);border-radius:6px}
 .tpl img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:5px;background:var(--field);box-shadow:0 0 0 1px var(--line)}
 .tpl:hover img{box-shadow:0 0 0 2px var(--accent)}
 .tpl span{font-size:11px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -837,7 +837,7 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .tpl-goals button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
 .tpl-variant{width:100%;margin-bottom:10px}
 .tpl .tpl-im{position:relative;display:block}
-.tpl .tpl-im img{display:block}
+.tpl .tpl-im img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
 .tpl .tpl-b{position:absolute;left:4px;bottom:4px;font-size:10px;line-height:14px;padding:0 5px;border-radius:4px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
 .tpl .tpl-n{font-size:11px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tpl-mine{position:relative}
