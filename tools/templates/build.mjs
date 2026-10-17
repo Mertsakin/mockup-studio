@@ -16,7 +16,7 @@ const LINES=[{h:'Planını saniyeler içinde kur',s:'Tek dokunuşla görev, hat�
   {h:'Gece de gözlerin dinlensin',s:'Koyu tema, her ekranda.'},{h:'Her yerden eriş',s:'Telefon, tablet ve bilgisayarda.'},{h:'Verilerin güvende',s:'Uçtan uca şifreleme.'}];
 
 // runs in the page: builds one variant on an empty document, returns {thumb (data URL), file (project JSON text)}
-async function buildInPage({spec,W,H,set,dur,name,lines}){
+async function buildInPage({spec,W,set,dur,name,lines}){
   const app=window.__app,st=app('state');
   const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('image '+src));i.src=src;});
   const frames=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));

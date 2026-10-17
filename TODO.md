@@ -26,7 +26,7 @@ Yayından önce ürünün içerik eksikleri kapanır; yayın ve ürünleştirme 
 4b. [x] **Çerçeveler ve auto layout** (14 Ekim, Figma mantığı): metin ve görseller çerçevelere girer; yön, aralık, iç boşluk, 3×3 hizalama, eşit aralık, esnet; Sabit / Sar / Doldur / % boyutlar; X, Y, W, H sayısal alanları; sürükleyerek sıralama, çerçeveye bırakma, ⌥⌘G / ⇧A / ⇧⌘G. [x] Mağaza setinde başlık + alt başlık auto layout çerçevesinde. [ ] Sonra: kenar kısıtları (constraints), sarma (wrap), min/maks boyut, çerçeve gölgesi ve kenarlığı. [x] İçeriğe saran çerçeve büyürken üst kenar sabit (anc).
 4c. [x] **Uzay ortamı** (14 Ekim): artboard ayarında Stüdyo / Uzay; Uzay'da zemin yok, sahne iz topuyla her yöne döner, isteğe bağlı "Işık sahneyle döner"; "Serbest takla" ve "Yörünge turu" hazır hareketleri.
 4d. [x] **Sağ panel sadeleşti** (14 Ekim): katlanan bölümler ve özet satırları, kaydırıcılar yerine değer alanları, hazırlar menüde, boyut tek listede, seyrek ayarlar "Ayrıntılar" altında, cihazda Ekran üstte.
-5. [ ] **Şablonlar:** metinli ve mağaza seti şablonları, animasyonlu şablonlar, kendi sahneni şablon olarak kaydetme, kartlarda gerçek örnek ekranlar.
+5. [x] **Şablonlar** (18 Ekim): 12 şablon × açık/koyu (açılış, mağaza seti, sosyal, video; metinli, hareketli), Şablonlar sekmesinde galeri, karşılama kartı önerileri şablonlardan, kendi şablonun (tarayıcıda). [ ] Sonra: kartlarda kısa hareket önizlemesi (video şablonları), vurgu rengi seçimi, Google Play ölçülerinde mağaza setleri, kendi şablonunu yeniden adlandırma ve dışa/içe aktarma.
 
 ## Strateji
 
@@ -139,10 +139,10 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 ## Şablonlar
 
 - [x] 21:9 oran, "Sade ekran" cihazı. (İlk 20 şablon ve galeri sayfası 14 Ekim'de kaldırıldı; tasarım dili stüdyoya uymuyordu. Yeni şablon seti gelecek.)
-- [ ] **Yeni şablon seti** (stüdyonun kendi tasarım diliyle) ve galeri.
-- [ ] Kullanıcının kendi sahnesini şablon olarak kaydetmesi.
-- [ ] Şablon kartlarında örnek ekran görüntüleri (şu an yer tutucu).
-- [ ] Animasyonlu şablonlar (hazır hareketli).
+- [x] **Yeni şablon seti** (stüdyonun kendi tasarım diliyle) ve galeri (18 Ekim).
+- [x] Kullanıcının kendi sahnesini şablon olarak kaydetmesi (18 Ekim; tarayıcıda saklanır).
+- [x] Şablon kartlarında örnek ekran görüntüleri (18 Ekim).
+- [x] Animasyonlu şablonlar (hazır hareketli; 18 Ekim: Yaklaşarak giriş, Süzülen başlık, Döner tabla).
 
 ## Web sitesi yakalama
 
