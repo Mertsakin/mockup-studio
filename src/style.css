@@ -773,11 +773,16 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .wl-drop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wl-drop b{color:var(--accent-ink);font-weight:500}
 .wl-drop small{display:block;color:var(--muted);font-size:11px}
-.wl-goals{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px}
-.wl-goals>span{color:var(--muted);margin-right:2px}
-.wl-chip{height:26px;padding:0 10px;border-radius:13px;background:var(--field);color:var(--ink-2);font-weight:500;white-space:nowrap}
-.wl-chip:hover{background:var(--field-hover)}
-.wl-chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-ink);box-shadow:inset 0 0 0 1px var(--accent)}
+.wl-glbl{margin:16px 0 8px;color:var(--muted)}
+/* goals: four square tiles in one row, icon over the name */
+.wl-goals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.wl-goal{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:8px 6px;border-radius:10px;
+  background:var(--field);color:var(--ink-2);font-weight:500;line-height:15px;text-align:center}
+.wl-goal:hover{background:var(--field-hover)}
+.wl-goal .ic{color:var(--ink-2)}
+.wl-goal[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-ink);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.wl-goal[aria-pressed="true"] .ic{color:var(--accent-ink)}
+@media (max-width:480px){.wl-goal{font-size:11px;line-height:13px;gap:6px;padding:6px 4px}}
 .wl-foot{display:flex;align-items:center;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .wl-link{color:var(--accent-ink);font-weight:500}
 .wl-link:hover{text-decoration:underline}
