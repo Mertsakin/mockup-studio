@@ -111,15 +111,19 @@ window.addEventListener('dragleave',()=>{dragDepth=Math.max(0,dragDepth-1);if(!d
 const dropTarget=e=>{if(!e.dataTransfer||!e.dataTransfer.types.includes('Files'))return null;const t=e.target&&e.target.closest?e.target:null;
   return !t?'shot':t.closest('#frameDrop')?'frame':t.closest('#bgDrop')?'bg':t.closest('#assetsGroup')?'asset':'shot';};
 window.addEventListener('dragover',e=>{const t=dropTarget(e);if(!t)return;e.preventDefault();frameDrop.classList.toggle('over',t==='frame');bgDrop.classList.toggle('over',t==='bg');drop.classList.toggle('over',t==='shot');});
+// another part of the UI can take dropped / pasted files first (the welcome card while it shows): true = taken
+let router=null;
+const routeShots=fn=>{router=fn;};
 window.addEventListener('drop',e=>{
   e.preventDefault();dragDepth=0;[drop,frameDrop,bgDrop].forEach(el=>el.classList.remove('over'));
   const f=e.dataTransfer&&e.dataTransfer.files[0];if(!f)return;
+  if(router&&router([...e.dataTransfer.files]))return;
   const t=dropTarget(e);if(t==='frame')loadFrame(f);else if(t==='bg')loadBg(f);else if(t==='shot')loadShot(f);
 });
 window.addEventListener('paste',e=>{
   if(e.target&&(e.target.tagName==='INPUT'&&e.target.type==='text'))return;
   const items=(e.clipboardData&&e.clipboardData.items)||[];
-  for(const it of items){if(it.type&&it.type.startsWith('image/')){loadShot(it.getAsFile());e.preventDefault();return;}}
+  for(const it of items){if(it.type&&it.type.startsWith('image/')){const f=it.getAsFile();e.preventDefault();if(router&&router([f]))return;loadShot(f);return;}}
 });
 onSyncUI(d=>{
   const b=state.bgImg;bgDrop.classList.toggle('has',!!b);
@@ -138,4 +142,4 @@ onSyncUI(d=>{
   else{$('#frameMain').textContent='Çerçeve PNG\u2019si seç';$('#frameSub').textContent='Ekran bölümü şeffaf bir cihaz çerçevesi. Ekran görüntün o alana yerleşir.';frameDrop.classList.remove('has');}
 });
 
-export {loadShot,loadShotVideo};
+export {loadShot,loadShotVideo,routeShots};

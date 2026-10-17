@@ -118,6 +118,16 @@
           </div>
           <div class="wl-foot"><button class="wl-link" type="button" id="wlOpen">Proje aç…</button><span class="grow"></span><button class="wl-link" type="button" id="wlBlank">Boş artboard ile başla</button></div>
         </div>
+        <div class="wl-pick" id="wlPick" hidden>
+          <div class="wl-phead">
+            <div><h2 id="wlPickTitle" tabindex="-1">Sahneler hazırlanıyor</h2><p class="wl-sub" id="wlPickSub"></p></div>
+            <span class="grow"></span>
+            <button class="btn lg" type="button" id="wlBack">Geri</button>
+            <button class="btn primary lg" type="button" id="wlAdd" disabled>Artboard ekle</button>
+          </div>
+          <div class="wl-grid" id="wlGrid" role="group" aria-labelledby="wlPickTitle"></div>
+          <p class="wl-status" id="wlStatus" role="status" aria-live="polite"></p>
+        </div>
       </section>
       <div class="world" id="world"></div>
       <div class="frame" id="frame"><canvas id="gl" aria-label="Sahne önizlemesi"></canvas></div>

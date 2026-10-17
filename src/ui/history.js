@@ -18,7 +18,11 @@ import {$} from '../util.js';
 const POLL=150,MAX=100;
 let past=[],future=[],current=null,currentSig='',pending='',saveTimer=0;
 const undoBtn=$('#undoBtn'),redoBtn=$('#redoBtn');
-const busy=()=>canvas.classList.contains('dragging')||(gizmoHelper.controls&&gizmoHelper.controls.dragging);
+// held: a multi-step change is under way (the welcome card building its scenes): nothing is recorded or undone
+// until it is released, then the result is one step
+let held=false;
+const holdHistory=on=>{held=!!on;pending='';};
+const busy=()=>held||canvas.classList.contains('dragging')||(gizmoHelper.controls&&gizmoHelper.controls.dragging);
 function syncButtons(){undoBtn.disabled=!past.length;redoBtn.disabled=!future.length;}
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>autosave(current),400);}
 function poll(){
@@ -31,7 +35,7 @@ function poll(){
 }
 // leaving the page / switching tabs: record and save right away (timers are throttled or stopped from here on)
 function flush(){
-  if(!current)return;const s=snapshot(),sig=signature(s);
+  if(!current||held)return;const s=snapshot(),sig=signature(s);
   if(sig!==currentSig){past.push(current);if(past.length>MAX)past.shift();future=[];current=s;currentSig=sig;pending='';syncButtons();}
   clearTimeout(saveTimer);autosave(current);
 }
@@ -44,8 +48,8 @@ function commitNow(){
 document.addEventListener('pointerdown',commitNow,true);
 document.addEventListener('keydown',e=>{if(!/^(Shift|Control|Alt|Meta)$/.test(e.key))commitNow();},true);
 function apply(s,from){applyDoc(s,from?changedBoard(from,s)||activeId():null);current=s;currentSig=signature(s);pending='';syncButtons();scheduleSave();}
-function undo(){commitNow();if(!past.length)return;const from=current;future.push(current);apply(past.pop(),from);}
-function redo(){if(!future.length)return;const from=current;past.push(current);apply(future.pop(),from);}
+function undo(){if(held)return;commitNow();if(!past.length)return;const from=current;future.push(current);apply(past.pop(),from);}
+function redo(){if(held||!future.length)return;const from=current;past.push(current);apply(future.pop(),from);}
 undoBtn.addEventListener('click',undo);redoBtn.addEventListener('click',redo);
 window.addEventListener('keydown',e=>{
   if(!(e.metaKey||e.ctrlKey)||e.altKey)return;
@@ -180,4 +184,4 @@ async function startHistory(templateOpened){
 // dev / tests: short description of the stacks (device positions)
 const historyInfo=()=>{const f=x=>x.boards.map(b=>b.snap.devices.map(d=>d.py.toFixed(1)+'/'+d.px.toFixed(1)).join(' ')).join(' | ');return {past:past.map(f),current:current&&f(current),future:future.map(f)};};
 
-export {historyInfo,redo,startHistory,undo};
+export {historyInfo,holdHistory,redo,startHistory,undo};
