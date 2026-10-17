@@ -54,6 +54,20 @@ async function buildInPage({spec,W,set,dur,name,lines}){
   if(set){g.fillStyle=spec.store.theme.c2;g.fillRect(0,0,tw,th);}
   let x=gap;for(const i of imgs){const [w,h]=sz(i);g.drawImage(i,x,gap,w,h);x+=w+gap;}
   const thumb=c.toDataURL('image/jpeg',.84);
+  // a moving template: a short preview (the first PREVIEW_S of its animation, small, WebM) for the card's hover
+  let preview=null;
+  if(dur){
+    const PW=360,FPS=12,PREVIEW_S=Math.min(3,dur),n=Math.round(PREVIEW_S*FPS);
+    const {encoderFor}=await import('/src/export/encoders.js');
+    st.size=PW;st.format='jpg';
+    const first=await createImageBitmap(await app('renderExport')(()=>{}));
+    const enc=await encoderFor('webm',first.width-first.width%2,first.height-first.height%2,FPS);first.close();
+    for(let i=0;i<n;i++){app('applyAt')(i/FPS,{sync:true});await frames();
+      const bmp=await createImageBitmap(await app('renderExport')(()=>{}));await enc.add(bmp,i);bmp.close();}
+    app('applyAt')(0,{sync:true});
+    const blob=await enc.finish();
+    preview=await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(blob);});
+  }
   // the template: every board's screens emptied (they show the placeholder until the user's screens arrive)
   for(const b of doc.boards){app('activate')(b.id);
     st.devices.forEach(d=>{d.img=null;d.imgName='';d.video=null;d.videoName='';d.scroll=0;d.siteUrl='';app('setScreenTexture')(d);});
@@ -61,7 +75,7 @@ async function buildInPage({spec,W,set,dur,name,lines}){
   app('activate')(doc.boards[0].id);
   const snap=app('docSnapshot')();snap.boards.forEach(b=>{b.thumb=null;});snap.assets=[];snap.assetImages={};
   const f=await app('toProjectFile')(snap);
-  return {thumb,file:await f.blob.text()};
+  return {thumb,preview,file:await f.blob.text()};
 }
 
 const server=await createServer({root:ROOT,logLevel:'error',server:{port:0,strictPort:false,hmr:false}});
@@ -88,6 +102,7 @@ try{
       fs.writeFileSync(path.join(OUT,base+'.mockup.json'),r.file);
       entry.ratio=entry.ratio||spec.ratio;
       entry.variants[v]={file:base+'.mockup.json',thumb:base+'.jpg'};
+      if(r.preview){fs.writeFileSync(path.join(OUT,base+'.webm'),Buffer.from(r.preview.split(',')[1],'base64'));entry.variants[v].preview=base+'.webm';}
       console.log('wrote',base,Math.round(r.file.length/1024)+' KB');
       await page.close();
     }

@@ -26,7 +26,7 @@ Yayından önce ürünün içerik eksikleri kapanır; yayın ve ürünleştirme 
 4b. [x] **Çerçeveler ve auto layout** (14 Ekim, Figma mantığı): metin ve görseller çerçevelere girer; yön, aralık, iç boşluk, 3×3 hizalama, eşit aralık, esnet; Sabit / Sar / Doldur / % boyutlar; X, Y, W, H sayısal alanları; sürükleyerek sıralama, çerçeveye bırakma, ⌥⌘G / ⇧A / ⇧⌘G. [x] Mağaza setinde başlık + alt başlık auto layout çerçevesinde. [ ] Sonra: kenar kısıtları (constraints), sarma (wrap), min/maks boyut, çerçeve gölgesi ve kenarlığı. [x] İçeriğe saran çerçeve büyürken üst kenar sabit (anc).
 4c. [x] **Uzay ortamı** (14 Ekim): artboard ayarında Stüdyo / Uzay; Uzay'da zemin yok, sahne iz topuyla her yöne döner, isteğe bağlı "Işık sahneyle döner"; "Serbest takla" ve "Yörünge turu" hazır hareketleri.
 4d. [x] **Sağ panel sadeleşti** (14 Ekim): katlanan bölümler ve özet satırları, kaydırıcılar yerine değer alanları, hazırlar menüde, boyut tek listede, seyrek ayarlar "Ayrıntılar" altında, cihazda Ekran üstte.
-5. [x] **Şablonlar** (18 Ekim): 12 şablon × açık/koyu (açılış, mağaza seti, sosyal, video; metinli, hareketli), Şablonlar sekmesinde galeri, karşılama kartı önerileri şablonlardan, kendi şablonun (tarayıcıda). [ ] Sonra: kartlarda kısa hareket önizlemesi (video şablonları), vurgu rengi seçimi, Google Play ölçülerinde mağaza setleri, kendi şablonunu yeniden adlandırma ve dışa/içe aktarma.
+5. [x] **Şablonlar** (18 Ekim): 12 şablon × açık/koyu (açılış, mağaza seti, sosyal, video; metinli, hareketli), Şablonlar sekmesinde galeri, karşılama kartı önerileri şablonlardan, kendi şablonun (tarayıcıda). [x] Kartlarda hareket önizlemesi, vurgu rengi, Google Play mağaza setleri, kendi şablonunu yeniden adlandırma ve dışa/içe aktarma, `?template=` (18 Ekim).
 
 ## Strateji
 

@@ -89,6 +89,15 @@ async function renderTab(){
     b.querySelector('img').src=BASE+(t.variants[variant]||t.variants.light).thumb;
     b.querySelector('.tpl-b').textContent=badge(t).join(' · ');b.querySelector('.tpl-n').textContent=t.name;
     b.addEventListener('click',()=>useFromTab(t));
+    // a moving template plays its short preview while pointed at or focused (not with reduced motion)
+    const pv=(t.variants[variant]||t.variants.light).preview;
+    if(pv&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      let v=null;
+      const on=()=>{if(v)return;v=document.createElement('video');v.muted=true;v.loop=true;v.playsInline=true;v.autoplay=true;v.src=BASE+pv;v.setAttribute('aria-hidden','true');
+        b.querySelector('.tpl-im').appendChild(v);v.play().catch(()=>{});};
+      const off=()=>{if(!v)return;v.pause();v.remove();v=null;};
+      b.addEventListener('pointerenter',on);b.addEventListener('pointerleave',off);b.addEventListener('focus',on);b.addEventListener('blur',off);
+    }
     grid.appendChild(b);});
 }
 async function useFromTab(t){

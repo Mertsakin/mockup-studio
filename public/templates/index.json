@@ -232,11 +232,13 @@
    "variants": {
     "light": {
      "file": "push-in-light.mockup.json",
-     "thumb": "push-in-light.jpg"
+     "thumb": "push-in-light.jpg",
+     "preview": "push-in-light.webm"
     },
     "dark": {
      "file": "push-in-dark.mockup.json",
-     "thumb": "push-in-dark.jpg"
+     "thumb": "push-in-dark.jpg",
+     "preview": "push-in-dark.webm"
     }
    }
   },
@@ -252,11 +254,13 @@
    "variants": {
     "light": {
      "file": "float-title-light.mockup.json",
-     "thumb": "float-title-light.jpg"
+     "thumb": "float-title-light.jpg",
+     "preview": "float-title-light.webm"
     },
     "dark": {
      "file": "float-title-dark.mockup.json",
-     "thumb": "float-title-dark.jpg"
+     "thumb": "float-title-dark.jpg",
+     "preview": "float-title-dark.webm"
     }
    }
   },
@@ -272,11 +276,13 @@
    "variants": {
     "light": {
      "file": "turntable-light.mockup.json",
-     "thumb": "turntable-light.jpg"
+     "thumb": "turntable-light.jpg",
+     "preview": "turntable-light.webm"
     },
     "dark": {
      "file": "turntable-dark.mockup.json",
-     "thumb": "turntable-dark.jpg"
+     "thumb": "turntable-dark.jpg",
+     "preview": "turntable-dark.webm"
     }
    }
   }
