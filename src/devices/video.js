@@ -80,8 +80,9 @@ function stopVideos(t){
 }
 
 /* ---------- loading */
-const VIDEO_TYPES=/^video\/(mp4|webm)$/i;
-const isVideoFile=f=>!!f&&(VIDEO_TYPES.test(f.type)||/\.(mp4|m4v|webm)$/i.test(f.name||''));
+// any video file goes to the video path (QuickTime .mov screen recordings are mostly H.264, which Chrome plays);
+// what the browser cannot decode fails in loadVideo with its own message
+const isVideoFile=f=>!!f&&(/^video\//i.test(f.type)||/\.(mp4|m4v|mov|webm)$/i.test(f.name||''));
 // a playable, muted, inline video element from a URL (blob / object URL); resolves when its first frame is decodable
 function loadVideo(src){
   return new Promise((res,rej)=>{

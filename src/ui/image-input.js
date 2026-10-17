@@ -14,7 +14,7 @@ import {$} from '../util.js';
 /* ---------- image & frame input ---------- */
 const drop=$('#drop'),fileEl=$('#file'),frameDrop=$('#frameDrop'),frameFile=$('#frameFile'),bgDrop=$('#bgDrop'),bgFile=$('#bgFile');
 function readImage(file,cb){
-  if(!file||!/^image\//.test(file.type)){toast('Bu dosya bir görsel değil. PNG, JPG ya da WebP seç.');return;}
+  if(!file||!/^image\//.test(file.type)){toast('Bu dosya bir görsel ya da video değil. PNG, JPG, WebP ya da MP4/WebM seç.');return;}
   const img=new Image();img.onload=()=>cb(img);img.onerror=()=>toast('Görsel açılamadı. Başka bir dosya dene.');img.src=URL.createObjectURL(file);
 }
 // a wide source turns a rotatable device landscape; the screen is redrawn either way
