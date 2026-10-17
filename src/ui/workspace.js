@@ -79,26 +79,43 @@ onBoards(renderBoards);
 onUi(()=>{renderBoards();stage.classList.toggle('hand',panning());stage.dataset.tool=ui.tool;});
 
 /* --- view */
-function setView(x,y,z){V.x=x;V.y=y;V.z=z;relayout();}
+// fitted: the boards the view was last fitted to; any other view change (pan, zoom) forgets it
+let fitted=null;
+function setView(x,y,z){V.x=x;V.y=y;V.z=z;fitted=null;relayout();}
 function zoomAt(f,cx,cy){const z=clamp(V.z*f,.02,4);setView(cx-(cx-V.x)*z/V.z,cy-(cy-V.y)*z/V.z,z);}
 function bounds(list){
   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
   list.forEach(b=>{const [w,h]=boardSize(b);x0=Math.min(x0,b.x);y0=Math.min(y0,b.y);x1=Math.max(x1,b.x+w);y1=Math.max(y1,b.y+h);});
   return {x0,y0,x1,y1};
 }
+// room kept free when fitting: the board's name (top), its size label and the dock (bottom)
+const FIT_TOP=36,FIT_BOTTOM=90;
 // fits boards into the stage, leaving room for labels (top) and the dock (bottom)
 function fitBoards(list){
   if(!list||!list.length)return;
-  const r=stage.getBoundingClientRect(),{x0,y0,x1,y1}=bounds(list||doc.boards),pad=40,top=36,bottom=72;
+  const r=stage.getBoundingClientRect(),{x0,y0,x1,y1}=bounds(list||doc.boards),pad=40,top=FIT_TOP,bottom=FIT_BOTTOM;
   const z=clamp(Math.min((r.width-2*pad)/(x1-x0),(r.height-top-bottom)/(y1-y0)),.02,1);
   setView((r.width-(x1-x0)*z)/2-x0*z,top+(r.height-top-bottom-(y1-y0)*z)/2-y0*z,z);
+  fitted=list.map(b=>b.id);
 }
 const fitAll=()=>fitBoards(doc.boards);
 const fitActive=()=>fitBoards(doc.boards.filter(b=>b.id===doc.active));
 $('#zoomIn').addEventListener('click',()=>{const r=stage.getBoundingClientRect();zoomAt(1.25,r.width/2,r.height/2);});
 $('#zoomOut').addEventListener('click',()=>{const r=stage.getBoundingClientRect();zoomAt(.8,r.width/2,r.height/2);});
 zoomVal.addEventListener('click',fitAll);
-new ResizeObserver(relayout).observe(stage);
+// the stage changes size with the window and when the timeline opens (Canlandır) or closes: a fitted view is
+// fitted again; otherwise the active board is refitted only if it no longer fits between the labels and the dock
+let stageSize='';
+new ResizeObserver(()=>{
+  const r=stage.getBoundingClientRect(),sz=Math.round(r.width)+'x'+Math.round(r.height);
+  if(sz===stageSize){relayout();return;}
+  stageSize=sz;
+  if(fitted){const ids=fitted,list=doc.boards.filter(b=>ids.includes(b.id));if(list.length){fitBoards(list);return;}}
+  const b=doc.boards.find(b=>b.id===doc.active);
+  if(b){const [w,h]=boardSize(b),x=V.x+b.x*V.z,y=V.y+b.y*V.z;
+    if(x<0||y<FIT_TOP||x+w*V.z>r.width||y+h*V.z>r.height-FIT_BOTTOM){fitActive();return;}}
+  relayout();
+}).observe(stage);
 
 /* --- panning: capture phase on the stage, so the 3D canvas never sees these presses */
 let pan=null;

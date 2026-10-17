@@ -36,7 +36,7 @@
     <div class="menu-wrap">
       <button class="btn primary" id="exportMenuBtn" type="button" aria-haspopup="dialog" aria-expanded="false">Dışa aktar</button>
       <div class="menu pop-export" id="exportMenu" role="dialog" aria-label="Dışa aktarım" hidden>
-        <div class="row"><label for="quality">Kalite</label><select id="quality"><option value="fast">Hızlı</option><option value="photo">Fotoğraf (yol izleme)</option></select></div>
+        <div class="row"><span class="lbl" id="qualityLbl">Kalite</span><div class="seg" data-key="quality" id="qualitySeg" role="group" aria-labelledby="qualityLbl"><button data-v="fast" title="Raster: birkaç saniye">Hızlı</button><button data-v="photo" title="Yol izleme: gerçek ışık ve gölge">Fotoğraf</button></div></div>
         <div class="row"><label for="format">Biçim</label><select id="format"><option value="png">PNG</option><option value="png24">PNG, saydamsız (mağaza)</option><option value="jpg">JPG</option></select></div>
         <div class="row" id="sizeRow"><label for="size">Genişlik</label><select id="size"><option value="1080">1080 px</option><option value="1920">1920 px</option><option value="3840">3840 px</option></select></div>
         <p class="hint-sm" id="exportNote"></p>
@@ -279,7 +279,7 @@
           <div class="row" data-for="phone tablet laptop monitor browser page"><span class="lbl">Cam yansıması</span><label class="switch"><input type="checkbox" id="glare" aria-label="Ekran camı yansıması"><span></span></label></div>
         </section>
         <section class="sec" data-sec="dev-model">
-          <h3 class="sh">Model</h3>
+          <h3 class="sh">Cihaz</h3>
           <div class="typeicons" id="typeGrid" role="group" aria-label="Cihaz tipi"></div>
           <div data-for="phone tablet laptop monitor page">
             <div class="swatches" id="swatches" role="group" aria-label="Renk"></div>

@@ -41,7 +41,6 @@ const ART=['customW','customH'].map(k=>{const el=$('#'+k);el.value=state[k];
   const read=fix=>{const v=Math.round(+el.value);if(!isFinite(v)||v<1)return;state[k]=Math.min(8192,Math.max(64,v));if(fix)el.value=state[k];if(state.ratio==='custom')layout();};
   el.addEventListener('input',()=>read(false));el.addEventListener('change',()=>read(true));return el;});
 const previewEl=$('#photoPreview');previewEl.checked=state.photoPreview;previewEl.addEventListener('change',()=>{state.photoPreview=previewEl.checked;req();});
-const qualityEl=$('#quality');qualityEl.value=state.quality;qualityEl.addEventListener('change',()=>{state.quality=qualityEl.value;syncUI();});
 // gradient angle (linear only)
 makeSlider($('#gradAngleSlot'),{id:'g-gang',k:'gradAngle',l:'Açı',min:0,max:360,step:1,reset:135,f:fDeg,after:bgCss},()=>state);
 onSyncUI(()=>{
@@ -50,7 +49,7 @@ onSyncUI(()=>{
   ['floor','wall','markers','selfShadow','showDome','worldLights'].forEach(k=>{const el=$('#'+k);if(el)el.checked=!!state[k];});
   // studio-only and space-only rows ([data-env], style.css)
   document.documentElement.dataset.env=state.env||'studio';
-  sizeEl.value=String(state.size);formatEl.value=state.format;qualityEl.value=state.quality;previewEl.checked=state.photoPreview;
+  sizeEl.value=String(state.size);formatEl.value=state.format;previewEl.checked=state.photoPreview;
   const custom=state.ratio==='custom';$('#artboard').hidden=!custom;$('#sizeRow').hidden=custom;
   ART.forEach(el=>{if(document.activeElement!==el)el.value=state[el.id];});
   $$('.seg[data-key]').forEach(seg=>{const v=String(state[seg.dataset.key]);seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));});

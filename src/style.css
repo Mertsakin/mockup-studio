@@ -360,7 +360,7 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .zv:hover{background:var(--field)}
 .hint{position:absolute;left:0;right:0;bottom:64px;margin:0;text-align:center;color:var(--muted)}
 
-.toast{position:fixed;left:50%;bottom:72px;transform:translate(-50%,8px);opacity:0;background:var(--ink);color:var(--panel);padding:8px 12px;border-radius:6px;
+.toast{position:fixed;left:50%;top:60px;transform:translate(-50%,-8px);opacity:0;background:var(--ink);color:var(--panel);padding:8px 12px;border-radius:6px;
   transition:opacity .2s,transform .2s;pointer-events:none;z-index:50;max-width:min(90vw,480px)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 

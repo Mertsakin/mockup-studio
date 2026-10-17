@@ -184,17 +184,26 @@ const newBoard=()=>{addBoard();setUi({kind:'board'});fitAll();};
 $('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEventListener('click',newBoard);$('#emptyAddBoard').addEventListener('click',newBoard);
 
 /* ---------- export popover ---------- */
+// rough wall-clock time of one export (CLAUDE.md "Hız", M1 Pro): the path tracer's 30 s budget + preparation +
+// OIDN, which grows with the pixel count and runs twice with depth of field
+function exportEta(w){
+  if(state.quality!=='photo')return 'birkaç saniye';
+  const oidn=w<=1080?4:w<=1920?7:25,s=33+oidn*(state.dof&&state.dof.on?2:1);
+  return s<55?'yaklaşık '+Math.round(s/5)*5+' sn':'yaklaşık '+(Math.round(s/30)/2).toLocaleString('tr-TR')+' dk';
+}
 function syncExport(){
   const b=activeBoard();if(!b){$('#exportNote').textContent='Artboard yok';$('#exportBoards').hidden=true;return;}
   const [w,h]=exportSize(state.size);  // the output file (the board on the canvas is always the largest size)
   // the live view draws at the screen's real pixel density: when the board is shown larger than the export, the
   // file looks softer than the canvas, so say so
   const s=boardScreen(),live=s?Math.round(s.w*Math.min(window.devicePixelRatio||1,2)):0;
-  $('#exportNote').textContent=w+' × '+h+' px'+(state.quality==='photo'?' · fotoğraf kalitesi yarım dakika kadar sürer':'')+
+  $('#exportNote').textContent=w+' × '+h+' px · '+exportEta(w)+
+    (state.quality==='photo'?'. Fotoğraf: gerçek ışık ve gölge (yol izleme)':'')+
     (live>w*1.15&&state.ratio!=='custom'&&state.size<3840?' · Ekranda şu an yaklaşık '+live+' px genişlikte görünüyor; aynı netlik için genişliği 3840 px seç.':'');
   $('#exportBoards').hidden=doc.boards.length<2;
 }
-['quality','size','format'].forEach(id=>$('#'+id).addEventListener('change',syncExport));
+['size','format'].forEach(id=>$('#'+id).addEventListener('change',syncExport));
+$('#qualitySeg').addEventListener('click',()=>setTimeout(syncExport,0));
 $('#export').addEventListener('click',()=>setTimeout(closeMenu,0));
 const slug=s=>{const m={ç:'c',ğ:'g',ı:'i',ö:'o',ş:'s',ü:'u',Ç:'c',Ğ:'g',İ:'i',Ö:'o',Ş:'s',Ü:'u'};return String(s).replace(/[çğıöşüÇĞİÖŞÜ]/g,c=>m[c]).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'artboard';};
 $('#exportBoards').addEventListener('click',async()=>{
