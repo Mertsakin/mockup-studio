@@ -1,0 +1,8 @@
+{
+  "name": "mockup-capture-service",
+  "private": true,
+  "type": "module",
+  "description": "Website capture service for the published studio (see docs/lansman.md).",
+  "scripts": {"start": "node server.mjs"},
+  "dependencies": {"playwright": "1.64.0"}
+}

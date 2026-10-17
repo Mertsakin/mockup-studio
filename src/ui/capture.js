@@ -33,23 +33,28 @@ const userError=m=>Object.assign(new Error(m),{user:true});
 /* One request to the dev server's endpoint: a full-page shot per target ({id, width, height, mobile, dpr}) ->
    {shots: {id: data URL}, finalUrl}. Shared by this panel and the welcome card (welcome.js), which sends one request
    per viewport to show each device's progress. */
+// the endpoint: the dev server's own, or in a build the capture service (services/capture/) when the build was given
+// its address (VITE_CAPTURE_URL, e.g. https://capture.example.com; docs/lansman.md). No address: no capture in the build.
+const SERVICE=(import.meta.env.VITE_CAPTURE_URL||'').replace(/\/+$/,'');
+const ENDPOINT=import.meta.env.DEV&&!SERVICE?'/api/capture':SERVICE+'/capture';
 // opts: {wait, dark, selector} (the capture options; defaults: none)
 async function captureShots(url,targets,opts={}){
   let r;
-  try{r=await fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({url,targets},opts))});}
+  try{r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({url,targets},opts))});}
   // no answer at all: the dev server has stopped (or the page was opened from the build / a file)
-  catch(e){throw userError('Yakalama sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.');}
+  catch(e){throw userError(SERVICE?'Yakalama servisine ulaşılamadı. Biraz sonra yeniden dene ya da ekran görüntüsü yükle.':'Yakalama sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.');}
   // a static deployment has no capture endpoint: 404, or an HTML fallback page instead of JSON
   if(r.status===404||!(r.headers.get('content-type')||'').includes('application/json'))throw userError('Web sitesinden yakalama yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).');
-  const res=await r.json();if(!r.ok)throw userError('Yakalanamadı: '+(res.error||r.statusText));
+  const res=await r.json();if(r.status===429)throw userError(res.error);if(!r.ok)throw userError('Yakalanamadı: '+(res.error||r.statusText));
   return res;
 }
 // the capture options in the Ekran section (editor settings, not part of the document)
 const captureOpts=()=>({wait:+$('#capWait').value||0,dark:$('#capDark').checked,selector:$('#capSel').value.trim()});
-// whether this page can capture at all: only the dev server has the endpoint (a build never asks, so no 404 is logged)
+// whether this page can capture at all: the dev server's endpoint or the configured service (a build without one never
+// asks, so no 404 is logged)
 let avail=null;
-const captureAvailable=()=>avail||(avail=!import.meta.env.DEV?Promise.resolve(false)
-  :fetch('/api/capture/ping').then(r=>r.ok&&(r.headers.get('content-type')||'').includes('application/json')).catch(()=>false));
+const captureAvailable=()=>avail||(avail=!import.meta.env.DEV&&!SERVICE?Promise.resolve(false)
+  :fetch(ENDPOINT+'/ping').then(r=>r.ok&&(r.headers.get('content-type')||'').includes('application/json')).catch(()=>false));
 const shotImage=src=>new Promise((ok,fail)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>fail(userError('Yakalanan görüntü açılamadı.'));img.src=src;});
 // puts a captured page on a device's screen, scrolled to the top (siteUrl: the address as the user typed it)
 function putShot(d,img,url,siteUrl){
@@ -85,6 +90,9 @@ async function capture(everyDevice){
 one.addEventListener('click',()=>capture(false));
 all.addEventListener('click',()=>capture(true));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();capture(false);}});
+// a build without a capture service shows no address field; the screen recording needs the dev server (record.mjs)
+if(!import.meta.env.DEV)$('#recordBtn').style.display='none';
+captureAvailable().then(ok=>{if(!ok)input.closest('.capture').style.display='none';});
 
 // the screen recording (record.js) opens the site at the same viewport
 export {captureAvailable,captureShots,shotImage,normalizeUrl,putShot,siteName,viewport};

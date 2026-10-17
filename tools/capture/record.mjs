@@ -14,7 +14,7 @@ import {chromium} from 'playwright';
 import {mkdirSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
-import {DPR_MAX,MAX_PX_W,mobileUA,reason} from './shared.mjs';
+import {DPR_MAX,MAX_PX_W,mobileUA,reason} from '../../services/capture/shared.mjs';
 
 const PROFILE=join(homedir(),'.mockup-studio','record-profile');
 const NAV_TIMEOUT=30000,SEND_LIMIT=12e6;  // bytes of frames allowed to queue on the socket before frames are dropped

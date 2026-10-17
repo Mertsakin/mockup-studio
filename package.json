@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "eslint .",
-    "render": "node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/default.js"
+    "render": "node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/default.js",
+    "build:site": "node tools/site/build.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

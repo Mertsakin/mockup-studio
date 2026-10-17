@@ -2,7 +2,7 @@
 
 Öncelik sırası, gerçekçilik ve iş akışı hızı birlikte düşünülerek verildi. Her maddeden sonra render düzeneğiyle görsel doğrulama yap.
 
-_Son güncelleme: 17 Ekim 2026._
+_Son güncelleme: 18 Ekim 2026._
 
 ## Mevcut durum
 
@@ -59,7 +59,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 **Önce kapatılması gerekenler:**
 
 - [ ] Üretimde yakalama servisi (1 ve 2 buna bağlı).
-- [ ] Düşük donanımda akıcı canlı görüntü; uzun fotoğraf render'ı için bulutta render seçeneği.
+- [x] Düşük donanımda akıcı canlı görüntü (18 Ekim): hareket sırasında uyarlamalı çözünürlük (`accumulation.js`), SwiftShader'da yörünge 2 kat hızlı. [ ] Uzun fotoğraf render'ı için bulutta render seçeneği (v2).
 - [x] İlk 60 saniye: boş tuval yerine "URL ver → hazır görsel" karşılama akışı (17 Ekim, `ui/welcome.js`, tasarım `wireframes/onboarding.html`): adres ya da ekran görüntüsü/video → 4 önerilen sahne (gerçek artboard, küçük resimli) → seçilenler artboard olur, tek geri al adımı; amaç çipleri (açılış görseli, sosyal 1:1 + 9:16, tanıtım videosu, mağaza seti formu); bir kez "Dışa aktar" ipucu. [ ] Sonra: son çalışmalar listesi (otomatik kayıt şu an tek belge), önerilerde şablon setinden sahneler, yayınlanmış sürümde adres yolu (yakalama servisi).
 - [x] Jenerik cihaz algısı: "Neden iPhone gibi değil?" sorusuna GLB içe aktarma ve "Kendi çerçeven" ile net cevap (GLB içe aktarma 17 Ekim'de eklendi; ekran malzemesini işaretleme sonra).
 
@@ -148,12 +148,12 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 
 - [x] Uzun ekran görüntüsü kaydırma (kaydırıcı, tekerlek, tümünü eşitle) ve kaydırma videosu ("Ekranı kaydır" hareketi).
 - [x] URL ile cihaz başına / tüm cihazlara yakalama; cihaz başına görüntü alanı ve `dpr`.
-- [ ] **Yayınlanmış sürüm için yakalama servisi** (altyapı kararı bekliyor; şu an yalnızca dev sunucusu).
+- [x] **Yayınlanmış sürüm için yakalama servisi** (18 Ekim, kod hazır): `services/capture/` (Cloud Run konteyneri, SSRF koruması, CORS, günlük sınır), stüdyo `VITE_CAPTURE_URL` ile bağlanır. [ ] Kurulum: hesaplar ve `docs/lansman.md` adımları (kullanıcıda). [ ] Sonra: Turnstile, ortak sınır deposu, ağ katmanında çıkış filtresi (DNS rebinding).
 - [x] Yakalama seçenekleri: bekleme süresi, belirli bir bölümden (CSS seçici) başlama, koyu tema (`prefers-color-scheme`) (18 Ekim).
 
 ## Yayın ve tanıtım
 
-- [x] Örnek açılış sayfası (`landing/`), görsel üretim betikleri (`tools/landing/`).
+- [x] Örnek açılış sayfası (`landing/`), görsel üretim betikleri (`tools/landing/`). [x] Hero videosu ürünün video dışa aktarımıyla (`tools/landing/video.mjs`), fiyat bölümü ücretsiz beta (18 Ekim). [x] Yayın derlemesi `npm run build:site` (açılış kökte, stüdyo `/studio/`, Cloudflare Pages başlıkları). [ ] Lansman kontrol listesi: `docs/lansman.md` §4 (boş bağlantılar, gizlilik notu, og:image, telefonda gömme ölçümü).
 - [ ] Yayınlama: barındırma, alan adı, yakalama servisiyle birlikte dağıtım.
 - [ ] Açılış sayfasına kısa ürün videosu (stüdyonun kendi MP4 çıktısıyla).
 
