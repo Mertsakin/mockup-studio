@@ -60,7 +60,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 
 - [ ] Üretimde yakalama servisi (1 ve 2 buna bağlı).
 - [ ] Düşük donanımda akıcı canlı görüntü; uzun fotoğraf render'ı için bulutta render seçeneği.
-- [ ] İlk 60 saniye: boş tuval yerine "URL ver → hazır görsel" karşılama akışı.
+- [x] İlk 60 saniye: boş tuval yerine "URL ver → hazır görsel" karşılama akışı (17 Ekim, `ui/welcome.js`, tasarım `wireframes/onboarding.html`): adres ya da ekran görüntüsü/video → 4 önerilen sahne (gerçek artboard, küçük resimli) → seçilenler artboard olur, tek geri al adımı; amaç çipleri (açılış görseli, sosyal 1:1 + 9:16, tanıtım videosu, mağaza seti formu); bir kez "Dışa aktar" ipucu. [ ] Sonra: son çalışmalar listesi (otomatik kayıt şu an tek belge), önerilerde şablon setinden sahneler, yayınlanmış sürümde adres yolu (yakalama servisi).
 - [x] Jenerik cihaz algısı: "Neden iPhone gibi değil?" sorusuna GLB içe aktarma ve "Kendi çerçeven" ile net cevap (GLB içe aktarma 17 Ekim'de eklendi; ekran malzemesini işaretleme sonra).
 
 ## Son eklenenler (9–17 Ekim 2026)

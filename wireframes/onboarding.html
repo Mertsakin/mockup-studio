@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Karşılama akışı</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Prototype of the first 60 seconds. Tokens copied from src/style.css. Images are the studio's own renders (landing/img). */
+:root{
+  --canvas:#efeff0;--panel:#ffffff;--field:#f4f4f5;--field-hover:#ebebed;--line:#e6e6e9;--line-strong:#d2d2d7;
+  --ink:#18181b;--ink-2:#52525b;--muted:#8a8a93;--accent:#0b68f5;--accent-hover:#0a5bd8;--accent-soft:#e8f0fe;--accent-ink:#0a56cc;--on-accent:#fff;
+  --ok:#30a46c;--key:#f5a524;--shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);--r:6px;--h:28px;color-scheme:light;
+  --board:linear-gradient(135deg,#dfe6ff,#f4dcea);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-hover:#5a9cff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
+  --ok:#3dd68c;--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-hover:#5a9cff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
+  --ok:#3dd68c;--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font:12px/16px Inter,system-ui,sans-serif;color:var(--ink);background:var(--canvas)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input{font:inherit;color:inherit}
+h1,h2,h3,p{margin:0}
+
+/* ---------- page chrome (not part of the prototype) */
+.page{max-width:1240px;margin:0 auto;padding:24px 16px 48px}
+.intro{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}
+.intro h1{font-size:20px;line-height:26px;font-weight:600}
+.intro p{color:var(--ink-2);margin-top:4px;max-width:70ch;line-height:18px}
+.theme{height:var(--h);padding:0 10px;border-radius:var(--r);background:var(--panel);box-shadow:0 0 0 1px var(--line);font-weight:500;flex:none}
+.alts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.alt{text-align:left;background:var(--panel);border-radius:10px;padding:12px 14px;box-shadow:0 0 0 1px var(--line)}
+.alt[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+.alt b{display:block;font-size:13px;font-weight:600;margin-bottom:2px}
+.alt span{color:var(--muted);line-height:15px}
+.steps{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+.step{height:26px;padding:0 10px;border-radius:13px;background:var(--panel);box-shadow:0 0 0 1px var(--line);color:var(--ink-2);font-weight:500}
+.step[aria-pressed="true"]{background:var(--ink);color:var(--panel);box-shadow:none}
+.steps .grow{flex:1}
+.nav{height:26px;padding:0 10px;border-radius:13px;background:var(--accent);color:var(--on-accent);font-weight:500}
+.note{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:12px 14px;margin-top:10px;color:var(--ink-2);line-height:18px}
+.note b{color:var(--ink);font-weight:600}
+
+/* ---------- mock editor */
+.app{position:relative;height:640px;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--line-strong),var(--shadow);display:grid;grid-template-rows:44px minmax(0,1fr);background:var(--canvas)}
+.top{display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+.logo{width:22px;height:22px;border-radius:5px;background:var(--ink);color:var(--panel);display:grid;place-items:center;font-weight:700;font-size:11px}
+.proj{font-weight:500}
+.modes{margin:0 auto;display:flex;background:var(--field);border-radius:6px;padding:2px}
+.modes span{padding:3px 12px;border-radius:4px;color:var(--muted);font-weight:500}
+.modes span:first-child{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.btn{height:var(--h);padding:0 12px;border-radius:var(--r);font-weight:500;background:var(--field);display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.lg{height:36px;padding:0 16px;font-size:13px}
+.btn.ghost{background:none;color:var(--ink-2)}
+.btn:disabled{opacity:.45;cursor:default}
+.body{display:grid;grid-template-columns:200px minmax(0,1fr) 240px;min-height:0}
+.body.bare{grid-template-columns:minmax(0,1fr)}
+.side{background:var(--panel);border-right:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.side.r{border-right:0;border-left:1px solid var(--line)}
+.sh{font-weight:600;padding:4px 2px}
+.node{padding:4px 8px;border-radius:5px;color:var(--ink-2)}
+.node.on{background:var(--accent-soft);color:var(--accent-ink)}
+.ph{height:24px;border-radius:5px;background:var(--field)}
+.ph.s{width:60%}
+.stage{position:relative;overflow:hidden;display:grid;place-items:center;padding:24px}
+.dock{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:2px;background:var(--panel);border-radius:10px;padding:4px;box-shadow:0 0 0 1px var(--line),var(--shadow)}
+.dock i{width:28px;height:28px;border-radius:6px;background:var(--field)}
+.dock i:first-child{background:var(--accent)}
+
+/* boards on the mock canvas */
+.board{position:relative;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.board img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.board .lab{position:absolute;left:0;top:-18px;color:var(--accent);font-size:11px}
+.boards{display:flex;gap:28px;align-items:flex-end}
+.boards .board{overflow:visible}
+.boards .board img{border-radius:2px}
+
+/* a generic phone drawn in CSS (placeholder screen) */
+.phone{width:120px;aspect-ratio:7.15/14.7;border-radius:20px;background:#1d1d20;padding:5px;box-shadow:0 18px 30px -12px rgba(0,0,0,.45)}
+.phone .scr{width:100%;height:100%;border-radius:15px;background:linear-gradient(160deg,#5a67f2,#9d63f0);display:grid;place-items:center;text-align:center;color:#fff;font-size:9px;line-height:12px;padding:8px;overflow:hidden}
+.phone .scr.shot{background:#fff center top/cover no-repeat;padding:0}
+
+/* ---------- welcome card (A) */
+.welcome{width:min(560px,100%);background:var(--panel);border-radius:14px;box-shadow:0 0 0 1px var(--line),var(--shadow);padding:28px}
+.welcome h2{font-size:20px;line-height:26px;font-weight:600;letter-spacing:-.01em}
+.welcome .sub{color:var(--ink-2);margin-top:4px;font-size:13px;line-height:18px}
+.url{display:flex;gap:8px;margin-top:18px}
+.url label{flex:1;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:8px;background:var(--field);box-shadow:inset 0 0 0 1px var(--line)}
+.url label:focus-within{box-shadow:inset 0 0 0 2px var(--accent)}
+.url input{flex:1;border:0;background:none;outline:none;font-size:13px;min-width:0}
+.ico{width:14px;height:14px;flex:none;color:var(--muted)}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);margin:14px 0}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.drop{border:1.5px dashed var(--line-strong);border-radius:10px;padding:16px;text-align:center;color:var(--ink-2);line-height:18px}
+.drop b{color:var(--accent-ink);font-weight:500}
+.drop small{display:block;color:var(--muted);font-size:11px}
+.goals{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.goals span{color:var(--muted);margin-right:2px;line-height:26px}
+.chip{height:26px;padding:0 10px;white-space:nowrap;border-radius:13px;background:var(--field);color:var(--ink-2);font-weight:500}
+.chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-ink);box-shadow:inset 0 0 0 1px var(--accent)}
+.recent{display:flex;align-items:center;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.recent .t{width:44px;height:32px;border-radius:4px;background:var(--board) center/contain no-repeat;box-shadow:0 0 0 1px var(--line)}
+.recent .grow{flex:1;color:var(--muted)}
+.link{color:var(--accent-ink);font-weight:500}
+
+/* progress (A2) */
+.prog{display:grid;gap:8px;margin-top:16px}
+.prow{display:grid;grid-template-columns:18px 90px minmax(0,1fr) 40px;gap:8px;align-items:center}
+.prow .bar{height:4px;border-radius:2px;background:var(--field);overflow:hidden}
+.prow .bar i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.prow .v{color:var(--muted);text-align:right}
+.dot{width:14px;height:14px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+.dot.ok{background:var(--ok);box-shadow:none;position:relative}
+.dot.ok::after{content:"";position:absolute;left:4px;top:2px;width:4px;height:7px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.dot.run{box-shadow:inset 0 0 0 2px var(--accent);border-top-color:transparent;animation:spin 1s linear infinite;background:conic-gradient(var(--accent) 0 25%,transparent 0)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.dot.run{animation:none}}
+
+/* results (A3, B3) */
+.results{width:100%;max-width:880px}
+.rhead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.rhead h3{font-size:15px;font-weight:600}
+.rhead p{color:var(--muted)}
+.rhead .grow{flex:1}
+.rgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.res{position:relative;text-align:left;background:var(--panel);border-radius:10px;padding:6px;box-shadow:0 0 0 1px var(--line)}
+.res[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+.res .im{aspect-ratio:4/5;border-radius:6px;background:var(--board) center/cover}
+.res b{display:block;font-weight:500;margin:6px 4px 0}
+.res small{display:block;color:var(--muted);margin:0 4px 2px}
+.res .ck{position:absolute;right:12px;top:12px;width:18px;height:18px;border-radius:50%;background:var(--panel);box-shadow:0 0 0 1.5px var(--line-strong)}
+.res[aria-pressed="true"] .ck{background:var(--accent);box-shadow:none}
+.res[aria-pressed="true"] .ck::after{content:"";position:absolute;left:6px;top:3px;width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+
+/* coach mark + toast (A4) */
+.coach{position:absolute;right:10px;top:52px;width:230px;background:var(--ink);color:var(--panel);border-radius:10px;padding:12px;box-shadow:var(--shadow);line-height:17px;z-index:3}
+.coach::before{content:"";position:absolute;right:34px;top:-6px;width:12px;height:12px;background:var(--ink);transform:rotate(45deg)}
+.coach b{display:block;margin-bottom:2px}
+.coach .row{display:flex;justify-content:space-between;margin-top:8px;opacity:.8}
+.toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:8px 12px;border-radius:6px;white-space:nowrap}
+
+/* goal cards (B1) */
+.goalgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;max-width:780px}
+.goal{text-align:left;background:var(--panel);border-radius:12px;padding:8px;box-shadow:0 0 0 1px var(--line)}
+.goal:hover{box-shadow:0 0 0 1px var(--line-strong),var(--shadow)}
+.goal .im{aspect-ratio:16/10;border-radius:8px;background:var(--board) center/cover}
+.goal b{display:block;font-size:13px;font-weight:600;margin:8px 4px 2px}
+.goal small{display:block;color:var(--muted);margin:0 4px 4px;line-height:15px}
+.goal.blank .im{background:var(--field);display:grid;place-items:center;color:var(--muted);font-size:22px}
+.bhead{text-align:center;margin-bottom:16px}
+.bhead h2{font-size:20px;line-height:26px;font-weight:600}
+.bhead p{color:var(--ink-2);margin-top:4px}
+.bcol{display:flex;flex-direction:column;align-items:center;width:100%}
+
+/* store set inputs (B2) */
+.form{width:min(620px,100%);background:var(--panel);border-radius:14px;box-shadow:0 0 0 1px var(--line),var(--shadow);padding:22px;display:grid;gap:14px}
+.form h2{font-size:16px;font-weight:600}
+.frow{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;align-items:start}
+.frow>span{line-height:var(--h)}
+.frow>span{color:var(--muted)}
+.seg{display:inline-grid;grid-auto-flow:column;grid-auto-columns:minmax(min-content,1fr);background:var(--field);border-radius:5px;padding:2px;height:var(--h)}
+.seg button{border-radius:4px;color:var(--muted);font-weight:500;padding:0 8px}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.shots{display:flex;gap:6px}
+.shots .s{width:44px;aspect-ratio:9/19.5;border-radius:6px;background:linear-gradient(160deg,#5a67f2,#9d63f0);position:relative}
+.shots .s:nth-child(2){background:linear-gradient(160deg,#f2795a,#f0b463)}
+.shots .s:nth-child(3){background:linear-gradient(160deg,#30a46c,#7ad3a0)}
+.shots .s:nth-child(4){background:linear-gradient(160deg,#3e63dd,#63c3f0)}
+.shots .s.add{background:var(--field);box-shadow:inset 0 0 0 1.5px var(--line-strong);display:grid;place-items:center;color:var(--muted);font-size:16px}
+.lines{display:grid;gap:4px}
+.lines div{height:var(--h);border-radius:var(--r);background:var(--field);display:flex;align-items:center;padding:0 10px;color:var(--ink-2)}
+.lines div em{color:var(--muted);font-style:normal;margin-left:6px}
+
+/* store set preview (B3) */
+.strip{display:flex;gap:10px;justify-content:center}
+.ss{width:120px;aspect-ratio:1290/2796;border-radius:4px;background:linear-gradient(180deg,#eef1ff,#dfe6ff);position:relative;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.ss h4{position:absolute;left:8px;right:8px;top:10px;margin:0;font-size:10px;line-height:12px;font-weight:700;color:#18181b;text-align:center}
+.ss .phone{position:absolute;left:50%;top:40px;transform:translateX(-50%);width:84px;border-radius:14px;padding:4px}
+.ss .phone .scr{border-radius:10px}
+.ss:nth-child(2) .scr{background:linear-gradient(160deg,#f2795a,#f0b463)}
+.ss:nth-child(3) .scr{background:linear-gradient(160deg,#30a46c,#7ad3a0)}
+.ss:nth-child(4) .scr{background:linear-gradient(160deg,#3e63dd,#63c3f0)}
+.ss:nth-child(2) .phone{transform:translateX(-50%) rotate(-8deg)}
+.ss:nth-child(4) .phone{transform:translateX(-50%) rotate(8deg)}
+
+/* in-canvas bar (C) */
+.cbar{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:var(--panel);border-radius:12px;padding:6px;box-shadow:0 0 0 1px var(--line),var(--shadow);z-index:2;max-width:calc(100% - 24px)}
+.cbar label{display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;background:var(--field);width:200px}
+.cbar input{flex:1;border:0;background:none;outline:none;min-width:0}
+.cbar .vr{width:1px;height:20px;background:var(--line);margin:0 2px}
+.cbar .chip{height:30px;border-radius:8px}
+.hintbubble{position:absolute;left:calc(50% + 90px);top:262px;background:var(--panel);border-radius:8px;padding:8px 10px;box-shadow:0 0 0 1px var(--line),var(--shadow);color:var(--ink-2);width:180px;line-height:16px}
+
+/* comparison */
+table{width:100%;border-collapse:collapse;margin-top:10px;background:var(--panel);border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top;line-height:16px}
+th{font-weight:600;color:var(--ink-2);background:var(--field)}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--muted);width:150px}
+
+@media (max-width:900px){
+  .alts{grid-template-columns:1fr}
+  .app{height:auto;min-height:640px}
+  .body{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .rgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .goalgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cbar{flex-wrap:wrap;justify-content:center}
+  .cbar label{width:100%}
+  .strip{flex-wrap:wrap}
+  .hintbubble{display:none}
+  table{display:block;overflow-x:auto}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="intro">
+    <div>
+      <h1>Karşılama akışı · ilk 60 saniye</h1>
+      <p>Üç alternatif. Üstten birini seç, adımlar arasında gez; alanlar ve kartlar tıklanabilir. Görseller stüdyonun kendi render'ları. Amaç: boş belgeyle açan kişi bir dakika içinde kendi ekranıyla fotoğraf kalitesinde bir sonuç görsün.</p>
+    </div>
+    <button class="theme" id="theme" type="button">Koyu tema</button>
+  </div>
+
+  <div class="alts" role="group" aria-label="Alternatif">
+    <button class="alt" type="button" data-alt="A" aria-pressed="true"><b>A · Tek giriş alanı</b><span>Ortada URL ya da ekran görüntüsü; sistem 4 hazır kompozisyon önerir, istediklerin artboard olur.</span></button>
+    <button class="alt" type="button" data-alt="B" aria-pressed="false"><b>B · Önce amaç</b><span>"Ne hazırlıyorsun?" kartları (açılış görseli, mağaza seti, sosyal, video); her amaç kendi kısa formunu açar.</span></button>
+    <button class="alt" type="button" data-alt="C" aria-pressed="false"><b>C · Doğrudan editör</b><span>Hazır bir artboard ve tuvalin üstünde bir komut çubuğu; ekran ve kompozisyon yerinde değişir.</span></button>
+  </div>
+
+  <div class="steps" id="steps" role="group" aria-label="Adım"></div>
+
+  <div class="app" aria-label="Stüdyo taslağı">
+    <div class="top">
+      <span class="logo">M</span><span class="proj">Mockup stüdyosu</span>
+      <div class="modes" aria-hidden="true"><span>Tasarla</span><span>Canlandır</span></div>
+      <button class="btn primary" type="button" id="exportBtn">Dışa aktar</button>
+    </div>
+    <div class="body" id="body"></div>
+    <div class="coach" id="coach" role="note" hidden><b>Hazır olduğunda: Dışa aktar</b>Kaliteyi <b style="display:inline">Fotoğraf</b> seç: gerçek ışık ve gölge, yaklaşık 35 sn.<div class="row"><span>1 / 2</span><button type="button" style="color:inherit;font-weight:600" onclick="this.closest('.coach').hidden=true">Tamam</button></div></div>
+  </div>
+
+  <div class="note" id="note"></div>
+
+  <table>
+    <thead><tr><th></th><th>A · Tek giriş alanı</th><th>B · Önce amaç</th><th>C · Doğrudan editör</th></tr></thead>
+    <tbody>
+      <tr><td>İlk sonuca kadar</td><td>1 alan + 1 tık (URL ya da dosya), ~10 sn yakalama</td><td>Amaç + kısa form; mağaza setinde 3–8 ekran görüntüsü</td><td>0 tık: artboard hazır, ekran boş; ekranı verince sonuç</td></tr>
+      <tr><td>Gücü</td><td>Vaadi en net anlatan: "siteni ver". Birden çok sonucu yan yana gösterir, fotoğraf kalitesi hemen görünür</td><td>Mağaza seti ve video gibi çok adımlı işleri baştan doğru kurar; şablon setiyle doğal eşleşir</td><td>En az engel; geri dönen kullanıcı için ideal; editörü hemen öğretir</td></tr>
+      <tr><td>Zayıfı</td><td>Mağaza seti gibi işler ikinci adımda kalır</td><td>Bir ekran fazla; "sadece bir mockup" isteyene ağır gelir</td><td>Ürünün en iyi sonucunu göstermez (tek varsayılan sahne); URL yakalama gözden kaçabilir</td></tr>
+      <tr><td>Yakalama servisi yokken</td><td>Bırakma alanı ana yol olur, URL alanı "yakında" ya da gizli</td><td>Formlarda yalnızca dosya</td><td>Çubukta yalnızca "ekran görüntüsü bırak"</td></tr>
+      <tr><td>Gereken iş</td><td>Karşılama kartı, toplu yakalama, 4 kompozisyonun küçük resimleri (mevcut COMPS + render), seçileni artboard yapma</td><td>A'nın hepsi + amaç başına form; mağaza seti üreticisi zaten var</td><td>Komut çubuğu, yerinde kompozisyon değişimi; en az iş</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>Önerim: A, B'nin amaçlarıyla birlikte.</b> Giriş alanının altındaki "Ne hazırlıyorsun?" çipleri (Açılış görseli · Mağaza seti · Sosyal gönderi · Tanıtım videosu) B'nin yönlendirmesini ekran eklemeden verir: varsayılan "Açılış görseli" 4 kompozisyon önerir, "Mağaza seti" mevcut üreticinin formunu açar. Geri dönen kullanıcı son çalışmasına iner (bugünkü gibi); karşılama kartı yalnızca boş belgede ve "Yeni proje"de çıkar. C'nin komut çubuğu sonra, boş bir artboard'da "ekranı ver" ipucu olarak eklenebilir.</div>
+</div>
+
+<script>
+const IMG='../landing/img/',SCR='../tools/landing/src/',SCREENS=['app-light','app-dark','app-gallery','app-light'];
+const $=s=>document.querySelector(s);
+const link='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>';
+const side=()=>'<div class="side"><div class="sh">Katmanlar</div><div class="node on">Artboard 1</div><div class="node">Telefon</div><div class="node">Oktabox</div></div>';
+const sideR=()=>'<div class="side r"><div class="sh">Artboard 1</div><div class="ph"></div><div class="ph s"></div><div class="sh" style="margin-top:8px">Kamera</div><div class="ph"></div><div class="ph"></div><div class="ph s"></div><div class="sh" style="margin-top:8px">Arka plan</div><div class="ph"></div></div>';
+const dock='<div class="dock" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>';
+const url='https://siten.com';
+
+const RESULTS=[
+  {k:'phone',n:'Tek telefon',d:'Eğik, yumuşak gölge',img:'phone-tilt.png'},
+  {k:'duo',n:'Masa başı',d:'Dizüstü ve monitör birlikte',img:'desk.png'},
+  {k:'fan',n:'Telefon yelpazesi',d:'Üç ekran, kayan sayfa',img:'hero-fan.png'},
+  {k:'tab',n:'Tablet + telefon',d:'Duyarlı tasarımı göster',img:'tablet-phone.png'},
+];
+let picked=new Set(['phone','duo']);
+let goal='land';
+
+const FLOWS={
+  A:{steps:['Boş belge','Yakalanıyor','Öneriler','Editör'],
+    render:[
+      ()=>`<div class="body bare"><div class="stage">${welcome()}</div></div>`,
+      ()=>`<div class="body bare"><div class="stage">${welcome(true)}</div></div>`,
+      ()=>`<div class="body bare"><div class="stage">${results()}</div></div>`,
+      ()=>editor(),
+    ],
+    notes:[
+      '<b>Boş belge.</b> Panel yok, tuvalin ortasında tek kart. URL yapıştırmak ya da dosya bırakmak aynı sonuca gider; çipler amacı seçer (varsayılan: açılış görseli). Altta son çalışmalar ve "boş artboard ile başla". Yakalama servisi yokken URL satırı gizlenir, bırakma alanı ana yol olur.',
+      '<b>Yakalanıyor.</b> Her cihaz kendi görüntü alanında yakalanır (telefon 390, tablet 820, dizüstü 1440 px; bugünkü "Tüm cihazlara" mantığı). İlerleme cihaz başına; biten önizleme hemen öneri kartına düşer, kullanıcı beklerken sonuç belirmeye başlar.',
+      '<b>Öneriler.</b> Mevcut hazır kompozisyonlardan (COMPS) dördü, kullanıcının ekranlarıyla, hızlı kalitede render edilmiş küçük resimler. Birden fazla seçilebilir; her biri ayrı artboard olur. Kartlara tıklayarak seçimi değiştir.',
+      '<b>Editör.</b> Seçilenler artboard olarak eklenir, ilki aktif ve kadraja sığdırılmış. Tek seferlik ipucu "Dışa aktar"ı ve fotoğraf kalitesini gösterir: ürünü ayıran şey ilk dışa aktarımda görünsün.',
+    ]},
+  B:{steps:['Amaç seç','İçerik','Önizleme','Editör'],
+    render:[
+      ()=>`<div class="body bare"><div class="stage"><div class="bcol"><div class="bhead"><h2>Ne hazırlıyorsun?</h2><p>Seç, sana uygun düzeni kuralım. Sonra her şeyi değiştirebilirsin.</p></div><div class="goalgrid">
+        ${goalCard('land','Açılış görseli','Sitenin hero görseli, 16:9 ya da 4:5','desk.png')}
+        ${goalCard('store','Mağaza seti','App Store ve Google Play, 3–8 ekran','phone-dramatic.png')}
+        ${goalCard('social','Sosyal gönderi','1:1 ve 9:16, metinli','phone-tilt.png')}
+        ${goalCard('video','Tanıtım videosu','Kayan sayfa ya da ekran kaydı, MP4','hero-fan.png')}
+        ${goalCard('dev','Cihaz karşılaştırma','Telefon, tablet, dizüstü yan yana','tablet-phone.png')}
+        <button class="goal blank" type="button" data-goal="blank"><div class="im">+</div><b>Boş başla</b><small>Artboard ve cihazları kendin kur</small></button>
+      </div></div></div></div>`,
+      ()=>`<div class="body bare"><div class="stage"><div class="form">
+        <h2>Mağaza seti</h2>
+        <div class="frow"><span>Mağaza</span><div class="seg"><button aria-pressed="true">App Store</button><button aria-pressed="false">Google Play</button><button aria-pressed="false">İkisi</button></div></div>
+        <div class="frow"><span>Ekranlar</span><div class="shots">${SCREENS.map(n=>`<div class="s" style="background:center top/cover url(${SCR+n}.png)"></div>`).join('')}<div class="s add">+</div></div></div>
+        <div class="frow"><span>Başlıklar</span><div class="lines"><div>Planını saniyeler içinde kur<em>| Tek dokunuşla</em></div><div>Ekibinle birlikte çalış</div><div>Her yerden eriş</div><div>Verilerin güvende</div></div></div>
+        <div class="frow"><span>Düzen</span><div class="seg"><button aria-pressed="false">Klasik</button><button aria-pressed="true">Dönüşümlü</button><button aria-pressed="false">Panorama</button></div></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn ghost" type="button">Geri</button><button class="btn primary lg" type="button" data-next>Seti oluştur</button></div>
+      </div></div></div>`,
+      ()=>`<div class="body bare"><div class="stage"><div class="results"><div class="rhead"><div><h3>App Store seti · 4 ekran</h3><p>6,9" iPhone · 1290 × 2796 · Dönüşümlü</p></div><span class="grow"></span><button class="btn" type="button">Düzeni değiştir</button><button class="btn primary" type="button" data-next>Editörde aç</button></div>
+        <div class="strip">${['Planını saniyeler içinde kur','Ekibinle birlikte çalış','Her yerden eriş','Verilerin güvende'].map((t,i)=>`<div class="ss"><h4>${t}</h4><div class="phone"><div class="scr shot" style="background-image:url(${SCR+SCREENS[i]}.png)"></div></div></div>`).join('')}</div></div></div></div>`,
+      ()=>editor(true),
+    ],
+    notes:[
+      '<b>Amaç seç.</b> Altı kart; her biri mevcut bir yeteneğe bağlanır (hazır kompozisyonlar, mağaza seti üreticisi, Canlandır + kaydırma/ekran kaydı). Kartlardaki görseller şablon setinin ilk parçaları olur. Bir karta tıkla.',
+      '<b>İçerik.</b> Mağaza seti için bugünkü üreticinin formu, sadeleşmiş hâli: mağaza, ekran görüntüleri (dosya adına göre sıralı), başlık | alt başlık satırları, düzen. Açılış görseli seçilseydi burada A\'daki URL/bırakma alanı olurdu.',
+      '<b>Önizleme.</b> Set tek satırda; onaylanınca artboard\'lar oluşur. A\'nın öneri adımının mağaza seti karşılığı.',
+      '<b>Editör.</b> Set artboard\'ları tuvalde; mağaza seti saydamsız PNG ile dışa aktarılır (bugünkü gibi).',
+    ]},
+  C:{steps:['Açılış','Ekran verildi','Kompozisyon değişti'],
+    render:[
+      ()=>editorC(0),
+      ()=>editorC(1),
+      ()=>editorC(2),
+    ],
+    notes:[
+      '<b>Açılış.</b> Boş belge yerine hazır bir artboard: tek telefon, boş ekran. Tuvalin üstündeki çubuk iki şey sorar: adres ya da ekran görüntüsü. Paneller açık; kullanıcı editörü baştan görür.',
+      '<b>Ekran verildi.</b> Yakalanan sayfa telefonun ekranına yerleşir (kaydırılabilir uzun ekran görüntüsü). Çubuktaki kompozisyon çipleri hâlâ görünür.',
+      '<b>Kompozisyon değişti.</b> Bir çipe tıklayınca aynı artboard yerinde değişir (bugünkü "Hazır kompozisyonlar" listesi tuvale taşınmış hâli). Çubuk ilk dışa aktarımdan sonra kaybolur.',
+    ]},
+};
+
+function welcome(busy){
+  const goals=[['land','Açılış görseli'],['store','Mağaza seti'],['social','Sosyal gönderi'],['video','Tanıtım videosu']];
+  return `<div class="welcome">
+    <h2>Ekranını fotoğraf kalitesinde bir mockup'a çevir</h2>
+    <p class="sub">Sitenin adresini ver ya da ekran görüntüsü bırak; telefon, tablet ve dizüstünde hazır sahneler kuralım.</p>
+    <div class="url"><label>${link}<input type="text" aria-label="Site adresi" placeholder="https://siten.com" value="${busy?url:''}" ${busy?'readonly':''}></label><button class="btn primary lg" type="button" ${busy?'disabled':'data-next'}>${busy?'Yakalanıyor…':'Mockup oluştur'}</button></div>
+    ${busy?`<div class="prog">
+      <div class="prow"><span class="dot ok"></span><span>Telefon</span><span class="bar"><i style="width:100%"></i></span><span class="v">390 px</span></div>
+      <div class="prow"><span class="dot run"></span><span>Dizüstü</span><span class="bar"><i style="width:62%"></i></span><span class="v">1440 px</span></div>
+      <div class="prow"><span class="dot"></span><span>Tablet</span><span class="bar"><i style="width:0"></i></span><span class="v">820 px</span></div>
+    </div><p style="color:var(--muted);margin-top:12px">Telefon hazır, öneriler hazırlanıyor… <button class="link" type="button" data-next>Önerilere geç</button></p>`
+    :`<div class="or">ya da</div>
+    <div class="drop" role="button" tabindex="0" data-next><b>Ekran görüntüsü ya da video seç</b> veya buraya sürükle<small>PNG, JPG, WebP, MP4 · birden fazla dosya olabilir</small></div>
+    <div class="goals"><span>Ne hazırlıyorsun?</span>${goals.map(([k,n])=>`<button class="chip" type="button" data-goal="${k}" aria-pressed="${goal===k}">${n}</button>`).join('')}</div>
+    <div class="recent"><span class="t" style="background-image:url(${IMG}phone-tilt.png)"></span><span class="t" style="background-image:url(${IMG}laptop-silver.png)"></span><span class="grow">Son çalışmalar</span><button class="link" type="button">Boş artboard ile başla</button></div>`}
+  </div>`;
+}
+function results(){
+  return `<div class="results"><div class="rhead"><div><h3>Sitenden 4 sahne</h3><p>siten.com · istediğin kadarını seç, her biri ayrı artboard olur</p></div><span class="grow"></span><button class="btn ghost" type="button">Başka adres</button><button class="btn primary" type="button" data-next id="addSel">${addLabel()}</button></div>
+    <div class="rgrid">${RESULTS.map(r=>`<button class="res" type="button" data-pick="${r.k}" aria-pressed="${picked.has(r.k)}"><div class="im" style="background-image:url(${IMG+r.img})"></div><span class="ck"></span><b>${r.n}</b><small>${r.d}</small></button>`).join('')}</div></div>`;
+}
+const addLabel=()=>picked.size?`${picked.size} artboard ekle`:'Bir sahne seç';
+function editor(store){
+  const list=store?null:RESULTS.filter(r=>picked.has(r.k));
+  const boards=store
+    ?`<div class="boards">${['Planını saniyeler içinde kur','Ekibinle birlikte çalış','Her yerden eriş','Verilerin güvende'].map((t,i)=>`<div class="ss" style="width:96px"><h4>${t}</h4><div class="phone"><div class="scr shot" style="background-image:url(${SCR+SCREENS[i]}.png)"></div></div></div>`).join('')}</div>`
+    :`<div class="boards">${(list.length?list:RESULTS.slice(0,1)).map((r,i)=>`<div class="board" style="width:${i?150:220}px;aspect-ratio:4/5"><span class="lab">${r.n}</span><img src="${IMG+r.img}" alt=""></div>`).join('')}</div>`;
+  return `<div class="body">${side()}<div class="stage">${boards}${dock}
+    <div class="toast">${store?'4 artboard oluşturuldu':(list.length||1)+' artboard eklendi'}</div>
+  </div>${sideR()}</div>`;
+}
+function editorC(s){
+  const comps=['Tek telefon','Masa başı','Yelpaze','Tablet + telefon'];
+  const on=s===2?1:0;
+  const art=s===2
+    ?`<div class="board" style="width:300px;aspect-ratio:4/5"><span class="lab">Artboard 1</span><img src="${IMG}desk.png" alt=""></div>`
+    :`<div class="board" style="width:300px;aspect-ratio:4/5;display:grid;place-items:center"><span class="lab">Artboard 1</span><div class="phone" style="width:110px">${s?`<div class="scr shot" style="background-image:url(${SCR}app-light.png)"></div>`:'<div class="scr">Ekranı ver<br><span style="opacity:.7">adres ya da görsel</span></div>'}</div></div>`;
+  return `<div class="body">${side()}<div class="stage">
+    <div class="cbar"><label>${link}<input type="text" aria-label="Site adresi" placeholder="Adres yapıştır" value="${s?url:''}"></label><button class="btn" type="button" ${s?'':'data-next'}>${s?'Yeniden yakala':'Ekran görüntüsü…'}</button><span class="vr"></span>${comps.map((c,i)=>`<button class="chip" type="button" ${s===1&&i===1?'data-next':''} aria-pressed="${i===on}">${c}</button>`).join('')}</div>
+    ${art}${dock}
+    ${s===1?'<div class="hintbubble">Kompozisyonu çubuktan değiştir; ekranın her sahnede aynı kalır.</div>':''}
+  </div>${sideR()}</div>`;
+}
+const goalCard=(k,n,d,img)=>`<button class="goal" type="button" data-goal="${k}" data-next><div class="im" style="background-image:url(${IMG+img})"></div><b>${n}</b><small>${d}</small></button>`;
+
+let alt='A',step=0;
+function draw(){
+  const F=FLOWS[alt];
+  $('#steps').innerHTML=F.steps.map((n,i)=>`<button class="step" type="button" data-step="${i}" aria-pressed="${i===step}">${i+1}. ${n}</button>`).join('')+
+    `<span class="grow"></span>${step<F.steps.length-1?'<button class="nav" type="button" data-next>Sonraki adım</button>':'<button class="nav" type="button" data-step="0">Baştan</button>'}`;
+  $('#body').outerHTML=F.render[step]().replace('<div class="body','<div id="body" class="body');
+  $('#note').innerHTML=F.notes[step];
+  $('#coach').hidden=!(alt!=='C'&&step===F.steps.length-1);
+  document.querySelectorAll('[data-alt]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.alt===alt)));
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,[role=button]');if(!t)return;
+  if(t.dataset.alt){alt=t.dataset.alt;step=0;draw();return;}
+  if(t.dataset.step){step=+t.dataset.step;draw();return;}
+  if(t.dataset.pick){const k=t.dataset.pick;picked.has(k)?picked.delete(k):picked.add(k);t.setAttribute('aria-pressed',String(picked.has(k)));$('#addSel').textContent=addLabel();return;}
+  if(t.dataset.goal&&!t.hasAttribute('data-next')){goal=t.dataset.goal;document.querySelectorAll('.chip[data-goal]').forEach(c=>c.setAttribute('aria-pressed',String(c.dataset.goal===goal)));return;}
+  if(t.hasAttribute('data-next')){if(t.id==='addSel'&&!picked.size)return;step=Math.min(step+1,FLOWS[alt].steps.length-1);draw();}
+});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.drop')){e.preventDefault();e.target.click();}
+  if(e.key==='Enter'&&e.target.matches('.welcome input')&&e.target.value){step=1;draw();}});
+$('#theme').addEventListener('click',()=>{const r=document.documentElement,d=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);r.dataset.theme=d?'light':'dark';$('#theme').textContent=d?'Koyu tema':'Açık tema';});
+if(matchMedia('(prefers-color-scheme: dark)').matches)$('#theme').textContent='Açık tema';
+draw();
+</script>
+</body>
+</html>
