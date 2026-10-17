@@ -4,6 +4,8 @@ import {followVideos,playVideos,setVideoClock,showFrames,videoDevices} from '../
 import {fromProjectFile,restore} from '../io/project.js';
 import {setFirstSamples,startLoop} from '../render/accumulation.js';
 import {gradCss} from '../render/backgrounds.js';
+import {paintItems} from '../render/items-paint.js';
+import {addFontFace,fontsReady,onFont} from '../render/text.js';
 import {canvas,renderer,req,setCrop} from '../render/renderer.js';
 import {applyTransform,camDist} from '../render/transform.js';
 import {designT,valuesAt} from '../state/anim.js';
@@ -39,24 +41,46 @@ function size(){
   const Ae=w/h,Ab=boardAspect();
   state.scene.zoom=zoom;view.aspect=Ab;const dB=camDist();view.aspect=Ae;const dE=camDist();
   fitK=dE/(dB*(Ae<Ab?Ab/Ae:1));
-  state.scene.zoom=zoom*fitK;applyTransform();
+  state.scene.zoom=zoom*fitK;applyTransform();drawItems();
 }
 function paintBg(){
   const el=document.getElementById('bg');
   el.style.background=bgMode==='transparent'?'':state.bg==='solid'?state.solid:state.bg==='gradient'?gradCss(state):
     state.bg==='image'&&state.bgImg?'center/cover no-repeat url("'+state.bgImg.src+'")':'';
 }
-// the scene at time t of the artboard's animation (camera, devices, lights; 2D items are not in the player yet)
+/* The 2D items (images, text, frames) on two canvases, behind and in front of the 3D view, inside the artboard's
+   rectangle (the designed area, centred in the embed as the 3D framing keeps it; render/items-paint.js, the same
+   painting as the studio's export). They stay on the page plane: the camera moving does not move them. t: the
+   time for text effects and item tracks (null: as designed). */
+const back=document.getElementById('itemsBack'),front=document.getElementById('itemsFront');
+let itemT=null;
+function boardRect(){
+  const w=innerWidth,h=innerHeight,Ab=boardAspect();
+  return w/h>=Ab?{x:(w-h*Ab)/2,y:0,w:h*Ab,h}:{x:0,y:(h-w/Ab)/2,w,h:w/Ab};
+}
+function drawItems(){
+  const has=state.items.length>0;back.hidden=front.hidden=!has;if(!has)return;
+  const pr=Math.min(devicePixelRatio||1,2),r=boardRect();
+  for(const [c,f] of [[back,false],[front,true]]){
+    const W=Math.round(innerWidth*pr),H=Math.round(innerHeight*pr);if(c.width!==W||c.height!==H){c.width=W;c.height=H;}
+    const g=c.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);
+    g.setTransform(pr,0,0,pr,r.x*pr,r.y*pr);paintItems(g,r.w,r.h,f,itemT);
+  }
+}
+onFont(drawItems);
+
+// the scene at time t of the artboard's animation (camera, devices, lights, 2D items)
 function at(t){
-  const all=[state.scene,...state.devices,...state.lights];
+  const all=[state.scene,...state.devices,...state.lights,...state.items];
   for(const o of all){
     if(!o.tracks)continue;const v=valuesAt(o,t);
     for(const k in v){if(k==='scroll'){if(Math.abs(o.scroll-v[k])>1e-6)scrollScreen(o,v[k]);}else o[k]=v[k];}
   }
   if('zoom' in valuesAt(state.scene,t)){zoom=state.scene.zoom;state.scene.zoom=zoom*fitK;}
+  if(state.items.length){itemT=t;drawItems();}
   if(base){base.ry=state.scene.ry;base.rx=state.scene.rx;}
 }
-const hasAnim=()=>[state.scene,...state.devices,...state.lights].some(o=>o.tracks&&Object.keys(o.tracks).length);
+const hasAnim=()=>[state.scene,...state.devices,...state.lights,...state.items].some(o=>o.tracks&&Object.keys(o.tracks).length)||state.items.some(it=>it.fx&&(it.fx.in||it.fx.out||it.fx.loop));
 
 /* Samples in a moving frame: one sample shows the PCSS shadows' pattern while the scene never stops (mouse, scroll,
    loop), so a moving frame takes several, as many as fit the frame time (measured, 1-4). */
@@ -119,9 +143,15 @@ async function load(){
   const src=q.get('src');if(!src)throw new Error('src yok');
   const doc=await fromProjectFile(await (await fetch(src)).blob());
   const b=doc.boards.find(x=>x.name===q.get('board'))||doc.boards[+q.get('board')-1]||doc.boards.find(x=>x.id===doc.active)||doc.boards[0];
+  (doc.fonts||[]).forEach(f=>addFontFace(f.family,f.data));  // fonts uploaded in the studio travel with the file
   restore(b.snap);
   state.selected=null;state.selLight=null;state.showDome=false;state.markers=false;
   zoom=state.scene.zoom;paintBg();size();
+  if(state.items.length){
+    // image items may still be decoding: draw again as each arrives
+    state.items.forEach(it=>{if(it.img&&!it.img.complete)it.img.addEventListener('load',drawItems,{once:true});});
+    await fontsReady(state.items);drawItems();
+  }
   base={ry:state.scene.ry,rx:state.scene.rx};
   t0=performance.now()/1000;startVideos();
   // fonts for the laptop's key legends and the browser bar arrive late: redraw like the studio does

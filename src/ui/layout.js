@@ -4,9 +4,10 @@ import {backgroundBlurPx} from '../render/lens.js';
 import {rectOf,resolve} from '../render/item-layout.js';
 import {onFont,textPad} from '../render/text.js';
 import {drawTextAt,fxPad} from '../render/text-fx.js';
+import {paintItems} from '../render/items-paint.js';
 import {applyTransform} from '../render/transform.js';
 import {state,view} from '../state/state.js';
-import {$,roundRect} from '../util.js';
+import {$} from '../util.js';
 
 /* ---------- layout & background ----------
    The live canvas (#frame) sits over the active artboard on the workspace. workspace.js registers the geometry
@@ -146,25 +147,7 @@ function renderItems(){
   els.forEach((el,id)=>{if(!seen.has(id)){el.remove();els.delete(id);}});
   itemSubs.forEach(f=>f());
 }
-// export / thumbnails: the items of one layer drawn on a W x H canvas; t: time of the text effects (video), else settled
-function paintItems(g,W,H,front,t){
-  const {nodes,roots}=resolve(state.items,W,H);
-  const paint=id=>{
-    const n=nodes.get(id);if(!n)return;const it=n.it;
-    if(it.kind!=='text'&&it.kind!=='frame'&&!(it.img&&it.img.complete))return;
-    g.save();g.globalAlpha*=it.opacity??1;g.translate(n.x+n.w/2,n.y+n.h/2);g.rotate(n.rot*Math.PI/180);
-    if(it.kind==='text')drawTextAt(g,n.view,(it.size||.06)*W,t??null);
-    else if(it.kind==='frame'){
-      const r=Math.min((it.radius||0)*W,n.w/2,n.h/2);g.beginPath();roundRect(g,-n.w/2,-n.h/2,n.w,n.h,r);
-      if(it.fillOn!==false&&it.fill){g.fillStyle=it.fill;g.fill();}
-      if(it.clip)g.clip();
-      g.translate(-n.w/2,-n.h/2);n.kids.forEach(paint);
-    }
-    else g.drawImage(it.img,-n.w/2,-n.h/2,n.w,n.h);
-    g.restore();
-  };
-  roots.forEach(id=>{if(!!nodes.get(id).it.front===front)paint(id);});
-}
+// export / thumbnails paint the items with render/items-paint.js (paintItems, exported from here as before)
 // a web font finished loading: text items are measured again and redrawn
 onFont(()=>{renderItems();layoutSubs.forEach(f=>f(screen));});
 

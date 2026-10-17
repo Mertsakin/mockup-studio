@@ -90,14 +90,14 @@ async function exportEmbed(){
     zip.file('README.txt',README(snippet));zip.file('index.html',EXAMPLE(snippet,name));
     const out=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
     offer(slug(name)+'-web.zip',out);
-    showSnippet(snippet,out.size,pf.zip&&state.devices.some(d=>d.video));
+    showSnippet(snippet,out.size);
   }catch(e){toast('Gömme paketi hazırlanamadı: '+(e.message||e));}
   finally{btn.disabled=false;btn.textContent=label;}
 }
 const slug=s=>{const m={ç:'c',ğ:'g',ı:'i',ö:'o',ş:'s',ü:'u',Ç:'c',Ğ:'g',İ:'i',Ö:'o',Ş:'s',Ü:'u'};return String(s).replace(/[çğıöşüÇĞİÖŞÜ]/g,c=>m[c]).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'mockup';};
 
 // after the download: the code to paste, with a copy button
-function showSnippet(code,bytes,video){
+function showSnippet(code,bytes){
   const sc=document.createElement('div');sc.className='scrim';
   sc.innerHTML='<div class="dialog emb-dlg" role="dialog" aria-modal="true" aria-labelledby="embDlgT"><div class="dh"><span id="embDlgT">Gömme kodu</span>'+
     '<button class="ib sm" type="button" data-a="close" aria-label="Kapat"><span>✕</span></button></div><div class="db">'+
@@ -107,8 +107,7 @@ function showSnippet(code,bytes,video){
     '<div class="dfoot"><button class="btn" type="button" data-a="close">Kapat</button><button class="btn primary" type="button" data-a="copy">Kodu kopyala</button></div></div></div>';
   document.body.appendChild(sc);
   const ta=sc.querySelector('textarea');ta.value=code;
-  sc.querySelector('.hint-sm').textContent='Paket '+(bytes/1e6).toLocaleString('tr-TR',{maximumFractionDigits:1})+' MB. '+MODES[$('#embMode').value]+'. Dosyalar bir sunucudan açılmalı (file:// ile çalışmaz).'+
-    (video?' Ekran videoları gömmede henüz oynamıyor; ilk karesi görünür.':'');
+  sc.querySelector('.hint-sm').textContent='Paket '+(bytes/1e6).toLocaleString('tr-TR',{maximumFractionDigits:1})+' MB. '+MODES[$('#embMode').value]+'. Dosyalar bir sunucudan açılmalı (file:// ile çalışmaz).';
   const close=()=>{sc.remove();document.removeEventListener('keydown',key,true);};
   const key=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}};
   document.addEventListener('keydown',key,true);
