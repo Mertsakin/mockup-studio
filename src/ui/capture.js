@@ -43,9 +43,10 @@ async function captureShots(url,targets){
   const res=await r.json();if(!r.ok)throw userError('Yakalanamadı: '+(res.error||r.statusText));
   return res;
 }
-// whether this page can capture at all: the endpoint answers a GET with 405 (JSON) on the dev server only
+// whether this page can capture at all: only the dev server has the endpoint (a build never asks, so no 404 is logged)
 let avail=null;
-const captureAvailable=()=>avail||(avail=fetch('/api/capture').then(r=>r.status===405&&(r.headers.get('content-type')||'').includes('application/json')).catch(()=>false));
+const captureAvailable=()=>avail||(avail=!import.meta.env.DEV?Promise.resolve(false)
+  :fetch('/api/capture/ping').then(r=>r.ok&&(r.headers.get('content-type')||'').includes('application/json')).catch(()=>false));
 const shotImage=src=>new Promise((ok,fail)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>fail(userError('Yakalanan görüntü açılamadı.'));img.src=src;});
 // puts a captured page on a device's screen, scrolled to the top (siteUrl: the address as the user typed it)
 function putShot(d,img,url,siteUrl){

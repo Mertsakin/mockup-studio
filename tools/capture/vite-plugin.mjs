@@ -55,6 +55,8 @@ export default function capturePlugin(){
         });
       }).catch(e=>console.warn('[record] WebSocket sunucusu kurulamadı:',e.message));
       server.middlewares.use('/api/capture',async(req,res)=>{
+        // GET /api/capture/ping: lets the page know it can capture (ui/capture.js captureAvailable)
+        if(req.method==='GET'&&String(req.url||'').startsWith('/ping'))return send(res,200,{ok:true});
         if(req.method!=='POST')return send(res,405,{error:'POST bekleniyor'});
         let body;try{body=await readJson(req);}catch(e){return send(res,400,{error:'Geçersiz istek'});}
         let url;try{url=new URL(String(body.url||'').trim());}catch(e){return send(res,400,{error:'Geçersiz adres'});}

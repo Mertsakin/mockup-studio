@@ -98,6 +98,27 @@
     <!-- ============ stage (+ timeline in Canlandır mode) ============ -->
     <div class="center">
     <main class="stage" id="stagearea" aria-label="Tuval">
+      <!-- welcome (ui/welcome.js): an empty document starts here instead of on a bare canvas -->
+      <section class="welcome" id="welcome" aria-labelledby="welcomeTitle" hidden>
+        <div class="wl-card" id="wlStart">
+          <h2 id="welcomeTitle">Ekranını fotoğraf kalitesinde bir mockup'a çevir</h2>
+          <p class="wl-sub" id="wlSub">Sitenin adresini ver ya da ekran görüntüsü bırak; telefon, tablet ve dizüstünde hazır sahneler kuralım.</p>
+          <form class="wl-url" id="wlUrlRow" hidden>
+            <label class="wl-field"><span data-icon="link" data-size="14"></span><input type="text" id="wlUrl" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://siten.com" aria-label="Site adresi"></label>
+            <button class="btn primary lg" type="submit" id="wlGo">Mockup oluştur</button>
+          </form>
+          <div class="wl-or" id="wlOr" hidden>ya da</div>
+          <div class="wl-drop" id="wlDrop" role="button" tabindex="0" aria-describedby="wlDropHint"><b>Ekran görüntüsü ya da video seç</b> veya buraya sürükle<small id="wlDropHint">PNG, JPG, WebP, MP4 · birden fazla dosya olabilir</small></div>
+          <input type="file" id="wlFile" accept="image/png,image/jpeg,image/webp,image/svg+xml,video/mp4,video/webm,video/*" multiple hidden>
+          <div class="wl-goals" role="group" aria-labelledby="wlGoalsLbl"><span id="wlGoalsLbl">Ne hazırlıyorsun?</span>
+            <button class="wl-chip" type="button" data-goal="land" aria-pressed="true">Açılış görseli</button>
+            <button class="wl-chip" type="button" data-goal="store" aria-pressed="false">Mağaza seti</button>
+            <button class="wl-chip" type="button" data-goal="social" aria-pressed="false">Sosyal gönderi</button>
+            <button class="wl-chip" type="button" data-goal="video" aria-pressed="false">Tanıtım videosu</button>
+          </div>
+          <div class="wl-foot"><button class="wl-link" type="button" id="wlOpen">Proje aç…</button><span class="grow"></span><button class="wl-link" type="button" id="wlBlank">Boş artboard ile başla</button></div>
+        </div>
+      </section>
       <div class="world" id="world"></div>
       <div class="frame" id="frame"><canvas id="gl" aria-label="Sahne önizlemesi"></canvas></div>
       <svg class="nav" id="navSvg" viewBox="-48 -48 96 96" role="group" aria-label="Görünüm yönü. Bir eksene tıkla ya da sürükleyerek döndür."></svg>
