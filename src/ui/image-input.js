@@ -1,7 +1,9 @@
 import {RT,setHolder} from '../devices/rt.js';
 import {rebuild} from '../devices/runtime.js';
 import {detectScreen,setScreenTexture} from '../devices/screen.js';
-import {MAX_MB,duration,fmtDur,isVideoFile,loadVideo,showFrame,shownTime,videoSize} from '../devices/video.js';
+import {MAX_MB,duration,fmtDur,isVideoFile,loadVideo,posterTime,showFrame,shownTime,videoSize,videoTime} from '../devices/video.js';
+import {MAX_DUR} from '../state/anim.js';
+import {A,setDuration} from './animate.js';
 import {numField} from './numfield.js';
 import {applyTransform,autoRefit} from '../render/transform.js';
 import {sel,state} from '../state/state.js';
@@ -39,10 +41,14 @@ async function loadShotVideo(d,file){
   if(file.size>MAX_MB*1e6)toast('Video '+Math.round(file.size/1e6)+' MB: büyük dosyalar otomatik kaydı ve proje dosyasını şişirir, oynatma takılabilir. Mümkünse '+MAX_MB+' MB altında tut.');
   let v;try{v=await loadVideo(URL.createObjectURL(file));}catch(e){toast('Video açılamadı. H.264 MP4 ya da WebM dene.');return;}
   if(!state.devices.includes(d))return;  // removed meanwhile
-  d.video=v;d.videoName=file.name||'Video';d.videoT0=0;d.videoLoop=true;d.img=null;d.imgName='';d.scroll=0;
+  d.video=v;d.videoName=file.name||'Video';d.videoT0=0;d.videoLoop=true;d.videoPoster=null;d.img=null;d.imgName='';d.scroll=0;
   if(d.tracks)delete d.tracks.scroll;
   const [vw,vh]=videoSize(v);placeShot(d,vw>vh);
   showFrame(d,shownTime(d));
+  // the artboard's duration follows the video on loading (a default: changing it later is the user's)
+  const dur=duration(v),fps=state.anim.fps||30;
+  if(dur){setDuration(Math.max(1,Math.min(MAX_DUR,Math.round(dur*fps)/fps)));
+    if(dur>MAX_DUR)toast('Video '+fmtDur(dur)+': Canlandır süresi en fazla '+MAX_DUR+' sn, gerisi Başlangıç ile seçilir.');}
 }
 // "Kaldır": the screen goes back to the placeholder
 $('#shotRemove').addEventListener('click',e=>{
@@ -56,7 +62,17 @@ const t0Field=numField({id:'nf-vt0',label:'Başlangıç',title:'Videonun bu sani
   get:()=>{const d=sel();return d&&d.video?d.videoT0||0:null;},
   set:v=>{const d=sel();if(!d||!d.video||typeof v!=='number')return;d.videoT0=Math.max(0,Math.min(Math.max(0,duration(d.video)-.1),v));showFrame(d,shownTime(d));syncUI();}});
 videoRow.prepend(t0Field.el);
-videoLoopEl.addEventListener('change',()=>{const d=sel();if(!d||!d.video)return;d.videoLoop=videoLoopEl.checked;showFrame(d,shownTime(d));});
+videoLoopEl.addEventListener('change',()=>{const d=sel();if(!d||!d.video)return;d.videoLoop=videoLoopEl.checked;showFrame(d,shownTime(d));syncUI();});
+/* Poster second (Tasarla only): the frame the still image, the thumbnails and the Tasarla screen show, as seconds of
+   the video, independent of the Canlandır mapping (d.videoPoster, null = the design frame's mapping). "İmleçteki
+   kare" takes the playhead's video time (the slot moves next to the transform fields in Canlandır, timeline.js). */
+const fmtSec=v=>v.toFixed(2).replace('.',',')+' sn';
+const posterField=numField({id:'nf-vposter',label:'Gösterilen an',title:'Tasarla\u2019da, durağan görselde ve küçük resimde videonun hangi saniyesi görünsün',step:.1,min:0,digits:2,fmt:fmtSec,
+  get:()=>{const d=sel();return d&&d.video?posterTime(d):null;},
+  set:v=>{const d=sel();if(!d||!d.video||typeof v!=='number')return;d.videoPoster=Math.max(0,Math.min(Math.max(0,duration(d.video)-1/60),v));showFrame(d,shownTime(d));syncUI();}});
+posterField.el.classList.add('design-only');
+const posterSlot=$('#posterSlot');posterSlot.prepend(posterField.el);
+$('#posterFromHead').addEventListener('click',()=>{const d=sel();if(!d||!d.video)return;d.videoPoster=+videoTime(d,A.t).toFixed(3);showFrame(d,shownTime(d));syncUI();toast('Poster: '+fmtSec(d.videoPoster));});
 // background image: placed by layout.js (cover / contain, scale, offset); kept when switching to another style and back
 const BG_FIT={bgFit:'cover',bgScale:1,bgX:0,bgY:0};
 function loadBg(file){
@@ -109,7 +125,10 @@ onSyncUI(d=>{
   else if(d.img){$('#dropMain').textContent=d.imgName||'Yapıştırılan görsel';$('#dropSub').textContent=d.img.naturalWidth+' × '+d.img.naturalHeight+' px. Değiştirmek için tıkla ya da yenisini sürükle.';drop.classList.add('has');}
   else{$('#dropMain').textContent='Görsel seç ya da buraya sürükle';$('#dropSub').textContent='PNG, JPG, WebP ya da MP4 / WebM video. Panodan yapıştırmak için Ctrl/⌘ + V.';drop.classList.remove('has');}
   $('#shotRemove').hidden=!(d.video||d.img);
-  videoRow.hidden=!d.video;if(d.video){t0Field.sync();videoLoopEl.checked=d.videoLoop!==false;}
+  videoRow.hidden=!d.video;posterSlot.hidden=!d.video;
+  if(d.video){t0Field.sync();posterField.sync();videoLoopEl.checked=d.videoLoop!==false;
+    // loop off and the video runs out before the artboard does: it holds its last frame
+    const rest=duration(d.video)-(d.videoT0||0);$('#videoHint').hidden=!(d.videoLoop===false&&rest>0&&rest<state.anim.dur-1e-3);}
   if(d.frameImg){$('#frameMain').textContent=d.frameName||'Çerçeve';$('#frameSub').textContent='Ekran alanı bulundu. Değiştirmek için tıkla.';frameDrop.classList.add('has');}
   else{$('#frameMain').textContent='Çerçeve PNG\u2019si seç';$('#frameSub').textContent='Ekran bölümü şeffaf bir cihaz çerçevesi. Ekran görüntün o alana yerleşir.';frameDrop.classList.remove('has');}
 });

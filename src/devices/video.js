@@ -6,6 +6,8 @@ import {state} from '../state/state.js';
    pure function of the artboard time: video time = d.videoT0 + (d.videoLoop ? t mod rest : min(t, rest)), rest being
    what is left of the video after the trim start. The editor shows the playhead's frame in Canlandır and the device's
    design frame (the poster frame) in Tasarla; the still export and the thumbnails are that poster frame too.
+   d.videoPoster (seconds of video, null = not set) overrides the poster: Tasarla shows that second whatever the
+   time mapping; Canlandır ignores it.
    Seeking is asynchronous: showFrame(d, t) remembers the wanted time and pumps the video's seeks one at a time
    (a new target while one is in flight replaces the pending one), redrawing the screen texture after each 'seeked'.
    The video export awaits the returned promise, so every frame is exact. While the timeline plays, the videos play
@@ -28,6 +30,9 @@ function videoTime(d,t){
 let clock=null;  // () => number | null
 const setVideoClock=fn=>{clock=fn;};
 const shownTime=d=>{const t=clock?clock():null;return t==null?designT(d):t;};
+const inDesign=()=>!clock||clock()==null;
+// the poster second (video time) a device shows in Tasarla: its own, else the design frame's mapping
+const posterTime=d=>{const v=d.video,dur=duration(v),p=d.videoPoster;if(p==null||!Number.isFinite(p))return videoTime(d,designT(d));return Math.max(0,dur?Math.min(dur-EPS,p):p);};
 
 // one seek: resolves when the frame at t is decodable (false: already there)
 function seekTo(v,t){
@@ -44,7 +49,7 @@ const pumps=new WeakMap();  // video -> {want, p (promise of the pump), drawn}
 function showFrame(d,t){
   const v=d.video;if(!v)return Promise.resolve();
   let s=pumps.get(v);if(!s){s={want:null,p:null};pumps.set(v,s);}
-  s.want=videoTime(d,t);
+  s.want=inDesign()&&d.videoPoster!=null?posterTime(d):videoTime(d,t);
   if(s.p)return s.p;
   s.p=(async()=>{
     try{
@@ -96,4 +101,4 @@ function loadVideo(src){
 const videoSize=v=>[v.videoWidth||1,v.videoHeight||1];
 const fmtDur=s=>{s=Math.max(0,s||0);const m=Math.floor(s/60),r=s-m*60;return m?m+':'+String(Math.floor(r)).padStart(2,'0'):r.toFixed(1).replace('.',',')+' sn';};
 
-export {DRIFT,MAX_MB,duration,fmtDur,followVideos,hasVideo,isVideoFile,loadVideo,playVideos,setVideoClock,showFrame,showFrames,showNow,shownTime,stopVideos,videoDevices,videoSize,videoTime};
+export {DRIFT,MAX_MB,duration,fmtDur,followVideos,hasVideo,isVideoFile,loadVideo,playVideos,posterTime,setVideoClock,showFrame,showFrames,showNow,shownTime,stopVideos,videoDevices,videoSize,videoTime};

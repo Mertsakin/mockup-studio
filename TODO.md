@@ -65,7 +65,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 
 ## Son eklenenler (9–17 Ekim 2026)
 
-- [x] **Ekranda video v1** (17 Ekim): Ekran bölümüne MP4/WebM bırakılır (`devices/video.js`); Başlangıç (kırpma) ve Döngü; Canlandır'da imleç ve oynatma videoyla senkron, Tasarla ve durağan görsel poster karesi; video dışa aktarımı her karede `seeked` bekler; otomatik kayıtta blob, proje dosyası videoluyken `.mockup.zip`. Sessiz; ses ve Fotoğraf kalitesinde video v2'ye kaldı.
+- [x] **Ekranda video v1** (17 Ekim): Ekran bölümüne MP4/WebM bırakılır (`devices/video.js`); Başlangıç (kırpma) ve Döngü; Canlandır'da imleç ve oynatma videoyla senkron, Tasarla ve durağan görsel poster karesi; video dışa aktarımı her karede `seeked` bekler; otomatik kayıtta blob, proje dosyası videoluyken `.mockup.zip`; yüklemede Canlandır süresi videodan, Tasarla için "Gösterilen an" (poster saniyesi) ve "İmleçteki kare". Sessiz; ses ve Fotoğraf kalitesinde video v2'ye kaldı.
 
 - [x] **Ekranda titreyen karo deseni düzeltildi** (17 Ekim): uzun objektif + düşük Yakınlık'ta ekran ile ön cam derinlikte yarışıyordu (GPU karosu biçiminde koyu bloklar). Yakın düzlem mesafenin %6'sı, ekran katmanlarına `polygonOffset`.
 - [x] **Kamera ve ışık animasyonu** (17 Ekim): Canlandır'da kamera (açılar, Yakınlık, objektif, kayma) ve ışıklar (yön, yükseklik, uzaklık, yoğunluk, boyut, huzme) cihazlar gibi anahtar kare alır; zaman çizelgesinde Kamera ve ışık satırları, panellerde ◆ ve "Anahtar kare", kamera ve ışık hazır hareketleri; videoda kamera/ışık hareketine bulanıklık, ışık hareketinde yansımalar kare kare.

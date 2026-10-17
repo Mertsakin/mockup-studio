@@ -4,7 +4,8 @@
    - ↑ / ↓ step by def.step (Shift: ×10).
    - Dragging the label scrubs the value (1 step per 2 px, Shift ×10).
    def = {id, label, title, get: () => number | null (null: empty / mixed), set: (v: number | string) => void,
-   step (1), min, max, digits (0), suffix ('' | '%' | '°'), disabled: () => bool}. Returns {el, sync}. */
+   step (1), min, max, digits (0), suffix ('' | '%' | '°'), fmt (own formatter instead of digits + suffix),
+   disabled: () => bool}. Returns {el, sync}. */
 const EXPR=/^[\d\s.,+\-*/()]+$/;
 function evaluate(text){
   const t=String(text).trim().replace(/,/g,'.');
@@ -19,7 +20,7 @@ function numField(def){
   if(def.title){lab.title=def.title;inp.setAttribute('aria-label',def.title);}
   const step=def.step||1,dig=def.digits||0,suf=def.suffix||'';
   const clampV=v=>Math.min(def.max??Infinity,Math.max(def.min??-Infinity,v));
-  const fmt=v=>v==null?'':(+v.toFixed(dig)).toString().replace('.',',')+suf;
+  const fmt=v=>v==null?'':def.fmt?def.fmt(v):(+v.toFixed(dig)).toString().replace('.',',')+suf;
   function sync(){
     const off=!!(def.disabled&&def.disabled());inp.disabled=off;el.classList.toggle('off',off);
     if(document.activeElement===inp&&!off)return;

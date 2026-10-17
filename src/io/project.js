@@ -65,7 +65,7 @@ function restore(s){
   if(![1080,1920,3840].includes(state.size))state.size=1920;
   // the scene object stays (modules hold it); its animation goes if the snapshot has none
   delete state.scene.tracks;delete state.scene.designT;Object.assign(state.scene,copy(s.state.scene));
-  state.devices=s.devices.map(o=>Object.assign({video:null,videoName:'',videoT0:0,videoLoop:true},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null,video:o.video?s.images[o.video]||null:null}));
+  state.devices=s.devices.map(o=>Object.assign({video:null,videoName:'',videoT0:0,videoLoop:true,videoPoster:null},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null,video:o.video?s.images[o.video]||null:null}));
   state.lights=copy(s.lights);
   reserveDeviceIds(Math.max(0,...state.devices.map(d=>d.id)));reserveLightIds(Math.max(0,...state.lights.map(l=>l.id)));
   state.selected=state.devices.some(d=>d.id===s.selected)?s.selected:(state.devices[0]&&state.devices[0].id);

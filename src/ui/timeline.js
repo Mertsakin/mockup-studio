@@ -240,7 +240,7 @@ function ensureDots(){
   }
 }
 // lid angle and scroll live in other sections; in Canlandır they move next to the transform sliders
-const moved=[['lidSlot'],['scrollSlot']].map(([id])=>{const el=$('#'+id),mark=document.createComment(id);el.parentNode.insertBefore(mark,el);return {el,mark};});
+const moved=[['lidSlot'],['scrollSlot'],['posterSlot']].map(([id])=>{const el=$('#'+id),mark=document.createComment(id);el.parentNode.insertBefore(mark,el);return {el,mark};});
 function placeSlots(animate){moved.forEach(({el,mark})=>{if(animate){if(el.parentNode!==$('#animSlots'))$('#animSlots').appendChild(el);}else if(el.previousSibling!==mark)mark.parentNode.insertBefore(el,mark.nextSibling);});}
 $('#devSliders').closest('.sec').classList.add('anim-keep');
 $('#keySec').classList.add('anim-keep');$('#presetChips').closest('.sec').classList.add('anim-keep');
