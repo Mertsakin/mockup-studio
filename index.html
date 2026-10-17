@@ -51,6 +51,11 @@
         <p class="hint-sm" id="exportNote"></p>
         <button class="btn primary full" id="export" type="button">İndir</button>
         <button class="btn full" id="exportBoards" type="button" hidden>Tüm artboardları indir (ZIP)</button>
+        <div class="i18n-box" role="group" aria-label="Diller">
+          <div class="row" id="langRow" hidden><label for="langSel">Dil</label><select id="langSel"></select></div>
+          <button class="btn full" id="exportLangs" type="button" hidden>Tüm diller (ZIP)</button>
+          <button class="btn full" id="langEdit" type="button">Diller ve çeviriler…</button>
+        </div>
         <button class="btn full" id="exportAll" type="button">Kayıtlı açıların hepsi (ZIP)</button>
         <button class="btn full" id="exportBatch" type="button" title="Her görsel bu sahnenin uygun cihazlarına konur ve ayrı bir dosya olarak çıkar">Her ekran görüntüsü için bir görsel (ZIP)…</button>
         <input type="file" id="batchFile" accept="image/png,image/jpeg,image/webp" multiple hidden>
@@ -461,6 +466,7 @@
         <section class="sec" id="textSec" data-sec="item-text" hidden>
           <h3 class="sh">Metin</h3>
           <textarea class="tbody" id="textBody" rows="2" aria-label="Metin içeriği" spellcheck="false"></textarea>
+          <div class="text-loc" id="textLoc" hidden></div>
           <div class="row tight"><select id="textFont" aria-label="Yazı tipi" class="grow2"></select><select id="textWeight" aria-label="Kalınlık"></select></div>
           <div class="slgrid" id="textGrid"><div id="textSizeSlot" class="cell3"></div><div id="textSliders" class="contents"></div></div>
           <div class="row tight"><div class="seg grow" id="textAlign" role="group" aria-label="Metin hizalaması"><button type="button" data-v="left">Sol</button><button type="button" data-v="center">Orta</button><button type="button" data-v="right">Sağ</button></div><button class="ib" type="button" id="textItalic" aria-pressed="false" title="İtalik" aria-label="İtalik"><span data-icon="text-italic"></span></button><input type="color" id="textColor" aria-label="Metin rengi"></div>

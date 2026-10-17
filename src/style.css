@@ -871,3 +871,14 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .tpl .tpl-im .tpl-b{z-index:1}
 .cap-opts input[type=number]{width:64px}
 .cap-opts input[type=text]{flex:1}
+/* languages (ui/i18n.js) */
+.i18n-box{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);display:grid;gap:6px}
+.text-loc{display:grid;gap:4px;margin:2px 0 6px}
+.text-loc .loc{display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px;align-items:start}
+.text-loc .loc span{color:var(--muted);font-size:11px;line-height:28px}
+.text-loc textarea{width:100%;min-height:28px;padding:5px 8px;border-radius:5px;border:1px solid transparent;background:var(--field);resize:vertical;font:inherit;line-height:1.35}
+.text-loc textarea:focus{outline:0;border-color:var(--accent)}
+.lang-dlg{width:520px}
+.lang-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;margin:10px 0}
+.lang-grid .lang{display:flex;align-items:center;gap:8px}
+.lang-dlg .row{gap:8px}

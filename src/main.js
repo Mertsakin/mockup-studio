@@ -41,6 +41,7 @@ import './ui/insert.js';
 import './ui/dock.js';
 import './ui/assets.js';
 import './ui/template-gallery.js';
+import './ui/i18n.js';
 import './ui/welcome.js';
 import './ui/timeline.js';
 import './export/video.js';

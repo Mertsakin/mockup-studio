@@ -15,8 +15,9 @@ import {mkCanvas} from '../util.js';
    board (snapshot + thumbnail) and restores the target's snapshot, so every existing panel keeps working unchanged.
    Board positions and sizes are in output pixels (1920 x 1080 board = 1920 x 1080 canvas units). */
 const GAP=160;
-// assets: the document's asset library [{img, name}] (ui/assets.js); fonts: uploaded fonts [{family, data (data URL)}]
-const doc={boards:[],active:null,assets:[],fonts:[]};
+// assets: the document's asset library [{img, name}] (ui/assets.js); fonts: uploaded fonts [{family, data (data URL)}];
+// langs: the document's languages (ui/i18n.js; empty: not localised, else the first is the base), lang: the one shown
+const doc={boards:[],active:null,assets:[],fonts:[],langs:[],lang:null};
 let uid=0,DEFAULT=null;
 const subs=[];
 function onBoards(fn){subs.push(fn);}
@@ -97,7 +98,7 @@ function show(b){doc.active=b.id;restore(b.snap);bgCss();layout();syncAll();emit
 // a board with nothing on it (the default scene's camera, lights and background, no devices or items)
 const emptySnap=()=>{const s=JSON.parse(JSON.stringify(Object.assign({},DEFAULT,{images:{}})));s.images={};s.devices=[];s.state.items=[];s.selected=null;return s;};
 // no board at all: the live scene is emptied and the stage shows nothing (layout hides the canvas)
-function clearAll(){doc.boards=[];doc.active=null;restore(emptySnap());layout();syncAll();emit();}
+function clearAll(){doc.boards=[];doc.active=null;doc.langs=[];doc.lang=null;restore(emptySnap());layout();syncAll();emit();}
 const hasBoard=()=>!!activeBoard();
 // adding something with no board open first opens an empty one for it
 function ensureBoard(){if(!hasBoard()){addBoard(emptySnap());return true;}return false;}
@@ -134,9 +135,9 @@ function moveBoard(id,x,y){const b=boardById(id);if(!b)return;b.x=Math.round(x);
 /* --- whole document, for undo / redo, autosave and project files */
 function docSnapshot(){
   const a=activeBoard();if(a){a.snap=snapshot();syncPano(a);}
-  return Object.assign({v:2,layout:LAYOUT,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb})),fonts:doc.fonts.slice()},packAssets(doc.assets));
+  return Object.assign({v:2,layout:LAYOUT,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb})),fonts:doc.fonts.slice(),langs:doc.langs.slice(),lang:doc.lang},packAssets(doc.assets));
 }
-const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[],(d.fonts||[]).map(f=>f.family)]);
+const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[],(d.fonts||[]).map(f=>f.family),d.langs||[],d.lang||null]);
 // first board whose content differs between two documents (undo jumps there)
 function changedBoard(from,to){
   const fm=new Map(from.boards.map(b=>[b.id,signature(b.snap)]));
@@ -146,6 +147,7 @@ function changedBoard(from,to){
 // that still exist (fresher), else the document's
 function applyDoc(d,prefer){
   doc.fonts=(d.fonts||[]).slice();doc.fonts.forEach(f=>addFontFace(f.family,f.data));
+  doc.langs=(d.langs||[]).slice();doc.lang=doc.langs.includes(d.lang)?d.lang:doc.langs[0]||null;
   if(!d.boards.length){const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);clearAll();return;}
   if(d.layout!==LAYOUT){
     // older layout: positions were in the export size's pixels; scale them with each board's own growth
