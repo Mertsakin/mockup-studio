@@ -67,6 +67,17 @@ async function openTemplate(t,variant,dress){
 /* ---------- the Şablonlar tab */
 const grid=$('#tplGrid'),empty=$('#tplEmpty');
 let goal='all',variant='light';
+/* the accent: the set uses the studio's blue for its small kickers (tools/templates/specs.mjs ACCENT, ACCENT_DARK
+   on dark); a template opened with another accent gets it on those text items. [name, light, dark] */
+const ACCENTS=[['Mavi','#0b68f5','#5a9cff'],['Mor','#6b4cff','#9d8cff'],['Yeşil','#16a34a','#4ade80'],['Turuncu','#ea580c','#fb923c'],['Pembe','#db2777','#f472b6'],['Mürekkep','#14161c','#ffffff']];
+const SET_ACCENT=new Set(['#0b68f5','#5a9cff']);
+let accent=0;
+function recolor(){
+  if(!accent)return;const c=ACCENTS[accent];
+  state.items.forEach(it=>{if(it.kind==='text'&&SET_ACCENT.has(String(it.color).toLowerCase()))it.color=variant==='dark'?c[2]:c[1];});
+}
+{const box=$('#tplAccent');ACCENTS.forEach(([n,l],i)=>{const b=document.createElement('button');b.type='button';b.className='sw';b.title=n;b.setAttribute('aria-label',n);
+  b.style.background=l;b.setAttribute('aria-pressed',String(i===0));b.addEventListener('click',()=>{accent=i;box.querySelectorAll('button').forEach((x,j)=>x.setAttribute('aria-pressed',String(j===i)));});box.appendChild(b);});}
 const badge=t=>[t.boards>1?t.boards+' ekran':t.ratio,t.motion?'Hareketli':''].filter(Boolean);
 async function renderTab(){
   const all=await templates();
@@ -83,7 +94,7 @@ async function renderTab(){
 async function useFromTab(t){
   holdHistory(true);
   try{
-    const s=screensOnBoard(),ids=await openTemplate(t,variant,()=>dressScreens(s.tall,s.wide));
+    const s=screensOnBoard(),ids=await openTemplate(t,variant,async()=>{await dressScreens(s.tall,s.wide);recolor();});
     activate(ids[0]);setUi({kind:'board'});fitAll();
     toast(t.name+(ids.length>1?': '+ids.length+' artboard eklendi':' yeni artboard olarak eklendi')+(t.motion?'. Hareketi Canlandır’da önizle.':''));
   }catch(e){toast('Şablon açılamadı: '+(e.message||e));}
