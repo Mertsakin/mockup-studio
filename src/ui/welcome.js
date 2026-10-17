@@ -6,11 +6,14 @@ import {newDevice,state} from '../state/state.js';
 import {activate,addBoard,boardById,boardSize,clearAll,hasBoard,moveBoard,onBoards,removeBoard,storeActive} from './boards.js';
 import {captureAvailable,captureShots,normalizeUrl,putShot,shotImage,siteName,viewport} from './capture.js';
 import {applyComp} from './devices-panel.js';
+import {applyPreset,setMode} from './animate.js';
 import {holdHistory} from './history.js';
 import {loadShotVideo,routeShots} from './image-input.js';
+import {layout} from './layout.js';
+import {openStoreDialog} from './store.js';
 import {onSyncUI} from './sync.js';
 import {toast} from './toast.js';
-import {setUi} from './ui-state.js';
+import {setUi,ui} from './ui-state.js';
 import {fitAll} from './workspace.js';
 import {$,$$} from '../util.js';
 
@@ -30,7 +33,7 @@ function sync(){
   const on=!hasBoard()||!!picking;
   if(on===shown)return;
   shown=on;card.hidden=!on;root.classList.toggle('wl-on',on);
-  if(on&&!picking)showStart();
+  if(on&&!picking){if(ui.mode==='animate')setMode('design');showStart();}  // an empty document is never in Canlandır
 }
 function showStart(){
   start.hidden=false;pick.hidden=true;
@@ -79,6 +82,12 @@ async function dress(tall,wide){
   await Promise.all(waits);
 }
 const frames=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+// what the scenes are for: a social post gets the first two scenes square and upright (1:1, 9:16)
+function forGoal(list){
+  if(goal!=='social')return list;
+  return list.slice(0,2).flatMap(c=>['1:1','9:16'].map(r=>Object.assign({},c,{n:c.n+' · '+r,ratio:r})));
+}
+const GOAL_NOTE={video:' · kaydırma hareketiyle Canlandır\'da açılır'};
 
 async function fromFiles(files){
   if(picking)return;
@@ -86,7 +95,7 @@ async function fromFiles(files){
   try{screens=(await Promise.all(files.map(f=>readScreen(f).catch(()=>null)))).filter(Boolean);}catch(e){screens=[];}
   if(!screens.length){toast('Bu dosyalar açılamadı. PNG, JPG, WebP ya da MP4 / WebM dene.');return;}
   const tall=screens.filter(s=>!s.wide),wide=screens.filter(s=>s.wide);
-  await buildScenes(recipes(tall.length>0,wide.length>0),()=>dress(tall,wide),
+  await buildScenes(forGoal(recipes(tall.length>0,wide.length>0)),()=>dress(tall,wide),
     screens.length===1?screens[0].name:screens.length+' ekran');
 }
 
@@ -95,7 +104,7 @@ async function buildScenes(list,dressBoard,what){
   holdHistory(true);
   picking={ids:[],chosen:new Set()};
   start.hidden=true;pick.hidden=false;
-  $('#wlPickTitle').textContent='Sahneler hazırlanıyor';$('#wlPickSub').textContent=what;
+  $('#wlPickTitle').textContent='Sahneler hazırlanıyor';$('#wlPickSub').textContent='';$('#wlPickSub').textContent=what;
   $('#wlAdd').disabled=true;$('#wlAdd').textContent='Artboard ekle';
   const grid=$('#wlGrid');grid.innerHTML='';
   const tiles=list.map(r=>{
@@ -107,6 +116,7 @@ async function buildScenes(list,dressBoard,what){
     for(let i=0;i<list.length;i++){
       if(!picking)return;
       const b=addBoard(null,list[i].n);picking.ids.push(b.id);
+      if(list[i].ratio){state.ratio=list[i].ratio;layout();}  // before the composition, so it frames for this shape
       applyComp(list[i]);await dressBoard();await frames();
       storeActive();  // the board's thumbnail, rendered off-view
       const t=tiles[i],[w,h]=boardSize(b);t.dataset.id=b.id;t.style.setProperty('--ar',w+'/'+h);
@@ -116,7 +126,7 @@ async function buildScenes(list,dressBoard,what){
     }
   }catch(e){toast('Sahneler kurulamadı: '+(e.message||e));back();return;}
   $('#wlPickTitle').textContent=list.length+' sahne';
-  $('#wlPickSub').textContent=what+' · istediğin kadarını seç, her biri ayrı artboard olur';
+  $('#wlPickSub').textContent=what+' · istediğin kadarını seç, her biri ayrı artboard olur'+(GOAL_NOTE[goal]||'');
   $('#wlPickTitle').focus();
 }
 function choose(t,on){
@@ -131,8 +141,12 @@ function confirm(){
   const keep=picking.ids.filter(id=>picking.chosen.has(id));
   picking.ids.filter(id=>!picking.chosen.has(id)).forEach(removeBoard);
   let x=0;keep.forEach(id=>{const b=boardById(id);moveBoard(id,x,0);x+=boardSize(b)[0]+160;});
+  // a promo video: long screenshots scroll to their end over the artboard's time, then Canlandır opens on it
+  const video=goal==='video';
+  if(video)keep.forEach(id=>{activate(id);state.devices.forEach(d=>{if(d.img&&!d.video)applyPreset('scroll',d);});});
   activate(keep[0]);
   picking=null;holdHistory(false);sync();setUi({kind:'board'});
+  if(video)setMode('animate');
   requestAnimationFrame(()=>fitAll());
   toast(keep.length+' artboard eklendi');
 }
@@ -179,7 +193,7 @@ async function fromUrl(raw){
     endCapture(true);$('#wlPnote').textContent=why&&why.user?why.message:'Sayfa yakalanamadı'+(why?': '+(why.message||why):'.');$('#wlUrl').focus();return;}
   endCapture();
   // a scene is offered when all its devices have their shot
-  const list=SITE_SCENES.map(comp).filter(c=>c.items.every(it=>shots[it.type]));
+  const list=forGoal(SITE_SCENES.map(comp).filter(c=>c.items.every(it=>shots[it.type])));
   const name=siteName(shots.phone.finalUrl);
   await buildScenes(list,async()=>{state.devices.forEach(d=>{const s=shots[d.type];if(s)putShot(d,s.img,s.finalUrl,raw);});},name);
 }
@@ -209,6 +223,8 @@ card.addEventListener('dragover',()=>drop.classList.add('over'));
 card.addEventListener('dragleave',e=>{if(!card.contains(e.relatedTarget))drop.classList.remove('over');});
 card.addEventListener('drop',()=>drop.classList.remove('over'));
 $('#wlBlank').addEventListener('click',()=>$('#emptyAddBoard').click());
+// a store set has its own form (store.js); the set's artboards close the card
+$('#wlStore').addEventListener('click',()=>openStoreDialog());
 $('#wlOpen').addEventListener('click',()=>$('#openProjectBtn').click());
 
 export {begin as startWelcome};

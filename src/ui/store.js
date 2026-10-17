@@ -136,7 +136,8 @@ async function generate(o){
 }
 
 /* ---------- dialog */
-function openDialog(){
+// pre: screenshots to start with (the welcome card's files); a click event otherwise
+function openDialog(pre){
   const sc=document.createElement('div');sc.className='scrim';
   sc.innerHTML='<div class="dialog store-dlg" role="dialog" aria-modal="true" aria-labelledby="stTitle"><div class="dh"><span id="stTitle">Mağaza seti oluştur</span>'+
     '<button class="ib sm" type="button" data-a="cancel" aria-label="Kapat"><span>✕</span></button></div><div class="db">'+
@@ -151,7 +152,8 @@ function openDialog(){
     '<input type="file" id="stShots" accept="image/*" multiple hidden>'+
     '<div class="dfoot"><button class="btn" type="button" data-a="cancel">Vazgeç</button><button class="btn primary" type="button" data-a="go">Oluştur</button></div></div></div>';
   document.body.appendChild(sc);
-  const q=s=>sc.querySelector(s),o={n:5,layout:'classic',theme:THEMES[0],font:'Plus Jakarta Sans',shots:[]};
+  const q=s=>sc.querySelector(s),o={n:5,layout:'classic',theme:THEMES[0],font:'Plus Jakarta Sans',shots:Array.isArray(pre)?pre:[]};
+  if(o.shots.length){o.n=Math.max(3,Math.min(8,o.shots.length));q('#stShotsNote').textContent=o.shots.length+' görsel seçildi; sırayla ekranlara yerleşecek.';}
   STORE_SIZES.forEach(z=>q('#stSize').appendChild(new Option(z.store+' · '+z.n+' ('+z.w+' × '+z.h+')',z.id)));
   FONTS.forEach(f=>q('#stFont').appendChild(new Option(f.name,f.name)));q('#stFont').value=o.font;
   [3,4,5,6,7,8].forEach(n=>{const b=document.createElement('button');b.type='button';b.textContent=n;b.dataset.v=n;q('#stCount').appendChild(b);});
