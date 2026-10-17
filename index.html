@@ -107,6 +107,10 @@
             <label class="wl-field"><span data-icon="link" data-size="14"></span><input type="text" id="wlUrl" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://siten.com" aria-label="Site adresi"></label>
             <button class="btn primary lg" type="submit" id="wlGo">Mockup oluştur</button>
           </form>
+          <div class="wl-prog" id="wlProg" hidden>
+            <div class="wl-prows" id="wlProws" role="status" aria-live="polite"></div>
+            <p class="wl-pnote"><span id="wlPnote">Sayfa her cihazın kendi genişliğinde açılıyor…</span> <button class="wl-link" type="button" id="wlCancel">Vazgeç</button></p>
+          </div>
           <div class="wl-or" id="wlOr" hidden>ya da</div>
           <div class="wl-drop" id="wlDrop" role="button" tabindex="0" aria-describedby="wlDropHint"><b>Ekran görüntüsü ya da video seç</b> veya buraya sürükle<small id="wlDropHint">PNG, JPG, WebP, MP4 · birden fazla dosya olabilir</small></div>
           <input type="file" id="wlFile" accept="image/png,image/jpeg,image/webp,image/svg+xml,video/mp4,video/webm,video/*" multiple hidden>

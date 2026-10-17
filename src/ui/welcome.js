@@ -1,9 +1,10 @@
+import {buildRT,disposeRT} from '../devices/runtime.js';
 import {setScreenTexture} from '../devices/screen.js';
 import {isVideoFile,loadVideo,videoSize} from '../devices/video.js';
 import {COMPS} from '../state/constants.js';
-import {state} from '../state/state.js';
+import {newDevice,state} from '../state/state.js';
 import {activate,addBoard,boardById,boardSize,clearAll,hasBoard,moveBoard,onBoards,removeBoard,storeActive} from './boards.js';
-import {captureAvailable} from './capture.js';
+import {captureAvailable,captureShots,normalizeUrl,putShot,shotImage,siteName,viewport} from './capture.js';
 import {applyComp} from './devices-panel.js';
 import {holdHistory} from './history.js';
 import {loadShotVideo,routeShots} from './image-input.js';
@@ -43,7 +44,7 @@ captureAvailable().then(ok=>{
 });
 
 $$('#welcome [data-goal]').forEach(b=>b.addEventListener('click',()=>{
-  goal=b.dataset.goal;$$('#welcome [data-goal]').forEach(c=>c.setAttribute('aria-pressed',String(c===b)));
+  goal=b.dataset.goal;card.dataset.goal=goal;$$('#welcome [data-goal]').forEach(c=>c.setAttribute('aria-pressed',String(c===b)));
 }));
 
 /* ---------- scenes */
@@ -145,15 +146,55 @@ $('#wlAdd').addEventListener('click',confirm);
 $('#wlBack').addEventListener('click',back);
 card.addEventListener('keydown',e=>{if(e.key==='Escape'&&picking){e.preventDefault();e.stopPropagation();back();}});
 
-// what the card was given: a site address (next step) or files
+/* ---------- from a site address: every device type is captured at its own viewport, one request each, so each
+   row shows its own progress; the scenes are built once the phone (at least) has arrived */
+const SITE=[{type:'phone',n:'Telefon'},{type:'tablet',n:'Tablet'},{type:'laptop',n:'Dizüstü'},{type:'browser',n:'Tarayıcı'}];
+const SITE_SCENES=['Tek telefon','Telefon + dizüstü','Tablet + telefon','Tarayıcı + telefon'];
+// a device type's capture viewport (capture.js viewport needs the device built: a scratch one, removed right away)
+function viewportOf(type){
+  const d=newDevice(type);buildRT(d);
+  try{return viewport(d);}finally{disposeRT(d.id);}
+}
+let run=0;  // the current capture; Vazgeç or a new one makes older answers stale
+async function fromUrl(raw){
+  if(picking||start.classList.contains('wl-busy'))return;
+  const url=normalizeUrl(raw),me=++run;
+  try{new URL(url);}catch(e){toast('Bu bir adres gibi görünmüyor.');$('#wlUrl').focus();return;}
+  start.classList.add('wl-busy');$('#wlProg').hidden=false;$('#wlGo').textContent='Yakalanıyor…';
+  $('#wlPnote').textContent='Sayfa her cihazın kendi genişliğinde açılıyor…';$('#wlCancel').hidden=false;
+  const rows=$('#wlProws');rows.innerHTML='';
+  const jobs=SITE.map(s=>{
+    const v=viewportOf(s.type),row=document.createElement('div');row.className='wl-prow run';
+    row.innerHTML='<span class="wl-dot" aria-hidden="true"></span><span></span><span class="v"></span>';
+    row.children[1].textContent=s.n;row.children[2].textContent=v.width+' px';rows.appendChild(row);
+    const p=captureShots(url,[Object.assign({id:s.type},v)]).then(async r=>{
+      const img=await shotImage(r.shots[s.type]);if(me===run){row.className='wl-prow ok';}return {type:s.type,img,finalUrl:r.finalUrl||url};
+    }).catch(e=>{if(me===run){row.className='wl-prow fail';row.children[2].textContent='alınamadı';}throw e;});
+    return p;});
+  const res=await Promise.allSettled(jobs);
+  if(me!==run)return;  // cancelled meanwhile
+  const shots={};res.forEach(r=>{if(r.status==='fulfilled')shots[r.value.type]=r.value;});
+  // no phone shot: the rows stay with the reason under them, the address can be fixed and sent again
+  if(!shots.phone){const e=res.find(r=>r.status==='rejected'),why=e&&e.reason;
+    endCapture(true);$('#wlPnote').textContent=why&&why.user?why.message:'Sayfa yakalanamadı'+(why?': '+(why.message||why):'.');$('#wlUrl').focus();return;}
+  endCapture();
+  // a scene is offered when all its devices have their shot
+  const list=SITE_SCENES.map(comp).filter(c=>c.items.every(it=>shots[it.type]));
+  const name=siteName(shots.phone.finalUrl);
+  await buildScenes(list,async()=>{state.devices.forEach(d=>{const s=shots[d.type];if(s)putShot(d,s.img,s.finalUrl,raw);});},name);
+}
+function endCapture(keep){start.classList.remove('wl-busy');$('#wlProg').hidden=!keep;$('#wlCancel').hidden=true;$('#wlGo').textContent='Mockup oluştur';}
+$('#wlCancel').addEventListener('click',()=>{run++;endCapture();$('#wlUrl').focus();});
+
+// what the card was given: a site address or files
 function begin(input){
   if(input.files)fromFiles(input.files);
-  else toast('Hazırlanıyor: '+input.url+' · '+goal);
+  else fromUrl(input.url);
 }
 // files dropped or pasted anywhere while the card shows come here
 routeShots(files=>{
   if(!shown)return false;
-  if(picking)return true;
+  if(picking||start.classList.contains('wl-busy'))return true;
   const usable=files.filter(f=>isVideoFile(f)||/^image\//.test(f.type));
   if(!usable.length)return false;
   begin({files:usable});return true;
