@@ -34,10 +34,13 @@
       </div>
       <input type="file" id="openProject" accept=".json,.zip,application/json,application/zip" hidden>
     </div>
+    <!-- narrow screens: the panels are drawers (ui/shell.js) -->
+    <button class="ib narrow-only" type="button" id="leftDrawerBtn" aria-label="Katmanlar" aria-expanded="false" aria-controls="leftPanel"><span data-icon="layers-minimalistic"></span></button>
     <button class="ib" type="button" id="undoBtn" aria-label="Geri al"><span data-icon="undo-left"></span><span class="tip">Geri al <kbd>⌘Z</kbd></span></button>
     <button class="ib" type="button" id="redoBtn" aria-label="Yinele"><span data-icon="undo-right"></span><span class="tip">Yinele <kbd>⇧⌘Z</kbd></span></button>
     <div class="seg modes" id="modeSeg" role="group" aria-label="Mod"><button type="button" data-mode="design">Tasarla</button><button type="button" data-mode="animate">Canlandır</button></div>
     <span class="grow"></span>
+    <button class="ib narrow-only" type="button" id="rightDrawerBtn" aria-label="Özellikler" aria-expanded="false" aria-controls="inspector"><span data-icon="settings"></span></button>
     <label class="ib tb-toggle" aria-label="Canlı fotoğraf önizlemesi"><input type="checkbox" id="photoPreview" role="switch"><span data-icon="magic-stick-3" data-size="18"></span><span class="tip">Canlı fotoğraf: kamera durunca önizleme fotoğraf kalitesine geçer (GPU'yu yoğun kullanır)</span></label>
     <div class="menu-wrap">
       <button class="btn primary" id="exportMenuBtn" type="button" aria-haspopup="dialog" aria-expanded="false">Dışa aktar</button>
@@ -63,7 +66,7 @@
 
   <div class="main">
     <!-- ============ left: layers ============ -->
-    <aside class="panel left" aria-label="Katmanlar">
+    <aside class="panel left" id="leftPanel" aria-label="Katmanlar">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" type="button" id="tabLayers" aria-selected="true" aria-controls="paneLayers">Katmanlar</button>
         <button class="tab" role="tab" type="button" id="tabAssets" aria-selected="false" aria-controls="paneAssets">Varlıklar</button>

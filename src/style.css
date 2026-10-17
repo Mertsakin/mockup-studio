@@ -367,10 +367,26 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 /* narrow canvas: the zoom box moves above the dock instead of overlapping it */
 @container (max-width:720px){.zoombox{bottom:64px}}
 @media (max-width:1100px){.main{grid-template-columns:200px minmax(0,1fr) 264px}.tabs{gap:0;padding-left:6px;padding-right:6px}.tab{padding:0 4px}}
+/* narrow screens: the canvas takes the width; the layers and the inspector slide in as drawers over it from their
+   sides (buttons in the top bar; the canvas or Esc closes them) */
+.narrow-only{display:none}
 @media (max-width:820px){
-  .main{grid-template-columns:minmax(0,1fr) 264px}
-  .panel.left{display:none}
+  .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+  .narrow-only{display:inline-flex}
+  /* the top bar fits a phone: the mark without the file name, no redo / live photo (⇧⌘Z, the menu), modes in the flow */
+  /* html: these come before the top bar's own rules further down, which would win at equal specificity */
+  html .appbtn .proj,html .appbtn [data-icon],html #redoBtn,html .topbar .tb-toggle{display:none}
+  html .topbar .modes{position:static;transform:none;margin:0 auto}
+  html .topbar #exportMenuBtn{padding:0 10px}
+  /* !important: shell.js gives the inspector an inline position (its menu's containing block; fixed is one too) */
+  .main>.panel{position:fixed!important;top:48px;bottom:0;width:min(300px,86vw);z-index:35;box-shadow:var(--shadow);transition:transform .2s ease;visibility:hidden}
+  .main>.panel.left{left:0;transform:translateX(-100%)}
+  .main>.panel.right{right:0;transform:translateX(100%)}
+  html.drawer-left .main>.panel.left,html.drawer-right .main>.panel.right{transform:none;visibility:visible}
+  html .topbar{padding:0 6px}
+  html .topbar .modes button{padding:0 8px}
 }
+@media (max-width:820px) and (prefers-reduced-motion:reduce){.main>.panel{transition:none}}
 @media (prefers-reduced-motion:reduce){.toast,.switch span,.switch span::after,.tg,.tg::after,.tip{transition:none}}
 
 /* ---------- Canlandır mode (ui/animate.js, ui/timeline.js) ---------- */

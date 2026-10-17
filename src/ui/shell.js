@@ -233,6 +233,20 @@ function selectTab(k){
 for(const t in TABS)$(TABS[t][0]).addEventListener('click',()=>selectTab(t));
 // the template gallery lives in template-gallery.js
 
+/* ---------- narrow screens: the panels as drawers. One open at a time; the canvas, Esc or the button closes it */
+const drawerQ=matchMedia('(max-width:820px)');
+function drawer(side){
+  const root=document.documentElement,open=side&&!root.classList.contains('drawer-'+side);
+  root.classList.toggle('drawer-left',open&&side==='left');root.classList.toggle('drawer-right',open&&side==='right');
+  $('#leftDrawerBtn').setAttribute('aria-expanded',String(root.classList.contains('drawer-left')));
+  $('#rightDrawerBtn').setAttribute('aria-expanded',String(root.classList.contains('drawer-right')));
+}
+$('#leftDrawerBtn').addEventListener('click',()=>drawer('left'));
+$('#rightDrawerBtn').addEventListener('click',()=>drawer('right'));
+$('#stagearea').addEventListener('pointerdown',()=>{if(drawerQ.matches)drawer(null);},true);
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawerQ.matches&&/drawer-/.test(document.documentElement.className))drawer(null);});
+drawerQ.addEventListener('change',()=>drawer(null));
+
 /* ---------- theme ---------- */
 const THEME_KEY='mockup-studio-theme';
 function applyTheme(t){if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme;
