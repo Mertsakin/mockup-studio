@@ -43,15 +43,22 @@ function screensOnBoard(){
   return {tall,wide};
 }
 
-// adds a template's artboards (returns their ids); the caller holds history if it needs one step
-async function openTemplate(t,variant,screens){
-  const v=t.variants[variant]||t.variants.light;
-  const r=await fetch(BASE+v.file);if(!r.ok)throw new Error('şablon dosyası '+r.status);
-  const doc=await fromProjectFile(await r.text());
-  const ids=[];
+// a template's project file (parsed once per variant)
+const files=new Map();
+async function templateDoc(t,variant){
+  const v=t.variants[variant]||t.variants.light,k=v.file;
+  if(!files.has(k))files.set(k,(async()=>{const r=await fetch(BASE+k);if(!r.ok)throw new Error('şablon dosyası '+r.status);return fromProjectFile(await r.text());})());
+  return files.get(k);
+}
+// the device types on a template's first artboard (what screens it needs)
+const deviceTypes=async(t,variant)=>{const d=await templateDoc(t,variant);return (d.boards[0].snap.devices||[]).map(x=>x.type);};
+// adds a template's artboards (returns their ids); dress() puts screens on each new board's devices. The caller
+// holds history if it needs one step
+async function openTemplate(t,variant,dress){
+  const doc=await templateDoc(t,variant),ids=[];
   for(const b of doc.boards){
     const nb=addBoard(b.snap,doc.boards.length>1?b.name:t.name);ids.push(nb.id);
-    if(screens)await dressScreens(screens.tall,screens.wide);
+    if(dress)await dress();
     storeActive();
   }
   return ids;
@@ -76,7 +83,7 @@ async function renderTab(){
 async function useFromTab(t){
   holdHistory(true);
   try{
-    const ids=await openTemplate(t,variant,screensOnBoard());
+    const s=screensOnBoard(),ids=await openTemplate(t,variant,()=>dressScreens(s.tall,s.wide));
     activate(ids[0]);setUi({kind:'board'});fitAll();
     toast(t.name+(ids.length>1?': '+ids.length+' artboard eklendi':' yeni artboard olarak eklendi')+(t.motion?'. Hareketi Canlandır’da önizle.':''));
   }catch(e){toast('Şablon açılamadı: '+(e.message||e));}
@@ -87,4 +94,4 @@ $$('#tplGoals button').forEach(b=>b.addEventListener('click',()=>{goal=b.dataset
 $$('#tplVariant button').forEach(b=>b.addEventListener('click',()=>{variant=b.dataset.v;$$('#tplVariant button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderTab();}));
 renderTab();
 
-export {dressScreens,openTemplate,templates};
+export {MOBILE,deviceTypes,dressScreens,openTemplate,templates};

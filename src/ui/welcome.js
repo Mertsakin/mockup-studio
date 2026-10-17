@@ -1,14 +1,14 @@
 import {buildRT,disposeRT} from '../devices/runtime.js';
-import {setScreenTexture} from '../devices/screen.js';
 import {isVideoFile,loadVideo,videoSize} from '../devices/video.js';
 import {COMPS} from '../state/constants.js';
 import {newDevice,state} from '../state/state.js';
 import {activate,addBoard,boardById,boardSize,clearAll,hasBoard,moveBoard,onBoards,removeBoard,storeActive} from './boards.js';
 import {captureAvailable,captureShots,normalizeUrl,putShot,shotImage,siteName,viewport} from './capture.js';
 import {applyComp} from './devices-panel.js';
+import {MOBILE,deviceTypes,dressScreens,openTemplate,templates} from './template-gallery.js';
 import {applyPreset,setMode} from './animate.js';
 import {holdHistory} from './history.js';
-import {loadShotVideo,routeShots} from './image-input.js';
+import {routeShots} from './image-input.js';
 import {layout} from './layout.js';
 import {openStoreDialog} from './store.js';
 import {onSyncUI} from './sync.js';
@@ -55,7 +55,6 @@ $$('#welcome [data-goal]').forEach(b=>b.addEventListener('click',()=>{
 
 /* ---------- scenes */
 const comp=n=>COMPS.find(c=>c.n===n);
-const MOBILE=new Set(['phone','tablet']);
 // which scenes to suggest for the screens at hand: tall screens go on phones and tablets, wide ones on laptops,
 // monitors and browser windows; a scene needs at least one screen of its kind
 function recipes(tall,wide){
@@ -73,16 +72,31 @@ async function readScreen(file){
   const img=await new Promise((ok,fail)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=fail;i.src=URL.createObjectURL(file);});
   return {img,name:file.name||'Görsel',wide:img.naturalWidth>img.naturalHeight};
 }
-// puts the screens on the live board's devices, each kind cycling through its own list (the other kind if empty)
-async function dress(tall,wide){
-  const n={tall:0,wide:0},waits=[];
-  for(const d of state.devices){
-    const kind=MOBILE.has(d.type)?(tall.length?'tall':'wide'):(wide.length?'wide':'tall');
-    const list=kind==='tall'?tall:wide,s=list[n[kind]++%list.length];
-    if(s.video){waits.push(loadShotVideo(d,s.file));continue;}
-    d.img=s.img;d.imgName=s.name;d.video=null;d.videoName='';d.scroll=0;d.fit='cover';setScreenTexture(d);
+// a dark screenshot (a dark-themed app) gets the templates' dark variant
+function variantFor(img){
+  if(!img)return 'light';
+  const c=document.createElement('canvas');c.width=c.height=8;const g=c.getContext('2d');g.drawImage(img,0,0,8,8);
+  const d=g.getImageData(0,0,8,8).data;let y=0;for(let i=0;i<d.length;i+=4)y+=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];
+  return y/(d.length/4)/255<.35?'dark':'light';
+}
+/* The suggestions: the chosen goal's templates whose every device gets a screen (has(type)), then ready-made
+   compositions until there are four. Each one knows how to build its board (build() -> board id); dress() puts
+   the screens on the board being built. */
+async function suggest(has,comps,dress,variant){
+  const out=[];
+  for(const t of (await templates()).filter(x=>x.goal===goal)){
+    if(out.length>=4)break;
+    let types;try{types=await deviceTypes(t,variant);}catch(e){continue;}
+    if(types.length&&types.every(has))out.push({n:t.name,tpl:true,build:async()=>(await openTemplate(t,variant,dress))[0]});
   }
-  await Promise.all(waits);
+  for(const c of comps){
+    if(out.length>=4)break;
+    if(out.some(o=>o.n===c.n))continue;
+    out.push({n:c.n,build:async()=>{const b=addBoard(null,c.n);
+      if(c.ratio){state.ratio=c.ratio;layout();}  // before the composition, so it frames for this shape
+      applyComp(c);await dress();return b.id;}});
+  }
+  return out;
 }
 const frames=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 // what the scenes are for: a social post gets the first two scenes square and upright (1:1, 9:16)
@@ -90,7 +104,7 @@ function forGoal(list){
   if(goal!=='social')return list;
   return list.slice(0,2).flatMap(c=>['1:1','9:16'].map(r=>Object.assign({},c,{n:c.n+' · '+r,ratio:r})));
 }
-const GOAL_NOTE={video:' · kaydırma hareketiyle Canlandır\'da açılır'};
+const GOAL_NOTE={video:' · hareketiyle Canlandır\'da açılır'};
 
 async function fromFiles(files){
   if(picking)return;
@@ -98,14 +112,16 @@ async function fromFiles(files){
   try{screens=(await Promise.all(files.map(f=>readScreen(f).catch(()=>null)))).filter(Boolean);}catch(e){screens=[];}
   if(!screens.length){toast('Bu dosyalar açılamadı. PNG, JPG, WebP ya da MP4 / WebM dene.');return;}
   const tall=screens.filter(s=>!s.wide),wide=screens.filter(s=>s.wide);
-  await buildScenes(forGoal(recipes(tall.length>0,wide.length>0)),()=>dress(tall,wide),
-    screens.length===1?screens[0].name:screens.length+' ekran');
+  const first=(tall[0]||wide[0]).img;
+  const list=await suggest(type=>MOBILE.has(type)?tall.length>0:wide.length>0,forGoal(recipes(tall.length>0,wide.length>0)),
+    ()=>dressScreens(tall,wide),variantFor(first));
+  await buildScenes(list,screens.length===1?screens[0].name:screens.length+' ekran');
 }
 
-// builds one board per recipe (dress: puts the screens on), renders their thumbnails and opens the picker
-async function buildScenes(list,dressBoard,what){
+// builds one board per suggestion, renders their thumbnails and opens the picker
+async function buildScenes(list,what){
   holdHistory(true);
-  picking={ids:[],chosen:new Set()};
+  picking={ids:[],chosen:new Set(),tpl:new Set()};
   start.hidden=true;pick.hidden=false;
   $('#wlPickTitle').textContent='Sahneler hazırlanıyor';$('#wlPickSub').textContent='';$('#wlPickSub').textContent=what;
   $('#wlAdd').disabled=true;$('#wlAdd').textContent='Artboard ekle';
@@ -118,9 +134,8 @@ async function buildScenes(list,dressBoard,what){
   try{
     for(let i=0;i<list.length;i++){
       if(!picking)return;
-      const b=addBoard(null,list[i].n);picking.ids.push(b.id);
-      if(list[i].ratio){state.ratio=list[i].ratio;layout();}  // before the composition, so it frames for this shape
-      applyComp(list[i]);await dressBoard();await frames();
+      const id=await list[i].build(),b=boardById(id);picking.ids.push(id);if(list[i].tpl)picking.tpl.add(id);
+      await frames();
       storeActive();  // the board's thumbnail, rendered off-view
       const t=tiles[i],[w,h]=boardSize(b);t.dataset.id=b.id;t.style.setProperty('--ar',w+'/'+h);
       const im=t.querySelector('.im');im.classList.remove('wait');if(b.thumb)im.style.backgroundImage='url("'+b.thumb+'")';
@@ -144,9 +159,10 @@ function confirm(){
   const keep=picking.ids.filter(id=>picking.chosen.has(id));
   picking.ids.filter(id=>!picking.chosen.has(id)).forEach(removeBoard);
   let x=0;keep.forEach(id=>{const b=boardById(id);moveBoard(id,x,0);x+=boardSize(b)[0]+160;});
-  // a promo video: long screenshots scroll to their end over the artboard's time, then Canlandır opens on it
+  // a promo video: the templates bring their own motion; on a composition long screenshots scroll to their end
+  // over the artboard's time. Then Canlandır opens on it
   const video=goal==='video';
-  if(video)keep.forEach(id=>{activate(id);state.devices.forEach(d=>{if(d.img&&!d.video)applyPreset('scroll',d);});});
+  if(video)keep.filter(id=>!picking.tpl.has(id)).forEach(id=>{activate(id);state.devices.forEach(d=>{if(d.img&&!d.video)applyPreset('scroll',d);});});
   activate(keep[0]);
   picking=null;holdHistory(false);sync();setUi({kind:'board'});
   if(video)setMode('animate');
@@ -196,10 +212,12 @@ async function fromUrl(raw){
   if(!shots.phone){const e=res.find(r=>r.status==='rejected'),why=e&&e.reason;
     endCapture(true);$('#wlPnote').textContent=why&&why.user?why.message:'Sayfa yakalanamadı'+(why?': '+(why.message||why):'.');$('#wlUrl').focus();return;}
   endCapture();
-  // a scene is offered when all its devices have their shot
-  const list=forGoal(SITE_SCENES.map(comp).filter(c=>c.items.every(it=>shots[it.type])));
+  // a scene is offered when all its devices have their shot (a monitor shows the laptop's)
+  const shotOf=type=>shots[type]||(type==='monitor'?shots.laptop:null);
   const name=siteName(shots.phone.finalUrl);
-  await buildScenes(list,async()=>{state.devices.forEach(d=>{const s=shots[d.type];if(s)putShot(d,s.img,s.finalUrl,raw);});},name);
+  const list=await suggest(type=>!!shotOf(type),forGoal(SITE_SCENES.map(comp).filter(c=>c.items.every(it=>shots[it.type]))),
+    async()=>{state.devices.forEach(d=>{const s=shotOf(d.type);if(s)putShot(d,s.img,s.finalUrl,raw);});},variantFor(shots.phone.img));
+  await buildScenes(list,name);
 }
 function endCapture(keep){start.classList.remove('wl-busy');$('#wlProg').hidden=!keep;$('#wlCancel').hidden=true;$('#wlGo').textContent='Mockup oluştur';}
 $('#wlCancel').addEventListener('click',()=>{run++;endCapture();$('#wlUrl').focus();});
