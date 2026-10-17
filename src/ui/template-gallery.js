@@ -1,7 +1,7 @@
 import {setScreenTexture} from '../devices/screen.js';
-import {fromProjectFile} from '../io/project.js';
+import {fromProjectFile,toProjectFile} from '../io/project.js';
 import {state} from '../state/state.js';
-import {activate,addBoard,fillThumbs,storeActive} from './boards.js';
+import {activate,activeBoard,addBoard,doc as docState,fillThumbs,storeActive} from './boards.js';
 import {holdHistory} from './history.js';
 import {loadShotVideo} from './image-input.js';
 import {toast} from './toast.js';
@@ -90,8 +90,63 @@ async function useFromTab(t){
   finally{holdHistory(false);}
   fillThumbs();
 }
+/* ---------- the user's own templates: an artboard saved with its screens emptied, kept in this browser (IndexedDB,
+   its own database: they belong to no project) as {id, name, created, thumb, blob (project file)} */
+const UDB='mockup-templates',USTORE='tpl';
+let udbP=null;
+const udb=()=>udbP||(udbP=new Promise((res,rej)=>{const r=indexedDB.open(UDB,1);r.onupgradeneeded=()=>r.result.createObjectStore(USTORE,{keyPath:'id'});
+  r.onsuccess=()=>res(r.result);r.onerror=()=>{udbP=null;rej(r.error);};}));
+const tx=async(mode,fn)=>{const d=await udb();return new Promise((res,rej)=>{const t=d.transaction(USTORE,mode),st=t.objectStore(USTORE),out=fn(st);
+  t.oncomplete=()=>res(out&&out.result);t.onerror=()=>rej(t.error);});};
+const mineAll=()=>tx('readonly',st=>st.getAll()).then(l=>(l||[]).sort((a,b)=>b.created-a.created)).catch(()=>[]);
+// a data URL scaled to w px wide (JPEG), for the card
+function smaller(url,w){
+  return new Promise(res=>{if(!url){res(null);return;}const i=new Image();i.onload=()=>{const k=Math.min(1,w/i.naturalWidth),c=document.createElement('canvas');
+    c.width=Math.round(i.naturalWidth*k);c.height=Math.round(i.naturalHeight*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.85));};
+    i.onerror=()=>res(null);i.src=url;});
+}
+async function saveAsTemplate(){
+  const b=activeBoard();if(!b){toast('Önce bir artboard ekle.');return;}
+  storeActive();
+  // the screens go (keys of device screenshots and videos), everything else stays: scene, lights, text, frames
+  const drop=new Set(),devices=b.snap.devices.map(d=>{if(d.img)drop.add(d.img);if(d.video)drop.add(d.video);
+    return Object.assign({},d,{img:null,imgName:'',video:null,videoName:'',scroll:0,siteUrl:''});});
+  const images={};for(const k in b.snap.images)if(!drop.has(k))images[k]=b.snap.images[k];
+  const snap=Object.assign({},b.snap,{devices,images});
+  const doc={v:2,layout:'max',active:1,boards:[{id:1,name:b.name,x:0,y:0,snap}],fonts:(docState.fonts||[]).slice()};
+  try{
+    const f=await toProjectFile(doc),rec={id:'u'+Date.now(),name:b.name,created:Date.now(),thumb:await smaller(b.thumb,480),blob:f.blob};
+    await tx('readwrite',st=>st.put(rec));
+    toast('"'+b.name+'" şablon olarak kaydedildi. Şablonlar sekmesinde, tüm projelerde.');renderMine();
+  }catch(e){toast('Şablon kaydedilemedi: '+(e.message||e));}
+}
+async function useMine(rec){
+  holdHistory(true);
+  try{
+    const d=await fromProjectFile(rec.blob),s=screensOnBoard(),ids=[];
+    for(const b of d.boards){ids.push(addBoard(b.snap,rec.name).id);await dressScreens(s.tall,s.wide);storeActive();}
+    activate(ids[0]);setUi({kind:'board'});fitAll();toast(rec.name+' yeni artboard olarak eklendi');
+  }catch(e){toast('Şablon açılamadı: '+(e.message||e));}
+  finally{holdHistory(false);}
+  fillThumbs();
+}
+const mine=$('#tplMine'),mineEmpty=$('#tplMineEmpty');
+async function renderMine(){
+  const l=await mineAll();mineEmpty.hidden=l.length>0;mine.innerHTML='';
+  l.forEach(rec=>{
+    const w=document.createElement('div');w.className='tpl-mine';
+    const b=document.createElement('button');b.type='button';b.className='tpl';b.title=rec.name+': yeni artboard olarak ekle';
+    b.innerHTML='<span class="tpl-im"><img alt=""></span><span class="tpl-n"></span>';if(rec.thumb)b.querySelector('img').src=rec.thumb;
+    b.querySelector('.tpl-n').textContent=rec.name;b.addEventListener('click',()=>useMine(rec));
+    const x=document.createElement('button');x.type='button';x.className='ib sm tpl-del';x.setAttribute('aria-label',rec.name+' şablonunu sil');x.title='Şablonu sil';x.textContent='✕';
+    x.addEventListener('click',async()=>{await tx('readwrite',st=>st.delete(rec.id));renderMine();toast('Şablon silindi');});
+    w.append(b,x);mine.appendChild(w);});
+}
+$('#tplSave').addEventListener('click',saveAsTemplate);
+renderMine();
+
 $$('#tplGoals button').forEach(b=>b.addEventListener('click',()=>{goal=b.dataset.goal;$$('#tplGoals button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderTab();}));
 $$('#tplVariant button').forEach(b=>b.addEventListener('click',()=>{variant=b.dataset.v;$$('#tplVariant button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderTab();}));
 renderTab();
 
-export {MOBILE,deviceTypes,dressScreens,openTemplate,templates};
+export {MOBILE,deviceTypes,dressScreens,openTemplate,saveAsTemplate,templates};

@@ -840,3 +840,7 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .tpl .tpl-im img{display:block}
 .tpl .tpl-b{position:absolute;left:4px;bottom:4px;font-size:10px;line-height:14px;padding:0 5px;border-radius:4px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap}
 .tpl .tpl-n{font-size:11px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tpl-mine{position:relative}
+.tpl-mine .tpl{width:100%}
+.tpl-del{position:absolute;right:4px;top:4px;background:var(--panel);box-shadow:0 0 0 1px var(--line);opacity:0;transition:opacity .1s}
+.tpl-mine:hover .tpl-del,.tpl-del:focus-visible{opacity:1}
