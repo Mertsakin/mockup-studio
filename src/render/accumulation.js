@@ -21,7 +21,9 @@ const showMat=new THREE.ShaderMaterial({uniforms:{tex:{value:null},count:{value:
   blending:THREE.NoBlending,depthTest:false,depthWrite:false,toneMapped:false});
 const quadScene=new THREE.Scene(),quadCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1),quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),addMat);
 quad.frustumCulled=false;quadScene.add(quad);
-const ACC={frame:null,acc:null,w:0,h:0,type:null,n:0,max:64,paused:false};  // paused: the live loop waits (video export renders)
+// first: samples in the frame right after a change (1 in the studio; the embed player raises it while the scene
+// keeps moving, where single-sample PCSS shadows would show their pattern)
+const ACC={frame:null,acc:null,w:0,h:0,type:null,n:0,max:64,paused:false,first:1};  // paused: the live loop waits (video export renders)
 (function(){
   if(renderer.extensions.has('EXT_color_buffer_float'))ACC.type=THREE.HalfFloatType;
 })();
@@ -89,11 +91,12 @@ function startLoop(){(function loop(){
   if(ACC.n>=max){onIdle.forEach(f=>f());return;}
   renderer.getDrawingBufferSize(dbs);
   if(!accEnsure(dbs.x,dbs.y)){hookAll();renderer.shadowMap.needsUpdate=true;renderer.setRenderTarget(null);renderer.render(scene,camera);ACC.n=ACC.max;return;}
-  const per=ACC.n===0?1:2;
+  const per=ACC.n===0?ACC.first:2;
   for(let k=0;k<per&&ACC.n<max;k++){renderSample(ACC.n);ACC.n++;}
   present(ACC.n);
 })();}
 
 const DOF_SAMPLES=192;
 const pauseLive=on=>{ACC.paused=on;if(!on)redraw.dirty=true;};
-export {DOF_SAMPLES,pauseLive,renderNow,startLoop};
+const setFirstSamples=n=>{ACC.first=Math.max(1,Math.min(8,Math.round(n)));};
+export {DOF_SAMPLES,pauseLive,renderNow,setFirstSamples,startLoop};

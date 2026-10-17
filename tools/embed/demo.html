@@ -1,0 +1,12 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gömme denemesi</title>
+<style>body{margin:0;font:16px/1.5 system-ui,sans-serif;color:#18181b;background:#fafafa}section{max-width:1100px;margin:0 auto;padding:48px 24px}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center}h1{font-size:44px;line-height:1.1;margin:0 0 12px}.sp{height:60vh}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}mockup-view{border-radius:16px;overflow:hidden}</style>
+<script src="/embed/mockup-view.js" defer></script></head><body>
+<section class="hero"><div><h1>Ürününü göster</h1><p>Fare: mockup sayfadaki imleci izliyor.</p></div>
+<mockup-view id="m1" src="/embed.html?src=/renders/embed-test.mockup.json" mode="mouse" alt="Uygulama ekranı telefonda"></mockup-view></section>
+<div class="sp"></div>
+<section><h2>Kaydırma</h2><p>Sayfa kaydıkça animasyon ilerler.</p><mockup-view id="m2" src="/embed.html?src=/renders/embed-test.mockup.json" mode="scroll" ratio="16/9"></mockup-view></section>
+<section class="grid"><div><h2>Sürükle</h2><mockup-view id="m3" src="/embed.html?src=/renders/embed-test.mockup.json" mode="drag"></mockup-view></div>
+<div><h2>Döngü</h2><mockup-view id="m4" src="/embed.html?src=/renders/embed-test.mockup.json&bg=transparent" mode="loop"></mockup-view></div></section>
+<div class="sp"></div></body></html>

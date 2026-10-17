@@ -3,3 +3,4 @@ renders/
 dist/
 .DS_Store
 tools/landing/src/
+dist-embed/
