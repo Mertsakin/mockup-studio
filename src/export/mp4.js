@@ -4,20 +4,20 @@ import {ArrayBufferTarget,Muxer} from 'mp4-muxer';
    recording (ui/record.js). pickConfig finds the first supported AVC level for the size; mp4Encoder takes canvases
    (or anything VideoFrame accepts) frame by frame at a fixed rate and returns the finished file as a Blob. */
 const BPP=.16;  // bits per pixel per frame
-const bitrate=(w,h,fps)=>Math.round(w*h*fps*BPP);
+const bitrate=(w,h,fps,bpp=BPP)=>Math.round(w*h*fps*bpp);
 
-async function pickConfig(w,h,fps){
+async function pickConfig(w,h,fps,bpp){
   if(typeof VideoEncoder==='undefined')return null;
   for(const codec of ['avc1.640034','avc1.640033','avc1.64002a','avc1.4d0034','avc1.42003e']){
-    const c={codec,width:w,height:h,bitrate:bitrate(w,h,fps),framerate:fps,avc:{format:'avc'}};
+    const c={codec,width:w,height:h,bitrate:bitrate(w,h,fps,bpp),framerate:fps,avc:{format:'avc'}};
     try{const r=await VideoEncoder.isConfigSupported(c);if(r.supported)return r.config;}catch(e){/* next */}
   }
   return null;
 }
 
-// enc = await mp4Encoder(W, H, fps); await enc.add(canvas, i) per frame (i = frame index); blob = await enc.finish(); enc.close() on abort
-async function mp4Encoder(W,H,fps){
-  const config=await pickConfig(W,H,fps);
+// enc = await mp4Encoder(W, H, fps[, bpp]); await enc.add(canvas, i) per frame (i = frame index); blob = await enc.finish(); enc.close() on abort
+async function mp4Encoder(W,H,fps,bpp){
+  const config=await pickConfig(W,H,fps,bpp);
   if(!config)throw new Error('codec');
   const target=new ArrayBufferTarget();
   const muxer=new Muxer({target,video:{codec:'avc',width:W,height:H,frameRate:fps},fastStart:'in-memory',firstTimestampBehavior:'offset'});

@@ -13,19 +13,22 @@ import {toast} from './toast.js';
 /* "Ekran kaydı": the site opens live inside the studio, in a lightbox, at the selected device's viewport. The page runs
    in the dev server's Chrome (tools/capture/record.mjs, persistent profile: logins and solved bot checks stay) and its
    picture streams here as CDP screencast frames (JPEG) over /api/record/ws; the mouse and keyboard on the canvas go
-   back, so cookie banners, logins and verifications are the user's to handle. Başlat keeps the incoming frames with
-   their arrival time (at most MAX_FRAMES / MAX_MS; then it stops by itself); Durdur resamples them at FPS (each output
-   frame shows the last frame received at or before its time), encodes them to an H.264 MP4 (export/mp4.js) and puts
-   the video on the target device screens through the screen-video loader (image-input.js), then switches to Canlandır.
+   back, so cookie banners, logins and verifications are the user's to handle. Başlat encodes while recording: the
+   frames drawn on the canvas also go to an H.264 encoder (export/mp4.js) on a FPS clock, each output frame showing
+   the newest frame received by its time, so only the compressed video is kept (MAX_MS, 2 min at REC_BPP ≈ 75 MB;
+   then it stops by itself). With İmleç on, the pointer (an arrow, a ring on each press) is drawn over the frames:
+   it is the page's own cursor position, which the screencast does not show. Durdur finishes the file and puts it
+   on the target device screens through the screen-video loader (image-input.js), then switches to Canlandır.
    Keys never reach the studio while the lightbox is open (a capture-phase listener on window); Esc closes it. */
-const FPS=30,MAX_FRAMES=900,MAX_MS=30000,MIN_GAP=1000/24-1;  // frames kept at most ~24/s: 30 s stays under MAX_FRAMES
+const FPS=30,MAX_MS=120000,REC_BPP=.05;  // a screen recording is mostly still: a third of the export's bits per pixel
 // the stream's sharpness: the server's cap (record.mjs recordDpr), mirrored here for the label and the canvas
 const REC_DPR_MAX=3,REC_PX=3.2e6;
 const recordDpr=(w,h,want)=>Math.max(1,Math.floor(Math.min(REC_DPR_MAX,Math.sqrt(REC_PX/(w*h)),Math.max(1,want||1))*4)/4);
 const scrim=$('#recScrim'),canvas=$('#recCanvas'),g=canvas.getContext('2d'),stage=$('#recStage'),urlIn=$('#recUrl'),vpEl=$('#recVp'),
   timeEl=$('#recTime'),startBtn=$('#recStart'),windowBtn=$('#recWindow'),statusEl=$('#recStatus'),noteEl=$('#recNote'),autoEl=$('#recAuto'),autoDur=$('#recAutoDur'),
   backBtn=$('#recBack'),reloadBtn=$('#recReload');
-const R={ws:null,open:false,ready:false,dev:null,vp:null,target:'one',last:null,rec:null,recT0:0,recLast:0,recEnd:0,timer:0,encoding:false,headed:false,url:'',prevFocus:null};
+const R={ws:null,open:false,ready:false,dev:null,vp:null,target:'one',last:null,rec:null,recT0:0,recEnd:0,timer:0,encoding:false,headed:false,url:'',prevFocus:null,
+  cur:{x:0,y:0,in:false},presses:[]};
 const fmtX=x=>(Math.round(x*4)/4).toString().replace('.',',')+'×';
 const status=t=>{statusEl.textContent=t||'';statusEl.title=t||'';};
 const note=t=>{noteEl.textContent=t||'';noteEl.hidden=!t;};
@@ -50,7 +53,7 @@ function openRecord(url){
 function closeRecord(){
   if(!R.open)return;
   send({type:'close'});if(R.ws){const ws=R.ws;R.ws=null;try{ws.close();}catch(e){/* gone */}}
-  clearInterval(R.timer);R.rec=null;R.open=false;R.last=null;pending=null;
+  clearInterval(R.timer);if(R.rec){if(R.rec.enc)R.rec.enc.close();if(R.rec.bmp)R.rec.bmp.close();}R.rec=null;R.open=false;R.last=null;pending=null;
   scrim.hidden=true;
   const f=R.prevFocus;R.prevFocus=null;if(f&&f.focus&&document.contains(f))f.focus({preventScroll:true});
 }
@@ -97,7 +100,7 @@ function onFrame(buf){
   if(buf.byteLength<=8)return;
   const bytes=new Uint8Array(buf,8),t=performance.now();
   R.last=bytes;
-  if(R.rec&&t-R.recLast>=MIN_GAP){R.rec.push({t,data:bytes});R.recLast=t;if(R.rec.length>=MAX_FRAMES||t-R.recT0>=MAX_MS)stopRecording();}
+  if(R.rec&&t-R.recT0>=MAX_MS)stopRecording();
   pending=bytes;if(!drawing)drawLoop();
 }
 async function drawLoop(){
@@ -107,7 +110,8 @@ async function drawLoop(){
       const b=pending;pending=null;
       let bmp;try{bmp=await createImageBitmap(new Blob([b],{type:'image/jpeg'}));}catch(e){continue;}
       if(canvas.width!==bmp.width||canvas.height!==bmp.height){canvas.width=bmp.width;canvas.height=bmp.height;}
-      g.drawImage(bmp,0,0);bmp.close();
+      g.drawImage(bmp,0,0);
+      if(R.rec){if(R.rec.bmp)R.rec.bmp.close();R.rec.bmp=bmp;pump();}else bmp.close();  // recording: the newest frame for the encoder
     }
   }finally{drawing=false;}
 }
@@ -116,11 +120,13 @@ async function drawLoop(){
 const pos=e=>{const r=canvas.getBoundingClientRect();return {x:+((e.clientX-r.left)/r.width*R.vp.width).toFixed(1),y:+((e.clientY-r.top)/r.height*R.vp.height).toFixed(1)};};
 let move=null,moveRaf=0;
 const flushMove=()=>{moveRaf=0;if(move){send(move);move=null;}};
-canvas.addEventListener('pointermove',e=>{if(!R.ready||e.pointerType==='touch')return;move={type:'input',kind:'move',...pos(e)};if(!moveRaf)moveRaf=requestAnimationFrame(flushMove);});
+canvas.addEventListener('pointerleave',()=>{R.cur.in=false;});
+canvas.addEventListener('pointermove',e=>{if(!R.ready||e.pointerType==='touch')return;const p=pos(e);R.cur={x:p.x,y:p.y,in:true};move={type:'input',kind:'move',...p};if(!moveRaf)moveRaf=requestAnimationFrame(flushMove);});
 canvas.addEventListener('pointerdown',e=>{
   canvas.focus({preventScroll:true});if(!R.ready||e.button===2||e.pointerType==='touch')return;e.preventDefault();
   try{canvas.setPointerCapture(e.pointerId);}catch(err){/* no capture */}
-  flushMove();send({type:'input',kind:'down',button:e.button,clicks:e.detail,...pos(e)});
+  const p=pos(e);R.cur={x:p.x,y:p.y,in:true};if(R.rec)R.presses.push({x:p.x,y:p.y,t:performance.now()});
+  flushMove();send({type:'input',kind:'down',button:e.button,clicks:e.detail,...p});
 });
 canvas.addEventListener('pointerup',e=>{if(!R.ready||e.button===2||e.pointerType==='touch')return;flushMove();send({type:'input',kind:'up',button:e.button,clicks:e.detail,...pos(e)});});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -160,53 +166,64 @@ $$('#recTarget button').forEach(b=>b.addEventListener('click',()=>{setTarget(b.d
 function syncStart(){
   const on=recording();
   startBtn.classList.toggle('on',on);startBtn.innerHTML=(on?'<span class="rec-stop"></span>':'<span class="rec-dot"></span>')+'<span></span>';
-  startBtn.lastChild.textContent=on?'Durdur':'Başlat';startBtn.title=on?'Kaydı bitir ve cihaza göm':'Ekranı kaydetmeye başla (en çok '+MAX_MS/1000+' sn)';
+  startBtn.lastChild.textContent=on?'Durdur':'Başlat';startBtn.title=on?'Kaydı bitir ve cihaza göm':'Ekranı kaydetmeye başla (en çok '+MAX_MS/60000+' dk)';
   timeEl.classList.toggle('on',on);
 }
 startBtn.addEventListener('click',()=>{if(recording())stopRecording();else startRecording();canvas.focus({preventScroll:true});});
 
-/* ---------- recording */
+/* ---------- recording: encoded live. R.rec = {enc, cv, cg, W, H, n (frames written), bmp (newest frame), busy} */
+const CUR=[[0,0],[0,17],[4.5,13],[7.5,20],[10,19],[7,12.5],[12.5,12.5]];  // an arrow pointer, CSS px, tip at 0,0
+function drawCursor(cg,k,now){
+  if(!$('#recCursor').checked)return;
+  // presses: a ring that grows and fades for 450 ms
+  R.presses=R.presses.filter(p=>now-p.t<450);
+  for(const p of R.presses){const a=(now-p.t)/450;cg.beginPath();cg.arc(p.x*k,p.y*k,(8+16*a)*k,0,Math.PI*2);
+    cg.strokeStyle='rgba(11,104,245,'+(.7*(1-a))+')';cg.lineWidth=3*k;cg.stroke();}
+  if(!R.cur.in)return;
+  cg.save();cg.translate(R.cur.x*k,R.cur.y*k);cg.scale(k,k);cg.beginPath();CUR.forEach(([x,y],i)=>i?cg.lineTo(x,y):cg.moveTo(x,y));cg.closePath();
+  cg.fillStyle='#111';cg.strokeStyle='#fff';cg.lineWidth=1.6;cg.lineJoin='round';cg.stroke();cg.fill();cg.restore();
+}
+// writes output frames up to now (one per 1/FPS since Başlat), each the newest frame received
+async function pump(){
+  const r=R.rec;if(!r||r.busy||!r.bmp)return;
+  r.busy=true;
+  try{
+    if(!r.enc){r.W=r.bmp.width-r.bmp.width%2;r.H=r.bmp.height-r.bmp.height%2;r.cv=mkCanvas(r.W,r.H);r.cg=r.cv.getContext('2d');r.enc=await mp4Encoder(r.W,r.H,FPS,REC_BPP);}
+    const now=performance.now(),want=Math.floor((now-R.recT0)*FPS/1000)+1,k=r.W/R.vp.width;
+    while(r.n<want&&R.rec===r){
+      r.cg.drawImage(r.bmp,0,0,r.W,r.H);drawCursor(r.cg,k,R.recT0+r.n*1000/FPS);
+      await r.enc.add(r.cv,r.n);r.n++;
+    }
+  }catch(e){r.failed=e;}
+  finally{r.busy=false;}
+}
 function startRecording(){
   if(!R.ready||recording()||R.encoding)return;
-  const t=performance.now();R.rec=[];R.recT0=R.recLast=t;
-  if(R.last){R.rec.push({t,data:R.last});}  // the picture on screen at Başlat is the first frame, even if the page is still
-  clearInterval(R.timer);R.timer=setInterval(()=>{timeEl.textContent=fmtDur((performance.now()-R.recT0)/1000);},100);
+  R.rec={enc:null,n:0,bmp:null,busy:false};R.recT0=performance.now();R.presses=[];
+  // the picture on screen at Başlat is the first frame, even if the page never draws again
+  if(R.last)createImageBitmap(new Blob([R.last],{type:'image/jpeg'})).then(b=>{if(R.rec&&!R.rec.bmp){R.rec.bmp=b;pump();}else b.close();}).catch(()=>{});
+  clearInterval(R.timer);R.timer=setInterval(()=>{timeEl.textContent=fmtDur((performance.now()-R.recT0)/1000);pump();},1000/FPS);
   timeEl.textContent=fmtDur(0);syncStart();status('Kaydediliyor');
   if(autoEl.checked)send({type:'scroll',dur:Math.max(1,Math.min(30,+autoDur.value||8))});
 }
 async function stopRecording(){
   if(!recording())return;
-  const frames=R.rec;R.rec=null;R.recEnd=performance.now();clearInterval(R.timer);syncStart();
-  if(!frames.length){status('');toast('Kayıtta kare yok: sayfa hiç çizilmedi.');return;}
-  R.encoding=true;startBtn.disabled=windowBtn.disabled=true;
-  const span=Math.min(MAX_MS/1000,Math.max(1/FPS,(R.recEnd-R.recT0)/1000));
+  R.recEnd=performance.now();clearInterval(R.timer);
+  const r=R.rec;
+  while(r.busy)await new Promise(res=>setTimeout(res,5));
+  await pump();  // the frames up to Durdur
+  R.rec=null;syncStart();
+  if(!r.enc||!r.n){if(r.bmp)r.bmp.close();if(r.enc)r.enc.close();status('');toast(r.failed&&r.failed.message==='codec'?'Bu boyutta video kodlanamıyor: daha küçük bir cihaz dene.':'Kayıtta kare yok: sayfa hiç çizilmedi.');return;}
+  R.encoding=true;startBtn.disabled=windowBtn.disabled=true;status('Video hazırlanıyor…');
+  const span=r.n/FPS;
   try{
-    const blob=await encode(frames,span,p=>{status('Kodlanıyor %'+Math.round(p*100));timeEl.textContent='%'+Math.round(p*100);});
+    if(r.failed)throw r.failed;
+    const blob=await r.enc.finish();
     await embed(blob,span);
   }catch(e){
     console.warn('Kayıt kodlanamadı:',e);
     status('');toast(e&&e.message==='codec'?'Bu boyutta video kodlanamıyor: daha küçük bir cihaz dene.':'Kayıt videoya çevrilemedi.');
-  }finally{R.encoding=false;startBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;timeEl.textContent='';}
-}
-// frames -> MP4 at FPS: output frame i (time i / FPS from the start) shows the last received frame at or before it
-async function encode(frames,span,onProgress){
-  const n=Math.max(1,Math.round(span*FPS)),t0=frames[0].t;
-  const first=await createImageBitmap(new Blob([frames[0].data],{type:'image/jpeg'}));
-  const W=first.width-first.width%2,H=first.height-first.height%2;  // H.264 wants even sizes
-  const cv=mkCanvas(W,H),cg=cv.getContext('2d');cg.drawImage(first,0,0);first.close();
-  const enc=await mp4Encoder(W,H,FPS);
-  try{
-    let fi=0,drawn=0;
-    for(let i=0;i<n;i++){
-      const ti=t0+i*1000/FPS;
-      while(fi+1<frames.length&&frames[fi+1].t<=ti)fi++;
-      if(fi!==drawn){const bmp=await createImageBitmap(new Blob([frames[fi].data],{type:'image/jpeg'}));cg.drawImage(bmp,0,0,W,H);bmp.close();drawn=fi;}
-      await enc.add(cv,i);
-      if(i%5===0){onProgress((i+1)/n);await new Promise(r=>setTimeout(r,0));}
-    }
-    onProgress(1);
-    return await enc.finish();
-  }finally{enc.close();}
+  }finally{r.enc.close();if(r.bmp)r.bmp.close();R.encoding=false;startBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;timeEl.textContent='';}
 }
 // the MP4 goes on the target devices through the screen-video loader (artboard duration from the video, poster null,
 // loop on), the lightbox closes and the studio switches to Canlandır
