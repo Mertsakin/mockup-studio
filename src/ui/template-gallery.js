@@ -124,9 +124,11 @@ async function saveAsTemplate(){
     return Object.assign({},d,{img:null,imgName:'',video:null,videoName:'',scroll:0,siteUrl:''});});
   const images={};for(const k in b.snap.images)if(!drop.has(k))images[k]=b.snap.images[k];
   const snap=Object.assign({},b.snap,{devices,images});
-  const doc={v:2,layout:'max',active:1,boards:[{id:1,name:b.name,x:0,y:0,snap}],fonts:(docState.fonts||[]).slice()};
+  const thumb=await smaller(b.thumb,480);
+  // the thumbnail travels inside the file (a project file keeps board thumbnails): an exported template shows itself
+  const doc={v:2,layout:'max',active:1,boards:[{id:1,name:b.name,x:0,y:0,snap,thumb}],fonts:(docState.fonts||[]).slice()};
   try{
-    const f=await toProjectFile(doc),rec={id:'u'+Date.now(),name:b.name,created:Date.now(),thumb:await smaller(b.thumb,480),blob:f.blob};
+    const f=await toProjectFile(doc),rec={id:'u'+Date.now(),name:b.name,created:Date.now(),thumb,blob:f.blob,zip:f.zip};
     await tx('readwrite',st=>st.put(rec));
     toast('"'+b.name+'" şablon olarak kaydedildi. Şablonlar sekmesinde, tüm projelerde.');renderMine();
   }catch(e){toast('Şablon kaydedilemedi: '+(e.message||e));}
@@ -149,10 +151,52 @@ async function renderMine(){
     const b=document.createElement('button');b.type='button';b.className='tpl';b.title=rec.name+': yeni artboard olarak ekle';
     b.innerHTML='<span class="tpl-im"><img alt=""></span><span class="tpl-n"></span>';if(rec.thumb)b.querySelector('img').src=rec.thumb;
     b.querySelector('.tpl-n').textContent=rec.name;b.addEventListener('click',()=>useMine(rec));
-    const x=document.createElement('button');x.type='button';x.className='ib sm tpl-del';x.setAttribute('aria-label',rec.name+' şablonunu sil');x.title='Şablonu sil';x.textContent='✕';
-    x.addEventListener('click',async()=>{await tx('readwrite',st=>st.delete(rec.id));renderMine();toast('Şablon silindi');});
-    w.append(b,x);mine.appendChild(w);});
+    const acts=document.createElement('span');acts.className='tpl-acts';
+    const act=(label,text,fn)=>{const x=document.createElement('button');x.type='button';x.className='ib sm';x.setAttribute('aria-label',rec.name+': '+label);x.title=label;x.textContent=text;
+      x.addEventListener('click',e=>{e.stopPropagation();fn();});acts.appendChild(x);};
+    act('Yeniden adlandır','✎',()=>rename(rec,b.querySelector('.tpl-n')));
+    act('Dosya olarak indir','⤓',()=>download(rec));
+    act('Şablonu sil','✕',async()=>{await tx('readwrite',st=>st.delete(rec.id));renderMine();toast('Şablon silindi');});
+    w.append(b,acts);mine.appendChild(w);});
 }
+// the name in place: Enter keeps it, Esc or an empty name puts the old one back
+function rename(rec,el){
+  const inp=document.createElement('input');inp.type='text';inp.className='tpl-ren';inp.value=rec.name;inp.setAttribute('aria-label','Şablon adı');
+  el.replaceWith(inp);inp.focus();inp.select();
+  let done=false;
+  const end=async ok=>{if(done)return;done=true;const v=inp.value.trim();
+    if(ok&&v&&v!==rec.name){rec.name=v.slice(0,60);await tx('readwrite',st=>st.put(rec));}
+    renderMine();};
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')end(true);else if(e.key==='Escape')end(false);});
+  inp.addEventListener('blur',()=>end(true));
+}
+// a template as a file to keep or share: the project file it is stored as (.mockup-sablon.json, or .zip with media)
+const slug=s=>String(s).toLowerCase().replace(/[çğıöşü]/g,c=>({ç:'c',ğ:'g',ı:'i',ö:'o',ş:'s',ü:'u'})[c]).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'sablon';
+async function download(rec){
+  // the name given here goes into the file (renaming changes only the stored record)
+  let blob=rec.blob;
+  if(!rec.zip)try{const j=JSON.parse(await blob.text());if(j.boards&&j.boards[0])j.boards[0].name=rec.name;blob=new Blob([JSON.stringify(j)],{type:'application/json'});}catch(e){/* as stored */}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=slug(rec.name)+(rec.zip?'.mockup-sablon.zip':'.mockup-sablon.json');
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+// importing: a template file (or any project file: its first artboard), its screens emptied as when saving
+async function importFiles(files){
+  let n=0;
+  for(const f of files){
+    try{
+      const d=await fromProjectFile(f),b=d.boards[0];if(!b)continue;
+      const drop=new Set(),devices=(b.snap.devices||[]).map(x=>{if(x.img)drop.add(x.img);if(x.video)drop.add(x.video);return Object.assign({},x,{img:null,imgName:'',video:null,videoName:'',scroll:0,siteUrl:''});});
+      const images={};for(const k in b.snap.images)if(!drop.has(k))images[k]=b.snap.images[k];
+      const name=(b.name&&!/^Artboard \\d+$/.test(b.name)?b.name:f.name.replace(/\.mockup(-sablon)?\.(json|zip)$/i,'').replace(/\.(json|zip)$/i,''))||'Şablon';
+      const doc={v:2,layout:'max',active:1,boards:[{id:1,name,x:0,y:0,snap:Object.assign({},b.snap,{devices,images}),thumb:b.thumb||null}],fonts:d.fonts||[]};
+      const pf=await toProjectFile(doc);
+      await tx('readwrite',st=>st.put({id:'u'+Date.now()+'-'+n,name,created:Date.now(),thumb:b.thumb||null,blob:pf.blob,zip:pf.zip}));n++;
+    }catch(e){toast(f.name+' açılamadı: '+(e.message||e));}
+  }
+  if(n){toast(n+' şablon içe aktarıldı');renderMine();}
+}
+$('#tplImport').addEventListener('click',()=>$('#tplImportFile').click());
+$('#tplImportFile').addEventListener('change',e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)importFiles(fs);});
 $('#tplSave').addEventListener('click',saveAsTemplate);
 renderMine();
 

@@ -101,7 +101,8 @@
           <p class="empty tpl-empty" id="tplEmpty" hidden>Şablonlar yüklenemedi.</p>
         </section>
         <section class="sec" data-sec="tpl-mine">
-          <h3 class="sh">Kendi şablonların<span class="sh-acts"><button class="ib sm" type="button" id="tplSave" aria-label="Etkin artboard'u şablon olarak kaydet" title="Etkin artboard'u şablon olarak kaydet"><span data-icon="add-circle" data-size="14"></span></button></span></h3>
+          <h3 class="sh">Kendi şablonların<span class="sh-acts"><button class="ib sm" type="button" id="tplImport" aria-label="Şablon dosyası içe aktar" title="Şablon dosyası içe aktar"><span data-icon="import" data-size="14"></span></button><button class="ib sm" type="button" id="tplSave" aria-label="Etkin artboard'u şablon olarak kaydet" title="Etkin artboard'u şablon olarak kaydet"><span data-icon="add-circle" data-size="14"></span></button></span></h3>
+          <input type="file" id="tplImportFile" accept=".json,.zip,application/json,application/zip" multiple hidden>
           <div class="tpl-grid" id="tplMine"></div>
           <p class="empty" id="tplMineEmpty">Bir artboard'u + ile şablon olarak kaydet: ekranları boşaltılır, sahne, ışık ve yazılar kalır. Tüm projelerde burada görünür.</p>
         </section>
