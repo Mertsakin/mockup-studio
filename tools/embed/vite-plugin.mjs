@@ -12,6 +12,9 @@ const options=(outDir,watch)=>({configFile:false,root,base:'./',publicDir:false,
     rollupOptions:{input:{embed:path.resolve(root,'embed.html')}}}});
 function finish(dir){
   fs.copyFileSync(path.resolve(root,'public/embed/mockup-view.js'),path.join(dir,'mockup-view.js'));
+  // compressed models' decoders (devices/model.js reads them next to the page: draco/, basis/); the export packs
+  // them only for scenes with a model
+  for(const d of ['draco','basis'])fs.cpSync(path.resolve(root,'public',d),path.join(dir,d),{recursive:true});
   const files=[];
   (function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=path.join(d,e.name);if(e.isDirectory())walk(f);else files.push(path.relative(dir,f).split(path.sep).join('/'));}})(dir);
   fs.writeFileSync(path.join(dir,'files.json'),JSON.stringify(files.filter(f=>f!=='files.json').sort()));

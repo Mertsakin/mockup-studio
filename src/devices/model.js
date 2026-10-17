@@ -1,8 +1,4 @@
 import * as THREE from 'three';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
-import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
-import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {fitModel} from './rt.js';
 import {ANISO,renderer,scene} from '../render/renderer.js';
 import {DEFAULT_MODEL_CM} from '../state/constants.js';
@@ -22,8 +18,14 @@ import {V3,mkCanvas} from '../util.js';
    neither) and skinned meshes their bind pose. */
 const MODEL_MAX_MB=50;
 const isModelFile=f=>!!f&&(/\.(glb|gltf)$/i.test(f.name||'')||/^model\/gltf/.test(f.type||''));
+// the loaders arrive with the first model (dynamic imports): a scene without one, and the embed player for it,
+// never downloads them
 let loader=null;
-function gltfLoader(){
+async function gltfLoader(){
+  if(loader)return loader;
+  const [{GLTFLoader},{DRACOLoader},{KTX2Loader},{MeshoptDecoder}]=await Promise.all([
+    import('three/addons/loaders/GLTFLoader.js'),import('three/addons/loaders/DRACOLoader.js'),
+    import('three/addons/loaders/KTX2Loader.js'),import('three/addons/libs/meshopt_decoder.module.js')]);
   if(loader)return loader;
   loader=new GLTFLoader();
   // decoders for compressed files (Draco, meshopt, KTX2 textures); the decoder binaries are copies of three's
@@ -37,7 +39,7 @@ function gltfLoader(){
 // a loaded asset from a URL (blob / object URL); rejects with a message the UI can show
 async function loadModel(src,name,blob){
   let gltf;
-  try{gltf=await gltfLoader().loadAsync(src);}
+  try{gltf=await (await gltfLoader()).loadAsync(src);}
   catch(e){throw new Error(String(e&&e.message||e).includes('bin')||/\.gltf$/i.test(name||'')?'gltf':'parse',{cause:e});}
   const root=gltf.scene||(gltf.scenes&&gltf.scenes[0]);
   if(!root)throw new Error('empty');
