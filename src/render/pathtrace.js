@@ -180,7 +180,8 @@ function setupStudio(env){
   const coatless=new Map();
   RT.forEach(o=>{
     o.holder.traverse(x=>{if(x.userData.ao||x===o.glare)set(x,'visible',false);});
-    [[o.screen,o.custom?o.mats.custom:o.mats.screen],...(o.mats.chrome.map?[[null,o.mats.chrome]]:[])].forEach(([meshArg,src])=>{
+    // an imported model has no screen; its materials are the file's (coat-less copies below, like the devices')
+    if(!o.model)[[o.screen,o.custom?o.mats.custom:o.mats.screen],...(o.mats.chrome.map?[[null,o.mats.chrome]]:[])].forEach(([meshArg,src])=>{
       const glow=new THREE.MeshPhysicalMaterial({color:0x000000,emissive:0xffffff,emissiveMap:src.map,emissiveIntensity:SCREEN_GLOW,
         roughness:.06,specularIntensity:SCREEN_SPEC,map:o.custom?src.map:null,transparent:!!o.custom,alphaTest:o.custom?.01:0,side:src.side});
       const targets=meshArg?[meshArg]:[];if(!meshArg)o.holder.traverse(x=>{if(x.material===src)targets.push(x);});

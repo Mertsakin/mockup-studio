@@ -27,7 +27,11 @@ const COMPS=[
   {n:'Masaüstü seti',items:[{type:'monitor'},{type:'laptop',px:-31,py:-10.25,pz:8,ry:22},{type:'phone',px:27,py:-12.6,pz:10,ry:-22}],scene:{rx:8,ry:0,rz:0}},
   {n:'Tarayıcı + telefon',items:[{type:'browser',ry:6},{type:'phone',px:14.5,py:-3.6,pz:5,ry:-12}],scene:{rx:-6,ry:18,rz:0}}
 ];
-const DEFAULT_FINISH={phone:'anodized',tablet:'anodized',laptop:'anodized',monitor:'anodized',browser:'matte',page:'matte',custom:'matte'};
+const DEFAULT_FINISH={phone:'anodized',tablet:'anodized',laptop:'anodized',monitor:'anodized',browser:'matte',page:'matte',custom:'matte',model:'matte'};
+// an imported 3D model (type 'model', devices/model.js) is not in TYPES (nothing turns into one); its name is the file's
+const typeName=d=>d.type==='model'?(d.modelName||'3B model'):TYPES[d.type]||'Cihaz';
+// its default size: the longest edge in cm (a phone's height; glTF files are in metres)
+const DEFAULT_MODEL_CM=14.7;
 
 // device scale range (inspector slider, transform box, layer-order compensation)
 const SCALE_MIN=.1,SCALE_MAX=10;
@@ -48,4 +52,4 @@ const STORE_SIZES=[
   {id:'play-10',store:'Google Play',n:'10" tablet (yatay)',w:1920,h:1200,dev:'tablet'},
   {id:'play-feature',store:'Google Play',n:'Öne çıkan görsel',w:1024,h:500,dev:'phone',single:true}
 ];
-export {STORE_SIZES,POS_MAX,ZOOM_MAX,ZOOM_MIN,SCALE_MAX,SCALE_MIN,COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};
+export {DEFAULT_MODEL_CM,typeName,STORE_SIZES,POS_MAX,ZOOM_MAX,ZOOM_MIN,SCALE_MAX,SCALE_MIN,COLORS,COMPS,DEFAULT_FINISH,DEFAULT_SCENE,PRESETS,THEMES,TYPES};

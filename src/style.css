@@ -261,6 +261,9 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--range-thumb-s
 .asset-x{position:absolute;top:-5px;right:-5px;width:18px;height:18px;padding:0;border-radius:50%;display:none;align-items:center;justify-content:center;background:var(--panel);color:var(--muted);box-shadow:0 0 0 1px var(--line)}
 .asset-x:hover{color:var(--ink)}
 .asset:hover .asset-x,.asset-x:focus-visible{display:flex}
+/* a 3D model tile: its rendered thumbnail (or a cube when none) and a small badge */
+.asset-3d .asset-btn{position:relative;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.asset-tag{position:absolute;right:4px;bottom:4px;font-size:9px;line-height:1;padding:2px 4px;border-radius:4px;background:var(--field);color:var(--muted);box-shadow:0 0 0 1px var(--line);pointer-events:none}
 #assetsGroup.over{background:var(--accent-soft)}
 .capture{display:flex;flex-direction:column;gap:4px;margin:8px 0 4px}
 .capture-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}

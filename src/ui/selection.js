@@ -89,8 +89,8 @@ function removeTargets(list){
 }
 const deleteSelection=()=>removeTargets(selection());
 // plain copies (images shared by reference: they are immutable elements)
-const SKIP=new Set(['id','img','frameImg']);
-function copyOf(o){const c={};for(const k in o)if(!SKIP.has(k))c[k]=JSON.parse(JSON.stringify(o[k]??null));c.img=o.img||null;if(o.type)c.frameImg=o.frameImg||null;return c;}
+const SKIP=new Set(['id','img','frameImg','video','model']);
+function copyOf(o){const c={};for(const k in o)if(!SKIP.has(k))c[k]=JSON.parse(JSON.stringify(o[k]??null));c.img=o.img||null;if(o.type){c.frameImg=o.frameImg||null;c.video=o.video||null;c.model=o.model||null;}return c;}
 let clip=null;
 // clip.board: where it was copied (pasting there offsets the copies; a cut leaves no original, so none)
 function copySelection(){const list=selection();if(!list.length)return false;clip={id:Date.now().toString(36),board:doc.active,list:entriesOf(list)};return true;}
@@ -109,7 +109,7 @@ const rootFront=o=>{let r=o,p;while(r.parent!=null&&(p=state.items.find(x=>x.id=
 function place(entries,shift){
   const out=[],ids=new Map(),made=[];
   entries.forEach(({dev,data,oid,abs,root})=>{
-    if(dev){const d=newDevice(data.type);const id=d.id;Object.assign(d,JSON.parse(JSON.stringify(Object.assign({},data,{img:null,frameImg:null}))),{id,img:data.img,frameImg:data.frameImg});
+    if(dev){const d=newDevice(data.type);const id=d.id;Object.assign(d,JSON.parse(JSON.stringify(Object.assign({},data,{img:null,frameImg:null,video:null,model:null}))),{id,img:data.img,frameImg:data.frameImg,video:data.video,model:data.model});
       if(shift){d.px=clamp(d.px+2,-POS_MAX,POS_MAX);d.py=clamp(d.py-1,-POS_MAX,POS_MAX);}
       state.devices.push(d);buildRT(d);out.push(d);}
     else{const it=Object.assign(JSON.parse(JSON.stringify(Object.assign({},data,{img:null}))),{id:nextItemId(),img:data.img});

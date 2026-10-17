@@ -51,13 +51,13 @@ function screenSize(o,d){
 }
 // Width of the device's screen in texture pixels (what a screenshot needs to be to come out sharp)
 function screenPixelWidth(d){
-  const o=RT.get(d.id);if(!o)return 0;
+  const o=RT.get(d.id);if(!o||o.model)return 0;
   if(o.custom){if(!d.screenRect||!d.frameImg)return 0;const fi=d.frameImg,s=Math.min(1,CUSTOM_MAX/Math.max(fi.naturalWidth,fi.naturalHeight));return Math.round(d.screenRect.w*fi.naturalWidth*s);}
   return screenSize(o,d)[0];
 }
 // How many screens tall the screenshot is (0 when it cannot scroll: no image, not "Doldur", or not taller)
 function scrollScreens(d){
-  const o=RT.get(d.id);if(!o||!d.img||d.fit!=='cover')return 0;
+  const o=RT.get(d.id);if(!o||o.model||!d.img||d.fit!=='cover')return 0;
   const iw=d.img.naturalWidth||d.img.width,ih=d.img.naturalHeight||d.img.height;
   let w,h;if(o.custom){if(!d.screenRect||!d.frameImg)return 0;w=d.screenRect.w*d.frameImg.naturalWidth;h=d.screenRect.h*d.frameImg.naturalHeight;}else[w,h]=screenSize(o,d);
   const n=(ih/iw)/(h/w);return n>1.01?n:0;
@@ -87,7 +87,7 @@ function customCanvas(d){
   g.drawImage(fi,0,0,cw,ch);return c;
 }
 function setScreenTexture(d){
-  const o=RT.get(d.id);if(!o)return;
+  const o=RT.get(d.id);if(!o||o.model)return;  // an imported model has no screen
   if(o.custom){
     const t=tex(customCanvas(d));
     if(o.mats.custom.map)o.mats.custom.map.dispose();

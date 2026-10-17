@@ -2,7 +2,7 @@
 
 Öncelik sırası, gerçekçilik ve iş akışı hızı birlikte düşünülerek verildi. Her maddeden sonra render düzeneğiyle görsel doğrulama yap.
 
-_Son güncelleme: 14 Ekim 2026 (`main` @ `bf48e52`)._
+_Son güncelleme: 17 Ekim 2026._
 
 ## Mevcut durum
 
@@ -51,7 +51,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 3. [ ] **Gömülebilir etkileşimli 3B mockup:** açılış sayfasına PNG yerine döndürülebilen, kaydırılabilen hafif bir web bileşeni.
 4. [ ] **Yapay zekâ ile sahne:** 3B cihazı yapay zekâyla üretilmiş ortama ışığı ve gölgesi tutarlı oturtma (ortamdan HDRI / ışık yönü tahmini → yol izleyici); referans fotoğrafın ışığını taklit; istemden kompozisyon önerisi.
 5. [ ] **Ekranda video:** [x] v1 (17 Ekim): cihaz ekranında MP4/WebM, sessiz; Canlandır'da imleçle senkron, Tasarla'da poster karesi; video dışa aktarımında kare kare; otomatik kayıt ve `.mockup.zip`. [x] **Etkileşimli ekran kaydı** (17 Ekim): site stüdyonun içindeki lightbox'ta canlı (dev sunucusunun Chrome'u, kalıcı profil, CDP screencast), kullanıcı gezer / giriş yapar / doğrulamayı geçer, Başlat–Durdur ile en çok 30 sn kayıt MP4 olarak cihaz ekranlarına gömülür; otomatik kaydırma; "Ayrı pencerede aç" yedeği. [ ] Sonra: kaydı yayınlanmış sürümde de sunmak (yakalama servisiyle birlikte), kayıtta ses, imleç görünümü, 30 sn üstü kayıt (kareleri diske/IndexedDB'ye akıtarak). [ ] Sonra: ses, WebCodecs ile kare çözme (seek yerine), Fotoğraf kalitesinde video, 9:16 ve 1:1 sosyal formatlar, artboard'lar arası kamera geçişleri, WebM/GIF çıktı.
-6. [ ] **Gerçekçilikte son mil:** ~~alan derinliği~~ (bitti), yansıtıcı/dokulu zemin, jenerik 3B eller (telefonu tutan el), dekor nesneleri, GLB içe aktarma.
+6. [ ] **Gerçekçilikte son mil:** ~~alan derinliği~~ (bitti), yansıtıcı/dokulu zemin, jenerik 3B eller (telefonu tutan el), dekor nesneleri, ~~GLB içe aktarma~~ (bitti, 17 Ekim).
 7. [ ] **Ekip ve bulut:** bulut proje, paylaşım linki, yorumlar, ekip kütüphanesi (marka kiti, ortak şablonlar); ücretli ekip planının dayanağı.
 
 İlk sırada 1, 2 ve 5 gelir (gelir getiren iş akışı); 3 ve 4 vitrin özellikleri.
@@ -61,10 +61,11 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [ ] Üretimde yakalama servisi (1 ve 2 buna bağlı).
 - [ ] Düşük donanımda akıcı canlı görüntü; uzun fotoğraf render'ı için bulutta render seçeneği.
 - [ ] İlk 60 saniye: boş tuval yerine "URL ver → hazır görsel" karşılama akışı.
-- [ ] Jenerik cihaz algısı: "Neden iPhone gibi değil?" sorusuna GLB içe aktarma ve "Kendi çerçeven" ile net cevap.
+- [x] Jenerik cihaz algısı: "Neden iPhone gibi değil?" sorusuna GLB içe aktarma ve "Kendi çerçeven" ile net cevap (GLB içe aktarma 17 Ekim'de eklendi; ekran malzemesini işaretleme sonra).
 
 ## Son eklenenler (9–17 Ekim 2026)
 
+- [x] **GLB içe aktarma** (17 Ekim): `devices/model.js`; kendi 3B modelin (GLB/glTF, Draco/meshopt/KTX2) sahneye cihaz gibi girer: Varlıklar sekmesinde karo (render küçük resmi), tıkla ya da artboarda sürükle (zemine, işaret edilen yere), cihaz menüsünde "3B model (GLB)…"; panelde Boyut (cm), "Gerçek ölçü", "Modeli değiştir…"; proje dosyası `.mockup.zip` (`media/<anahtar>.glb`), otomatik kayıt, geri al, kopyala/yapıştır; yol izleyicide dosyanın malzemeleriyle.
 - [x] **Ekranda video v1** (17 Ekim): Ekran bölümüne MP4/WebM bırakılır (`devices/video.js`); Başlangıç (kırpma) ve Döngü; Canlandır'da imleç ve oynatma videoyla senkron, Tasarla ve durağan görsel poster karesi; video dışa aktarımı her karede `seeked` bekler; otomatik kayıtta blob, proje dosyası videoluyken `.mockup.zip`; yüklemede Canlandır süresi videodan, Tasarla için "Gösterilen an" (poster saniyesi) ve "İmleçteki kare". Sessiz; ses ve Fotoğraf kalitesinde video v2'ye kaldı.
 
 - [x] **Ekranda titreyen karo deseni düzeltildi** (17 Ekim): uzun objektif + düşük Yakınlık'ta ekran ile ön cam derinlikte yarışıyordu (GPU karosu biçiminde koyu bloklar). Yakın düzlem mesafenin %6'sı, ekran katmanlarına `polygonOffset`.
@@ -107,7 +108,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [ ] Ekran camı yansımasına kullanıcı ayarı (yoğunluk); sıyırma açısında ekranı soldurmasın.
 - [x] **Alan derinliği (bokeh)** ve odak noktası seçimi: objektif hazırları (24–200 mm), mm alanı, Bokeh anahtarı (diyafram, odak: cihaz ya da sahneden nokta, diyafram şekli, arka planı bulanıklaştır); Hızlı ve Fotoğraf kalitesinde, videoda.
 - [ ] **Yansıtıcı / dokulu zemin:** parlak masa, mermer, ahşap, beton.
-- [ ] **GLB içe aktarma:** kullanıcının kendi (lisanslı) modeli + ekran malzemesini işaretleme.
+- [x] **GLB içe aktarma** (17 Ekim): Varlıklar sekmesine ya da cihaz menüsünden `.glb` yüklenir, cihaz gibi yerleşir (gizmo, kaydırıcılar, katman ağacı, Zemine oturt, Odakla, animasyon izleri), Boyut (cm) + "Gerçek ölçü", malzemeler dosyadan, Hızlı ve Fotoğraf kalitesinde; `.mockup.zip` içinde saklanır. [ ] Sonra: ekran malzemesini işaretleme (GLB'deki bir yüzeye ekran görüntüsü), modelden gölge/temas ayarı, büyük dosyalarda ilerleme göstergesi.
 - [ ] Cihaz detayları devamı: jenerik kamera lensleri, monitör ayağı formu.
 - [ ] Blender modelleri (`tools/blender/phone.py`, deneysel): yalnızca yakın çekim kazancı görülürse.
 - [ ] WebGPU yol izleyici (`WebGPUPathTracer`) denemesi.

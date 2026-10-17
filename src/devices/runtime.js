@@ -29,7 +29,8 @@ function buildRT(d){
 }
 function disposeRT(id){
   const o=RT.get(id);if(!o)return;comp.remove(o.holder);
-  o.holder.traverse(x=>{if(x.isMesh){x.geometry.dispose();if(x.customDepthMaterial)x.customDepthMaterial.dispose();}});
+  // an imported model's geometry and materials belong to its asset (shared by its placements and the library)
+  if(!o.model)o.holder.traverse(x=>{if(x.isMesh){x.geometry.dispose();if(x.customDepthMaterial)x.customDepthMaterial.dispose();}});
   Object.values(o.mats).forEach(mt=>{if(mt.map)mt.map.dispose();mt.dispose();});
   RT.delete(id);
 }

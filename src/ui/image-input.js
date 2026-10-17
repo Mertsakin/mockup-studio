@@ -1,9 +1,11 @@
+import {isModelFile} from '../devices/model.js';
 import {RT,setHolder} from '../devices/rt.js';
 import {rebuild} from '../devices/runtime.js';
 import {detectScreen,setScreenTexture} from '../devices/screen.js';
 import {MAX_MB,duration,fmtDur,isVideoFile,loadVideo,posterTime,showFrame,shownTime,videoSize,videoTime} from '../devices/video.js';
 import {MAX_DUR} from '../state/anim.js';
 import {A,setDuration} from './animate.js';
+import {importModels} from './assets.js';
 import {numField} from './numfield.js';
 import {applyTransform,autoRefit} from '../render/transform.js';
 import {sel,state} from '../state/state.js';
@@ -16,7 +18,7 @@ import {$} from '../util.js';
 /* ---------- image & frame input ---------- */
 const drop=$('#drop'),fileEl=$('#file'),frameDrop=$('#frameDrop'),frameFile=$('#frameFile'),bgDrop=$('#bgDrop'),bgFile=$('#bgFile');
 function readImage(file,cb){
-  if(!file||!/^image\//.test(file.type)){toast('Bu dosya bir görsel ya da video değil. PNG, JPG, WebP ya da MP4/WebM seç.');return;}
+  if(!file||!/^image\//.test(file.type)){toast('Bu dosya bir görsel ya da video değil. PNG, JPG, WebP, MP4/WebM ya da 3B model için GLB seç.');return;}
   const img=new Image();img.onload=()=>cb(img);img.onerror=()=>toast('Görsel açılamadı. Başka bir dosya dene.');img.src=URL.createObjectURL(file);
 }
 // a wide source turns a rotatable device landscape; the screen is redrawn either way
@@ -27,6 +29,7 @@ function placeShot(d,wide){
   syncUI();
 }
 function loadShot(file){
+  if(isModelFile(file)){importModels([file]);return;}  // a GLB dropped anywhere: a 3D model in the library and the scene
   const d=sel();
   if(!d){toast('Ekran görüntüsü için önce bir cihaz ekle.');return;}
   if(isVideoFile(file)){loadShotVideo(d,file);return;}

@@ -85,7 +85,7 @@ async function save(as){
     commitNow();const zip=needsZip(snapshot());
     if(FS){
       // a .json file cannot hold the video: the zip gets a name of its own (a .zip file keeps taking either content)
-      if(fileHandle&&zip&&!ZIP.test(fileHandle.name)){toast('Videolu proje .mockup.zip olarak kaydedilir: yeni bir ad seç.');as=true;}
+      if(fileHandle&&zip&&!ZIP.test(fileHandle.name)){toast('Video ya da 3B model içeren proje .mockup.zip olarak kaydedilir: yeni bir ad seç.');as=true;}
       if(as||!fileHandle){
         let h;try{h=await window.showSaveFilePicker({suggestedName:suggested(zip),types:FILE_TYPES});}
         catch(e){if(e&&e.name==='AbortError')return false;throw e;}

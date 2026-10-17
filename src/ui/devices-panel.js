@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import {FINISHES,applyColorTo} from '../devices/materials.js';
+import {fmtMB,realSizeCm} from '../devices/model.js';
 import {RT,setHolder} from '../devices/rt.js';
 import {buildRT,disposeRT,rebuild} from '../devices/runtime.js';
 import {scrollScreen,scrollScreens,setScreenTexture,updateChrome} from '../devices/screen.js';
-import {camera,req} from '../render/renderer.js';
+import {camera,canvas,req} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
-import {applyTransform,autoRefit,refit} from '../render/transform.js';
-import {COLORS,COMPS,DEFAULT_SCENE,SCALE_MIN,TYPES,ZOOM_MIN} from '../state/constants.js';
+import {applyTransform,autoRefit,compBox,deviceBox,refit} from '../render/transform.js';
+import {COLORS,COMPS,DEFAULT_MODEL_CM,DEFAULT_SCENE,SCALE_MIN,TYPES,ZOOM_MIN,typeName} from '../state/constants.js';
 import {newDevice,sel,state} from '../state/state.js';
 import {parseV} from './controls.js';
 import {icon} from './icons.js';
@@ -18,8 +19,8 @@ import {$,$$} from '../util.js';
 
 /* ---------- device list & type ---------- */
 function devLabel(d){
-  const same=state.devices.filter(x=>x.type===d.type);
-  return TYPES[d.type]+(same.length>1?' '+(same.indexOf(d)+1):'');
+  const n=typeName(d),same=state.devices.filter(x=>typeName(x)===n);
+  return n+(same.length>1?' '+(same.indexOf(d)+1):'');
 }
 function renderDevList(){
   const el=$('#devList');el.innerHTML='';
@@ -43,7 +44,11 @@ Object.entries(TYPES).forEach(([k,n])=>{
   typeGrid.appendChild(b);
 });
 $('#addDevice').addEventListener('click',()=>{
-  const base=sel()||{},d=newDevice(addSel.value,{colorKey:base.colorKey||'graphite',custom:base.custom||'#7a5cff'});
+  const base=sel()||{};
+  addDeviceOf(newDevice(addSel.value,{colorKey:base.colorKey||'graphite',custom:base.custom||'#7a5cff'}));
+});
+// adds a new device (a built state entry) to the scene and selects it; returns its runtime object
+function addDeviceOf(d){
   state.devices.push(d);const o=buildRT(d);state.selected=d.id;
   // Centred on the artboard: on the camera's axis (the full frame's centre, whatever the pan, Yakınlık or the part of
   // the board on screen), just in front of the other devices. The framing stays put, so devices already
@@ -67,8 +72,42 @@ $('#addDevice').addEventListener('click',()=>{
   for(let i=0;i<4;i++){const m=extent();if(m<=.85||state.scene.zoom<=ZOOM_MIN)break;state.scene.zoom=+Math.max(ZOOM_MIN,state.scene.zoom*.85/m).toFixed(3);applyTransform();}
   const m=extent();if(m>.85){d.scale=+Math.max(SCALE_MIN,d.scale*.85/m).toFixed(3);applyTransform();}
   $('#placeDetails').open=true;syncAll();
-  toast(TYPES[d.type]+' eklendi'+(state.scene.zoom<z0-1e-3?'. Sığması için kamera geri çekildi.':''));
-});
+  toast(typeName(d)+' eklendi'+(state.scene.zoom<z0-1e-3?'. Sığması için kamera geri çekildi.':''));
+  return o;
+}
+/* ---------- imported 3D models (devices/model.js): a device of type 'model' */
+// the floor the other devices stand on (composition space), or null when the model is alone
+function floorOf(d){const b=compBox(d.id);return b.isEmpty()?null:b.min.y;}
+// puts the model on the others' floor (a product falls onto the table it is dropped on)
+function settleModel(d){const f=floorOf(d);if(f==null)return;const own=deviceBox(d.id).min.y;d.py=+(d.py+f-own).toFixed(3);applyTransform();}
+/* adds the asset as a new model device: centred like any device, standing on the others' floor; `at` (client px,
+   a drop) moves it along the floor to where the pointer points (or across the camera plane when there is no floor);
+   `name` is the library's name for the file (an asset loaded back from storage carries none) */
+function addModel(asset,at,name){
+  const d=newDevice('model',{model:asset,modelName:name||asset.name,modelSize:DEFAULT_MODEL_CM,finish:'matte'}),o=addDeviceOf(d);
+  settleModel(d);
+  if(at){
+    const r=canvas.getBoundingClientRect();
+    if(r.width&&r.height){
+      const ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2((at.x-r.left)/r.width*2-1,-(at.y-r.top)/r.height*2+1),camera);
+      const wp=o.holder.getWorldPosition(new THREE.Vector3()),f=state.env!=='space'?floorOf(d):null,plane=new THREE.Plane();
+      if(f!=null){const up=new THREE.Vector3(0,1,0).transformDirection(comp.matrixWorld),p=comp.localToWorld(new THREE.Vector3(0,deviceBox(d.id).min.y,0));plane.setFromNormalAndCoplanarPoint(up,p);}
+      else plane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()),wp);
+      const hit=ray.ray.intersectPlane(plane,new THREE.Vector3());
+      if(hit){const a=comp.worldToLocal(hit.clone()),c=comp.worldToLocal(wp.clone());
+        d.px=+(d.px+a.x-c.x).toFixed(2);d.pz=+(d.pz+a.z-c.z).toFixed(2);if(f==null)d.py=+(d.py+a.y-c.y).toFixed(2);applyTransform();}
+    }
+  }
+  setUi({kind:'device'});syncAll();return d;
+}
+// another file for an existing model device ("Modeli değiştir"): its place, size and animation stay
+function replaceModel(d,asset,name){d.model=asset;d.modelName=name||asset.name;rebuild(d,state.devices.length<2);syncAll();}
+// size: the longest edge in cm (the file's own units are metres: "Gerçek ölçü" reads them as such)
+const fCm=v=>v.toFixed(1).replace('.',',')+' cm';
+makeSlider($('#modelSlots'),{id:'d-msize',k:'modelSize',l:'Boyut',min:.5,max:1000,step:.1,reset:DEFAULT_MODEL_CM,f:fCm,log:true,
+  note:'En uzun kenarın uzunluğu. Ölçek bunun üstüne çarpan olarak gelir.',after:()=>{const d=sel();if(d&&state.devices.length<2)autoRefit();}},sel);
+$('#modelReal').addEventListener('click',()=>{const d=sel();if(!d||!d.model)return;d.modelSize=realSizeCm(d.model);autoRefit();applyTransform();syncSliders();toast('Dosyadaki ölçü: '+fCm(d.modelSize)+' (metre birimi varsayıldı)');});
+$('#modelReplace').addEventListener('click',()=>$('#modelFile').click());
 // the last device can go too: the artboard is then empty (its background and 2D items stay)
 $('#removeDevice').addEventListener('click',()=>{
   const d=sel();if(!d)return;
@@ -143,6 +182,10 @@ onSyncUI(d=>{
   $$('.seg[data-dkey]').forEach(seg=>{const v=String(d[seg.dataset.dkey]);seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));});
   typeGrid.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.type===d.type)));
   $$('[data-for]').forEach(el=>{el.hidden=!el.dataset.for.split(' ').includes(d.type);});
+  // an imported model: no screen, no type to switch, no body colour; its own block instead
+  const model=d.type==='model';$('[data-sec="dev-screen"]').hidden=model;typeGrid.hidden=model;
+  if(model){const a=d.model;$('#modelInfo').textContent=a&&!a.missing?(d.modelName||'Model')+'.glb · '+fmtMB(a.bytes||0)+' · dosyada '+fCm(realSizeCm(a)):'Model dosyası yüklenemedi: yerine gri bir blok duruyor. "Modeli değiştir" ile yeniden seç.';
+    $('#modelReal').disabled=!a||!!a.missing;}
   $('#screenBgRow').hidden=d.fit!=='contain';
   swWrap.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===d.colorKey)));
   finishSel.value=d.finish||'';
@@ -154,4 +197,4 @@ onSyncUI(d=>{
   $('#scrollAll').hidden=state.devices.filter(x=>scrollScreens(x)).length<2;
 });
 
-export {applyComp};
+export {addModel,applyComp,replaceModel};

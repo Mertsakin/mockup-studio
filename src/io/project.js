@@ -1,4 +1,5 @@
 import {RT} from '../devices/rt.js';
+import {loadModel} from '../devices/model.js';
 import {loadVideo} from '../devices/video.js';
 import {buildRT,disposeRT} from '../devices/runtime.js';
 import {rebuildLights} from '../lights/actions.js';
@@ -8,6 +9,7 @@ import {patternBg} from '../render/backgrounds.js';
 import {renderer} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
+import {DEFAULT_MODEL_CM} from '../state/constants.js';
 import {reserveDeviceIds,reserveItemIds,state,view} from '../state/state.js';
 
 /* Whole-scene snapshots, shared by undo/redo, autosave and project files.
@@ -15,12 +17,13 @@ import {reserveDeviceIds,reserveItemIds,state,view} from '../state/state.js';
    current framing (composition offset and radius, which "Odakla" / "Kadraja sığdır" change). Images are not copied:
    devices refer to them by key, and `images` maps key -> HTMLImageElement in memory. Project files and autosave
    store the images themselves (see packImages / unpackImages). Screen videos (d.video, an HTMLVideoElement) travel
-   the same way under 'v…' keys: a blob in the autosave, a media file in a .mockup.zip project. */
+   the same way under 'v…' keys: a blob in the autosave, a media file in a .mockup.zip project; imported 3D models
+   (d.model, devices/model.js) under 'm…' keys, the same way. */
 const SKIP_STATE=new Set(['devices','lights','selected','selLight','mode','gizmo','bgImg','items','selItem']);
-const SKIP_DEVICE=new Set(['img','frameImg','video']);
+const SKIP_DEVICE=new Set(['img','frameImg','video','model']);
 const ids=new WeakMap();let nextImg=0;
-const imgKey=img=>{if(!img)return null;if(!ids.has(img))ids.set(img,(img.tagName==='VIDEO'?'v':'i')+(++nextImg));return ids.get(img);};
-const isVideoKey=k=>/^v/.test(k);
+const imgKey=img=>{if(!img)return null;if(!ids.has(img))ids.set(img,(img.isModel?'m':img.tagName==='VIDEO'?'v':'i')+(++nextImg));return ids.get(img);};
+const isVideoKey=k=>/^v/.test(k),isModelKey=k=>/^m/.test(k);
 // an image loaded back from a file / storage keeps its key, so it is not stored twice
 const adopt=(img,k)=>{ids.set(img,k);const n=+String(k).slice(1);if(n>nextImg)nextImg=n;return img;};
 const copy=o=>JSON.parse(JSON.stringify(o));
@@ -41,7 +44,7 @@ function snapshot(){
     // animated values are stored at the design frame, not at the editor's playhead (moving the playhead is not an edit)
     tracked(d).forEach(k=>{o[k]=interp(d.tracks[k],designT(d));});
     if(d.img){o.img=imgKey(d.img);images[o.img]=d.img;}if(d.frameImg){o.frameImg=imgKey(d.frameImg);images[o.frameImg]=d.frameImg;}
-    if(d.video){o.video=imgKey(d.video);images[o.video]=d.video;}return o;});
+    if(d.video){o.video=imgKey(d.video);images[o.video]=d.video;}if(d.model){o.model=imgKey(d.model);images[o.model]=d.model;}return o;});
   return {v:1,state:st,devices,lights,selected:state.selected,selLight:state.selLight,
     frame:{comp:comp.position.toArray(),fitRadius:view.fitRadius},images};
 }
@@ -65,7 +68,8 @@ function restore(s){
   if(![1080,1920,3840].includes(state.size))state.size=1920;
   // the scene object stays (modules hold it); its animation goes if the snapshot has none
   delete state.scene.tracks;delete state.scene.designT;Object.assign(state.scene,copy(s.state.scene));
-  state.devices=s.devices.map(o=>Object.assign({video:null,videoName:'',videoT0:0,videoLoop:true,videoPoster:null},copy(o),{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null,video:o.video?s.images[o.video]||null:null}));
+  state.devices=s.devices.map(o=>Object.assign({video:null,videoName:'',videoT0:0,videoLoop:true,videoPoster:null,model:null,modelName:'',modelSize:DEFAULT_MODEL_CM},copy(o),
+    {img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null,video:o.video?s.images[o.video]||null:null,model:o.model?s.images[o.model]||null:null}));
   state.lights=copy(s.lights);
   reserveDeviceIds(Math.max(0,...state.devices.map(d=>d.id)));reserveLightIds(Math.max(0,...state.lights.map(l=>l.id)));
   state.selected=state.devices.some(d=>d.id===s.selected)?s.selected:(state.devices[0]&&state.devices[0].id);
@@ -77,13 +81,15 @@ function restore(s){
 }
 
 // --- images for files / storage: key -> Blob and back
-async function imageBlob(img){const r=await fetch(img.src);return r.blob();}
+async function imageBlob(img){if(img.blob)return img.blob;const r=await fetch(img.src);return r.blob();}  // a model asset keeps its file
 const blobToDataUrl=b=>new Promise((res,rej)=>{const f=new FileReader();f.onload=()=>res(f.result);f.onerror=rej;f.readAsDataURL(b);});
-async function loadImage(src){const img=new Image();img.src=src;await img.decode();return img;}
-// an element for a stored key: a video for 'v…' keys, an image otherwise
-const loadMedia=(src,k)=>isVideoKey(k)?loadVideo(src):loadImage(src);
-const extOf=b=>({'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/svg+xml':'svg','image/gif':'gif','video/mp4':'mp4','video/webm':'webm'})[b.type]||'bin';
-const MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',svg:'image/svg+xml',gif:'image/gif',mp4:'video/mp4',webm:'video/webm'};
+// resolves on load, not decode(): Chrome defers decode() in a hidden tab indefinitely, which kept the studio booting
+// in a background tab until it was looked at (drawImage decodes on demand anyway)
+const loadImage=src=>new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=()=>rej(new Error('image'));img.src=src;});
+// an element for a stored key: a video for 'v…' keys, a model asset for 'm…' keys, an image otherwise
+const loadMedia=(src,k)=>isVideoKey(k)?loadVideo(src):isModelKey(k)?loadModel(src):loadImage(src);
+const extOf=b=>({'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/svg+xml':'svg','image/gif':'gif','video/mp4':'mp4','video/webm':'webm','model/gltf-binary':'glb','model/gltf+json':'gltf'})[b.type]||'bin';
+const MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',svg:'image/svg+xml',gif:'image/gif',mp4:'video/mp4',webm:'video/webm',glb:'model/gltf-binary',gltf:'model/gltf+json'};
 
 /* Documents: a list of artboards, each holding one scene snapshot (see ui/boards.js).
    {v:2, active, boards:[{id,name,x,y,snap}]}. Snapshots of one document share one image map. */
@@ -101,10 +107,10 @@ function asDoc(s){
 }
 function attachImages(d,images){d.boards.forEach(b=>{b.snap.images=images;});d.assetImages=images;return d;}
 
-/* Project file. Without video: one JSON with the images inlined as data URLs (.mockup.json, as before). With a screen
-   video: a ZIP (.mockup.zip) holding project.json (no inlined media) and media/<key>.<ext> for every image and video
+/* Project file. Without video or model: one JSON with the images inlined as data URLs (.mockup.json, as before). With a
+   screen video or an imported 3D model: a ZIP (.mockup.zip) holding project.json (no inlined media) and media/<key>.<ext> for every image and video
    (a video as a data URL would triple the memory and freeze the save). Returns {blob, zip}. */
-const needsZip=d=>Object.keys(docImages(d)).some(isVideoKey);
+const needsZip=d=>Object.keys(docImages(d)).some(k=>isVideoKey(k)||isModelKey(k));
 async function toProjectFile(d){
   const all=docImages(d),base=Object.assign({app:'mockup-studio'},plainDoc(d));
   if(needsZip(d)){
@@ -133,8 +139,10 @@ async function fromProjectFile(src){
   const p=JSON.parse(text);
   if(p.app!=='mockup-studio'||!(Array.isArray(p.boards)||Array.isArray(p.devices)))throw new Error('Bu bir mockup stüdyosu proje dosyası değil.');
   const images={};
-  for(const k in p.images||{})images[k]=adopt(await loadMedia(p.images[k],k),k);
-  for(const k in media)images[k]=adopt(await loadMedia(URL.createObjectURL(media[k]),k),k);
+  // a file whose media cannot be loaded (a broken model, say) still opens: that device shows a placeholder
+  const safe=async(src,k)=>{try{return adopt(await loadMedia(src,k),k);}catch(e){console.warn('Medya açılamadı:',k,e);return null;}};
+  for(const k in p.images||{}){const m=await safe(p.images[k],k);if(m)images[k]=m;}
+  for(const k in media){const m=await safe(URL.createObjectURL(media[k]),k);if(m)images[k]=m;}
   delete p.images;delete p.media;
   return attachImages(asDoc(p),images);
 }
@@ -161,7 +169,8 @@ async function loadAutosave(){
   try{
     const data=await idb('readonly',st=>st.get('scene'));if(!data||!(Array.isArray(data.boards)||Array.isArray(data.devices)))return null;
     const images={};
-    for(const k of data.images||[]){const b=await idb('readonly',st=>st.get('img:'+k));if(b){images[k]=adopt(await loadMedia(URL.createObjectURL(b),k),k);stored.add(k);}}
+    for(const k of data.images||[]){const b=await idb('readonly',st=>st.get('img:'+k));if(!b)continue;stored.add(k);
+      try{images[k]=adopt(await loadMedia(URL.createObjectURL(b),k),k);}catch(e){console.warn('Medya açılamadı:',k,e);}}
     delete data.images;
     return attachImages(asDoc(data),images);
   }catch(e){return null;}

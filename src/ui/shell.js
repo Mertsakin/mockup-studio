@@ -1,7 +1,7 @@
 import {exportSize,offer,renderExport} from '../export/export.js';
 import {busy,isCancel,paint} from './busy.js';
 import {MODS,modOf} from '../lights/mods.js';
-import {TYPES} from '../state/constants.js';
+import {TYPES,typeName} from '../state/constants.js';
 import {TEMPLATES} from '../state/templates.js';
 import {hasAnim} from '../state/anim.js';
 import {selItem,state} from '../state/state.js';
@@ -25,12 +25,12 @@ import {$,$$} from '../util.js';
 hydrateIcons();
 state.showDome=true;  // the light map now lives in the inspector
 
-const DEV_ICON={phone:'smartphone',tablet:'tablet',laptop:'laptop',monitor:'monitor',browser:'window-frame',page:'display',custom:'gallery-wide'};
+const DEV_ICON={phone:'smartphone',tablet:'tablet',laptop:'laptop',monitor:'monitor',browser:'window-frame',page:'display',custom:'gallery-wide',model:'box'};
 const LIGHT_ICON={sun:'sun',overcast:'sun-fog',window:'sun-fog',bulb:'lightbulb'};
 const typing=t=>t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable);
 function labels(list,base){const n={},seen={};list.forEach(x=>{const b=base(x);n[b]=(n[b]||0)+1;});
   return list.map(x=>{const b=base(x);seen[b]=(seen[b]||0)+1;return n[b]>1?b+' '+seen[b]:b;});}
-const devNames=list=>labels(list,d=>TYPES[d.type]||'Cihaz');
+const devNames=list=>labels(list,typeName);
 const lightNames=list=>labels(list,L=>L.mod==='custom'?'Işık':modOf(L.mod).n);
 
 /* ---------- inspector ---------- */
@@ -174,7 +174,8 @@ $('#boardMore').addEventListener('click',e=>{e.stopPropagation();openMenu($('#in
 // dock: add device / light
 $('#dock [data-add="device"]').addEventListener('click',e=>{e.stopPropagation();openMenu($('#addMenu'),e.currentTarget,
   Object.entries(TYPES).map(([k,n])=>[DEV_ICON[k]||'smartphone',n,()=>{ensureBoard();$('#addType').value=k;$('#addDevice').click();setUi({kind:'device'});syncTool();}])
-    .concat([null,['widget','Hazır kompozisyonlar…',()=>{selectTab('tpl');}]]));});
+    // a GLB / glTF file of the user's own (assets.js loads it into the library and places it)
+    .concat([['box','3B model (GLB)…',()=>{ensureBoard();$('#modelAdd').click();}],null,['widget','Hazır kompozisyonlar…',()=>{selectTab('tpl');}]]));});
 $('#dock [data-add="light"]').addEventListener('click',e=>{e.stopPropagation();openMenu($('#addMenu'),e.currentTarget,
   MODS.filter(m=>m.k!=='custom').map(m=>[LIGHT_ICON[m.k]||'sun-2',m.n,()=>{ensureBoard();const n=state.lights.length;$('#addLight').click();
     if(state.lights.length>n){const b=$('#modGrid [data-mod="'+m.k+'"]');if(b)b.click();setUi({kind:'light'});}}]));});

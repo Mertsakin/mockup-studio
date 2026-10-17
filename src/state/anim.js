@@ -23,7 +23,7 @@ function propsOf(o){
   switch(kindOf(o)){
     case 'camera':return CAM_PROPS;
     case 'light':return LIGHT_PROPS.filter(k=>(k!=='dist'&&k!=='size'||o.mod!=='sun')&&(k!=='angle'&&k!=='penumbra'||o.type==='spot'));
-    case 'device':return ANIM_PROPS.filter(k=>(k!=='lidAngle'||o.type==='laptop')&&(k!=='scroll'||!o.video));  // a video screen does not scroll
+    case 'device':return ANIM_PROPS.filter(k=>(k!=='lidAngle'||o.type==='laptop')&&(k!=='scroll'||!o.video&&o.type!=='model'));  // a video screen does not scroll, a model has none
     default:return ITEM_PROPS.filter(k=>o.kind==='text'?k!=='w'&&k!=='h':o.kind==='frame'?k!=='size':k!=='size'&&k!=='h');
   }
 }

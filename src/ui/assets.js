@@ -1,12 +1,17 @@
+import {MODEL_MAX_MB,fmtMB,isModelFile,loadModelFile,modelError,modelThumb} from '../devices/model.js';
+import {sel,state} from '../state/state.js';
 import {doc,ensureBoard,onBoards} from './boards.js';
+import {addModel,replaceModel} from './devices-panel.js';
 import {addItem} from './items.js';
 import {icon} from './icons.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
 
-/* Asset library (left panel): PNG / SVG / WebP / JPG images the document keeps (doc.assets, saved with the project).
-   Click a tile to place it in the middle of the active artboard, or drag it onto the artboard to place it there.
-   Files can be added with + or dropped on the group. Removing a tile does not touch items already placed. */
+/* Asset library (left panel): PNG / SVG / WebP / JPG images and GLB / glTF 3D models the document keeps (doc.assets,
+   saved with the project). Click a tile to place it in the middle of the active artboard (an image as a 2D item, a
+   model as a 3D object standing on the floor), or drag it onto the artboard to place it there.
+   Files can be added with + or dropped on the group. Removing a tile does not touch what is already placed.
+   An entry is {img, name}: img an HTMLImageElement, or a model asset (devices/model.js, isModel). */
 const grid=$('#assetGrid'),fileEl=$('#assetFile'),group=$('#assetsGroup');
 const MIME='application/x-mockup-asset';
 
@@ -30,20 +35,39 @@ async function loadAsset(file){
   return img;
 }
 const baseName=f=>(f.name||'Görsel').replace(/\.[a-z0-9]+$/i,'')||'Görsel';
+// a GLB file into the library (with its size warning); rejects with the message to show
+async function loadModelAsset(file){
+  if(file.size>MODEL_MAX_MB*1e6)toast(file.name+' '+fmtMB(file.size)+': büyük modeller otomatik kaydı ve proje dosyasını şişirir, sahne yavaşlayabilir. Mümkünse '+MODEL_MAX_MB+' MB altında tut.');
+  try{return await loadModelFile(file);}catch(e){throw new Error(modelError(e),{cause:e});}
+}
 async function addAssetFiles(files){
-  let n=0,bad=0;
-  for(const f of files){try{doc.assets.push({img:await loadAsset(f),name:baseName(f)});n++;}catch(e){bad++;}}
-  if(bad)toast(bad+' dosya açılamadı. PNG, SVG, WebP veya JPG kullan.');
+  let n=0,bad=0,msg='';
+  for(const f of files){
+    try{
+      if(isModelFile(f)){const a=await loadModelAsset(f);doc.assets.push({img:a,name:a.name});}
+      else doc.assets.push({img:await loadAsset(f),name:baseName(f)});
+      n++;
+    }catch(e){bad++;if(isModelFile(f))msg=e.message;}
+  }
+  if(bad)toast(msg||bad+' dosya açılamadı. PNG, SVG, WebP, JPG ya da GLB kullan.');
   else if(n)toast(n>1?n+' varlık eklendi':'Varlık eklendi. Tıkla ya da artboarda sürükle.');
   renderAssets();
+}
+// places an asset: an image as a 2D item, a model as a 3D object (at the drop point when given)
+function placeAsset(a,at){
+  if(a.img.isModel){addModel(a.img,at,a.name);return;}
+  if(at)addItem(a.img,a.name,at);else addItem(a.img,a.name);
 }
 function renderAssets(){
   grid.innerHTML='';
   doc.assets.forEach((a,i)=>{
-    const t=document.createElement('div');t.className='asset';t.setAttribute('role','listitem');
+    const model=!!a.img.isModel,t=document.createElement('div');t.className='asset'+(model?' asset-3d':'');t.setAttribute('role','listitem');
     t.innerHTML='<button type="button" class="asset-btn" draggable="true"><img alt=""></button><button type="button" class="asset-x" aria-label="Kütüphaneden kaldır">'+icon('close-circle',14)+'</button>';
-    const b=t.querySelector('.asset-btn');b.title=a.name+': artboarda ekle';b.setAttribute('aria-label',a.name+', artboarda ekle');t.querySelector('img').src=a.img.src;
-    b.addEventListener('click',()=>{ensureBoard();addItem(a.img,a.name);});
+    const b=t.querySelector('.asset-btn'),img=t.querySelector('img');
+    b.title=a.name+(model?' (3B model): sahneye ekle':': artboarda ekle');b.setAttribute('aria-label',b.title);
+    if(model){const th=modelThumb(a.img);if(th)img.src=th;else{img.remove();b.innerHTML=icon('box',28);}b.insertAdjacentHTML('beforeend','<span class="asset-tag">3B</span>');}
+    else img.src=a.img.src;
+    b.addEventListener('click',()=>{ensureBoard();placeAsset(a);});
     b.addEventListener('dragstart',e=>{e.dataTransfer.setData(MIME,String(i));e.dataTransfer.effectAllowed='copy';});
     t.querySelector('.asset-x').addEventListener('click',()=>{doc.assets.splice(i,1);renderAssets();});
     grid.appendChild(t);
@@ -62,8 +86,25 @@ stage.addEventListener('dragover',e=>{if(e.dataTransfer.types.includes(MIME)){e.
 stage.addEventListener('drop',e=>{
   const i=e.dataTransfer.getData(MIME);if(i==='')return;e.preventDefault();e.stopPropagation();
   const a=doc.assets[+i];if(!a)return;
-  if(ensureBoard())addItem(a.img,a.name);else addItem(a.img,a.name,{x:e.clientX,y:e.clientY});
+  if(ensureBoard())placeAsset(a);else placeAsset(a,{x:e.clientX,y:e.clientY});
 });
+/* GLB files from elsewhere in the editor: the device menu ("3B model (GLB)…", #modelAdd) loads them into the library
+   and places each one; "Modeli değiştir" (#modelFile, the model's panel) gives the selected model another file. Model
+   files dropped anywhere on the window land here too (image-input.js hands them over). */
+async function importModels(files,target){
+  const ok=[];
+  for(const f of files){
+    if(!isModelFile(f)){toast(f.name+': GLB ya da glTF dosyası değil.');continue;}
+    try{const a=await loadModelAsset(f);doc.assets.push({img:a,name:a.name});ok.push(a);}catch(e){toast(e.message);}
+  }
+  renderAssets();if(!ok.length)return;
+  ensureBoard();
+  if(target&&state.devices.includes(target)&&target.type==='model'){replaceModel(target,ok[0]);ok.slice(1).forEach(a=>addModel(a));toast(ok[0].name+' yüklendi');}
+  else ok.forEach(a=>addModel(a));
+}
+const modelAdd=$('#modelAdd'),modelFile=$('#modelFile');
+modelAdd.addEventListener('change',()=>{const f=[...modelAdd.files];modelAdd.value='';if(f.length)importModels(f);});
+modelFile.addEventListener('change',()=>{const f=[...modelFile.files];modelFile.value='';const d=sel();if(f.length&&d&&d.type==='model')importModels(f,d);});
 onBoards(renderAssets);
 
-export {addAssetFiles,renderAssets};
+export {addAssetFiles,importModels,renderAssets};

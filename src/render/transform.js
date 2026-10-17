@@ -37,11 +37,14 @@ function boxOf(include){
 const tmpV=new V3();
 function extents(){
   let minY=Infinity,minZ=Infinity;
-  RT.forEach(o=>o.holder.traverse(x=>{
+  RT.forEach(o=>{
+    // an imported model: its precomputed extreme points (devices/model.js), not every vertex of the file
+    if(o.model){const p=o.asset.pts,mw=o.fit.matrixWorld;for(let i=0;i<p.length;i+=3){tmpV.set(p[i],p[i+1],p[i+2]).applyMatrix4(mw);if(tmpV.y<minY)minY=tmpV.y;if(tmpV.z<minZ)minZ=tmpV.z;}return;}
+    o.holder.traverse(x=>{
     if(!x.isMesh||!x.visible||x.material===M.glare||x.userData.ao)return;
     const p=x.geometry.attributes.position,mw=x.matrixWorld;
     for(let i=0;i<p.count;i++){tmpV.fromBufferAttribute(p,i).applyMatrix4(mw);if(tmpV.y<minY)minY=tmpV.y;if(tmpV.z<minZ)minZ=tmpV.z;}
-  }));
+  });});
   return {y:isFinite(minY)?minY:0,z:isFinite(minZ)?minZ:0};
 }
 // a panorama set frames the whole set (n boards side by side), not one board

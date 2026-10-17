@@ -14,7 +14,7 @@ import {$} from '../util.js';
    fewer screens down the page. */
 const WIDTH={phone:390,tablet:820,laptop:1440,monitor:1920,browser:1440},DPR_MAX=8;
 function viewport(d){
-  const o=RT.get(d.id);if(!o)return null;
+  const o=RT.get(d.id);if(!o||o.model)return null;  // an imported model has no screen
   let a;  // screen width / height as displayed
   if(o.custom){if(!d.screenRect||!d.frameImg)return null;a=(d.screenRect.w*d.frameImg.naturalWidth)/(d.screenRect.h*d.frameImg.naturalHeight);}
   else{a=o.sw/o.sh;if(o.rotatable&&d.landscape)a=1/a;}

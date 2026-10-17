@@ -4,7 +4,7 @@ import {DOF_DEFAULT,F_STOPS,LENSES,dof,effectiveMm,fovFromMm,mmFromFov} from '..
 import {camera,canvas} from '../render/renderer.js';
 import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
-import {TYPES} from '../state/constants.js';
+import {typeName} from '../state/constants.js';
 import {byId,state} from '../state/state.js';
 import {makeSlider,syncSliders} from './sliders.js';
 import {onSyncUI,syncUI} from './sync.js';
@@ -39,7 +39,7 @@ const bgEl=$('#dofBg');bgEl.addEventListener('change',()=>setDof({bg:bgEl.checke
 
 // focus: a select of "the selected device", each device, and a point picked on the scene
 const focusEl=$('#dofFocus');
-function devLabel(d){const same=state.devices.filter(x=>x.type===d.type);return (TYPES[d.type]||'Cihaz')+(same.length>1?' '+(same.indexOf(d)+1):'');}
+function devLabel(d){const n=typeName(d),same=state.devices.filter(x=>typeName(x)===n);return n+(same.length>1?' '+(same.indexOf(d)+1):'');}
 function fillFocus(){
   const fc=dof().focus,opts=[['sel','Seçili cihaz']];
   state.devices.forEach(d=>opts.push(['d'+d.id,devLabel(d)]));

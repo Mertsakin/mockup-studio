@@ -1,4 +1,4 @@
-import {TYPES} from '../state/constants.js';
+import {typeName} from '../state/constants.js';
 import {FX} from '../render/text-fx.js';
 import {modOf} from '../lights/mods.js';
 import {selLight} from '../lights/runtime.js';
@@ -47,7 +47,7 @@ function fmtV(o,k,v){
 // names like the layer tree's: the base name, numbered when it repeats
 function labels(list,base){const n={},seen={};list.forEach(x=>{const b=base(x);n[b]=(n[b]||0)+1;});
   return list.map(x=>{const b=base(x);seen[b]=(seen[b]||0)+1;return n[b]>1?b+' '+seen[b]:b;});}
-const devNames=()=>labels(state.devices,d=>TYPES[d.type]||'Cihaz');
+const devNames=()=>labels(state.devices,typeName);
 const lightNames=()=>labels(state.lights,L=>L.mod==='custom'?'Işık':modOf(L.mod).n);
 function nameOf(o){
   switch(kindOf(o)){case 'camera':return 'Kamera';case 'light':return lightNames()[state.lights.indexOf(o)];case 'device':return devNames()[state.devices.indexOf(o)];default:return o.name;}

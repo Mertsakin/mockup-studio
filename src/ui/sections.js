@@ -1,7 +1,7 @@
 import {modOf} from '../lights/mods.js';
 import {mmFromFov} from '../render/lens.js';
 import {FX} from '../render/text-fx.js';
-import {COLORS,TYPES} from '../state/constants.js';
+import {COLORS,typeName} from '../state/constants.js';
 import {sel,selItem,state} from '../state/state.js';
 import {doc,onBoards,sizeOf} from './boards.js';
 import {icon} from './icons.js';
@@ -25,7 +25,7 @@ const SUMMARY={
   'board-env':()=>(state.env==='space'?'Uzay':'Stüdyo')+(state.env!=='space'&&state.floor?' · gölge %'+Math.round(state.shadowOpacity*100):''),
   'board-light':()=>{const n=state.lights.length;return n?modOf(state.lights[0].mod).n+(n>1?' + '+(n-1):''):'Işık yok';},
   'dev-screen':()=>{const d=sel();return d&&d.video?d.videoName||'Video':d&&d.img?d.imgName||'Görsel':'Görsel yok';},
-  'dev-model':()=>{const d=sel();if(!d)return '';const c=COLORS.find(x=>x.k===d.colorKey);return (TYPES[d.type]||'')+(c?' · '+c.n:'');},
+  'dev-model':()=>{const d=sel();if(!d)return '';const c=COLORS.find(x=>x.k===d.colorKey);return typeName(d)+(c&&d.type!=='model'?' · '+c.n:'');},
   'dev-transform':()=>{const d=sel();return d?d.scale.toFixed(2)+'×':'';},
   'dev-layer':()=>state.devices.length>1?state.devices.length+' cihaz':'',
   'item-text':()=>{const i=selItem();return i&&i.kind==='text'?i.font+' · '+Math.round((i.size||0)*sizeOf(state)[0]):'';},
