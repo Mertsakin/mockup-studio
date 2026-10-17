@@ -61,7 +61,9 @@ function applyTransform(){
   // the board's slice of a panorama: board i of n is shifted so the set's centre is the frame's centre
   shift.x=state.pano?-(2*state.pano.i+1-state.pano.n)/2:0;
   camera.fov=S.fov;camera.aspect=view.aspect;camera.zoom=dist/eff;camera.position.set(0,0,dist);
-  camera.near=Math.max(.05,dist*.03);camera.far=dist*5+2000;camera.lookAt(0,0,0);camera.updateProjectionMatrix();
+  // near at 6 % of the distance: the composition starts at 20 % (dist ≥ 1.2 radii), and depth precision is proportional
+  // to near (3 % let the screen and its cover glass, 0.02 mm apart, fight at long lens + low Yakınlık)
+  camera.near=Math.max(.05,dist*.06);camera.far=dist*5+2000;camera.lookAt(0,0,0);camera.updateProjectionMatrix();
   const vh=2*eff*Math.tan(v/2),vw=vh*view.aspect;  // visible size at the target plane
   pivot.position.set(S.panX*vw,S.panY*vh,0);
   scene.updateMatrixWorld(true);

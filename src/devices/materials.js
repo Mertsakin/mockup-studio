@@ -6,12 +6,16 @@ import {mkCanvas,rng} from '../util.js';
 /* ---------- shared materials & textures ---------- */
 // Constants below were tuned in r128 as linear values; lin() keeps them linear under color management.
 const lin=hex=>new THREE.Color().setHex(hex,THREE.LinearSRGBColorSpace);
+// depth layers on the cover glass, in polygon-offset steps: the screen (LAYER), what sits on the screen (LAYER2: the
+// camera hole, the lens face), and the glare above them (-3/-6, M.glare); see CLAUDE.md "Derinlik hassasiyeti"
+const LAYER={polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2},LAYER2={polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4};
 const M={
   glass:new THREE.MeshPhysicalMaterial({color:lin(0x030405),roughness:.18,metalness:0,clearcoat:1,clearcoatRoughness:.04}),
-  black:new THREE.MeshBasicMaterial({color:0x000000}),
+  black:new THREE.MeshBasicMaterial(Object.assign({color:0x000000},LAYER2)),  // the phone's camera hole, on the screen
   lens:new THREE.MeshStandardMaterial({color:lin(0x07080a),roughness:.04,metalness:.6}),
   flash:new THREE.MeshStandardMaterial({color:lin(0xf1ead8),roughness:.3,metalness:0}),
-  glare:new THREE.MeshPhysicalMaterial({color:0x000000,metalness:0,roughness:.035,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,envMapIntensity:.45}),
+  glare:new THREE.MeshPhysicalMaterial({color:0x000000,metalness:0,roughness:.035,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,envMapIntensity:.45,
+    polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-6}),
   // matte PBT caps; low env reflection keeps them charcoal under a bright studio environment
   keycap:new THREE.MeshPhysicalMaterial({color:lin(0x0d0e10),roughness:.62,metalness:0,envMapIntensity:.35}),
   well:new THREE.MeshStandardMaterial({color:lin(0x0b0c0e),roughness:.9,metalness:0}),
@@ -76,7 +80,10 @@ function applyFinish(mat,fk,colorHex,opts){
 }
 function makeMats(){
   return {frame:new THREE.MeshPhysicalMaterial(),back:new THREE.MeshPhysicalMaterial(),well:new THREE.MeshPhysicalMaterial(),pad:new THREE.MeshPhysicalMaterial(),band:new THREE.MeshPhysicalMaterial(),
-    screen:new THREE.MeshBasicMaterial({toneMapped:false}),chrome:new THREE.MeshBasicMaterial({toneMapped:false}),
+    // LAYER: the screen (and the browser's bar) lies 0.02 mm over the cover glass, the glare 0.02 mm over that. With a far
+    // camera (long lens, low Yakınlık) the depth buffer cannot tell them apart and the glass wins in GPU-tile-shaped
+    // patches that flicker between samples; a polygon offset orders the layers in depth units, whatever the distance
+    screen:new THREE.MeshBasicMaterial(Object.assign({toneMapped:false},LAYER)),chrome:new THREE.MeshBasicMaterial(Object.assign({toneMapped:false},LAYER)),
     custom:new THREE.MeshBasicMaterial({transparent:true,alphaTest:.01,side:THREE.DoubleSide,toneMapped:false})};
 }
 function colorPreset(d){return d.colorKey==='custom'?{c:d.custom}:(COLORS.find(x=>x.k===d.colorKey)||COLORS[0]);}
@@ -108,6 +115,6 @@ const LENS_TEX=(function(){
   g.fillStyle=gr;g.beginPath();g.arc(128,128,60,0,Math.PI*2);g.fill();
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
 })();
-M.lensFace=new THREE.MeshPhysicalMaterial({map:LENS_TEX,roughness:.08,metalness:0,clearcoat:1,clearcoatRoughness:.02});
+M.lensFace=new THREE.MeshPhysicalMaterial(Object.assign({map:LENS_TEX,roughness:.08,metalness:0,clearcoat:1,clearcoatRoughness:.02},LAYER2));  // on the cover glass / the laptop's screen
 
 export {FINISHES,M,applyColorTo,lin,makeMats,tex};
