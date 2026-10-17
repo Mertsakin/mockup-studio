@@ -13,7 +13,9 @@ function newDevice(type,o){
     model:null,modelName:'',modelSize:DEFAULT_MODEL_CM},o||{});
 }
 const state={
-  scene:{rx:-6,ry:26,rz:0,zoom:1,fov:28,panX:0,panY:0},
+  // the camera: view angles, Yakınlık, lens (fov: vertical angle), shift; fnum and focusDist (cm) belong to the depth of
+  // field (render/lens.js) and animate like the rest
+  scene:{rx:-6,ry:26,rz:0,zoom:1,fov:28,panX:0,panY:0,fnum:2.8,focusDist:60},
   devices:[],selected:null,mode:'rotate',gizmo:'translate',
   bg:'gradient',solid:'#eef1f4',bg1:'#dfe6ff',bg2:'#f4dcea',
   gradType:'linear',gradAngle:135,  // gradient: linear at gradAngle (CSS degrees: 0 = upwards, clockwise) or radial from the centre

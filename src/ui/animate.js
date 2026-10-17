@@ -88,6 +88,9 @@ function observe(){
 }
 const queueObserve=()=>{if(!observeQueued){observeQueued=true;queueMicrotask(observe);}};
 onChange.add(queueObserve);onItems(queueObserve);
+// writes a field without it counting as an edit (no key): e.g. the focus distance taking over the current focus when
+// the focus mode switches to "Uzaklık" (ui/lens-panel.js)
+function setQuiet(o,k,v){o[k]=v;const s=applied.get(refOf(o));if(s)s[k]=v;}
 // sets (or adds) the key of value k at time t
 function put(o,k,t,v){
   o.tracks=o.tracks||{};const tr=o.tracks[k]||(o.tracks[k]=[]);
@@ -240,4 +243,4 @@ onBoards(()=>{
 
 const anyAnim=()=>targets().some(hasAnim)||state.items.some(hasFx);
 export {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,deleteSelected,hasFx,keyProp,keysAt,moveSelected,
-  onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets};
+  onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,targets};

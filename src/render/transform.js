@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {M} from '../devices/materials.js';
 import {RT,setHolder} from '../devices/rt.js';
 import {updateLights} from '../lights/runtime.js';
+import {updateFocus} from './lens.js';
 import {camera,req,scene,shift} from './renderer.js';
 import {comp,ground,groundMat,pivot,wall} from './stage.js';
 import {byId,floorOn,state,view} from '../state/state.js';
@@ -78,6 +79,7 @@ function applyTransform(){
   wall.position.set(pivot.position.x,ex.y-.004+2000,ex.z-state.wallGap*R);wall.visible=state.wall&&state.env!=='space';
   groundMat.opacity=state.shadowOpacity;groundMat.color.set(state.shadowColor);
   updateLights();
+  updateFocus();  // depth of field in "Kadraj noktası" mode: what the frame point lands on now
   req();
 }
 

@@ -2,7 +2,7 @@ import {typeName} from '../state/constants.js';
 import {FX} from '../render/text-fx.js';
 import {modOf} from '../lights/mods.js';
 import {selLight} from '../lights/runtime.js';
-import {mmFromFov} from '../render/lens.js';
+import {fmtM,mmFromFov} from '../render/lens.js';
 import {designT,halfFrame,hasAnim,isDevice,keyIn,kindOf,propsOf,refOf,timesOf,tracked} from '../state/anim.js';
 import {sel,selItem,state} from '../state/state.js';
 import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,hasFx,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets} from './animate.js';
@@ -24,13 +24,13 @@ import {$,$$} from '../util.js';
 const tl=$('#timeline'),names=$('#tlNames'),lanes=$('#tlLanes');
 const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Yatış',scale:'Ölçek',lidAngle:'Kapak açısı',scroll:'Kaydırma',
   x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık',
-  zoom:'Yakınlık',fov:'Objektif',panX:'Yatay kayma',panY:'Dikey kayma',
+  zoom:'Yakınlık',fov:'Objektif',panX:'Yatay kayma',panY:'Dikey kayma',fnum:'Diyafram',focusDist:'Odak uzaklığı',
   az:'Yön',el:'Yükseklik',dist:'Uzaklık',intensity:'Yoğunluk',angle:'Huzme açısı',penumbra:'Huzme kenarı'};
 // the value field of each animatable value, per target kind (the ◆ attaches to its label)
 const SLIDER={
   device:{px:'s-d-px',py:'s-d-py',pz:'s-d-pz',ry:'s-d-ry',rx:'s-d-rx',rz:'s-d-rz',scale:'s-d-scale',lidAngle:'s-d-lid',scroll:'s-d-scroll'},
   item:{x:'nf-x',y:'nf-y',w:'nf-w',h:'nf-h',size:'nf-fs',rot:'nf-r',opacity:'nf-op'},
-  camera:{ry:'s-g-ry',rx:'s-g-rx',rz:'s-g-rz',zoom:'s-g-zoom',fov:'s-g-mm',panX:'s-g-panX',panY:'s-g-panY'},
+  camera:{ry:'s-g-ry',rx:'s-g-rx',rz:'s-g-rz',zoom:'s-g-zoom',fov:'s-g-mm',panX:'s-g-panX',panY:'s-g-panY',fnum:'s-g-fnum',focusDist:'s-g-focus'},
   light:{intensity:'s-l-int',az:'s-l-az',el:'s-l-el',dist:'s-l-dist',size:'s-l-size',angle:'s-l-angle',penumbra:'s-l-pen'}};
 const POSE_BTN={device:'#poseKey',item:'#itemPoseKey',camera:'#camPoseKey',light:'#lightPoseKey'};
 const EASES=[['smooth','Yumuşak','M2 20 C 14 20, 22 2, 34 2'],['linear','Doğrusal','M2 20 L 34 2'],['hold','Ani','M2 20 L 30 20 L 30 2 L 34 2'],['back','Geri tepme','M2 20 C 12 20, 18 -6, 34 2']];
@@ -39,7 +39,7 @@ const fmtT=t=>t.toFixed(2).replace('.',',');
 const deg=v=>Math.round(v)+'°',pct=v=>Math.round(v*100)+'%';
 function fmtV(o,k,v){
   switch(kindOf(o)){
-    case 'camera':return k==='zoom'?v.toFixed(2)+'×':k==='fov'?Math.round(mmFromFov(v))+' mm':/^pan/.test(k)?pct(v):deg(v);
+    case 'camera':return k==='zoom'?v.toFixed(2)+'×':k==='fov'?Math.round(mmFromFov(v))+' mm':k==='fnum'?'f/'+(+v.toFixed(1)):k==='focusDist'?fmtM(v):/^pan/.test(k)?pct(v):deg(v);
     case 'light':return k==='intensity'?v.toFixed(2):k==='dist'?v.toFixed(2)+'×':k==='size'||k==='penumbra'?pct(v):deg(v);
     default:return /^(scroll|x|y|opacity)$/.test(k)?pct(v):/^(size|w|h)$/.test(k)?Math.round(v*sizeOf(state)[0])+' px':k==='scale'?v.toFixed(2)+'×':/^r|lid/.test(k)?deg(v):v.toFixed(1);
   }

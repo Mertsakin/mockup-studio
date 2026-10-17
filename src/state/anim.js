@@ -8,8 +8,9 @@
    hold the values the editor shows (ui/animate.js writes them). o.designT is the target's design frame (default 0 s):
    what Tasarla, the still image and snapshots show; editing in Tasarla rewrites the keys at that time. */
 const ANIM_PROPS=['px','py','pz','ry','rx','rz','scale','lidAngle','scroll'];
-// the camera (state.scene): the view angles, Yakınlık, the lens (fov: the UI shows mm) and the shift
-const CAM_PROPS=['ry','rx','rz','zoom','fov','panX','panY'];
+// the camera (state.scene): the view angles, Yakınlık, the lens (fov: the UI shows mm), the shift, and the depth of
+// field's f-number and focus distance (cm; a focus pull is keys on it, render/lens.js)
+const CAM_PROPS=['ry','rx','rz','zoom','fov','panX','panY','fnum','focusDist'];
 // a light: direction and height (camera relative), distance, intensity, source size, spot beam
 const LIGHT_PROPS=['az','el','dist','intensity','size','angle','penumbra'];
 // 2D items: position (in the parent), width (a frame also height; fractions of the board width), rotation, opacity;

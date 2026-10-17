@@ -16,8 +16,9 @@ const SLIDERS=[];
    symmetric range that adapts to the scene (device position); the value is kept within it. */
 const POS_SPAN=v=>Math.max(60,Math.ceil(view.fitRadius*2.5/10)*10,Math.ceil(Math.abs(v||0)*1.25/10)*10);
 const fDeg=v=>Math.round(v)+'°',fX=v=>v.toFixed(2)+'×',fPct=v=>Math.round(v*100)+'%',fU=v=>v.toFixed(1);
-// what the user sees -> the stored value (percent fields show ×100)
-const scaleOf=def=>def.f===fPct?100:1;
+// what the user sees -> the stored value (percent fields show ×100; def.scale: shown units per stored unit, e.g. .01 for
+// a distance kept in cm and shown in m)
+const scaleOf=def=>def.scale||(def.f===fPct?100:1);
 function bounds(def,v){if(def.span){const r=Math.max(def.span(v),Math.abs(v||0));return [-r*4,r*4];}return [def.min,def.max];}
 function makeSlider(parent,def,getObj){
   const el=document.createElement('div');el.className='nf sl';const id='s-'+def.id;el.dataset.w=String(def.w||2);

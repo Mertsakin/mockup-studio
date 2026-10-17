@@ -101,6 +101,9 @@
       <div class="world" id="world"></div>
       <div class="frame" id="frame"><canvas id="gl" aria-label="Sahne önizlemesi"></canvas></div>
       <svg class="nav" id="navSvg" viewBox="-48 -48 96 96" role="group" aria-label="Görünüm yönü. Bir eksene tıkla ya da sürükleyerek döndür."></svg>
+      <!-- depth of field overlays (ui/lens-panel.js; never in exports): the draggable frame point, and what is in focus -->
+      <div class="focus-cross" id="focusCross" hidden role="slider" tabindex="0" aria-label="Odak noktası: kadrajda sürükle, ok tuşlarıyla kaydır"><i></i><i></i></div>
+      <div class="focus-info" id="focusInfo" hidden aria-live="polite"></div>
       <div class="menu" id="addMenu" role="menu" hidden></div>
       <nav class="dock" id="dock" aria-label="Araçlar">
         <div class="tool-split" role="group" aria-label="Seçim araçları">
@@ -171,7 +174,13 @@
           <div class="row"><span class="lbl">Bokeh</span><label class="switch"><input type="checkbox" id="dofOn" role="switch" aria-label="Alan derinliği (bokeh)"><span></span></label></div>
           <div id="dofOpts" class="dof-opts" hidden>
             <div id="dofSliders" class="slgrid"></div>
-            <div class="row"><label for="dofFocus">Odak</label><select id="dofFocus"></select></div>
+            <div class="row"><span class="lbl narrow" title="Odak nereye bağlı: bir hedefe (cihaz ya da nokta), kadrajdaki bir noktaya ya da kameradan sabit bir uzaklığa">Odak</span><div class="seg" id="dofMode" role="group" aria-label="Odak kipi"><button data-v="target" title="Hedef: seçilen cihaz ya da nokta; hareket edince odak onunla gider">Hedef</button><button data-v="frame" title="Kadraj noktası: kadrajda işaretlenen yerdeki şey net olur (kamera hareketinde öne gelen netleşir)">Kadraj</button><button data-v="dist" title="Uzaklık: kameradan sabit ya da animasyonlu bir odak uzaklığı (odak çekme)">Uzaklık</button></div></div>
+            <div class="row" data-fmode="target"><label for="dofFocus">Hedef</label><select id="dofFocus"></select></div>
+            <div class="row" data-fmode="frame"><span class="hint-sm grow" id="dofFrameHint">Kadrajdaki artıyı sürükle; Shift merkeze yapıştırır.</span><button class="linkbtn" type="button" id="dofCenter">Merkeze al</button></div>
+            <div data-fmode="dist">
+              <div id="dofDistSlot" class="slgrid"></div>
+              <div class="row"><label for="dofPull">Buna odakla</label><select id="dofPull" aria-label="Buna odakla: bir cihazın şu anki uzaklığını odak uzaklığına yaz"></select></div>
+            </div>
             <div class="row"><span class="lbl" title="Diyafram şekli: bokeh lekelerinin biçimi">Şekil</span><div class="seg" id="dofBlades" role="group" aria-label="Diyafram şekli"><button data-v="0" title="Yuvarlak diyafram">Daire</button><button data-v="6" title="6 bıçaklı diyafram (altıgen)">6</button><button data-v="8" title="8 bıçaklı diyafram (sekizgen)">8</button></div></div>
             <div class="row"><span class="lbl wide">Arka planı bulanıklaştır</span><label class="switch"><input type="checkbox" id="dofBg" role="switch" aria-label="Arka plan görselini ya da geçişini bulanıklaştır"><span></span></label></div>
           </div>

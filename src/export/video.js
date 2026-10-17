@@ -14,7 +14,7 @@ import {$,$$,mkCanvas} from '../util.js';
 import {exportSize,offer} from './export.js';
 import {bitrate as bps,mp4Encoder} from './mp4.js';
 
-import {dofOn} from '../render/lens.js';
+import {dofOn,holdFocus} from '../render/lens.js';
 import {scheduleEnv} from '../render/environment.js';
 /* Video export (Canlandır): every frame is set up at its time and rendered like the fast still export (progressive
    samples, background and 2D items composited), then encoded to H.264 with WebCodecs and muxed into an MP4.
@@ -43,8 +43,11 @@ async function renderVideo(onProgress){
       if(cancel)return null;
       const t=i*dt;
       applyAt(t,{sync:true});if(video)await showFrames(t);if(lightsMove)scheduleEnv(true);  // screen videos: the exact frame, drawn before the samples
+      // the focus is the frame's own (its time): the motion blur sub-samples keep it (render/lens.js)
+      holdFocus(true);
       if(X.blur&&moving)renderNow(S,j=>{applyAt(Math.max(0,Math.min(state.anim.dur,t+((j+.5)/S-.5)*SHUTTER*dt)),{scroll:false});});
       else renderNow(S);
+      holdFocus(false);
       g.clearRect(0,0,W,H);
       if(state.bg==='transparent'){g.fillStyle='#ffffff';g.fillRect(0,0,W,H);}  // MP4 has no alpha
       paintBg(g,W,H);paintItems(g,W,H,false,t);g.drawImage(canvas,0,0,W,H);paintItems(g,W,H,true,t);
@@ -54,7 +57,7 @@ async function renderVideo(onProgress){
     }
     return await enc.finish();
   }finally{
-    enc.close();
+    enc.close();holdFocus(false);
     hidden.forEach(o=>{o.visible=true;});
     pauseLive(false);renderer.setPixelRatio(pr);invalidateLayout();layout();
     applyNow();req();

@@ -68,6 +68,12 @@ function restore(s){
   if(![1080,1920,3840].includes(state.size))state.size=1920;
   // the scene object stays (modules hold it); its animation goes if the snapshot has none
   delete state.scene.tracks;delete state.scene.designT;Object.assign(state.scene,copy(s.state.scene));
+  // the f-number used to live in dof.f; it and the focus distance are the camera's now (render/lens.js). A snapshot
+  // from before gets them here (not the previous board's values, since the scene object stays)
+  const sc=s.state.scene||{};
+  if(sc.fnum===undefined)state.scene.fnum=state.dof&&typeof state.dof.f==='number'?state.dof.f:2.8;
+  if(sc.focusDist===undefined)state.scene.focusDist=60;
+  if(state.dof&&'f' in state.dof)delete state.dof.f;
   state.devices=s.devices.map(o=>Object.assign({video:null,videoName:'',videoT0:0,videoLoop:true,videoPoster:null,model:null,modelName:'',modelSize:DEFAULT_MODEL_CM},copy(o),
     {img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null,video:o.video?s.images[o.video]||null:null,model:o.model?s.images[o.model]||null:null}));
   state.lights=copy(s.lights);

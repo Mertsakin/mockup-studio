@@ -688,7 +688,23 @@ html[data-pick=focus] #stagearea canvas{cursor:crosshair!important}
 /* the Bokeh switch and its settings are one group: the inspector's inner 8 px rhythm */
 #inspector .dof-group,#inspector .dof-opts{display:flex;flex-direction:column;gap:8px}
 #inspector .dof-opts[hidden]{display:none}
+#inspector .dof-opts [data-fmode][hidden]{display:none}
+#inspector .dof-opts .row>#dofFrameHint{margin:0;font-size:11px;white-space:normal}
+#inspector .dof-opts .row>.lbl.narrow{width:44px}
 .row>.lbl.wide{width:auto;flex:1}
+/* Bokeh overlays on the stage (ui/lens-panel.js): the frame point (draggable cross) and the focus read-out. Both are DOM,
+   so they never reach an export or a thumbnail. */
+.focus-cross{position:absolute;left:0;top:0;width:22px;height:22px;margin:-11px 0 0 -11px;z-index:4;cursor:move;touch-action:none;border-radius:50%;outline:none}
+.focus-cross>i{position:absolute;left:50%;top:50%;background:var(--accent);box-shadow:0 0 0 1px var(--panel);border-radius:1px}
+.focus-cross>i:first-child{width:22px;height:2px;margin:-1px 0 0 -11px}
+.focus-cross>i:last-child{width:2px;height:22px;margin:-11px 0 0 -1px}
+.focus-cross::after{content:"";position:absolute;inset:4px;border:1.5px solid var(--accent);border-radius:50%;box-shadow:0 0 0 1px var(--panel);opacity:.55}
+.focus-cross:hover::after,.focus-cross:focus-visible::after,.focus-cross.drag::after{opacity:1;inset:2px}
+.focus-cross.hit>i{background:var(--key,var(--accent))}
+.focus-cross[hidden]{display:none}
+.focus-info{position:absolute;left:0;top:0;z-index:3;pointer-events:none;padding:3px 8px;border-radius:5px;background:color-mix(in srgb,var(--panel) 82%,transparent);color:var(--ink-2);font-size:11px;line-height:14px;white-space:nowrap;box-shadow:0 0 0 1px var(--line);backdrop-filter:blur(6px)}
+.focus-info b{color:var(--ink);font-weight:500}
+.focus-info[hidden]{display:none}
 
 /* ---------- export progress (ui/busy.js): the whole editor waits under a scrim, the card in the dialog style ---------- */
 .scrim.busy{z-index:80;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:busy-in .2s ease-out .15s both}
