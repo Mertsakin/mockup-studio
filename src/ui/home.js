@@ -16,7 +16,7 @@ import {listProjects,listTrash,thumbURL} from '../io/cloud-projects.js';
 import {activate,clearAll,doc,fillThumbs,storeActive} from './boards.js';
 import {historyReady,holdHistory} from './history.js';
 import {icon} from './icons.js';
-import {destroyAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,signInHooks,trashAction} from './projects.js';
+import {destroyAction,discardAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction} from './projects.js';
 import {openTemplate,templates} from './template-gallery.js';
 import {toast} from './toast.js';
 import {closeWelcomeModal,openWelcome} from './welcome.js';
@@ -140,9 +140,10 @@ function openWork(){
 }
 function openCard(w){
   if(prefs.layout==='list')return '<div class="hm-row hm-open" role="listitem" tabindex="0" data-a="return"><span class="hm-lth">'+(w.thumb?'<img alt="" src="'+w.thumb+'">':icon('gallery-wide',20))+'</span>'+
-    '<span class="hm-nm">'+esc(w.name)+' <span class="hm-c">· açık, buluta kaydedilmedi</span></span><span class="hm-c">şimdi</span><span class="hm-c">'+w.boards+'</span><span class="hm-c">—</span><span></span></div>';
+    '<span class="hm-nm">'+esc(w.name)+' <span class="hm-c">· açık, buluta kaydedilmedi</span></span><span class="hm-c">şimdi</span><span class="hm-c">'+w.boards+'</span><span class="hm-c">—</span>'+
+    '<button class="hm-ib" type="button" data-menu="open" aria-label="'+esc(w.name)+' seçenekleri" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div>';
   return '<div class="hm-card hm-open" role="listitem" tabindex="0" data-a="return" aria-label="Açık çalışmaya dön: '+esc(w.name)+'"><div class="hm-th"><span class="hm-thi">'+(w.thumb?'<img alt="" src="'+w.thumb+'">':icon('gallery-wide',28))+'</span>'+
-    '<span class="hm-badge">Açık</span></div><div class="hm-meta"><span class="hm-ico">'+icon('gallery-wide',13)+'</span><span class="hm-mtx"><span class="hm-nm">'+esc(w.name)+'</span>'+
+    '<span class="hm-badge">Açık</span><button class="hm-dots" type="button" data-menu="open" aria-label="'+esc(w.name)+' seçenekleri" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div><div class="hm-meta"><span class="hm-ico">'+icon('gallery-wide',13)+'</span><span class="hm-mtx"><span class="hm-nm">'+esc(w.name)+'</span>'+
     '<span class="hm-tm">Buluta kaydedilmedi · '+w.boards+' artboard</span></span></div></div>';
 }
 const withOpen=(html,w)=>w?html.replace(/^(<div class="hm-(?:grid|list)" role="list">(?:<div class="hm-row hm-hd">.*?<\/div>)?)/,'$1'+openCard(w)):html;
@@ -232,6 +233,11 @@ function startGoal(g){
   if(g==='store'){openStoreDialog(undefined,hooks());return;}
   openWelcome(g,hooks());
 }
+// the open work's card: back to it, make it a cloud project, or throw it away
+function openWorkMenu(btn){
+  openMenu(btn,[{label:'Aç',key:'↵',run:()=>hideHome()},null,{label:'Buluta kaydet',run:async()=>{if(await saveToCloud())await load();}},
+    null,{label:'Sil',key:'⌫',danger:true,run:async()=>{if(await discardAction())draw();}}],{right:true});
+}
 function projectMenu(btn,p){
   const run=f=>async()=>{try{if(await f(p)){await load();}}catch(e){toast(e.message);}};
   if(view==='trash')openMenu(btn,[{label:'Geri getir',run:run(restoreAction)},null,{label:'Kalıcı olarak sil',danger:true,run:run(destroyAction)}],{right:true});
@@ -242,7 +248,7 @@ function onClick(e){
   const t=e.target;
   const nav=t.closest('[data-view]');if(nav){go(nav.dataset.view);return;}
   const lay=t.closest('[data-layout]');if(lay){prefs.layout=lay.dataset.layout;savePrefs();draw();return;}
-  const m=t.closest('[data-menu]');if(m){e.stopPropagation();const p=byId(m.dataset.menu);if(p)projectMenu(m,p);return;}
+  const m=t.closest('[data-menu]');if(m){e.stopPropagation();if(m.dataset.menu==='open'){openWorkMenu(m);return;}const p=byId(m.dataset.menu);if(p)projectMenu(m,p);return;}
   const g=t.closest('[data-goal]');if(g){startGoal(g.dataset.goal);return;}
   const tp=t.closest('[data-tpl]');if(tp){const x=tpls.find(y=>y.id===tp.dataset.tpl);if(x)startTemplate(x);return;}
   const a=t.closest('[data-a]');
@@ -268,6 +274,7 @@ document.addEventListener('keydown',e=>{
 },true);
 function onKey(e){
   const open=e.target.closest&&e.target.closest('.hm-open');if(open&&e.target===open&&e.key==='Enter'){e.preventDefault();hideHome();return;}
+  if(open&&e.target===open&&(e.key==='Delete'||e.key==='Backspace')){e.preventDefault();discardAction().then(c=>{if(c)draw();});return;}
   const card=e.target.closest&&e.target.closest('.hm-item');
   if(card&&e.target===card){const p=byId(card.dataset.id);if(!p)return;
     if(e.key==='Enter'&&view!=='trash'){e.preventDefault();openP(p);}

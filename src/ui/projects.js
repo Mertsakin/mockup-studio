@@ -150,6 +150,11 @@ async function trashAction(p){
   if(open){await resetDocument();remember(null);}
   toast(p.name+' çöp kutusuna taşındı');return true;
 }
+// the open work that is not a cloud project (the home page's "Açık çalışma" card): gone for good after asking
+async function discardAction(){
+  if(!(await confirmBox('Açık çalışmayı sil','Bu çalışma buluta kaydedilmedi; silinince geri getirilemez.','Sil')))return false;
+  await resetDocument();remember(null);toast('Açık çalışma silindi');return true;
+}
 async function restoreAction(p){await restoreProject(p.id);toast(p.name+' geri getirildi');return true;}
 async function destroyAction(p){
   if(!(await confirmBox('Kalıcı olarak sil',p.name+' kalıcı olarak silinecek. Bu geri alınamaz.','Kalıcı olarak sil')))return false;
@@ -178,4 +183,4 @@ async function leave(){
 
 saveBtn.addEventListener('click',()=>saveToCloud());
 
-export {isLeaving,destroyAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction};
+export {isLeaving,destroyAction,discardAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction};

@@ -55,6 +55,15 @@ try{
   await p.screenshot({path:'renders/home-popups-5-ask.png'});
   await p.click('.scrim [data-a="ok"]');await p.waitForSelector('#home',{state:'detached',timeout:15000});
   ok(await p.evaluate(()=>window.__app('doc').boards.length===1),'"Yeni proje": the editor on the new blank artboard');
+  // the open work's card has a menu too: Aç, Buluta kaydet, Sil
+  await p.waitForTimeout(800);await p.click('#homeTopBtn');await p.waitForSelector('#home .hm-open');
+  await p.hover('#home .hm-open');await p.click('#home .hm-open .hm-dots');await p.waitForSelector('.hm-menu');
+  const items=await p.$$eval('.hm-menu .hm-mi',l=>l.map(x=>x.textContent.trim()));
+  ok(['Aç','Buluta kaydet','Sil'].every(n=>items.some(t=>t.startsWith(n))),'the open work\'s card has a menu: '+items.join(', '));
+  await p.screenshot({path:'renders/home-popups-6-open-menu.png'});
+  await p.click('.hm-menu >> text=Sil');await p.click('[role="alertdialog"] [data-a="ok"]');
+  await p.waitForFunction(()=>!document.querySelector('#home .hm-open'),null,{timeout:10000}).catch(()=>{});
+  ok(!(await p.$('#home .hm-open'))&&await p.evaluate(()=>window.__app('doc').boards.length===0),'"Sil": the unsaved work is gone, and its card');
   ok(!errors.length,'no page errors'+(errors.length?': '+errors.join('; '):''));
 }finally{await admin.auth.admin.deleteUser(u.user.id).catch(()=>{});await b.close();}
 console.log(fails?fails+' failed':'all passed');process.exit(fails?1:0);
