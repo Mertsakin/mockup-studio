@@ -260,5 +260,12 @@ $('#wlBlank').addEventListener('click',()=>$('#emptyAddBoard').click());
 // a store set has its own form (store.js); the set's artboards close the card
 $('#wlStore').addEventListener('click',()=>openStoreDialog());
 $('#wlOpen').addEventListener('click',()=>$('#openProjectBtn').click());
+/* The card for a goal (the home page's goal buttons: ui/home.js): that goal pressed, the address field (or the drop
+   area) focused; 'store' opens the store set form over it. The document must be empty (the card shows then). */
+function openWelcome(g){
+  if(g==='store'){requestAnimationFrame(()=>openStoreDialog());return;}
+  const b=$('#welcome [data-goal="'+g+'"]');if(b)b.click();
+  showStart();
+}
 
-export {begin as startWelcome};
+export {begin as startWelcome,openWelcome};

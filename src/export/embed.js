@@ -36,7 +36,7 @@ function snippetOf(o){
   return '<script src="'+DIR+'mockup-view.js" defer></script>\n'+
     '<mockup-view src="'+DIR+'embed.html?'+q.toString()+'" mode="'+o.mode+'" poster="'+DIR+'poster.webp" ratio="'+o.ratio+'" alt="'+esc(o.alt)+'"></mockup-view>';
 }
-const README=snippet=>`Mockup stüdyosu · Web'e göm
+const README=snippet=>`Shotlight · Web'e göm
 
 1. "mockup" klasörünü sitenin dosyalarının yanına koy (örnek sayfa: index.html).
 2. Mockup'ın görüneceği yere şu kodu ekle:

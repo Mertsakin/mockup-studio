@@ -90,7 +90,7 @@ async function saveToCloud({asNew=false}={}){
   if(!doc.boards.length){toast('Kaydedilecek bir artboard yok.');return false;}
   let p=asNew?null:mine();
   if(!p){
-    const name=await askName(asNew?'Yeni proje olarak kaydet':'Buluta kaydet',$('#projName').textContent.replace(/^Mockup stüdyosu$|^Shotlight$/,'')||'Adsız proje','Kaydet');
+    const name=await askName(asNew?'Yeni proje olarak kaydet':'Buluta kaydet',$('#projName').textContent.replace(/^Mockup stüdyosu$|^Shotlight$|^Adsız proje$/,'')||'Adsız proje','Kaydet');
     if(!name)return false;
     try{p=await createProject(name);}catch(e){toast(e.message);return false;}
   }

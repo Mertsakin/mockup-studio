@@ -66,7 +66,7 @@ window.addEventListener('keydown',e=>{
 /* Two formats (io/project.js): .mockup.json (images inlined) and, once a screen video is in the document, .mockup.zip
    (project.json + media files). A file saved as .json that now needs the zip asks for a new name. */
 const FS=typeof window.showSaveFilePicker==='function';
-const FILE_TYPES=[{description:'Mockup stüdyosu projesi',accept:{'application/json':['.json'],'application/zip':['.zip']}}];
+const FILE_TYPES=[{description:'Shotlight projesi',accept:{'application/json':['.json'],'application/zip':['.zip']}}];
 const EXT=/\.mockup\.(json|zip)$/i,ZIP=/\.zip$/i;
 let fileHandle=null,fileName='',savedSig=null;  // savedSig: the document as last saved to / opened from a file
 const stamp=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes());};
@@ -75,7 +75,7 @@ const withExt=(n,zip)=>{n=String(n||'').trim().replace(/[\\/:*?"<>|]+/g,'-');if(
 const suggested=zip=>withExt(fileName||'mockup-proje-'+stamp(),zip);
 function setFileName(n){
   fileName=n||'';const el=$('#projName');
-  el.textContent=fileName?fileName.replace(EXT,'').replace(/\.(json|zip)$/i,''):'Mockup stüdyosu';el.title=fileName?fileName+(fileHandle?'':' (indirildi)'):'';
+  el.textContent=fileName?fileName.replace(EXT,'').replace(/\.(json|zip)$/i,''):'Adsız proje';el.title=fileName?fileName+(fileHandle?'':' (indirildi)'):'';
 }
 // the document as a file: {blob, zip}; a change made a moment ago is recorded first
 async function projectFile(){commitNow();return toProjectFile(snapshot());}

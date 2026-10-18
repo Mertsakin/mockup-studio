@@ -2,22 +2,25 @@
    in, and where the editor's "Ana sayfa" goes back to. A full-screen layer over the editor (the editor behind is inert).
      sidebar   the account (theme, shortcuts, signing out), search, Son kullanılanlar / Projelerim / Şablonlar /
                Çöp kutusu, the storage used
-     top bar   back / forward between views; the goals on the right (Açılış görseli, Sosyal, Mağaza seti, Video:
-               each starts a new project from that goal's first template) and Diğer (blank canvas, capture a site,
-               open a project file, every template)
+     top bar   back / forward between views; "Projeye dön" while a document is open; the goals on the right
+               (Açılış görseli, Sosyal, Mağaza seti, Video: each starts a new, empty project and opens the welcome card
+               with that goal, i.e. the address field and the drop area; the store set opens its form) and Diğer
+               (blank canvas, capture a site, open a project file, every template)
      content   recommended templates (a big "Bir şablonla başla" panel for an account without projects), then the
                projects as a grid or a list (sorted by last edit, name or creation); the trash with restore and delete
-               for good
+               for good. The work open in the editor that is not (yet) a cloud project shows as the first card,
+               "Açık çalışma", so the way back to it is always there (Esc too)
    The data is the user's cloud projects (io/cloud-projects.js); the actions are ui/projects.js's. Opening a project or
    starting one goes to the editor. */
 import {auth,cloudEnabled,onAuth} from '../io/cloud.js';
 import {listProjects,listTrash,thumbURL} from '../io/cloud-projects.js';
-import {activate,clearAll,doc,fillThumbs} from './boards.js';
+import {activate,clearAll,doc,fillThumbs,storeActive} from './boards.js';
 import {holdHistory} from './history.js';
 import {icon} from './icons.js';
 import {destroyAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,signInHooks,trashAction} from './projects.js';
 import {openTemplate,templates} from './template-gallery.js';
 import {toast} from './toast.js';
+import {openWelcome} from './welcome.js';
 import {setUi} from './ui-state.js';
 import {fitAll} from './workspace.js';
 import {$} from '../util.js';
@@ -50,7 +53,8 @@ async function showHome(v){
     el.addEventListener('click',onClick);el.addEventListener('input',onInput);el.addEventListener('keydown',onKey);
   }
   past=[];ahead=[];view=v||'recent';
-  frame();await load();
+  if(doc.boards.length)storeActive();  // a fresh thumbnail of the open work for its card
+  frame();el.querySelector('.hm-nav[data-view="'+view+'"]').focus({preventScroll:true});await load();
 }
 function hideHome(){if(!el)return;closeMenu();el.remove();el=null;document.documentElement.classList.remove('home-on');shut(false);}
 async function load(){
@@ -81,6 +85,7 @@ function frame(){
       '<button class="hm-ib" type="button" data-a="back" aria-label="Geri">'+icon('alt-arrow-left',16)+'</button>'+
       '<button class="hm-ib" type="button" data-a="fwd" aria-label="İleri">'+icon('alt-arrow-right',16)+'</button>'+
       '<h1 id="hmTitle"></h1><span class="hm-sp"></span>'+
+      '<button class="hm-back" type="button" data-a="return" id="hmReturn" hidden>'+icon('alt-arrow-left',14)+'Projeye dön</button>'+
       '<div class="hm-goals" role="group" aria-label="Yeni proje başlat">'+GOALS.map(([g,n,ic,c])=>'<button class="hm-goal" type="button" data-goal="'+g+'"><span class="hm-gi '+c+'">'+icon(ic,14)+'</span>'+n+'</button>').join('')+
         '<button class="hm-goal hm-more" type="button" data-a="more" aria-haspopup="menu">Diğer'+icon('alt-arrow-down',14)+'</button></div>'+
     '</header><div class="hm-scroll" id="hmBody"></div></main>';
@@ -120,6 +125,21 @@ function cards(list,{trash:isTrash=false}={}){
       '<div class="hm-meta"><span class="hm-ico">'+icon('gallery-wide',13)+'</span><span class="hm-mtx"><span class="hm-nm">'+esc(p.name)+'</span><span class="hm-tm">'+
       (isTrash?'Silindi '+ago(p.deleted_at):'Düzenlendi '+ago(p.updated_at))+' · '+(p.boards||0)+' artboard</span></span></div></div>').join('')+'</div>';
 }
+// the work open in the editor when it is not one of the listed cloud projects (new, never saved, or saved elsewhere)
+function openWork(){
+  if(!doc.boards.length)return null;
+  const id=openId();if(id&&projects&&projects.some(p=>p.id===id))return null;
+  const b=doc.boards.find(x=>x.id===doc.active)||doc.boards[0],name=($('#projName').textContent||'').trim();
+  return {name:name&&!/^(Mockup stüdyosu|Shotlight|Adsız proje)$/.test(name)?name:'Adsız çalışma',thumb:b&&b.thumb,boards:doc.boards.length};
+}
+function openCard(w){
+  if(prefs.layout==='list')return '<div class="hm-row hm-open" role="listitem" tabindex="0" data-a="return"><span class="hm-lth">'+(w.thumb?'<img alt="" src="'+w.thumb+'">':icon('gallery-wide',20))+'</span>'+
+    '<span class="hm-nm">'+esc(w.name)+' <span class="hm-c">· açık, buluta kaydedilmedi</span></span><span class="hm-c">şimdi</span><span class="hm-c">'+w.boards+'</span><span class="hm-c">—</span><span></span></div>';
+  return '<div class="hm-card hm-open" role="listitem" tabindex="0" data-a="return" aria-label="Açık çalışmaya dön: '+esc(w.name)+'"><div class="hm-th"><span class="hm-thi">'+(w.thumb?'<img alt="" src="'+w.thumb+'">':icon('gallery-wide',28))+'</span>'+
+    '<span class="hm-badge">Açık</span></div><div class="hm-meta"><span class="hm-ico">'+icon('gallery-wide',13)+'</span><span class="hm-mtx"><span class="hm-nm">'+esc(w.name)+'</span>'+
+    '<span class="hm-tm">Buluta kaydedilmedi · '+w.boards+' artboard</span></span></div></div>';
+}
+const withOpen=(html,w)=>w?html.replace(/^(<div class="hm-(?:grid|list)" role="list">(?:<div class="hm-row hm-hd">.*?<\/div>)?)/,'$1'+openCard(w)):html;
 function bar(h){
   return '<div class="hm-bar2"><h2>'+h+'</h2><span class="hm-sp"></span>'+
     '<button class="hm-pill" type="button" data-a="sort" aria-haspopup="menu">'+({edited:'Son düzenlenen',name:'Ada göre',created:'Oluşturulma'})[prefs.sort]+icon('alt-arrow-down',14)+'</button>'+
@@ -131,18 +151,20 @@ function draw(){
   el.querySelectorAll('.hm-nav').forEach(n=>n.setAttribute('aria-current',n.dataset.view===view?'page':'false'));
   el.querySelector('#hmTitle').textContent=TITLES[view];
   el.querySelector('[data-a="back"]').disabled=!past.length;el.querySelector('[data-a="fwd"]').disabled=!ahead.length;
+  el.querySelector('#hmReturn').hidden=!doc.boards.length;
   const n=el.querySelector('[data-count="all"]');n.textContent=projects&&projects.length?projects.length:'';
   const body=el.querySelector('#hmBody');
   if(!projects){body.innerHTML='<p class="hm-empty">Yükleniyor…</p>';return;}
   let h='',thumbs=[];
   if(view==='recent'||view==='all'){
-    if(!projects.length&&!q){
+    const w=q?null:openWork();
+    if(!projects.length&&!q&&!w){
       h+=rec(true)+'<div class="hm-empty"><h2>Henüz projen yok</h2><p>Bir şablon seç, sağ üstten bir amaçla başla ya da boş tuvalle aç.</p>'+
         '<button class="hm-btn" type="button" data-a="blank">'+icon('add-circle',16)+'Boş tuval</button></div>';
     }else{
       if(view==='recent'&&!prefs.recClosed&&!q)h+=rec(false);
       const all=sorted(projects).filter(p=>match(p.name)),l=view==='recent'&&!q?all.slice(0,8):all;thumbs=l;
-      h+=bar(view==='recent'?'Son kullanılanlar':'Tüm projeler ('+projects.length+')')+(l.length?cards(l):'<p class="hm-empty">Bu aramayla eşleşen proje yok.</p>');
+      h+=bar(view==='recent'?'Son kullanılanlar':'Tüm projeler ('+projects.length+')')+(l.length||w?withOpen(cards(l),w):'<p class="hm-empty">Bu aramayla eşleşen proje yok.</p>');
       if(view==='recent'&&!q&&projects.length>8)h+='<button class="hm-link" type="button" data-view="all">Tüm projeler ('+projects.length+') →</button>';
     }
   }else if(view==='templates'){
@@ -201,6 +223,11 @@ async function blank({capture=false}={}){
   hideHome();
   if(capture){const u=$('#wlUrl');if(u&&!$('#wlUrlRow').hidden)u.focus();else toast('Site yakalama bu sürümde kapalı.');}
 }
+// a goal: a new, empty project; the welcome card asks for the address or the screenshots, with that goal chosen
+async function startGoal(g){
+  if(!(await newProject()))return;
+  hideHome();openWelcome(g);
+}
 function projectMenu(btn,p){
   const run=f=>async()=>{try{if(await f(p)){await load();}}catch(e){toast(e.message);}};
   if(view==='trash')openMenu(btn,[{label:'Geri getir',run:run(restoreAction)},null,{label:'Kalıcı olarak sil',danger:true,run:run(destroyAction)}],{right:true});
@@ -212,10 +239,11 @@ function onClick(e){
   const nav=t.closest('[data-view]');if(nav){go(nav.dataset.view);return;}
   const lay=t.closest('[data-layout]');if(lay){prefs.layout=lay.dataset.layout;savePrefs();draw();return;}
   const m=t.closest('[data-menu]');if(m){e.stopPropagation();const p=byId(m.dataset.menu);if(p)projectMenu(m,p);return;}
-  const g=t.closest('[data-goal]');if(g){const tp=tpls.find(x=>x.goal===g.dataset.goal);if(tp)startTemplate(tp);else toast('Bu amaç için şablon yok.');return;}
+  const g=t.closest('[data-goal]');if(g){startGoal(g.dataset.goal);return;}
   const tp=t.closest('[data-tpl]');if(tp){const x=tpls.find(y=>y.id===tp.dataset.tpl);if(x)startTemplate(x);return;}
   const a=t.closest('[data-a]');
   if(a){switch(a.dataset.a){
+    case 'return':hideHome();return;
     case 'back':if(past.length){ahead.push(view);go(past.pop(),{push:false});}return;
     case 'fwd':if(ahead.length){past.push(view);go(ahead.pop(),{push:false});}return;
     case 'recShift':recShift+=4;draw();return;
@@ -232,7 +260,12 @@ function onClick(e){
 }
 const theme=v=>{const b=document.querySelector('#themeSeg [data-theme="'+v+'"]');if(b)b.click();};
 function onInput(e){if(e.target.id==='hmQ'){q=e.target.value.trim().toLocaleLowerCase('tr');draw();}}
+// Esc goes back to the open work (on the document: the focus may be anywhere while the home page shows)
+document.addEventListener('keydown',e=>{
+  if(el&&e.key==='Escape'&&doc.boards.length&&!menu&&!document.querySelector('.scrim:not([hidden])')){e.preventDefault();e.stopPropagation();hideHome();}
+},true);
 function onKey(e){
+  const open=e.target.closest&&e.target.closest('.hm-open');if(open&&e.target===open&&e.key==='Enter'){e.preventDefault();hideHome();return;}
   const card=e.target.closest&&e.target.closest('.hm-item');
   if(card&&e.target===card){const p=byId(card.dataset.id);if(!p)return;
     if(e.key==='Enter'&&view!=='trash'){e.preventDefault();openP(p);}
@@ -244,8 +277,10 @@ function onKey(e){
 // ---------- wiring: signing in lands here; the editor's menus come back here
 if(cloudEnabled){
   signInHooks.add(()=>showHome());
-  onAuth(a=>{const b=$('#homeBtn');if(b)b.hidden=!a.user;if(!a.user)hideHome();else if(el)frame(),draw();});
+  onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user)hideHome();else if(el){frame();draw();}});
   $('#homeBtn').addEventListener('click',()=>showHome());
+  $('#homeTopBtn').addEventListener('click',()=>showHome());
+  $('#wlClose').addEventListener('click',()=>showHome());
   $('#cloudOpenBtn').addEventListener('click',()=>showHome('all'));
 }
 

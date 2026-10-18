@@ -21,8 +21,9 @@
 <div class="app">
   <!-- ============ top bar ============ -->
   <header class="topbar">
+    <button class="ib home-btn" type="button" id="homeTopBtn" aria-label="Ana sayfa" hidden><span data-icon="widget"></span><span class="tip">Ana sayfa</span></button>
     <div class="menu-wrap">
-      <button class="appbtn" id="appMenuBtn" type="button" aria-label="Menü" aria-haspopup="menu" aria-expanded="false"><img class="mark" src="favicon.svg" alt="" aria-hidden="true"><span class="proj" id="projName">Mockup stüdyosu</span><span data-icon="alt-arrow-down" data-size="12"></span></button>
+      <button class="appbtn" id="appMenuBtn" type="button" aria-label="Menü" aria-haspopup="menu" aria-expanded="false"><img class="mark" src="favicon.svg" alt="" aria-hidden="true"><span class="proj" id="projName">Adsız proje</span><span data-icon="alt-arrow-down" data-size="12"></span></button>
       <div class="menu" id="appMenu" role="menu" hidden>
         <button class="mi" role="menuitem" type="button" id="homeBtn" hidden><span data-icon="alt-arrow-left"></span>Ana sayfa</button>
         <button class="mi" role="menuitem" type="button" id="openProjectBtn"><span data-icon="folder-open"></span>Proje aç…<kbd>⌘O</kbd></button>
@@ -145,6 +146,7 @@
       <!-- welcome (ui/welcome.js): an empty document starts here instead of on a bare canvas -->
       <section class="welcome" id="welcome" aria-labelledby="welcomeTitle" hidden>
         <div class="wl-card" id="wlStart">
+          <button class="ib wl-x" type="button" id="wlClose" aria-label="Ana sayfaya dön" hidden><span data-icon="close-circle"></span></button>
           <h2 id="welcomeTitle">Ekranını fotoğraf kalitesinde bir mockup'a çevir</h2>
           <p class="wl-sub" id="wlSub">Sitenin adresini ver ya da ekran görüntüsü bırak; telefon, tablet ve dizüstünde hazır sahneler kuralım.</p>
           <form class="wl-url" id="wlUrlRow" hidden>

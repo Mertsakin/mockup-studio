@@ -967,6 +967,9 @@ html.gated .toast{z-index:95}
 .hm-goal:hover{background:var(--field-hover);box-shadow:inset 0 0 0 1px var(--line-strong)}
 .hm-goal:focus-visible,.hm-ib:focus-visible,.hm-nav:focus-visible,.hm-pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hm-more{padding:0 12px 0 14px;gap:4px}
+.hm-back{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 12px 0 8px;border-radius:7px;font-weight:500;color:var(--accent-ink);margin-right:6px}
+.hm-back .ic{color:inherit}
+.hm-back:hover{background:var(--accent-soft)}
 .hm-gi{width:24px;height:24px;border-radius:6px;display:grid;place-items:center}
 .hm-gi .ic{color:#fff}
 .g1{background:#0b68f5}.g2{background:#e8457c}.g3{background:#10a37f}.g4{background:#f26b1d}
@@ -1037,3 +1040,7 @@ html.gated .toast{z-index:95}
 }
 /* dialogs (rename, confirm, conflict) opened from the home page sit above it */
 html.home-on .scrim{z-index:82}
+/* the editor's way back to the home page (signed in): the leftmost button of the top bar; the welcome card's close */
+.topbar .home-btn{margin-right:2px}
+.wl-card{position:relative}
+.wl-x{position:absolute;top:12px;right:12px}
