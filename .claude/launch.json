@@ -32,6 +32,17 @@
         "services/capture/server.mjs"
       ],
       "port": 8099
+    },
+    {
+      "name": "accounts",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5177",
+        "--strictPort"
+      ],
+      "port": 5177
     }
   ]
 }

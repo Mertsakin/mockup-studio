@@ -5,3 +5,9 @@ dist/
 tools/landing/src/
 dist-embed/
 /site/
+.dev.vars
+.wrangler/
+supabase/.temp/
+supabase/.branches/
+.env.local
+.env.*.local

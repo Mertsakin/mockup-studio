@@ -1,7 +1,7 @@
 /* Editor UI. Tokens first; components read only tokens. Dark theme: system preference unless the user picks one
    (data-theme on <html>). Names used from JS/SVG too: --field, --line, --muted, --accent, --panel, --axis-*. */
 :root{
-  --canvas:#efeff0;--panel:#ffffff;--field:#f4f4f5;--field-hover:#ebebed;
+  --canvas:#efeff0;--panel:#ffffff;--field:#f4f4f5;--field-hover:#ebebed;--danger:#c4321f;
   --line:#e6e6e9;--line-strong:#d2d2d7;
   --ink:#18181b;--ink-2:#52525b;--muted:#8a8a93;
   --accent:#0b68f5;--accent-hover:#0a5bd8;--accent-soft:#e8f0fe;--accent-ink:#0a56cc;--on-accent:#ffffff;
@@ -13,11 +13,11 @@
   --r:6px;--h:28px;color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;--danger:#ff8a7a;
   --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-hover:#5a9cff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
   --chk1:#2a2a2d;--chk2:#323235;--key:#f5b13d;--key-ink:#ffcf7a;--track:#2c2c2f;--range-track:#3e3e43;--range-fill:#3d8bff;--range-thumb:#f4f4f5;--range-thumb-shadow:0 1px 2px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.45);--axis-x:#ff6369;--axis-y:#3dd68c;--axis-z:#7b93ff;--rec:#ff6369;--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}}
 :root[data-theme="dark"]{
-  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;--danger:#ff8a7a;
   --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-hover:#5a9cff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
   --chk1:#2a2a2d;--chk2:#323235;--key:#f5b13d;--key-ink:#ffcf7a;--track:#2c2c2f;--range-track:#3e3e43;--range-fill:#3d8bff;--range-thumb:#f4f4f5;--range-thumb-shadow:0 1px 2px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.45);--axis-x:#ff6369;--axis-y:#3dd68c;--axis-z:#7b93ff;--rec:#ff6369;--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}
 
@@ -882,3 +882,29 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .lang-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;margin:10px 0}
 .lang-grid .lang{display:flex;align-items:center;gap:8px}
 .lang-dlg .row{gap:8px}
+
+/* the account (ui/account.js): top bar button, avatar, menu, sign-in dialog */
+.acct{display:flex;align-items:center;margin-right:6px}
+.acct-btn{width:30px;height:30px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:var(--field);box-shadow:0 0 0 1px var(--line)}
+.acct-btn:hover,.acct-btn[aria-expanded="true"]{box-shadow:0 0 0 2px var(--accent)}
+.acct-btn img{width:100%;height:100%;object-fit:cover}
+.acct-btn .ini{font-size:11px;font-weight:600;color:var(--ink-2)}
+.topbar .acct-menu{left:auto;right:0;top:calc(100% + 6px);min-width:240px;max-width:300px}
+.acct-head{display:grid;gap:1px;padding:8px 8px 4px}
+.acct-head b{font-weight:600}
+.acct-head b,.acct-head span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-head span{color:var(--muted);font-size:12px}
+.acct-use{padding-top:2px}
+.mi[disabled]{opacity:.5;cursor:default}
+.signin-dlg{width:380px}
+.si-prov{display:grid;gap:8px;margin-top:12px}
+.si-btn{justify-content:center;gap:10px;height:38px;width:100%}
+.si-or{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:var(--muted);font-size:12px}
+.si-or::before,.si-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.si-mail{display:grid;gap:6px}
+.si-mail input{height:36px}
+.si-mail .btn{justify-content:center;gap:8px;height:38px;margin-top:4px}
+.si-err{margin:0;color:var(--danger);font-size:12px}
+.si-sent{display:grid;justify-items:center;text-align:center;gap:6px;padding:12px 4px 4px}
+.si-sent [data-icon],.si-sent svg{width:28px;height:28px;color:var(--accent)}
+.si-sent p{margin:0;color:var(--ink-2)}

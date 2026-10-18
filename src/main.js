@@ -43,6 +43,7 @@ import './ui/assets.js';
 import './ui/template-gallery.js';
 import './ui/i18n.js';
 import './ui/welcome.js';
+import './ui/account.js';
 import './ui/timeline.js';
 import './export/video.js';
 import './export/embed.js';
