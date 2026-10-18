@@ -162,9 +162,9 @@ kbd{font:inherit;color:var(--muted)}
 .fld .ic{width:14px;height:14px;color:var(--muted)}
 input[type=number]{-moz-appearance:textfield}
 input[type=number]::-webkit-inner-spin-button{opacity:0}
-input[type=text],select{height:var(--h);border-radius:5px;background:var(--field);border:1px solid transparent;padding:0 8px;min-width:0}
-input[type=text]:hover,select:hover{border-color:var(--line-strong)}
-input[type=text]:focus,select:focus{border-color:var(--accent);outline:none;background:var(--panel)}
+input[type=text],input[type=email],input[type=search],select{height:var(--h);border-radius:5px;background:var(--field);border:1px solid transparent;padding:0 8px;min-width:0}
+input[type=text]:hover,input[type=email]:hover,input[type=search]:hover,select:hover{border-color:var(--line-strong)}
+input[type=text]:focus,input[type=email]:focus,input[type=search]:focus,select:focus{border-color:var(--accent);outline:none;background:var(--panel)}
 select{cursor:pointer;flex:1}
 input[type=color]{appearance:none;-webkit-appearance:none;width:28px;height:var(--h);border:0;border-radius:5px;padding:4px;background:var(--field);cursor:pointer}
 input[type=color]:hover{background:var(--field-hover)}
@@ -902,7 +902,11 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .si-or{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:var(--muted);font-size:12px}
 .si-or::before,.si-or::after{content:"";flex:1;height:1px;background:var(--line)}
 .si-mail{display:grid;gap:6px}
-.si-mail input{height:36px}
+.si-mail input{height:36px;width:100%}
+.si-mail input[aria-invalid="true"]{border-color:var(--danger)}
+.si-mail .lbl{letter-spacing:0}
+.si-mail .btn svg,.si-btn svg{flex:none}
+.si-mail .btn.primary svg{color:var(--on-accent);opacity:1}
 .si-mail .btn{justify-content:center;gap:8px;height:38px;margin-top:4px}
 .si-err{margin:0;color:var(--danger);font-size:12px}
 .si-sent{display:grid;justify-items:center;text-align:center;gap:6px;padding:12px 4px 4px}
