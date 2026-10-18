@@ -5,7 +5,7 @@ import {selLight} from '../lights/runtime.js';
 import {fmtM,mmFromFov} from '../render/lens.js';
 import {designT,halfFrame,hasAnim,isDevice,keyIn,kindOf,propsOf,refOf,timesOf,tracked} from '../state/anim.js';
 import {sel,selItem,state} from '../state/state.js';
-import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,selectAllKeys,selectKey,selectKeys,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets} from './animate.js';
+import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,selectAllKeys,selectKey,selectKeys,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets,toggleKeyAt} from './animate.js';
 import {sizeOf} from './boards.js';
 import {duration,fmtDur,hasVideo} from '../devices/video.js';
 import {icon} from './icons.js';
@@ -25,7 +25,10 @@ import {$,$$} from '../util.js';
    lane's empty part draws a marquee (across rows too), ⌘A takes the current target's keys; dragging any selected
    diamond moves the whole selection together, snapping to frames and, within 6 px, to whole seconds, other keys and
    the playhead (⌘ off); ⌥ ← / → nudge a frame; Delete removes them all. A press outside the timeline and the
-   inspector drops the selection. */
+   inspector drops the selection.
+   Adding keys from the timeline: every row's name cell has a key navigator ◀ ◆ ▶ (previous key, key / un-key at
+   the playhead, next key; shown on hover, on the selected row and while a key is at the playhead), a double-click
+   on a lane keys that row at the clicked time, ↑ / ↓ jump to the previous / next key of the current target. */
 const tl=$('#timeline'),names=$('#tlNames'),lanes=$('#tlLanes');
 const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Yatış',scale:'Ölçek',lidAngle:'Kapak açısı',scroll:'Kaydırma',
   x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık',
@@ -97,12 +100,19 @@ function build(){
     // name cell
     const n=document.createElement('div');n.className='tl-name'+(prop?' subrow':'');n.dataset.ref=ref;
     if(prop===FXROW){n.innerHTML='<span class="nm">Metin efekti</span>';}
-    else if(prop){n.innerHTML='<span class="nm"></span><span class="sub"></span>';n.firstChild.textContent=LABEL[prop];n.dataset.prop=prop;}
+    else if(prop){n.innerHTML='<span class="nm"></span>'+NAV+'<span class="sub"></span>';n.firstChild.textContent=LABEL[prop];n.dataset.prop=prop;}
     else{
       const anim=hasAnim(d),fx=kindOf(d)==='item'&&hasFx(d),ic=iconOf(d);n.setAttribute('aria-selected',String(isSel(d)));
-      n.innerHTML='<button type="button" class="caret" aria-label="Değerleri göster" aria-expanded="'+open.has(ref)+'"'+(anim?'':' disabled')+'>'+icon(open.has(ref)?'alt-arrow-down':'alt-arrow-right',12)+'</button>'+icon(ic,14)+'<span class="nm"></span><span class="sub">'+(anim?tracked(d).length+' değer':fx?'efekt':'')+'</span>';
-      n.querySelector('.nm').textContent=name;
+      n.innerHTML='<button type="button" class="caret" aria-label="Değerleri göster" aria-expanded="'+open.has(ref)+'"'+(anim?'':' disabled')+'>'+icon(open.has(ref)?'alt-arrow-down':'alt-arrow-right',12)+'</button>'+icon(ic,14)+'<span class="nm"></span>'+NAV+'<span class="sub">'+(fx?'efekt':'')+'</span>';
+      n.querySelector('.nm').textContent=name;if(anim)n.title=tracked(d).length+' animasyonlu değer';
       n.querySelector('.caret').addEventListener('click',e=>{e.stopPropagation();open.has(ref)?open.delete(ref):open.add(ref);draw(true);});
+    }
+    if(prop!==FXROW){
+      const p=prop||null,times=()=>p?d.tracks[p]?d.tracks[p].map(k=>k.t):[]:timesOf(d),hf=halfFrame(fps());
+      n.querySelector('.pv').addEventListener('click',e=>{e.stopPropagation();const t=times().filter(x=>x<A.t-hf).pop();if(t!==undefined){stop();seek(t);}});
+      n.querySelector('.nx').addEventListener('click',e=>{e.stopPropagation();const t=times().find(x=>x>A.t+hf);if(t!==undefined){stop();seek(t);}});
+      n.querySelector('.kd').addEventListener('click',e=>{e.stopPropagation();stop();pickTarget(d,true);toggleKeyAt(d,p);});
+      syncNav(n);
     }
     n.addEventListener('click',()=>pickTarget(d));
     names.appendChild(n);
@@ -129,7 +139,7 @@ function build(){
       b.addEventListener('pointerdown',e=>dragKey(e,d,t,prop));
       lane.appendChild(b);
     });
-    lane.addEventListener('pointerdown',e=>{if(e.target!==lane&&!e.target.classList.contains('seg-bar'))return;marquee(e,d);});
+    lane.addEventListener('pointerdown',e=>{if(e.target!==lane&&!e.target.classList.contains('seg-bar'))return;marquee(e,d,prop);});
     lanes.appendChild(lane);
   });
   const end=document.createElement('div');end.className='end';end.style.left=xOf(dur)+'px';end.innerHTML='<span>'+String(dur).replace('.',',')+' sn</span>';
@@ -142,6 +152,22 @@ function moveHead(){
   const ph=$('#tlPh');if(ph)ph.style.left=xOf(A.t)+'px';
   $('#tlTime').innerHTML=fmtT(A.t)+' <span>/ '+fmtT(state.anim.dur)+' sn</span>';
   names.querySelectorAll('.subrow[data-prop]').forEach(n=>{const d=byRef(n.dataset.ref);if(d)n.querySelector('.sub').textContent=fmtV(d,n.dataset.prop,d[n.dataset.prop]);});
+  names.querySelectorAll('.tl-name').forEach(n=>{if(n.querySelector('.knav'))syncNav(n);});
+}
+// the key navigator of a row: ◀ ▶ enabled while there is a key before / after the playhead; ◆ filled while the row has
+// a key at the playhead (half: a summary row where only some values have one), outlined while the row animates
+const NAV='<span class="knav"><button type="button" class="pv" aria-label="Önceki anahtar kare">'+icon('alt-arrow-left',10)+'<span class="tip">Önceki anahtar kare <kbd>↑</kbd></span></button>'+
+  '<button type="button" class="kd" aria-label="Bu anda anahtar kare"><i></i><span class="tip"></span></button>'+
+  '<button type="button" class="nx" aria-label="Sonraki anahtar kare">'+icon('alt-arrow-right',10)+'<span class="tip">Sonraki anahtar kare <kbd>↓</kbd></span></button></span>';
+function syncNav(n){
+  const d=byRef(n.dataset.ref);if(!d)return;const prop=n.dataset.prop||null,t=Math.round(A.t*fps())/fps(),hf=halfFrame(fps());
+  const times=prop?d.tracks[prop]?d.tracks[prop].map(k=>k.t):[]:timesOf(d),ks=keysAt(d,t,prop);
+  const at=ks.length>0,part=!prop&&at&&ks.length<tracked(d).length;
+  const kd=n.querySelector('.kd');kd.classList.toggle('at',at);kd.classList.toggle('part',part);kd.classList.toggle('anim',!at&&times.length>0);
+  kd.querySelector('.tip').innerHTML=prop?(at?'Bu andaki anahtar kareyi kaldır':'Bu anda '+LABEL[prop].toLowerCase()+' için anahtar kare')
+    :part?'Bu anda eksik değerlere de anahtar kare (poz) <kbd>K</kbd>':at?'Bu andaki anahtar kareleri kaldır':'Bu anda tüm değerlere anahtar kare (poz) <kbd>K</kbd>';
+  n.querySelector('.pv').disabled=!times.some(x=>x<t-hf);n.querySelector('.nx').disabled=!times.some(x=>x>t+hf);
+  n.classList.toggle('has',at);
 }
 function draw(force){
   if(tl.hidden)return;
@@ -176,6 +202,11 @@ function scrub(e){
   loop(e,ev=>{const t=tOf(ev.clientX-r.left),cands=targets().flatMap(timesOf).concat([...Array(Math.floor(state.anim.dur)+1).keys()]);
     const near=cands.find(k=>Math.abs(xOf(k)-xOf(t))<6);seek(near!==undefined?near:Math.round(t*fps())/fps());});
 }
+// ↑ / ↓: the previous / next key of the current target (of any target when it has none)
+function jumpKey(dir){
+  const o=cur(),own=o?timesOf(o):[],ts=own.length?own:[...new Set(targets().flatMap(timesOf))].sort((a,b)=>a-b),hf=halfFrame(fps());
+  const t=dir>0?ts.find(x=>x>A.t+hf):ts.filter(x=>x<A.t-hf).pop();if(t!==undefined)seek(t);
+}
 // a dragged key: within 6 px it snaps to whole seconds, keys outside the selection and the playhead's start (⌘ off);
 // otherwise to frames. A dashed guide shows the snap.
 function snapNear(t,ev,ph){
@@ -203,8 +234,11 @@ function dragKey(e,d,t0,prop){
     ()=>{guide(null);if(!moved){seek(t0);if(!add&&was)selectKey(ref,t0,prop);}});
 }
 // a press on a lane's empty part: a drag draws a marquee and selects the keys inside it (Shift / ⌘ keeps the
-// selection), across rows too; a click selects the row's target and moves the playhead there
-function marquee(e,d){
+// selection), across rows too; a click selects the row's target and moves the playhead there; a second click within
+// 400 ms at the same spot (a double-click; the browser's own never fires, the lane is rebuilt after the first click)
+// keys the row at that time
+let lastClick={at:0,x:0,y:0};
+function marquee(e,d,prop){
   if(e.button!==0)return;e.preventDefault();stop();ui.tlFocus=true;
   const r=lanes.getBoundingClientRect(),x0=e.clientX-r.left,y0=e.clientY-r.top;
   const keep=e.shiftKey||e.metaKey||e.ctrlKey,base=keep?A.sel.slice():[];let box=null,moved=false;
@@ -221,7 +255,9 @@ function marquee(e,d){
     lanes.querySelectorAll('.kf').forEach(b=>{const o=byRef(b.parentNode.dataset.ref);b.classList.toggle('on',!!o&&diamondOn(o,+b.dataset.t,b.dataset.prop||null));});},
     ()=>{if(box)box.remove();
       if(moved){selectKeys(A.sel);return;}
-      pickTarget(d);const t=tOf(x0);seek(Math.round(t*fps())/fps());});
+      const now=performance.now(),dbl=now-lastClick.at<400&&Math.hypot(x0-lastClick.x,y0-lastClick.y)<5;lastClick={at:dbl?0:now,x:x0,y:y0};
+      pickTarget(d,dbl);const t=tOf(x0);seek(Math.round(t*fps())/fps());
+      if(dbl&&prop!==FXROW)toggleKeyAt(d,prop||null);});
 }
 // an effect bar: moves the effect in time (snapped to frames, kept within the duration)
 function dragFx(e,it,ph){
@@ -367,6 +403,7 @@ addEventListener('keydown',e=>{
   else if(e.key==='Home'){stopIt();stop();seek(0);}
   else if(e.key.toLowerCase()==='k'&&!e.repeat){stopIt();addPoseKey(cur());}
   else if((e.key==='ArrowLeft'||e.key==='ArrowRight')&&ui.kind!=='item'&&ui.kind!=='multi'&&!(t&&t.type==='range')){stopIt();stop();seek(A.t+(e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:1/fps()));}
+  else if((e.key==='ArrowUp'||e.key==='ArrowDown')&&ui.kind!=='item'&&ui.kind!=='multi'&&!(t&&(t.type==='range'||t.id==='domeSvg'))){stopIt();stop();jumpKey(e.key==='ArrowDown'?1:-1);}
   else if((e.key==='Delete'||e.key==='Backspace')&&A.sel.length){stopIt();deleteSelected();}
 },true);
 

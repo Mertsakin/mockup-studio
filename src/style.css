@@ -430,14 +430,29 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .tl-time span{color:var(--muted);font-weight:400}
 .tl-fps{margin-left:8px;color:var(--muted)}
 .btn.sm{height:24px;padding:0 8px;font-size:11px}
-.tl-body{position:relative;display:grid;grid-template-columns:180px minmax(0,1fr);min-height:0;overflow-x:hidden;overflow-y:auto}
+.tl-body{position:relative;display:grid;grid-template-columns:236px minmax(0,1fr);min-height:0;overflow-x:hidden;overflow-y:auto}
 .tl-names{border-right:1px solid var(--line)}
 .ruler-pad{height:24px;border-bottom:1px solid var(--line)}
 .tl-name{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px 0 8px;border-bottom:1px solid var(--line);cursor:default;user-select:none}
 .tl-name .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-name[aria-selected="true"]{background:var(--accent-soft)}
 .tl-name[aria-selected="true"] .nm{color:var(--accent-ink)}
-.tl-name .sub{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+.tl-name .sub{color:var(--muted);font-size:11px;white-space:nowrap;min-width:44px;text-align:right}
+.tl-name .sub:empty{min-width:0}
+/* key navigator in a row's name cell (timeline.js): previous key, key / un-key at the playhead, next key */
+.tl-name .knav{display:inline-flex;align-items:center;margin-left:auto;flex:none;opacity:0;transition:opacity .12s}
+.tl-name:hover .knav,.tl-name[aria-selected="true"] .knav,.tl-name.has .knav,.tl-name .knav:focus-within{opacity:1}
+.knav button{position:relative;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;color:var(--muted)}
+.knav button:hover{background:var(--field);color:var(--ink)}
+.knav button:disabled{opacity:.3;cursor:default}
+.knav button:disabled:hover{background:none}
+.knav .kd i{display:block;width:8px;height:8px;transform:rotate(45deg);border-radius:1px;border:1.5px solid var(--line-strong)}
+.knav .kd.anim i{border-color:var(--key)}
+.knav .kd.at i{background:var(--key);border-color:var(--key)}
+.knav .kd.part i{background:linear-gradient(90deg,var(--key) 50%,transparent 50%)}
+.knav .kd:hover i{border-color:var(--key-ink)}
+.knav .tip{top:auto;bottom:calc(100% + 6px)}
+.knav button:hover>.tip{opacity:1;transition-delay:.4s}
 .tl-name .caret{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;flex:none}
 .tl-name .caret:hover{background:var(--field)}
 .tl-name.subrow{height:26px;padding-left:46px;color:var(--muted);font-size:11px}
@@ -472,7 +487,7 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .end span{position:absolute;top:26px;right:9px;font-size:10px;color:var(--muted);white-space:nowrap}
 .ph{position:absolute;top:0;bottom:0;width:0;border-left:1.5px solid var(--accent);pointer-events:none;z-index:2}
 .ph::before{content:"";position:absolute;left:-6px;top:0;width:11px;height:12px;background:var(--accent);clip-path:polygon(0 0,100% 0,100% 60%,50% 100%,0 60%)}
-.tl-empty{position:absolute;left:calc(50% + 90px);top:64px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 228px);margin:0;padding:8px 12px;border-radius:var(--r);
+.tl-empty{position:absolute;left:calc(50% + 118px);top:64px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 284px);margin:0;padding:8px 12px;border-radius:var(--r);
   background:var(--panel);box-shadow:0 0 0 1px var(--line);text-align:center;color:var(--muted);pointer-events:none;z-index:5}
 .tl-empty b{color:var(--ink);font-weight:500}
 

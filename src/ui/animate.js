@@ -125,6 +125,16 @@ function addPoseKey(o){
 // the diamond beside a slider: keys that one value at the playhead
 function keyProp(o,k){if(!o)return;const t=snapT(A.t,fps());put(o,k,t,o[k]);A.sel=[{ref:refOf(o),prop:k,t}];emit();}
 function keysAt(o,t,prop){return (prop?[prop]:tracked(o)).map(k=>keyIn(o.tracks[k],t,fps())).filter(Boolean);}
+// the ◆ of a timeline row (and a double-click on a lane): keys the value at the playhead, or removes its key there; on
+// a summary row a pose (every value), or, when every animated value already has a key there, removes them all (a
+// half-filled diamond, some values keyed, completes the pose)
+function toggleKeyAt(o,prop){
+  if(!o)return;const t=snapT(A.t,fps()),ks=keysAt(o,t,prop);
+  if(ks.length&&(prop||ks.length>=tracked(o).length)){
+    (prop?[prop]:tracked(o)).forEach(k=>{const tr=o.tracks[k],key=keyIn(tr,t,fps());if(!key)return;tr.splice(tr.indexOf(key),1);if(!tr.length)delete o.tracks[k];});
+    A.sel=A.sel.filter(e=>!(e.ref===refOf(o)&&Math.abs(e.t-t)<halfFrame(fps())&&(!prop||e.prop===prop)));applyNow();syncSliders();emit();
+  }else if(prop)keyProp(o,prop);else addPoseKey(o);
+}
 
 /* ---------- key selection (editor state): A.sel is a list of value keys {ref, prop, t}. A summary diamond on the
    timeline stands for every value's key at that time (entriesAt). The entries resolve to the key objects on demand
@@ -272,4 +282,4 @@ onBoards(()=>{
 
 const anyAnim=()=>targets().some(hasAnim)||state.items.some(hasFx);
 export {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,
-  onAnim,play,presetsFor,seek,selectAllKeys,selectKey,selectKeys,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,targets};
+  onAnim,play,presetsFor,seek,selectAllKeys,selectKey,selectKeys,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,targets,toggleKeyAt};
