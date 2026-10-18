@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shotlight logo · renkli</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Inter+Tight:wght@600&display=swap" rel="stylesheet">
+<style>
+/* Colour variants of the Shotlight mark on a white plate (tools/brand/mark.mjs, colors option). Three families:
+   A a dark sphere whose lit side is the colour, B a coloured sphere with a light lit side, C the whole sphere a
+   coloured gradient. The graphite icon (brand/) is shown first for comparison. */
+:root{--bg:#fff;--card:#fff;--ink:#18181b;--sub:#71717a;--line:#ececef}
+*{box-sizing:border-box}
+body{margin:0;font:13px/1.5 Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.page{max-width:1200px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:20px;font-weight:500;margin:0 0 4px}
+.lead{color:var(--sub);margin:0 0 24px;max-width:80ch}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{border-radius:16px;box-shadow:0 0 0 1px var(--line);padding:18px;display:grid;gap:14px;align-content:start}
+.card h3{font-size:13px;font-weight:500;margin:0}.card h3 span{color:var(--sub);font-weight:400}
+.big{display:grid;place-items:center;padding:4px 0}
+.big svg{width:150px;height:150px}
+.ic{filter:drop-shadow(0 10px 24px rgba(20,20,30,.16)) drop-shadow(0 2px 5px rgba(20,20,30,.10))}
+.row{display:flex;align-items:flex-end;gap:14px}
+.row svg{display:block}
+.word{display:flex;align-items:center;gap:12px;height:60px;padding:0 4px;font:600 24px/1 "Inter Tight",Inter,sans-serif;letter-spacing:-.03em}
+.word.d{background:#0d0d0f;color:#f4f4f5;border-radius:10px;padding:0 14px}
+@media (max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Shotlight · beyaz zeminde renkli gradyan</h1>
+  <p class="lead">İkonun zemini beyaz; rengi ışık taşıyor. A: koyu küre, aydınlık yüzü renkli. B: renkli küre, aydınlık yüzü açık. C: kürenin tamamı renkli gradyan. İlk kart karşılaştırma için bugünkü grafit.</p>
+  <h2 style="font-size:15px;font-weight:500;margin:0 0 12px">Seçilen: C · Gün batımı küre, aydınlık yüz beyaz</h2>
+  <p class="lead">Aydınlık yüz beyaz, kürenin gölgede kalan yüzü pembe-mor gradyan; kenar çizgisi düz bir renk yerine aynı gradyanı izliyor. Üç kart yalnızca terminatörün (beyaz ile gradyan arasındaki geçiş) tonunda ayrılıyor. Beyaz zeminin çevresinde ince bir çizgi var ki beyaz sayfada küçük boyutta kaybolmasın.</p>
+  <div class="grid" id="sel" style="margin-bottom:40px"></div>
+  <h2 style="font-size:15px;font-weight:500;margin:0 0 12px">Önceki tur</h2>
+  <div class="grid" id="grid"></div>
+</div>
+<script type="module">
+import {GRAPHITE,icon} from '/tools/brand/mark.mjs';
+const W={bg:['#ffffff','#ecebe7'],glow:'#fff',edge:'#fff',floor:'#5b5560'};
+const V=[
+  {n:'Grafit',f:'ilk set',c:GRAPHITE},
+  {n:'A · Gün batımı',f:'koyu küre, sıcak ışık',c:{...W,sphere:['#26252b','#0c0c0f'],lit:['#ffe3a3','#ff8a5c','#e8437a'],rim:'#6b6670'}},
+  {n:'A · Spektrum',f:'koyu küre, renk geçişli ışık',c:{...W,sphere:['#232330','#0b0b12'],lit:['#ffe9a8','#ff6f91','#6c5cff'],rim:'#5f5a78'}},
+  {n:'A · Mavi saat',f:'koyu küre, serin ışık',c:{...W,sphere:['#1e2433','#090c14'],lit:['#d8f3ff','#5ab8ff','#4357ff'],rim:'#56627e'}},
+  {n:'B · Mor',f:'renkli küre, açık ışık',c:{...W,sphere:['#5b3df0','#26136e'],lit:['#ffffff','#efe8ff','#b9a5ff'],rim:'#8f78ff',floor:'#3a2a80'}},
+  {n:'B · Okyanus',f:'renkli küre, açık ışık',c:{...W,sphere:['#1f6bff','#0b2a85'],lit:['#ffffff','#e6f1ff','#9fc4ff'],rim:'#6e9cff',floor:'#123a8a'}},
+  {n:'C · Gün batımı küre',f:'kürenin tamamı gradyan',c:{...W,sphere:['#ff5f7e','#8a2be2'],lit:['#fff4c2','#ffb36b','#ff6b6b'],rim:'#ff9a9a',floor:'#7a2a6a'}},
+  {n:'C · Aurora küre',f:'kürenin tamamı gradyan',c:{...W,sphere:['#2fd3c6','#3b2bd1'],lit:['#f2fff8','#9ff5d7','#38c9b6'],rim:'#7fe3ff',floor:'#2b3a8a'}},
+];
+const SUN={...W,sphere:['#ff5f7e','#8a2be2'],rim:['#ffb0c2','#b48cff'],floor:'#7a2a6a',outline:'#e4e1db'};
+const SEL=[
+  {n:'1 · Nötr geçiş',f:'beyazdan soğuk griye',c:{...SUN,lit:['#ffffff','#f7f6f4','#d9d4dc']}},
+  {n:'2 · Pembe geçiş',f:'beyazdan pembeye',c:{...SUN,lit:['#ffffff','#fff3f5','#ffc2cf']}},
+  {n:'3 · Şeftali geçiş',f:'beyazdan sıcak tona',c:{...SUN,lit:['#ffffff','#fff6ef','#ffcdb8']}},
+  {n:'Kenar çizgisi yok',f:'karşılaştırma: 2, çizgisiz',c:{...SUN,rim:null,lit:['#ffffff','#fff3f5','#ffc2cf']}},
+];
+let n=0;
+const svg=(c,size,o={})=>icon({id:'v'+(n++),colors:c,...o}).replace('<svg ',`<svg width="${size}" height="${size}" class="${size>=48?'ic':''}" `);
+const card=v=>`<section class="card">
+  <h3>${v.n} <span>· ${v.f}</span></h3>
+  <div class="big">${svg(v.c,150)}</div>
+  <div class="row">${svg(v.c,64)}${svg(v.c,32,{small:true})}${svg(v.c,16,{small:true})}</div>
+  <div class="word">${svg(v.c,40)}shotlight</div>
+  <div class="word d">${svg(v.c,36)}shotlight</div>
+</section>`;
+document.getElementById('sel').innerHTML=SEL.map(card).join('');
+document.getElementById('grid').innerHTML=V.map(card).join('');
+</script>
+</body>
+</html>
