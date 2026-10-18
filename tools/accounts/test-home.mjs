@@ -52,7 +52,7 @@ try{
   await p.click('#homeTopBtn');await p.waitForSelector('#home .hm-goal');
   await p.click('.hm-goal[data-goal="social"]');await p.waitForSelector('#home',{state:'detached'});
   ok(await p.evaluate(()=>document.documentElement.classList.contains('wl-on')&&document.querySelector('#welcome [data-goal="social"]').getAttribute('aria-pressed')==='true'),'"Sosyal": a new project, the welcome card with Sosyal gönderi chosen');
-  ok(await p.evaluate(()=>{const u=document.querySelector('#wlUrl'),r=document.querySelector('#wlUrlRow');return r.hidden||document.activeElement===u;}),'the address field is focused (when capture is on)');
+  ok(await p.waitForFunction(()=>{const u=document.querySelector('#wlUrl'),r=document.querySelector('#wlUrlRow');return r.hidden||document.activeElement===u;},null,{timeout:3000}).then(()=>true,()=>false),'the address field is focused (when capture is on)');
   ok(await p.isVisible('#wlClose'),'the welcome card has a close button');
   await p.click('#wlClose');await p.waitForSelector('#home .hm-card');
   ok(true,'closing it returns to the home page');
