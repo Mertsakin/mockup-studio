@@ -4,9 +4,9 @@
 // node tools/accounts/test-home.mjs [studio URL]   (studio on 5177 with --mode accounts, storage Worker on 8787)
 import {chromium} from 'playwright';
 import {createClient} from '@supabase/supabase-js';
-import {NODE_OPTS,local} from './local.mjs';
+import {NODE_OPTS,STUDIO_URL,local,signInAt} from './local.mjs';
 
-const L=local(),STUDIO=process.argv[2]||'http://localhost:5177/',SHOTS=process.env.SHOTS||'';
+const L=local(),STUDIO=process.argv[2]||STUDIO_URL,SHOTS=process.env.SHOTS||'';
 const admin=createClient(L.url,L.service,NODE_OPTS);
 let fails=0;const ok=(c,m)=>{console.log((c?'  ok   ':'  FAIL ')+m);if(!c)fails++;};
 const email=`home-${Date.now()}@shotlight.test`,password='test-'+crypto.randomUUID();
@@ -16,8 +16,8 @@ const b=await chromium.launch({args:['--use-angle=metal']});
 const errs=[];
 async function page(){const ctx=await b.newContext({viewport:{width:1440,height:900}}),p=await ctx.newPage();
   p.on('pageerror',e=>errs.push(e.message));await p.addInitScript(()=>{window.__noPhotoPreview=true;});
-  await p.goto(STUDIO);await p.waitForFunction(()=>window.__app&&!document.documentElement.classList.contains('booting'),null,{timeout:60000});return p;}
-const signIn=p=>p.evaluate(async([e,pw])=>{const c=await window.__app('client')();const r=await c.auth.signInWithPassword({email:e,password:pw});if(r.error)throw r.error;},[email,password]);
+  await p.goto(STUDIO);await p.waitForFunction(()=>!document.documentElement.classList.contains('booting'),null,{timeout:60000});return p;}
+const signIn=p=>signInAt(p,email,password,STUDIO);
 const toastHas=(p,re)=>p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#toast').textContent),re.source,{timeout:30000});
 const clearToast=p=>p.evaluate(()=>{document.querySelector('#toast').textContent='';});
 const boards=p=>p.evaluate(()=>window.__app('doc').boards.length);

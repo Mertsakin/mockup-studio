@@ -24,6 +24,7 @@ import {openStoreDialog} from './store.js';
 import {closeHooks} from './history.js';
 import {setUi} from './ui-state.js';
 import {fitAll} from './workspace.js';
+import {go as goTo,onRoute,parse,takeNext} from './router.js';
 import {$} from '../util.js';
 
 const GOALS=[['land','Açılış görseli','gallery-wide','g1'],['social','Sosyal','heart','g2'],['store','Mağaza seti','smartphone','g3'],['video','Video','play','g4']];
@@ -33,7 +34,7 @@ let prefs={layout:'grid',sort:'edited',recClosed:false};
 try{Object.assign(prefs,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){/* defaults */}
 const savePrefs=()=>{try{localStorage.setItem(KEY,JSON.stringify(prefs));}catch(e){/* no storage */}};
 
-let el=null,view='recent',past=[],ahead=[],projects=null,trash=null,tpls=[],mixed=[],recShift=0,q='';
+let el=null,view='recent',projects=null,trash=null,tpls=[],mixed=[],recShift=0,q='';
 // the recommendations take the goals in turn (the set lists them goal by goal: a row of five store sets otherwise)
 const interleave=l=>{const by={};l.forEach(t=>(by[t.goal]=by[t.goal]||[]).push(t));const out=[],qs=Object.values(by);for(let i=0;out.length<l.length;i++)qs.forEach(q=>{if(q[i])out.push(q[i]);});return out;};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
@@ -43,25 +44,25 @@ const ago=t=>{const s=(Date.now()-new Date(t).getTime())/1000;
   return new Date(t).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:new Date(t).getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
 const mb=n=>n<2**30?(n/2**20).toFixed(n<10*2**20?1:0).replace('.',',')+' MB':(n/2**30).toFixed(1).replace('.',',')+' GB';
 const shown=()=>!!el;
-// the home page is remembered for this tab (a reload comes back to it, on the same view)
-const OPEN='shotlight.home.open';
-const remember=v=>{try{if(v)sessionStorage.setItem(OPEN,v);else sessionStorage.removeItem(OPEN);}catch(e){/* no storage */}};
-const remembered=()=>{try{return sessionStorage.getItem(OPEN);}catch(e){return null;}};
+// the editor's address: the cloud project open in it, or the work that is not one (ui/router.js)
+const editorRoute=()=>openId()?{name:'project',id:openId()}:{name:'edit'};
+const unboot=()=>document.documentElement.classList.remove('home-boot');
 
 // ---------- showing and hiding
 function shut(on){for(const c of document.body.children)if(c!==el&&c.id!=='toast'&&!c.classList.contains('scrim')&&!c.classList.contains('hm-menu')&&!c.classList.contains('wl-modal'))c.inert=on;}
-async function showHome(v){
+// fromURL: the address says so already (back / forward, a reload); replace: in place of the current entry
+async function showHome(v,{fromURL=false,replace=false}={}){
   if(!auth.user)return;
   if(!el){
     el=document.createElement('div');el.id='home';el.className='hm';el.setAttribute('role','region');el.setAttribute('aria-label','Ana sayfa');
     document.body.appendChild(el);document.documentElement.classList.add('home-on');shut(true);
     el.addEventListener('click',onClick);el.addEventListener('input',onInput);el.addEventListener('keydown',onKey);
   }
-  past=[];ahead=[];view=v||'recent';remember(view);
+  view=v||'recent';if(!fromURL)goTo({name:'home',view},{replace});
   if(doc.boards.length)storeActive();  // a fresh thumbnail of the open work for its card
-  frame();document.documentElement.classList.remove('home-boot');el.querySelector('.hm-nav[data-view="'+view+'"]').focus({preventScroll:true});await load();
+  frame();unboot();el.querySelector('.hm-nav[data-view="'+view+'"]').focus({preventScroll:true});await load();
 }
-function hideHome(){if(!el)return;closeMenu();el.remove();el=null;document.documentElement.classList.remove('home-on');shut(false);remember(null);}
+function hideHome({fromURL=false}={}){if(!el)return;closeMenu();el.remove();el=null;document.documentElement.classList.remove('home-on');shut(false);if(!fromURL)goTo(editorRoute());}
 async function load(){
   projects=null;draw();
   try{[projects,tpls]=await Promise.all([listProjects(),templates()]);mixed=interleave(tpls);}catch(e){projects=[];toast('Projeler alınamadı: '+e.message);}
@@ -69,7 +70,7 @@ async function load(){
   draw();
 }
 async function loadTrash(){try{trash=await listTrash();}catch(e){trash=[];toast(e.message);}}
-function go(v,{push=true}={}){if(v===view)return;if(push){past.push(view);ahead=[];}view=v;remember(v);q='';const s=el.querySelector('#hmQ');if(s)s.value='';
+function go(v,{fromURL=false}={}){if(v===view)return;view=v;if(!fromURL)goTo({name:'home',view:v});q='';const s=el.querySelector('#hmQ');if(s)s.value='';
   if(v==='trash'){trash=null;draw();loadTrash().then(draw);}else draw();}
 
 // ---------- the frame: sidebar and top bar (drawn once per showing; the content redraws)
@@ -155,7 +156,8 @@ function draw(){
   if(!el)return;
   el.querySelectorAll('.hm-nav').forEach(n=>n.setAttribute('aria-current',n.dataset.view===view?'page':'false'));
   el.querySelector('#hmTitle').textContent=TITLES[view];
-  el.querySelector('[data-a="back"]').disabled=!past.length;el.querySelector('[data-a="fwd"]').disabled=!ahead.length;
+  // the browser's history (the Navigation API knows whether there is a way; without it both stay enabled)
+  const nav=window.navigation;el.querySelector('[data-a="back"]').disabled=!!nav&&!nav.canGoBack;el.querySelector('[data-a="fwd"]').disabled=!!nav&&!nav.canGoForward;
   const n=el.querySelector('[data-count="all"]');n.textContent=projects&&projects.length?projects.length:'';
   const body=el.querySelector('#hmBody');
   if(!projects){body.innerHTML='<p class="hm-empty">Yükleniyor…</p>';return;}
@@ -246,8 +248,8 @@ function onClick(e){
   const a=t.closest('[data-a]');
   if(a){switch(a.dataset.a){
     case 'return':hideHome();return;  // the open work's card
-    case 'back':if(past.length){ahead.push(view);go(past.pop(),{push:false});}return;
-    case 'fwd':if(ahead.length){past.push(view);go(ahead.pop(),{push:false});}return;
+    case 'back':history.back();return;  // the browser's own history: the views and the editor have addresses
+    case 'fwd':history.forward();return;
     case 'recShift':recShift+=4;draw();return;
     case 'recClose':prefs.recClosed=true;savePrefs();draw();return;
     case 'blank':openWelcome('land',hooks());return;  // the welcome card as a window, as the goals
@@ -275,21 +277,37 @@ function onKey(e){
 }
 
 // ---------- wiring: signing in lands here; the editor's menus come back here
-/* A reload with the session carried over (not a sign-in: that has its hook): back to the home page when it was open in
-   this tab, or when there is nothing to continue (an empty document; the editor would only show its welcome card).
-   A template link opens the template instead. */
+/* The page follows its address (ui/router.js): a reload, a link, back / forward.
+     home views   the home page on that view
+     /p/<id>      that cloud project in the editor (already open: as it is; other unsaved work asks first, and stays
+                  if the user keeps it); one that cannot be opened: the home page
+     /edit        the open work; nothing open: the home page
+   A template link (?template=) opens the template in the editor. */
 let started=false;
+// addr: r is the page's own address (false: where a sign-in goes on to, the address is written)
+async function follow(r,{initial=false,addr=true}={}){
+  if(!auth.user)return;
+  if(r.name==='home'||r.name==='login'){if(el&&!initial)go(r.view||'recent',{fromURL:true});else showHome(r.view||'recent',{fromURL:addr&&r.name==='home',replace:true});return;}
+  if(r.name==='project'){
+    if(r.id===openId()&&doc.boards.length){hideHome({fromURL:true});unboot();return;}
+    if(await openFromCloud(r.id)){hideHome({fromURL:true});goTo(editorRoute(),{replace:true});unboot();return;}
+    // kept the open work or the project is gone: the address says where the user is
+    if(el)goTo({name:'home',view},{replace:true});else if(doc.boards.length){goTo(editorRoute(),{replace:true});unboot();}else showHome('recent',{replace:true});
+    return;
+  }
+  if(doc.boards.length){hideHome({fromURL:true});goTo(editorRoute(),{replace:true});unboot();}else showHome('recent',{replace:true});
+}
 async function resume(){
   started=true;
-  if(/[?&]template=/.test(location.search)){document.documentElement.classList.remove('home-boot');return;}
   await historyReady;
-  const v=remembered();
-  if(auth.user&&!el&&(v||!doc.boards.length))showHome(TITLES[v]?v:'recent');
-  else document.documentElement.classList.remove('home-boot');
+  if(/[?&]template=/.test(location.search)){goTo({name:'edit'},{replace:true});unboot();return;}
+  follow(parse(),{initial:true});
 }
+onRoute(r=>follow(r));
 if(cloudEnabled){
-  signInHooks.add(()=>showHome());
-  onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user){hideHome();started=false;document.documentElement.classList.remove('home-boot');}else if(el){frame();draw();}
+  // a sign-in: where the visitor was going before the sign-in page (ui/router.js takeNext), the home page otherwise
+  signInHooks.add(()=>{const n=takeNext();if(n)follow(n,{initial:true,addr:false});else showHome('recent',{replace:true});});
+  onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user){hideHome({fromURL:true});started=false;}else if(el){frame();draw();}
     else if(!a.fresh&&!started)resume();});
   $('#homeBtn').addEventListener('click',()=>showHome());
   $('#homeTopBtn').addEventListener('click',()=>showHome());

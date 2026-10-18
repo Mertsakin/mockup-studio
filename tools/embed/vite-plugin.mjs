@@ -29,7 +29,8 @@ export default function player(){
       const watcher=await build(options(dir,true));
       watcher.on('event',e=>{if(e.code==='END')finish(dir);else if(e.code==='ERROR')console.warn('[player]',e.error&&e.error.message);});
       server.httpServer?.once('close',()=>watcher.close());
-      server.middlewares.use('/player',(req,res,next)=>{
+      // under the studio's base (/studio/player with accounts: tools/site/routes-plugin.mjs); plugin middlewares see the full path
+      server.middlewares.use(path.posix.join(server.config.base||'/','player'),(req,res,next)=>{
         const f=path.join(dir,decodeURIComponent(String(req.url||'/').split('?')[0]));
         if(!f.startsWith(dir+path.sep)||!fs.existsSync(f)||fs.statSync(f).isDirectory())return next();
         res.setHeader('Content-Type',TYPES[path.extname(f)]||'application/octet-stream');res.setHeader('Cache-Control','no-store');

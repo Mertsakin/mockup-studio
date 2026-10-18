@@ -1,13 +1,13 @@
-// Signing in with an e-mail link in the studio, end to end, against the local Supabase: signed out, the gate covers
-// the studio (inert behind it); the gate sends the link, the local mail catcher (Mailpit) receives it, the page follows
-// it and comes back signed in (PKCE), the profile shows in the account menu; signing out brings the gate back and
+// Signing in with an e-mail link in the studio, end to end, against the local Supabase: signed out, the studio sends
+// the visitor to /studio/login (the editor not loaded); the page sends the link, the local mail catcher (Mailpit) receives it, the page follows
+// it and comes back signed in (PKCE), the profile shows in the account menu; signing out goes back to the sign-in page and
 // empties this browser's work. node tools/accounts/test-signin.mjs [studio URL]
 // The studio must run with .env.accounts.local pointing at the local Supabase (npm run dev, or the "accounts" preview on 5177).
 import {chromium} from 'playwright';
 import {createClient} from '@supabase/supabase-js';
-import {NODE_OPTS,local} from './local.mjs';
+import {NODE_OPTS,STUDIO_URL,local} from './local.mjs';
 
-const L=local(),STUDIO=process.argv[2]||'http://localhost:5177/',SHOTS=process.env.SHOTS||'';
+const L=local(),STUDIO=process.argv[2]||STUDIO_URL,SHOTS=process.env.SHOTS||'';
 const admin=createClient(L.url,L.service,NODE_OPTS);
 let fails=0;const ok=(c,m)=>{console.log((c?'  ok   ':'  FAIL ')+m);if(!c)fails++;};
 const email=`signin-${Date.now()}@shotlight.test`;
@@ -17,8 +17,9 @@ try{
   await p.goto(STUDIO);
   await p.waitForFunction(()=>!document.documentElement.classList.contains('booting'),null,{timeout:60000});
   await p.waitForSelector('#authGate:not(.pending)',{timeout:15000});
-  ok(await p.isVisible('#authGate .ag-card'),'signed out: the sign-in gate covers the studio');
-  ok(await p.evaluate(()=>!!document.querySelector('#appMenuBtn').closest('[inert]')&&!document.querySelector('#authGate').closest('[inert]')),'the studio behind it is inert, the gate is not');
+  ok(await p.isVisible('#authGate .ag-card'),'signed out: the studio sends the visitor to the sign-in page');
+  ok(new URL(p.url()).pathname.endsWith('/studio/login'),'… at its own address ('+new URL(p.url()).pathname+')');
+  ok(await p.evaluate(()=>!window.__app&&![...performance.getEntriesByType('resource')].some(r=>/\/src\/main\.js|\/three\/|three\.module/.test(r.name))&&!document.querySelector('#leftPanel').offsetParent),'the editor is not loaded (no three, no main.js) and its markup does not show');
   ok(await p.evaluate(()=>![...performance.getEntriesByType('resource')].some(r=>/supabase-js|@supabase/.test(r.name))),'supabase-js is not loaded before it is needed');
   if(SHOTS)await p.screenshot({path:SHOTS+'/gate.png'});
   await p.click('.si-mail .btn');
@@ -66,7 +67,7 @@ try{
   // unsaved work asks first
   await p.waitForSelector('text=Kaydetmeden çık',{timeout:5000}).then(()=>p.click('[data-a="discard"]')).catch(()=>{});
   await p.waitForSelector('#authGate:not(.pending)',{timeout:10000});
-  ok(await p.isHidden('#acctBtn'),'signed out: the gate is back');
+  ok(await p.isHidden('#acctBtn')&&new URL(p.url()).pathname.endsWith('/studio/login'),'signed out: back on the sign-in page');
   ok(await p.evaluate(()=>!window.__app||window.__app('doc').boards.length===0),'and this browser\'s work is emptied');
   ok(!errs.length,'no page errors'+(errs.length?': '+errs.join(' | '):''));
 }finally{

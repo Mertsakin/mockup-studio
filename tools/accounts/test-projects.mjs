@@ -5,9 +5,9 @@
 import {spawn} from 'node:child_process';
 import {chromium} from 'playwright';
 import {createClient} from '@supabase/supabase-js';
-import {NODE_OPTS,local} from './local.mjs';
+import {NODE_OPTS,STUDIO_URL,local,signInAt} from './local.mjs';
 
-const L=local(),STUDIO=process.argv[2]||'http://localhost:5177/',W=process.env.STORAGE_URL||'http://127.0.0.1:8787',SHOTS=process.env.SHOTS||'';
+const L=local(),STUDIO=process.argv[2]||STUDIO_URL,W=process.env.STORAGE_URL||'http://127.0.0.1:8787',SHOTS=process.env.SHOTS||'';
 const admin=createClient(L.url,L.service,NODE_OPTS);
 let fails=0;const ok=(c,m)=>{console.log((c?'  ok   ':'  FAIL ')+m);if(!c)fails++;};
 let worker=null;
@@ -25,9 +25,7 @@ async function studio(tag){
   p.errs=[];p.on('pageerror',e=>p.errs.push(tag+': '+e.message));
   p.mediaPuts=0;p.on('request',r=>{if(r.method()==='PUT'&&/\/media\/[0-9a-f]{64}/.test(r.url()))p.mediaPuts++;});
   await p.addInitScript(()=>{window.__noPhotoPreview=true;});
-  await p.goto(STUDIO);
-  await p.waitForFunction(()=>window.__app&&!document.documentElement.classList.contains('booting'),null,{timeout:60000});
-  await p.evaluate(async([e,pw])=>{const c=await window.__app('client')();const r=await c.auth.signInWithPassword({email:e,password:pw});if(r.error)throw r.error;},[email,password]);
+  await signInAt(p,email,password,STUDIO);
   await p.waitForSelector('#acctBtn:not([hidden])',{state:'attached'});
   return p;
 }
@@ -40,7 +38,7 @@ try{
   await A.waitForSelector('#home [data-a="blank"]',{timeout:15000});await A.click('#home [data-a="blank"]');await A.click('#wlBlank');await A.waitForSelector('#home',{state:'detached'});
   // a board with a screenshot on the phone
   await A.evaluate(async()=>{const app=window.__app;if(!app('hasBoard')())app('addBoard')();const st=app('state'),d=st.devices[0];
-    const i=new Image();i.src='/tools/landing/src/app-light.png';await i.decode();d.img=i;d.imgName='ekran.png';app('setScreenTexture')(d);app('req')();});
+    const i=new Image();i.src='tools/landing/src/app-light.png';await i.decode();d.img=i;d.imgName='ekran.png';app('setScreenTexture')(d);app('req')();});
   await A.waitForTimeout(1200);
   ok(await A.isVisible('#appMenuBtn'),'studio A ready, signed in');
   await menu(A,'cloudSaveBtn');

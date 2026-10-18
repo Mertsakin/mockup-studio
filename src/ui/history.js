@@ -69,6 +69,11 @@ const FS=typeof window.showSaveFilePicker==='function';
 const FILE_TYPES=[{description:'Shotlight projesi',accept:{'application/json':['.json'],'application/zip':['.zip']}}];
 const EXT=/\.mockup\.(json|zip)$/i,ZIP=/\.zip$/i;
 let fileHandle=null,fileName='',savedSig=null;  // savedSig: the document as last saved to / opened from a file
+/* The saved state outlives a reload: a hash of its signature in localStorage, so the work restored after a reload is
+   not "unsaved" when it is just what was saved last (a cloud project's address would ask before opening otherwise). */
+const SAVED='shotlight.saved';
+const sigHash=x=>{let h=2166136261;for(let i=0;i<x.length;i++){h^=x.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36)+':'+x.length;};
+function setSaved(){savedSig=currentSig;try{if(savedSig)localStorage.setItem(SAVED,sigHash(savedSig));else localStorage.removeItem(SAVED);}catch(e){/* no storage */}}
 const stamp=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes());};
 const withExt=(n,zip)=>{n=String(n||'').trim().replace(/[\\/:*?"<>|]+/g,'-');if(!n)return '';const want='.mockup.'+(zip?'zip':'json');
   return n.toLowerCase().endsWith(want)?n:n.replace(EXT,'').replace(/\.(json|zip)$/i,'')+want;};
@@ -96,11 +101,11 @@ async function save(as){
         fileHandle=h;
       }
       const {blob}=await projectFile(),w=await writable(fileHandle);await w.write(blob);await w.close();
-      setFileName(fileHandle.name);savedSig=currentSig;toast(fileHandle.name+' kaydedildi');return true;
+      setFileName(fileHandle.name);setSaved();toast(fileHandle.name+' kaydedildi');return true;
     } else {
       const name=withExt(await askName(suggested(zip)),zip);if(!name)return false;
       const {blob}=await projectFile();offer(name,blob);
-      setFileName(name);savedSig=currentSig;toast(name+' indirildi');return true;
+      setFileName(name);setSaved();toast(name+' indirildi');return true;
     }
   }catch(e){toast('Proje kaydedilemedi: '+(e.message||e));return false;}
 }
@@ -122,7 +127,7 @@ $('#saveProjectAs').addEventListener('click',()=>save(true));
 // file: a File / Blob (.mockup.json or .mockup.zip) or the JSON text
 async function openText(file,handle,name){
   const s=await fromProjectFile(file);if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();
-  fileHandle=handle||null;setFileName(name);savedSig=currentSig;toast((name||'Proje')+' açıldı');
+  fileHandle=handle||null;setFileName(name);setSaved();toast((name||'Proje')+' açıldı');
 }
 const openEl=$('#openProject');
 $('#openProjectBtn').addEventListener('click',async()=>{
@@ -167,7 +172,7 @@ const closeHooks=new Set();  // fn() after "Projeyi kapat" (the home page opens:
 // an empty document, no file, history and autosave emptied (closing a project; signing out, ui/account.js)
 function resetDocument(){
   doc.assets=[];doc.fonts=[];clearAll();
-  past=[];future=[];current=snapshot();currentSig=signature(current);pending='';savedSig=currentSig;syncButtons();
+  past=[];future=[];current=snapshot();currentSig=signature(current);pending='';setSaved();syncButtons();
   fileHandle=null;setFileName('');clearTimeout(saveTimer);return autosave(current);
 }
 $('#closeProject').addEventListener('click',closeProject);
@@ -186,6 +191,7 @@ async function startHistory(templateOpened){
     }
   }finally{document.documentElement.classList.remove('booting');}
   current=snapshot();currentSig=signature(current);syncButtons();
+  try{if(currentSig&&localStorage.getItem(SAVED)===sigHash(currentSig))savedSig=currentSig;}catch(e){/* no storage */}
   setInterval(poll,POLL);readyResolve();
 }
 
@@ -196,8 +202,8 @@ const historyInfo=()=>{const f=x=>x.boards.map(b=>b.snap.devices.map(d=>d.py.toF
    put a document in place of the current one (one undo step, like opening a file); mark the current state as saved
    under a name (the top bar shows it; no file handle: a cloud project is not a file); unsaved changes since then? */
 function takeDoc(){commitNow();return snapshot();}
-function putDoc(s,name){if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();fileHandle=null;setFileName(name);savedSig=currentSig;}
-function markSaved(name){fileHandle=null;setFileName(name);savedSig=currentSig;}
+function putDoc(s,name){if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();fileHandle=null;setFileName(name);setSaved();}
+function markSaved(name){fileHandle=null;setFileName(name);setSaved();}
 const isDirty=()=>{commitNow();return !!current&&!!(doc.boards.length||doc.assets.length)&&currentSig!==savedSig;};
 
 export {closeHooks,historyInfo,historyReady,holdHistory,isDirty,markSaved,putDoc,redo,resetDocument,startHistory,takeDoc,undo};

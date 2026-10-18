@@ -7,6 +7,7 @@ import {auth,cloudEnabled,onAuth,signOut} from '../io/cloud.js';
 import {createProject,destroyProject,duplicateProject,openProject,projectRow,renameProject,restoreProject,saveProject,trashProject} from '../io/cloud-projects.js';
 import {doc,storeActive} from './boards.js';
 import {historyReady,isDirty,markSaved,putDoc,resetDocument,takeDoc} from './history.js';
+import {go,parse,toLogin} from './router.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
 
@@ -100,6 +101,7 @@ async function saveToCloud({asNew=false}={}){
     toast('Buluta kaydediliyor…');
     const v=await saveProject(p,d,thumb,(done,total)=>{if(total>2*2**20)toast('Yükleniyor: '+mb(done)+' / '+mb(total));});
     remember(Object.assign({},p,{version:v}));markSaved(p.name);showName();
+    {const r=parse();if(r.name==='edit'||(r.name==='project'&&r.id!==p.id))go({name:'project',id:p.id},{replace:true});}  // the open work is this project now: its address
     toast(p.name+' buluta kaydedildi');return true;
   }catch(e){
     if(e.conflict)return resolveConflict(p);
@@ -154,6 +156,8 @@ async function newProject(){
   await resetDocument();remember(null);return true;
 }
 // signing out: unsaved work asks first, then this browser's work is emptied (it is no one's once signed out)
+let leavingNow=false;
+const isLeaving=()=>leavingNow;
 async function leave(){
   if(isDirty()){
     const r=await dialog('Çıkış yap','<p class="pd-text">Kaydedilmemiş değişiklikler var. Çıkınca bu tarayıcıdaki çalışma kapanır.</p>',
@@ -161,10 +165,12 @@ async function leave(){
     if(!r||r.v==='cancel')return false;
     if(r.v==='save'&&!(await saveToCloud()))return false;
   }
-  try{await signOut();await forgetLocal();toast('Çıkış yapıldı');return true;}
-  catch(err){toast('Çıkış yapılamadı: '+err.message);return false;}
+  // the sign-in page once this browser's work is emptied (the signed-out event would go there before it is)
+  leavingNow=true;
+  try{await signOut();await forgetLocal();toLogin();return true;}
+  catch(err){leavingNow=false;toast('Çıkış yapılamadı: '+err.message);return false;}
 }
 
 saveBtn.addEventListener('click',()=>saveToCloud());
 
-export {destroyAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction};
+export {isLeaving,destroyAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction};

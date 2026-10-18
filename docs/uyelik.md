@@ -152,7 +152,7 @@ Sırası önemli değil; her biri bittiğinde bilgileri bana (ya da yerel `.env.
 1. supabase.com'da hesap aç, yeni proje: ad `shotlight`, bölge **Central EU (Frankfurt)**, güçlü bir veritabanı şifresi (parola yöneticine kaydet).
 2. Project Settings → API: **Project URL** ve **anon public** anahtarını not et. Bunlar tarayıcıya giren, herkese açık değerler; `.env.local` dosyasına `VITE_SUPABASE_URL` ve `VITE_SUPABASE_ANON_KEY` olarak yazılır.
 3. **service_role** anahtarı gizlidir: yalnızca Worker'ın gizli değişkenine (`wrangler secret put`) girecek. Hiçbir dosyaya yazma.
-4. Authentication → URL Configuration: Site URL `https://shotlight.studio`, ek yönlendirme adresleri `http://localhost:5173/**` ve `https://shotlight.studio/studio/**`.
+4. Authentication → URL Configuration: Site URL `https://shotlight.studio`, ek yönlendirme adresleri `http://localhost:5177/**` ve `https://shotlight.studio/studio/**`. Girişten dönüş her zaman stüdyonun köküdür (`/studio/`); giriş sayfası (`/studio/login`) oturumu kendisi tamamlamaz.
 
 **Google ile giriş**
 1. Google Cloud Console → APIs & Services → OAuth consent screen: uygulama adı Shotlight, destek e-postası, alan adı.

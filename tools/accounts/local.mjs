@@ -10,3 +10,15 @@ export function local(){
 }
 // client options for scripts: no session storage; Node 20 has no WebSocket and the tests never use realtime
 export const NODE_OPTS={auth:{persistSession:false},realtime:{transport:class{}}};
+// the studio with accounts (npm run dev:accounts, the "accounts" preview): every page has its own address under /studio/
+export const STUDIO_URL='http://localhost:5177/studio/';
+/* Signs a test user in with a password, as the sign-in page would hand a session over: on /studio/login (src/login.js
+   exposes its client in development), then on to the studio, which opens on a fresh sign-in (the home page, or
+   where the page was sent away from). Resolves once the studio is up. */
+export async function signInAt(p,email,password,studio=STUDIO_URL){
+  if(!/\/login$/.test(new URL(p.url()).pathname))await p.goto(studio+'login');
+  await p.waitForFunction(()=>window.__login,null,{timeout:60000});
+  await p.evaluate(async([e,pw])=>{const c=await window.__login.client(),r=await c.auth.signInWithPassword({email:e,password:pw});if(r.error)throw new Error(r.error.message);},[email,password]);
+  await p.waitForURL(u=>!/\/login$/.test(u.pathname),{timeout:30000});
+  await p.waitForFunction(()=>window.__app&&!document.documentElement.classList.contains('booting'),null,{timeout:60000});
+}

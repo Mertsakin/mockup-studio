@@ -4,9 +4,9 @@
 // node tools/accounts/test-home-popups.mjs [studio URL]   (the studio on 5177 with --mode accounts)
 import {chromium} from 'playwright';
 import {createClient} from '@supabase/supabase-js';
-import {NODE_OPTS,local} from './local.mjs';
+import {NODE_OPTS,STUDIO_URL,local,signInAt} from './local.mjs';
 
-const L=local(),STUDIO=process.argv[2]||'http://localhost:5177/',admin=createClient(L.url,L.service,NODE_OPTS);
+const L=local(),STUDIO=process.argv[2]||STUDIO_URL,admin=createClient(L.url,L.service,NODE_OPTS);
 const email='popups-'+Date.now()+'@shotlight.test',password='pw-'+crypto.randomUUID();
 const {data:u}=await admin.auth.admin.createUser({email,password,email_confirm:true});
 let fails=0;const ok=(c,m)=>{console.log((c?'  ok   ':'  FAIL ')+m);if(!c)fails++;};
@@ -16,8 +16,7 @@ const errors=[];p.on('pageerror',e=>errors.push(e.message));
 const top=()=>p.evaluate(()=>{const e=document.elementFromPoint(innerWidth/2,innerHeight/2);return e?(e.closest('.store-dlg')?'store':e.closest('.wl-modal')?'welcome':e.closest('#home')?'home':'other'):'none';});
 const modalOpen=()=>p.evaluate(()=>!document.querySelector('.wl-modal').hidden);
 try{
-  await p.goto(STUDIO);await p.waitForFunction(()=>window.__app&&!document.documentElement.classList.contains('booting'),null,{timeout:60000});
-  await p.evaluate(async([e,pw])=>{const c=await window.__app('client')();await c.auth.signInWithPassword({email:e,password:pw});},[email,password]);
+  await signInAt(p,email,password,STUDIO);
   await p.waitForSelector('#home .hm-empty .hm-btn[data-a="blank"]',{timeout:30000});
   ok(await p.isVisible('#home .hm-logo'),'the logo sits at the top of the sidebar');
   ok(await p.evaluate(()=>{const f=document.querySelector('#home .hm-foot');return !!f&&!!f.querySelector('.hm-me')&&!!f.querySelector('.hm-store');}),'the account and the storage share the foot of the sidebar');

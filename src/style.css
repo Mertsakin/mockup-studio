@@ -933,7 +933,9 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .ag-sub{margin:6px 0 18px;color:var(--ink-2)}
 .ag-form .si-prov{margin-top:0}
 .ag-form .si-sent-wrap .dfoot{justify-content:center}
-html.gated .toast{z-index:95}
+/* the sign-in page (/studio/login, src/login.js): the editor's markup is in the page but none of it shows (its code never loads) */
+html.route-login body>:not(#authGate):not(.toast){display:none!important}
+html.route-login .toast{z-index:95}
 
 .appbtn img.mark{background:none;object-fit:contain}
 

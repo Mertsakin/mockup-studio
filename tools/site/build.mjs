@@ -1,7 +1,8 @@
 // The deployable site (docs/lansman.md): the landing page at the root and the studio under /studio/, in site/.
 //   VITE_CAPTURE_URL=https://capture.example.com node tools/site/build.mjs     (npm run build:site)
 // Without VITE_CAPTURE_URL the studio has no website capture (the address field is hidden). site/_headers sets
-// caching and security headers for Cloudflare Pages (other hosts: the same rules by hand).
+// caching and security headers for Cloudflare Pages, site/_redirects the studio's addresses (other hosts: the same
+// rules by hand).
 import {execSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -43,6 +44,9 @@ fs.writeFileSync(path.join(OUT,'_headers'),`/*
 /video/*
   Cache-Control: public, max-age=604800
 `);
+// the studio's addresses (tools/site/routes-plugin.mjs): every page is the same index.html; listed one by one so no
+// rule can shadow a real file (assets, player, templates)
+fs.writeFileSync(path.join(OUT,'_redirects'),['login','edit','projects','templates','trash','p/*'].map(r=>'/studio/'+r+' /studio/index.html 200').join('\n')+'\n');
 const size=d=>fs.readdirSync(d,{withFileTypes:true}).reduce((a,e)=>a+(e.isDirectory()?size(path.join(d,e.name)):fs.statSync(path.join(d,e.name)).size),0);
 const n=d=>fs.readdirSync(d,{withFileTypes:true}).reduce((a,e)=>a+(e.isDirectory()?n(path.join(d,e.name)):1),0);
 console.log('site/:',n(OUT),'files,',(size(OUT)/1048576).toFixed(1),'MB','| capture:',process.env.VITE_CAPTURE_URL||'none');
