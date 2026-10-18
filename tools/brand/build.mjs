@@ -71,4 +71,7 @@ await browser.close();
   let off=head.length;sizes.forEach((s,i)=>{const e=6+16*i,b=small[s];head.writeUInt8(s,e);head.writeUInt8(s,e+1);head.writeUInt8(0,e+2);head.writeUInt8(0,e+3);
     head.writeUInt16LE(1,e+4);head.writeUInt16LE(32,e+6);head.writeUInt32LE(b.length,e+8);head.writeUInt32LE(off,e+12);off+=b.length;});
   files.push(write('favicon.ico',Buffer.concat([head,...sizes.map(s=>small[s])])));}
-console.log('brand/:',files.join(', '));
+// the studio's own favicon (public/: Vite serves and copies it as it is; index.html links it)
+fs.copyFileSync(path.join(OUT,'favicon.ico'),path.join(ROOT,'public/favicon.ico'));
+fs.copyFileSync(path.join(OUT,'shotlight-icon-small.svg'),path.join(ROOT,'public/favicon.svg'));
+console.log('brand/:',files.join(', '),'+ public/favicon.ico, public/favicon.svg');

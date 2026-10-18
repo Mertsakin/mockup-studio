@@ -3,161 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vitrin: 3B cihaz mockup stüdyosu</title>
-<meta name="description" content="Ekran görüntünü yükle, cihazı seç, ışığı kur ve fotoğraf kalitesinde mockup'ını saniyeler içinde al. Tarayıcıda çalışır, kurulum istemez.">
+<title>Shotlight · tarayıcıda 3B cihaz mockup stüdyosu</title>
+<meta name="description" content="Ekran görüntünü yükle, cihazı yerleştir, ışığı kur. Fotoğraf kalitesinde mockup görseli ve video, doğrudan tarayıcında. Ücretsiz beta, hesap gerekmez.">
+<link rel="icon" href="../brand/favicon.ico" sizes="any">
+<link rel="icon" href="../brand/shotlight-icon-small.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../brand/shotlight-icon-180.png">
+<meta property="og:title" content="Shotlight">
+<meta property="og:description" content="Fotoğraf kalitesinde 3B cihaz mockup'ları ve video, tarayıcında. Ücretsiz beta.">
+<meta property="og:image" content="video/hero.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Inter+Tight:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<header class="nav" id="nav">
-  <div class="wrap">
-    <a class="logo" href="#"><i></i>Vitrin</a>
-    <nav>
-      <a href="#ozellikler">Ürün</a>
-      <a href="#sablonlar">Şablonlar</a>
-      <a href="#fiyatlar">Fiyatlar</a>
-      <a href="#sss">Destek</a>
-      <a href="#">Blog</a>
-    </nav>
-    <a class="btn" href="../index.html">Ücretsiz başla</a>
-  </div>
+<!-- A small interim landing page (the full website is being designed separately). Built into the site root by
+     npm run build:site (tools/site/build.mjs rewrites ../ links); in development: /landing/index.html -->
+<header class="top wrap">
+  <a class="logo" href="./" aria-label="Shotlight ana sayfa"><img src="../brand/shotlight-wordmark-on-light.svg" alt="Shotlight" width="140" height="35"></a>
+  <a class="btn sm" href="../index.html">Stüdyoyu aç</a>
 </header>
 
-<section class="hero">
-  <div class="wrap">
-    <h1>Tüm mockup'larını Vitrin ile yap!</h1>
-    <p>Ekran görüntünü yükle, cihazını seç, ışığını kur. Telefon, tablet, dizüstü ve monitör mockup'larını fotoğraf kalitesinde, istediğin açıdan ve 4K çözünürlükte tek araçtan al.</p>
-    <a class="btn lg" href="../index.html">Ücretsiz başla</a>
-    <div class="fan"><video autoplay muted loop playsinline preload="metadata" poster="video/hero.jpg" width="1600" height="1120" aria-label="Üç telefon mockup'ı yan yana süzülüyor: proje listesi, fotoğraf kalitesi render ekranı ve şablon galerisi"><source src="video/hero.webm" type="video/webm"><source src="video/hero.mp4" type="video/mp4"><img src="img/hero-fan.png" width="2000" height="1400" alt="Üç telefon mockup'ı yan yana"></video></div>
-  </div>
-</section>
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">Ücretsiz beta · hesap gerekmez</p>
+    <h1>Ekran görüntün,<br>stüdyo ışığında.</h1>
+    <p class="lead">Telefon, tablet, dizüstü ve monitörü tek sahnede kur, ışığı ayarla, anahtar karelerle canlandır. Fotoğraf kalitesinde görsel ve video, doğrudan tarayıcında.</p>
+    <div class="ctas"><a class="btn" href="../index.html">Stüdyoyu aç</a><a class="btn ghost" href="#neler">Neler yapabilirsin</a></div>
+  </section>
 
-<section class="band" id="ozellikler">
-  <div class="wrap">
+  <figure class="reel wrap">
+    <div class="clip"><video autoplay muted loop playsinline preload="metadata" poster="video/hero.jpg" width="1600" height="1120" aria-label="Üç telefon mockup'ı yan yana süzülüyor; video Shotlight ile üretildi">
+      <source src="video/hero.webm" type="video/webm"><source src="video/hero.mp4" type="video/mp4">
+    </video></div>
+    <figcaption>Bu video da Shotlight ile çekildi.</figcaption>
+  </figure>
 
-    <div class="card">
-      <div class="txt">
-        <h2>Dakikalar içinde ilk mockup'ını al</h2>
-        <p class="muted">Kaydol, ekran görüntünü sürükle bırak, <span class="accent">hazır bir açı seç</span> ve PNG olarak indir. Kurulum yok, eklenti yok; tarayıcında çalışır.</p>
-      </div>
-      <div class="pic"><img src="img/phone-tilt.png" width="1300" height="1500" alt="Eğik duran grafit telefon, ekranında proje listesi"></div>
-    </div>
+  <section class="feats wrap" id="neler" aria-label="Özellikler">
+    <article><h2>Gerçek ışık</h2><p>Softbox, pencere ışığı ya da güneş. Gölgeler ve yansımalar fotoğraftaki gibi; fotoğraf kalitesinde render ve 4K çıktı.</p></article>
+    <article><h2>Canlandır</h2><p>Kamera, cihaz ve ışık için anahtar kareler, hazır hareketler, metin efektleri. MP4, WebM ya da GIF olarak indir.</p></article>
+    <article><h2>Mağazaya ve web'e hazır</h2><p>App Store ve Google Play setleri, sosyal medya ölçüleri, şablonlar. Sitene etkileşimli 3B olarak göm.</p></article>
+  </section>
 
-    <div class="card rev" id="sablonlar">
-      <div class="txt">
-        <h2>Telefon, tablet, dizüstü ve monitör tek sahnede</h2>
-        <p class="muted">Cihazları aynı zemine diz, her birine kendi ekranını ver, kameranı çevir. <span class="accent">20 hazır şablon</span> kare, story, banner ve sunum oranlarında seni bekliyor.</p>
-      </div>
-      <div class="pic"><img src="img/tablet-phone.png" width="1700" height="1400" alt="Yan yana tablet ve telefon mockup'ı"></div>
-    </div>
+  <section class="end wrap">
+    <h2>Beta boyunca ücretsiz.</h2>
+    <p>Kurulum yok, hesap yok. Çalışman tarayıcında saklanır; istediğin an proje dosyası olarak indirirsin.</p>
+    <a class="btn" href="../index.html">Stüdyoyu aç</a>
+  </section>
+</main>
 
-    <div class="card">
-      <div class="txt">
-        <h2>Siteni tek tıkla cihazlara yakala</h2>
-        <p class="muted">Adresi yaz, Vitrin siteyi her cihazın kendi ekran boyutunda <span class="accent">tam sayfa</span> çeker ve ekranlara yerleştirir. Uzun sayfalarda ekranı kaydır, istediğin kesiti göster.</p>
-      </div>
-      <div class="pic"><img src="img/desk.png" width="2200" height="1400" alt="Monitör, dizüstü ve telefondan oluşan masaüstü seti"></div>
-    </div>
-
-    <div class="card dark">
-      <div class="pic"><img src="img/laptop-dark.png" width="2200" height="1400" alt="Koyu zeminde grafit dizüstü, ekranında stüdyo arayüzü"></div>
-      <div class="txt">
-        <h2>Fotoğraf kalitesinde render</h2>
-        <p>Yol izlemeli render, gerçek yansımalar ve yumuşak gölgelerle stüdyo çekimi görünümü verir. Gürültü giderme otomatik; 3840 px çıktı saniyeler içinde hazır.</p>
-        <a class="btn inv" href="#">Örnekleri gör</a>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<section class="black">
-  <div class="wrap">
-    <div class="pic"><img src="img/phone-dramatic.png" width="1400" height="1600" alt="Siyah zeminde dramatik ışıkla aydınlatılmış telefon"></div>
-    <div class="txt">
-      <h2>Işığı sen kur</h2>
-      <p>Softbox, şemsiye, pencere ışığı ya da sert flaş. Işıkları haritada sürükle, gölgenin yumuşaklığını kaynak boyutuyla ayarla. Hazır kurulumlar tek tıkla.</p>
-      <a class="btn inv" href="#">Keşfet</a>
-    </div>
-  </div>
-</section>
-
-<section class="trust">
-  <div class="wrap">
-    <h2>Çalışman güvende</h2>
-    <p class="lead">Projelerin tarayıcında, cihazların jenerik, çıktıların senin. Vitrin'i gönül rahatlığıyla ticari işlerde kullan.</p>
-    <div class="grid">
-      <div class="tile"><i>☁</i><h3>Otomatik kayıt</h3><p>Her değişiklik anında tarayıcına kaydedilir. Sekmeyi kapat, döndüğünde kaldığın yerden devam et; proje dosyasıyla başka bilgisayara taşı.</p></div>
-      <div class="tile"><i>©</i><h3>Ticari kullanım</h3><p>Cihaz modelleri jenerik, ortam ve ikonlar açık lisanslı. Çıktıların üzerinde tüm haklar sana ait.</p></div>
-      <div class="tile"><i>⌁</i><h3>Tarayıcıda çalışır</h3><p>Kurulum ve güncelleme derdi yok. Render kendi GPU'nda yapılır, görsellerin sunucuya gitmek zorunda değil.</p></div>
-      <div class="tile"><i>?</i><h3>Beta geri bildirimi</h3><p>Soru ve önerilerini e-postayla bize ulaştır; beta boyunca her geri bildirimi okuyoruz.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="pricing" id="fiyatlar">
-  <div class="wrap">
-    <h2>Beta boyunca ücretsiz</h2>
-    <p class="lead" style="margin:14px auto 0">Hesap yok, kart yok. Stüdyoyu aç, tüm özellikleri kullan. Çalışman tarayıcında saklanır, istediğin an proje dosyası olarak indirirsin.</p>
-    <div class="plans one">
-      <div class="plan hi">
-        <h3>Beta</h3>
-        <div class="price">₺0</div>
-        <ul><li>Tüm cihazlar ve şablonlar</li><li>3840 px, filigransız</li><li>Fotoğraf kalitesinde render</li><li>Video, WebM ve GIF dışa aktarımı</li><li>Web'e göm</li></ul>
-        <a class="btn" href="../index.html">Stüdyoyu aç</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="faq" id="sss">
-  <div class="wrap">
-    <h2>Sıkça sorulan sorular</h2>
-    <p class="lead">Aklına takılanları cevaplamak için buradayız.</p>
-    <details open><summary>Vitrin nedir?</summary><p>Vitrin, tarayıcıda çalışan bir 3B cihaz mockup stüdyosudur. Ekran görüntünü ya da sitenin adresini verirsin; telefon, tablet, dizüstü ve monitör üzerinde, seçtiğin ışık ve açıyla gerçekçi bir görsel üretir. Tasarımcılar, pazarlama ekipleri ve uygulama geliştiriciler için yapıldı.</p></details>
-    <details><summary>Görsellerimi nasıl dışa aktarırım?</summary><p>PNG ya da JPG olarak, şeffaf ya da renkli arka planla, 3840 px uzun kenara kadar. Birden fazla artboard'u ZIP olarak tek seferde indirebilir, Canlandır modunda MP4 video alabilirsin.</p></details>
-    <details><summary>Cihaz modelleri hangi markaya ait?</summary><p>Hiçbirine. Tüm cihazlar jenerik tasarımdır; böylece ticari işlerde marka hakkı sorunu yaşamazsın. Belirli bir ürün görünümü istersen lisanslı çerçeve görselini "Kendi çerçeven" ile yükleyebilirsin.</p></details>
-    <details><summary>Fotoğraf kalitesi ne demek?</summary><p>Hızlı modda görsel anında hazırlanır. Fotoğraf modunda yol izleme ile gerçek yansımalar, yumuşak gölgeler ve ortam ışığı hesaplanır, ardından gürültü giderme uygulanır. 1080 px'te yaklaşık bir dakika sürer.</p></details>
-    <details><summary>Verilerim nerede saklanıyor?</summary><p>Beta'da hesap yok: projelerin ve görsellerin yalnızca kendi tarayıcında saklanır, istediğin an proje dosyası olarak indirirsin. Render işlemi de tarayıcında yapılır; görsellerin sunucuya gönderilmez. Yalnızca site yakalamada adres, sayfayı çekmek için sunucumuza gider.</p></details>
-    <details><summary>Beta bitince ne olacak?</summary><p>Beta boyunca her şey ücretsiz. Ücretli planlar geldiğinde önceden duyuracağız; indirdiğin proje dosyaları ve görseller senin, hiçbiri kilitlenmez.</p></details>
-    <p class="muted" style="margin-top:24px;font-size:14px">Daha fazla bilgi için <a class="accent" href="#">destek merkezimize</a> ulaşabilirsin.</p>
-  </div>
-</section>
-
-<section class="cta">
-  <div class="wrap">
-    <div class="txt">
-      <small>Hemen başlamak için</small>
-      <h2>Ücretsiz hesap aç, ilk mockup'ını bugün al</h2>
-      <div class="btns"><a class="btn lg" href="../index.html">Ücretsiz başla</a><a class="btn lg ghost" href="#">Şablonlara göz at</a></div>
-    </div>
-    <div class="pic"><img src="img/laptop-silver.png" width="2000" height="1300" alt="Gümüş dizüstü, ekranında Vitrin stüdyosu"></div>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <div class="cols">
-      <div>
-        <a class="logo" href="#"><i></i>Vitrin</a>
-        <p class="note">Tarayıcıda çalışan 3B cihaz mockup stüdyosu. Gerçekçi ışık, gölge ve malzeme; her açıdan yüksek çözünürlüklü çıktı.</p>
-      </div>
-      <div><h4>Ürün</h4><ul><li><a href="#ozellikler">Özellikler</a></li><li><a href="#sablonlar">Şablonlar</a></li><li><a href="#fiyatlar">Fiyatlar</a></li><li><a href="#">Değişiklik günlüğü</a></li></ul></div>
-      <div><h4>Kaynaklar</h4><ul><li><a href="#">Blog</a></li><li><a href="#sss">Destek merkezi</a></li><li><a href="#">Durum sayfası</a></li><li><a href="#">API</a></li></ul></div>
-      <div><h4>Şirket</h4><ul><li><a href="#">Hakkımızda</a></li><li><a href="#">İletişim</a></li><li><a href="#">Kariyer</a></li></ul></div>
-    </div>
-    <div class="bottom">
-      <span>© 2026 Vitrin Yazılım A.Ş. Tüm hakları saklıdır.</span>
-      <nav><a href="#">Gizlilik</a><a href="#">Kullanım şartları</a><a href="#">KVKK</a><a href="#">Çerezler</a></nav>
-    </div>
-  </div>
+<footer class="foot wrap">
+  <img src="../brand/shotlight-icon-small.svg" alt="" width="20" height="20">
+  <span>© 2026 Shotlight · beta</span>
 </footer>
-
 <script>
-  const nav=document.getElementById('nav');
-  addEventListener('scroll',()=>nav.classList.toggle('stuck',scrollY>8),{passive:true});
+// reduced motion: the reel stays on its poster
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){const v=document.querySelector('.reel video');v.removeAttribute('autoplay');v.pause();}
 </script>
 </body>
 </html>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 100 100">
+<defs>
+<linearGradient id="bsbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#ecebe7"/></linearGradient>
+<radialGradient id="bsgw" cx=".92" cy=".04" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="bsgl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<radialGradient id="bssp" cx=".35" cy=".35" r=".75"><stop offset="0" stop-color="#ff5f7e"/><stop offset="1" stop-color="#8a2be2"/></radialGradient>
+<linearGradient id="bslt" gradientUnits="userSpaceOnUse" x1="96" y1="4" x2="39.200" y2="96"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#fff6ef"/><stop offset="1" stop-color="#ffcdb8"/></linearGradient>
+<radialGradient id="bsfl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#7a2a6a" stop-opacity=".75"/><stop offset="1" stop-color="#7a2a6a" stop-opacity="0"/></radialGradient>
+<linearGradient id="bsrm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb0c2"/><stop offset="1" stop-color="#b48cff"/></linearGradient>
+<clipPath id="bscl"><circle cx="50" cy="50" r="36"/></clipPath>
+
+</defs>
+<rect width="100" height="100" rx="22.37" fill="url(#bsbg)"/><rect width="100" height="100" rx="22.37" fill="url(#bsgw)"/><rect x=".5" y=".5" width="99" height="99" rx="22.37" fill="none" stroke="url(#bsgl)"/><rect x=".4" y=".4" width="99.2" height="99.2" rx="21.970000000000002" fill="none" stroke="#e4e1db" stroke-width="1.6"/>
+
+<g transform="rotate(-35 50 50)">
+<circle cx="50" cy="50" r="36" fill="url(#bssp)"/>
+
+<g clip-path="url(#bscl)"><path d="M50 4H96V96H50V86A10.799999999999999 36 0 0 1 50 14Z" fill="url(#bslt)"/></g>
+</g>
+</svg>

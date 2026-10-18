@@ -11,9 +11,11 @@ const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..','..'),
 execSync('npx vite build',{cwd:ROOT,stdio:'inherit',env:process.env});
 fs.rmSync(OUT,{recursive:true,force:true});
 fs.cpSync(path.join(ROOT,'dist'),path.join(OUT,'studio'),{recursive:true});
-for(const f of ['style.css','img','video'])fs.cpSync(path.join(ROOT,'landing',f),path.join(OUT,f),{recursive:true});
-// the landing page links the studio as ../index.html (it lives in landing/ during development)
-fs.writeFileSync(path.join(OUT,'index.html'),fs.readFileSync(path.join(ROOT,'landing/index.html'),'utf8').replaceAll('href="../index.html"','href="studio/"'));
+for(const f of ['style.css','video'])fs.cpSync(path.join(ROOT,'landing',f),path.join(OUT,f),{recursive:true});
+fs.cpSync(path.join(ROOT,'brand'),path.join(OUT,'brand'),{recursive:true});
+fs.copyFileSync(path.join(ROOT,'brand/favicon.ico'),path.join(OUT,'favicon.ico'));
+// the landing page links the studio as ../index.html and the brand files as ../brand/ (it lives in landing/ during development)
+fs.writeFileSync(path.join(OUT,'index.html'),fs.readFileSync(path.join(ROOT,'landing/index.html'),'utf8').replaceAll('href="../index.html"','href="studio/"').replaceAll('"../brand/','"brand/'));
 fs.writeFileSync(path.join(OUT,'_headers'),`/*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
@@ -35,7 +37,7 @@ fs.writeFileSync(path.join(OUT,'_headers'),`/*
 /studio/hdri/*
   Cache-Control: public, max-age=2592000
 
-/img/*
+/brand/*
   Cache-Control: public, max-age=604800
 
 /video/*

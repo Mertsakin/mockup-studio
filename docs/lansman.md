@@ -162,13 +162,13 @@ Google Cloud konsolu → Billing → Budgets & alerts → aylık 10 $'lık büt�
 ## 4. Lansman öncesi kontrol listesi
 
 **Benim yapabileceklerim** (söylemen yeterli):
-- [ ] Açılış sayfasındaki boş bağlantılar (`href="#"`): Blog, Değişiklik günlüğü, Durum sayfası, API, "Örnekleri gör", "Keşfet", "Şablonlara göz at". Ya kaldırılır ya da gerçek hedefe bağlanır (şablonlar → `studio/?template=…`).
+- [x] Açılış sayfası yerine geçici, sade bir landing (18 Ekim; asıl siteyi kullanıcı tasarlıyor): boş bağlantı yok, logo ve favicon Shotlight.
 - [ ] "Beta geri bildirimi" kutusuna e-posta bağlantısı (adres sende).
 - [ ] **Gizlilik notu** (KVKK aydınlatma metni). Yakalama servisi, kötüye kullanıma karşı istek başına IP adresini ve yakalanan adresi kaydeder (Cloud Run günlükleri, varsayılan 30 gün). Bunun kısa bir sayfada söylenmesi gerekir. Metni ben taslak olarak yazarım; hukuki onayı sende.
-- [ ] Sosyal paylaşım görseli (`og:image`) ve favicon, ürünün kendisiyle render edilerek.
+- [x] Favicon (Shotlight). [ ] Sosyal paylaşım görseli (`og:image`): şimdilik hero videosunun posteri.
 
 **Sende olanlar:**
-- [ ] Alan adı ve marka adı kesinleşmesi ("Vitrin" sayfada geçiyor; tescil/çakışma kontrolü).
+- [ ] Alan adı (`shotlight.studio` boş) ve marka tescili/çakışma kontrolü (ad Shotlight olarak kesinleşti).
 - [ ] **Gömme oynatıcısının telefonda ölçümü:** kendi telefonunda `alanadi.com/studio/player/…` gömmesini aç. Akıcı mı, ısınıyor mu? Bunu bir sayfa hazırlayıp sana bağlantısını veririm.
 - [ ] Zayıf bir bilgisayarda (entegre GPU'lu eski bir dizüstü) stüdyoyu bir kez dene. Canlı görünüm hareket sırasında artık kendi çözünürlüğünü düşürüyor; asıl donanımda bir göz atmak iyi olur.
 
