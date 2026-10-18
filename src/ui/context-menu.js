@@ -52,6 +52,8 @@ function itemsFor(){
   }
   return out;
 }
+// the timeline's key menu uses the same element (timeline.js)
+export {open as openMenu,close as closeMenu};
 // where the menu was opened: "Buraya … ekle" puts the new item there
 let at={x:0,y:0};
 canvas.addEventListener('contextmenu',e=>{

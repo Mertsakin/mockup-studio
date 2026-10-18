@@ -508,6 +508,11 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 /* marquee selection and the snap guide of a dragged key (timeline.js) */
 .marq{position:absolute;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);pointer-events:none;z-index:4}
 .snapg{position:absolute;top:0;bottom:0;border-left:1px dashed var(--key-ink);pointer-events:none;z-index:3}
+/* the selection's range with the stretch handles (outside the end keys) */
+.range{position:absolute;height:0;border-top:1.5px dashed color-mix(in srgb,var(--accent) 55%,transparent);pointer-events:none;z-index:4}
+.range i{position:absolute;top:-5px;width:9px;height:9px;border-radius:2px;background:var(--panel);box-shadow:0 0 0 1.5px var(--accent);cursor:col-resize;pointer-events:auto}
+.range i:hover{background:var(--accent-soft)}
+.range i.l{left:-5px}.range i.r{right:-5px}
 /* text effect span on an item's row (timeline.js): drag to move */
 .fx-bar{position:absolute;top:7px;height:18px;padding:0 6px;border-radius:4px;background:color-mix(in srgb,var(--accent) 22%,var(--track));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent-ink);font-size:10.5px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:ew-resize;user-select:none;box-sizing:border-box}
 .fx-bar.out{background:color-mix(in srgb,var(--accent) 12%,var(--track))}

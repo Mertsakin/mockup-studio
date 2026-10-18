@@ -187,6 +187,44 @@ function moveSelected(dt){
   owners.forEach(o=>tracked(o).forEach(k=>sortKeys(o.tracks[k])));
   A.sel.forEach(e=>{e.t=snapT(e.t+dt,fps());});applyNow();emit();return dt;
 }
+/* ---------- clipboard: copies of the selected keys, pasted at the playhead (the first key lands there, the gaps
+   stay). A copy remembers its target; pasting while another target of the same kind is current puts the keys on that
+   target (a phone's motion onto another phone). ⌘D duplicates at the playhead. */
+let clip=null;
+function copyKeys(){const ks=selectedKeys();if(!ks.length)return 0;const a=Math.min(...ks.map(x=>x.key.t));
+  clip=ks.map(({o,prop,key})=>({ref:refOf(o),prop,dt:key.t-a,v:key.v,ease:key.ease}));return clip.length;}
+function cutKeys(){const n=copyKeys();if(n)deleteSelected();return n;}
+const hasKeyClip=()=>!!clip;
+function pasteKeys(onto){
+  if(!clip)return 0;const t0=snapT(A.t,fps()),sel=[];let n=0;
+  clip.forEach(c=>{
+    let o=byRef(c.ref);
+    if(onto&&o&&onto!==o&&kindOf(onto)===kindOf(o)&&propsOf(onto).includes(c.prop))o=onto;
+    if(!o||!propsOf(o).includes(c.prop))return;
+    const t=snapT(t0+c.dt,fps());if(t>state.anim.dur+1e-6)return;
+    // a value animated for the first time keeps its design-frame value, as a recorded edit does
+    const fresh=!(o.tracks&&o.tracks[c.prop]&&o.tracks[c.prop].length);
+    if(fresh&&Math.abs(t-designT(o))>=halfFrame(fps()))put(o,c.prop,designT(o),o[c.prop]);
+    const k=put(o,c.prop,t,c.v);k.ease=c.ease;sel.push({ref:refOf(o),prop:c.prop,t:k.t});n++;
+  });
+  if(!n)return 0;A.sel=sel;A.seg=null;applyNow();syncSliders();emit();return n;
+}
+function duplicateKeys(){const keep=clip,n=copyKeys()?pasteKeys(null):0;clip=keep;return n;}
+// stretches the selection in time: the keys' original times (orig: [{key, t}], spanning a0..b0) are mapped onto
+// na..nb (whole frames, at least a frame wide). Refused when a key would land on an unselected key of its value or
+// two selected keys of one value would merge. The design frames follow as in moveSelected.
+function stretchSelected(orig,na,nb){
+  const ks=selectedKeys();if(!ks.length||!orig.length)return false;
+  const a0=Math.min(...orig.map(x=>x.t)),b0=Math.max(...orig.map(x=>x.t)),hf=halfFrame(fps());if(b0-a0<hf)return false;
+  na=snapT(Math.max(0,na),fps());nb=snapT(Math.min(state.anim.dur,nb),fps());if(nb-na<1/fps()-1e-9)return false;
+  const map=new Map(orig.map(x=>[x.key,snapT(na+(x.t-a0)*(nb-na)/(b0-a0),fps())])),moving=new Set(map.keys());
+  for(const {o,prop,key} of ks){if(!map.has(key))return false;const nt=map.get(key);
+    if(o.tracks[prop].some(x=>x!==key&&Math.abs((moving.has(x)?map.get(x):x.t)-nt)<hf))return false;}
+  const owners=new Set(ks.map(x=>x.o));
+  owners.forEach(o=>{const at=keysAt(o,designT(o),null);if(at.length&&at.every(k=>moving.has(k)))o.designT=map.get(at[0]);});
+  map.forEach((t,key)=>{key.t=t;});owners.forEach(o=>tracked(o).forEach(k=>sortKeys(o.tracks[k])));
+  A.sel=ks.map(({o,prop,key})=>({ref:refOf(o),prop,t:key.t}));applyNow();emit();return true;
+}
 // makes the selected keys' time the design frame of their target (what Tasarla and the still image show); only when
 // the selection sits at one time
 function setDesignFrame(){const ks=selectedKeys();if(!ks.length)return;const ts=ks.map(x=>x.key.t);if(Math.max(...ts)-Math.min(...ts)>=halfFrame(fps()))return;
@@ -287,5 +325,5 @@ onBoards(()=>{
 });
 
 const anyAnim=()=>targets().some(hasAnim)||state.items.some(hasFx);
-export {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,
-  onAnim,play,presetsFor,seek,segKeys,selectAllKeys,selectKey,selectKeys,selectSeg,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,targets,toggleKeyAt};
+export {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,copyKeys,cutKeys,deleteSelected,duplicateKeys,entriesAt,hasFx,hasKeyClip,isSelected,keyProp,keysAt,
+  moveSelected,onAnim,pasteKeys,play,presetsFor,seek,segKeys,selectAllKeys,selectKey,selectKeys,selectSeg,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,stretchSelected,targets,toggleKeyAt};

@@ -137,21 +137,23 @@ const typing=t=>t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEdit
 // (the system clipboard is emptied, so an older screenshot on it does not win over this copy at ⌘V)
 let sawCopy=false;
 const doCut=()=>{clip.board=null;deleteSelection();};
-document.addEventListener('copy',e=>{sawCopy=true;if(typing(e.target)||!copySelection())return;e.preventDefault();e.clipboardData.setData('text/plain','');toast('Kopyalandı');},true);
-document.addEventListener('cut',e=>{sawCopy=true;if(typing(e.target)||!copySelection())return;e.preventDefault();e.clipboardData.setData('text/plain','');doCut();},true);
+// the last press was in the timeline, in Canlandır: ⌘C / ⌘X / ⌘V / ⌘D / ⌘A act on the keys there (timeline.js)
+const tlKeys=()=>ui.tlFocus&&ui.mode==='animate';
+document.addEventListener('copy',e=>{sawCopy=true;if(typing(e.target)||tlKeys()||!copySelection())return;e.preventDefault();e.clipboardData.setData('text/plain','');toast('Kopyalandı');},true);
+document.addEventListener('cut',e=>{sawCopy=true;if(typing(e.target)||tlKeys()||!copySelection())return;e.preventDefault();e.clipboardData.setData('text/plain','');doCut();},true);
 // capture on window, before image-input's screenshot paste: an image on the system clipboard is a screenshot (pasted
 // into the device as before); anything else pastes our copy
 const hasImage=dt=>!!dt&&[...(dt.items||[])].some(x=>x.type&&x.type.startsWith('image/'));
 let sawPaste=false;
 window.addEventListener('paste',e=>{
   sawPaste=true;
-  if(typing(e.target)||!clip||hasImage(e.clipboardData))return;
+  if(typing(e.target)||tlKeys()||!clip||hasImage(e.clipboardData))return;
   e.preventDefault();e.stopImmediatePropagation();paste();
 },true);
 // some environments (automation, clipboard blocked) send ⌘C / ⌘X / ⌘V without the clipboard event: do it shortly after
 addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
-  if(!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey||typing(e.target)||k.length!==1||!'cxv'.includes(k))return;
+  if(!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey||typing(e.target)||tlKeys()||k.length!==1||!'cxv'.includes(k))return;
   if(k==='v'){if(!clip)return;sawPaste=false;setTimeout(()=>{if(!sawPaste)paste();},80);return;}
   if(!selection().length||(getSelection&&String(getSelection())))return;
   sawCopy=false;setTimeout(()=>{if(sawCopy||!copySelection())return;if(k==='x')doCut();else toast('Kopyalandı');},80);
@@ -234,12 +236,12 @@ function unframeSelection(){
 addEventListener('keydown',e=>{
   if(typing(e.target))return;
   const k=e.key.toLowerCase(),mod=e.metaKey||e.ctrlKey;
-  if(mod&&k==='a'&&!e.shiftKey&&!e.altKey){if(ui.tlFocus&&ui.mode==='animate')return;  // the timeline's keys (timeline.js)
+  if(mod&&k==='a'&&!e.shiftKey&&!e.altKey){if(tlKeys())return;
     if(!state.devices.length&&!state.items.length)return;e.preventDefault();e.stopImmediatePropagation();selectAll();return;}
   if(mod&&e.altKey&&e.code==='KeyG'&&!e.shiftKey){if(!items2D().length)return;e.preventDefault();e.stopImmediatePropagation();frameSelection(false);return;}
   if(mod&&e.shiftKey&&e.code==='KeyG'&&!e.altKey){if(!items2D().some(isFrame))return;e.preventDefault();e.stopImmediatePropagation();unframeSelection();return;}
   if(!mod&&!e.altKey&&e.shiftKey&&e.code==='KeyA'){if(!items2D().length)return;e.preventDefault();e.stopImmediatePropagation();frameSelection(true);return;}
-  if(mod&&k==='d'&&!e.shiftKey&&!e.altKey){if(!selection().length)return;e.preventDefault();e.stopImmediatePropagation();duplicateSelection();return;}
+  if(mod&&k==='d'&&!e.shiftKey&&!e.altKey){if(tlKeys()||!selection().length)return;e.preventDefault();e.stopImmediatePropagation();duplicateSelection();return;}
   if(!isMulti()||mod||e.altKey)return;
   const mv={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
   if(mv){const sc=boardScreen();if(!sc)return;e.preventDefault();e.stopImmediatePropagation();const n=(e.shiftKey?10:1)*sc.w/sizeOf(state)[0];nudge(mv[0]*n,mv[1]*n);return;}

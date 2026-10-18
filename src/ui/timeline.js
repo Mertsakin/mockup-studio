@@ -5,7 +5,8 @@ import {selLight} from '../lights/runtime.js';
 import {fmtM,mmFromFov} from '../render/lens.js';
 import {designT,halfFrame,hasAnim,isDevice,keyIn,kindOf,propsOf,refOf,timesOf,tracked} from '../state/anim.js';
 import {sel,selItem,state} from '../state/state.js';
-import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,segKeys,selectAllKeys,selectKey,selectKeys,selectSeg,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets,toggleKeyAt} from './animate.js';
+import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,copyKeys,cutKeys,deleteSelected,duplicateKeys,entriesAt,hasFx,hasKeyClip,isSelected,keyProp,keysAt,moveSelected,onAnim,pasteKeys,play,presetsFor,seek,segKeys,selectAllKeys,selectKey,selectKeys,selectSeg,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,stretchSelected,targets,toggleKeyAt} from './animate.js';
+import {closeMenu,openMenu} from './context-menu.js';
 import {sizeOf} from './boards.js';
 import {duration,fmtDur,hasVideo} from '../devices/video.js';
 import {icon} from './icons.js';
@@ -36,7 +37,12 @@ import {$,$$} from '../util.js';
    View: ⌘ / Ctrl + wheel (and a pinch) zooms the time axis around the pointer, 1× (the whole duration) to 20×; a
    horizontal wheel pans while zoomed; − / + / ⤢ in the bar and ⇧1 (while the last press was in the timeline) fit.
    The ruler's labels thin out as the axis shrinks and frame ticks appear when a frame is wide enough; while playing
-   or seeking the playhead is kept in view (the view pages forward). Zoom and scroll are editor state here. */
+   or seeking the playhead is kept in view (the view pages forward). Zoom and scroll are editor state here.
+   Clipboard (while the last press was in the timeline): ⌘C / ⌘X copy / cut the selected keys, ⌘V pastes them at
+   the playhead (onto the current target when it is another of the same kind), ⌘D duplicates there; a right-click on
+   a diamond opens a menu with these, the ease, the design frame and Sil; on a lane: paste and key here. Two or more
+   selected keys apart in time get a dashed range with handles at both ends: dragging one stretches the selection
+   (stretchSelected), the motion slows down or speeds up. */
 const tl=$('#timeline'),names=$('#tlNames'),lanes=$('#tlLanes');
 const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Yatış',scale:'Ölçek',lidAngle:'Kapak açısı',scroll:'Kaydırma',
   x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık',
@@ -167,9 +173,12 @@ function build(){
       b.dataset.t=t;b.dataset.prop=prop||'';
       b.setAttribute('aria-label',(prop?LABEL[prop]+', ':'')+'anahtar kare, '+fmtT(t)+' sn');b.title=fmtT(t)+' sn'+(part?' · '+keysAt(d,t,null).map(k=>LABEL[tracked(d).find(p=>d.tracks[p].includes(k))]).join(', '):'');
       b.addEventListener('pointerdown',e=>dragKey(e,d,t,prop));
+      b.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();ui.tlFocus=true;pickTarget(d,true);if(!diamondOn(d,t,prop))selectKey(refOf(d),t,prop);keyMenu(e.clientX,e.clientY);});
       lane.appendChild(b);
     });
     lane.addEventListener('pointerdown',e=>{if(e.target!==lane&&!e.target.classList.contains('seg-bar'))return;marquee(e,d,prop);});
+    lane.addEventListener('contextmenu',e=>{if(e.target!==lane&&!e.target.classList.contains('seg-bar'))return;e.preventDefault();ui.tlFocus=true;
+      const r=lanes.getBoundingClientRect(),t=Math.round(tOf(e.clientX-r.left)*fps())/fps();laneMenu(e.clientX,e.clientY,d,prop===FXROW?null:prop,t,prop===FXROW);});
     lanes.appendChild(lane);
   });
   const end=document.createElement('div');end.className='end';end.style.left=xOf(dur)+'px';end.innerHTML='<span>'+String(dur).replace('.',',')+' sn</span>';
@@ -177,7 +186,42 @@ function build(){
   end.title='Süreyi değiştirmek için sürükle (en fazla 30 sn)'+(vids.length?'. Ekran videosu: '+vids.map(fmtDur).join(', '):'');end.addEventListener('pointerdown',dragEnd);lanes.appendChild(end);
   const ph=document.createElement('div');ph.className='ph';ph.id='tlPh';lanes.appendChild(ph);
   $('#tlEmpty').hidden=anyAnim()||state.devices.some(hasVideo);
-  drawCard();
+  drawCard();drawRange();
+}
+/* ---------- the selection's range: a dashed line through its rows with a stretch handle at each end */
+function drawRange(){
+  const old=lanes.querySelector('.range');if(old)old.remove();
+  const ks=selectedKeys();if(ks.length<2)return;
+  const ts=ks.map(x=>x.key.t),a=Math.min(...ts),b=Math.max(...ts);if(b-a<halfFrame(fps()))return;
+  const hit=[...lanes.querySelectorAll('.lane')].filter(l=>!l.dataset.fx&&ks.some(x=>refOf(x.o)===l.dataset.ref&&(!l.dataset.prop||l.dataset.prop===x.prop)));if(!hit.length)return;
+  // along the bottom of the selection's last row: clear of the diamonds and of the card (which sits under the first row)
+  const bot=Math.max(...hit.map(l=>l.offsetTop+l.offsetHeight));
+  const r=document.createElement('div');r.className='range';r.style.left=xOf(a)+'px';r.style.width=(xOf(b)-xOf(a))+'px';r.style.top=(bot-5)+'px';
+  r.innerHTML='<i class="l" title="Esnet: başlangıcı sürükle (hareket hızlanır ya da yavaşlar)"></i><i class="r" title="Esnet: bitişi sürükle (hareket hızlanır ya da yavaşlar)"></i>';
+  r.querySelector('.l').addEventListener('pointerdown',e=>stretch(e,'l'));r.querySelector('.r').addEventListener('pointerdown',e=>stretch(e,'r'));
+  lanes.appendChild(r);
+}
+function stretch(e,side){
+  if(e.button!==0)return;e.preventDefault();e.stopPropagation();stop();ui.tlFocus=true;
+  const orig=selectedKeys().map(x=>({key:x.key,t:x.key.t})),a=Math.min(...orig.map(x=>x.t)),b=Math.max(...orig.map(x=>x.t)),x0=e.clientX;
+  loop(e,ev=>{const d=(ev.clientX-x0)/pps();if(side==='l')stretchSelected(orig,a+d,b);else stretchSelected(orig,a,b+d);});
+}
+/* ---------- clipboard and the right-click menus */
+const MAC=/Mac|iPhone|iPad/.test(navigator.platform||''),C=MAC?'⌘':'Ctrl+';
+function copySel(){const n=copyKeys();if(n)toast(n+' anahtar kare kopyalandı');return n;}
+function cutSel(){const n=cutKeys();if(n)toast(n+' anahtar kare kesildi');return n;}
+function pasteSel(){if(!hasKeyClip())return 0;const n=pasteKeys(cur());toast(n?n+' anahtar kare yapıştırıldı · '+fmtT(A.t)+' sn':'Yapıştırılamadı: anahtarlar sürenin dışına düşüyor');return n;}
+function keyMenu(x,y){
+  const ks=selectedKeys(),n=ks.length,es=new Set(ks.map(k=>k.key.ease)),ts=ks.map(k=>k.key.t),one=Math.max(...ts)-Math.min(...ts)<halfFrame(fps())&&new Set(ks.map(k=>k.o)).size===1;
+  const last=ks.every(({o,prop,key})=>o.tracks[prop][o.tracks[prop].length-1]===key);
+  openMenu(x,y,[['copy','Kopyala',copySel,C+'C'],['scissors','Kes',cutSel,C+'X'],['clipboard','İmlece yapıştır',pasteSel,C+'V',!hasKeyClip()],['copy','İmlece çoğalt',()=>duplicateKeys(),C+'D'],null,
+    ...EASES.map(([k,nm])=>['',(es.size===1&&es.has(k)?'✓ ':'')+'Geçiş: '+nm.toLowerCase(),()=>setEase(k),'',last]),null,
+    ['target','Tasarım karesi yap',setDesignFrame,'',!one],['trash-bin-minimalistic',n>1?n+' anahtar kareyi sil':'Sil',()=>deleteSelected(),'⌫']]);
+}
+function laneMenu(x,y,d,prop,t,fx){
+  openMenu(x,y,[['clipboard','İmlece yapıştır',pasteSel,C+'V',!hasKeyClip()],null,
+    ['add-circle','Buraya anahtar kare ekle ('+fmtT(t)+' sn)',()=>{pickTarget(d,true);seek(t);toggleKeyAt(d,prop);},'',fx],
+    ['layers-minimalistic','Katmanın tüm anahtarlarını seç',()=>{pickTarget(d,true);selectAllKeys(d);},C+'A',!hasAnim(d)]]);
 }
 /* ---------- the edit card above the selected keys, or the selected transition */
 const EASE_SVG=path=>'<svg viewBox="0 0 36 22" aria-hidden="true"><path d="'+path+'"/></svg>';
@@ -456,6 +500,14 @@ addEventListener('keydown',e=>{
   if(e.altKey&&!mod&&arrow&&A.sel.length){stopIt();stop();moveSelected((e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:1/fps()));return;}
   if(e.key==='Escape'&&(A.sel.length||A.seg)&&ui.tlFocus){stopIt();selectKey(null);return;}
   if(e.shiftKey&&e.code==='Digit1'&&!mod&&!e.altKey&&ui.tlFocus){stopIt();setZoom(1);return;}
+  // the clipboard of keys (selection.js leaves these alone while the press was here)
+  if(mod&&!e.altKey&&!e.shiftKey&&ui.tlFocus){
+    const k=e.key.toLowerCase();
+    if(k==='c'&&A.sel.length){stopIt();copySel();return;}
+    if(k==='x'&&A.sel.length){stopIt();cutSel();return;}
+    if(k==='v'&&hasKeyClip()){stopIt();closeMenu();pasteSel();return;}
+    if(k==='d'&&A.sel.length){stopIt();duplicateKeys();return;}
+  }
   if(mod||e.altKey)return;
   if(e.code==='Space'){stopIt();if(!e.repeat)play();}
   else if(e.key==='Home'){stopIt();stop();seek(0);}
