@@ -43,7 +43,10 @@ try{
   await p.goto(link.replace(/&amp;/g,'&'));
   await p.waitForSelector('#acctBtn:not([hidden])',{timeout:20000});
   ok(true,'back in the studio, signed in (avatar in the top bar)');
-  ok(await p.evaluate(()=>!document.querySelector('#authGate')&&!document.querySelector('#appMenuBtn').closest('[inert]')),'the gate is gone and the studio works');
+  await p.waitForSelector('#home',{timeout:15000});
+  ok(true,'signing in lands on the home page');
+  await p.click('#home [data-a="blank"]');await p.waitForSelector('#home',{state:'detached'});
+  ok(await p.evaluate(()=>!document.querySelector('#authGate')&&!document.querySelector('#appMenuBtn').closest('[inert]')),'"Boş tuval": the gate and the home page are gone, the studio works');
   // some work to see it emptied on signing out
   await p.evaluate(()=>{const app=window.__app;if(app&&!app('hasBoard')())app('addBoard')();});
   ok(!/code=/.test(p.url()),'the sign-in code is gone from the address ('+p.url()+')');

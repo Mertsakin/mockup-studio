@@ -36,6 +36,8 @@ async function menu(p,id){await p.evaluate(()=>{document.querySelector('#toast')
 const row=async()=>(await admin.from('projects').select('*').eq('owner',uid).is('deleted_at',null).order('created_at')).data;
 try{
   const A=await studio('A');
+  // a first sign-in lands on the home page: A starts with a blank canvas
+  await A.waitForSelector('#home [data-a="blank"]',{timeout:15000});await A.click('#home [data-a="blank"]');await A.waitForSelector('#home',{state:'detached'});
   // a board with a screenshot on the phone
   await A.evaluate(async()=>{const app=window.__app;if(!app('hasBoard')())app('addBoard')();const st=app('state'),d=st.devices[0];
     const i=new Image();i.src='/tools/landing/src/app-light.png';await i.decode();d.img=i;d.imgName='ekran.png';app('setScreenTexture')(d);app('req')();});
@@ -54,13 +56,12 @@ try{
   ok(A.mediaPuts===puts&&(await row())[0].version===2,'saving again: version 2, no media uploaded again');
 
   const B=await studio('B');
-  // B signs in with a project in the cloud: the launcher lists it
-  await B.waitForSelector('#projectsScrim.launcher .pj-card',{timeout:15000});
-  ok((await B.$$('.pj-card')).length===1&&/Test projesi/.test(await B.textContent('.pj-card .pj-name')),'B: the launcher lists the project (and a new project card)');
-  await B.waitForSelector('.pj-thumb img',{timeout:10000}).catch(()=>{});
-  ok(await B.$('.pj-thumb img')!==null,'with its thumbnail');
-  if(SHOTS)await B.locator('.projects-dlg').screenshot({path:SHOTS+'/projects.png'});
-  await B.click('.pj-open');await toastHas(B,/açıldı/);
+  // B signs in with a project in the cloud: the home page lists it
+  await B.waitForSelector('#home .hm-card',{timeout:15000});
+  ok((await B.$$('.hm-card')).length===1&&/Test projesi/.test(await B.textContent('.hm-card .hm-nm')),'B: the home page lists the project');
+  await B.waitForSelector('.hm-card .hm-thi img',{timeout:10000}).catch(()=>{});
+  ok(await B.$('.hm-card .hm-thi img')!==null,'with its thumbnail');
+  await B.click('.hm-card');await toastHas(B,/açıldı/);
   const got=await B.evaluate(()=>{const st=window.__app('state'),d=st.devices[0];return {boards:window.__app('doc').boards.length,img:!!(d&&d.img&&d.img.naturalWidth)};});
   ok(got.boards===1&&got.img,'B opened it: the board and the screenshot are back');
 
@@ -78,19 +79,20 @@ try{
   ok(!!docs.data[0].doc_key,'the project points at A\'s document');
 
   // the dialog's own actions
-  await B.evaluate(()=>{document.querySelector('#toast').textContent='';});await B.click('#acctBtn');await B.click('#acctMenu [data-a="projects"]');await B.waitForSelector('.pj-card');
-  await B.hover('.pj-card');await B.click('.pj-card [data-a="rename"]');await B.fill('#pdName','Lansman görselleri');await B.keyboard.press('Enter');
+  const cardMenu=async(nth,label)=>{await B.hover('.hm-card >> nth='+nth);await B.click('.hm-card >> nth='+nth+' >> .hm-dots');await B.click('.hm-menu >> text='+label);};
+  await B.evaluate(()=>{document.querySelector('#toast').textContent='';});await B.click('#acctBtn');await B.click('#acctMenu [data-a="projects"]');await B.waitForSelector('#home .hm-card');
+  await cardMenu(0,'Yeniden adlandır');await B.fill('#pdName','Lansman görselleri');await B.keyboard.press('Enter');
   await toastHas(B,/yeniden adlandırıldı/);
   ok((await row())[0].name==='Lansman görselleri','rename');
-  await B.waitForSelector('.pj-card');await B.hover('.pj-card');await B.click('.pj-card [data-a="dup"]');await toastHas(B,/çoğaltıldı/);
+  await B.waitForSelector('#home .hm-card');await cardMenu(0,'Çoğalt');await toastHas(B,/çoğaltıldı/);
   r=await row();
   ok(r.length===2&&r[1].name==='Lansman görselleri kopyası'&&r[1].version===1,'duplicate: a second project at version 1');
   const dm=await admin.from('project_media').select('hash').eq('project',r[1].id);
   ok(dm.data.length>=1,'the copy lists the same media (not uploaded again)');
-  await B.waitForFunction(()=>document.querySelectorAll('.pj-card').length===2);
-  await B.hover('.pj-card >> nth=1');await B.click('.pj-card >> nth=1 >> [data-a="del"]');await B.click('.dialog [data-a="ok"]');
-  await toastHas(B,/silindi/);
-  ok((await row()).length===1,'delete: back to one project');
+  await B.waitForFunction(()=>document.querySelectorAll('#home .hm-card').length===2);
+  await cardMenu(1,'Çöp kutusuna taşı');await B.click('.dialog [data-a="ok"]');
+  await toastHas(B,/çöp kutusuna taşındı/);
+  ok((await row()).length===1,'to the trash: back to one project');
   ok(!A.errs.length&&!B.errs.length,'no page errors'+([...A.errs,...B.errs].length?': '+[...A.errs,...B.errs].join(' | '):''));
 }finally{
   await admin.auth.admin.deleteUser(uid).catch(()=>{});

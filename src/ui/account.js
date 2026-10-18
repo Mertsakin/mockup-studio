@@ -3,10 +3,10 @@
    back on signing out. Signed in, the top bar shows the user's avatar and a menu. A build without accounts (no
    VITE_SUPABASE_URL: the render harness, tests, a self-hosted copy) has none of this and opens as before.
    Sign-in: Google, GitHub, Apple (VITE_AUTH_PROVIDERS picks the buttons) or a one-time e-mail link. */
-import {PROVIDERS,auth,client,cloudEnabled,onAuth,signInEmail,signInWith,signOut} from '../io/cloud.js';
-import {isDirty} from './history.js';
+import {PROVIDERS,auth,client,cloudEnabled,onAuth,signInEmail,signInWith} from '../io/cloud.js';
 import {icon} from './icons.js';
-import {forgetLocal,openProjects,saveToCloud} from './projects.js';
+import {showHome} from './home.js';
+import {leave} from './projects.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
 
@@ -112,32 +112,10 @@ function openMenu(){
   menu.hidden=false;acctBtn.setAttribute('aria-expanded','true');
   const f=menu.querySelector('.mi:not([disabled])');if(f)f.focus({preventScroll:true});
 }
-// unsaved work asks before signing out (the document is emptied: this browser's work is no one's once signed out)
-function askLeave(){
-  return new Promise(res=>{
-    const sc=document.createElement('div');sc.className='scrim';
-    sc.innerHTML='<div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="soT"><div class="dh"><span id="soT">Çıkış yap</span></div>'+
-      '<div class="db"><p class="pd-text">Kaydedilmemiş değişiklikler var. Çıkınca bu tarayıcıdaki çalışma kapanır.</p>'+
-      '<div class="dfoot"><button class="btn" type="button" data-a="cancel">Vazgeç</button><button class="btn" type="button" data-a="discard">Kaydetmeden çık</button><button class="btn primary" type="button" data-a="save">Buluta kaydet ve çık</button></div></div></div>';
-    document.body.appendChild(sc);sc.querySelector('[data-a="save"]').focus();
-    const done=v=>{sc.remove();res(v);};
-    sc.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a)done(a.dataset.a);else if(e.target===sc)done('cancel');});
-    sc.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape')done('cancel');});
-  });
-}
-async function leave(){
-  if(isDirty()){
-    const a=await askLeave();
-    if(a==='cancel')return;
-    if(a==='save'&&!(await saveToCloud()))return;
-  }
-  try{await signOut();await forgetLocal();toast('Çıkış yapıldı');}
-  catch(err){toast('Çıkış yapılamadı: '+err.message);}
-}
 acctBtn.addEventListener('click',e=>{e.stopPropagation();if(menu.hidden)openMenu();else closeMenu();});
 menu.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;closeMenu();
-  if(b.dataset.a==='projects')openProjects();
+  if(b.dataset.a==='projects')showHome('all');
   else if(b.dataset.a==='out')leave();
 });
 document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target)&&!acctBtn.contains(e.target))closeMenu();});

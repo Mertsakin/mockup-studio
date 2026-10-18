@@ -45,6 +45,7 @@ import './ui/i18n.js';
 import './ui/welcome.js';
 import './ui/account.js';
 import './ui/projects.js';
+import './ui/home.js';
 import './ui/timeline.js';
 import './export/video.js';
 import './export/embed.js';

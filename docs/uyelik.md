@@ -106,8 +106,8 @@ Yerel otomatik kayıt bugün tek belge tutuyor. Üyelikle birlikte açık projen
 
 - **Üst bar:** girişsiz "Giriş yap"; girişli kullanıcı avatarı ve menüsü (Projelerim, Hesap, Çıkış). Dosya adının yanında kayıt durumu: *Kaydedildi* / *Kaydediliyor…* / *Çevrimdışı · sonra eşitlenecek*.
 - **Giriş penceresi:** Google, GitHub, Apple, "E-postama bağlantı gönder". Şifre yok.
-- **Başlangıç:** giriş yapınca (sayfa yenilemesinde değil; yenilemede açık çalışmayla devam edilir) bulutta projesi varsa projeleri listelenir, son kart "Yeni proje oluştur" (karşılama kartına götürür); hiç projesi yoksa doğrudan karşılama kartı (18 Ekim).
-- **Projelerim:** küçük resimli ızgara, arama, yeni proje, aç, yeniden adlandır, çoğalt, sil (çöp kutusu), son değişiklik tarihi.
+- **Ana sayfa** (18 Ekim; Figma'nın dosya tarayıcısı gibi, `ui/home.js`): giriş yapınca açılır (yenilemede değil); kenar çubuğu, sağ üstte amaç düğmeleri (şablonla yeni proje), önerilen şablonlar, projeler ızgara/liste, çöp kutusu; hiç projesi yoksa büyük şablon paneli ve boş tuval. Editörün menüsündeki "Ana sayfa" buraya döner.
+- **Projeler:** ana sayfada; arama, aç, yeniden adlandır, çoğalt, çöp kutusuna taşı, geri getir, kalıcı sil, son değişiklik tarihi.
 - **İlk girişte:** tarayıcıdaki çalışma varsa "Bu çalışmayı hesabına kaydet?" diye sorulur.
 - **Karşılama kartı:** girişliyse "Proje aç…"ın yerinde son projeler.
 - **Hesap:** ad ve avatar, kullanılan alan, tüm verini indir (ZIP: her proje bir `.mockup.zip`), hesabı sil (onaylı, geri alınamaz).

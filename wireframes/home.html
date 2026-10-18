@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shotlight ana sayfa</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Prototype: the home page (file browser) a signed-in user lands on, after Figma's: a sidebar (account, search,
+   Son kullanılanlar / Projelerim / Şablonlar / Çöp kutusu, storage), quick starts on top, the projects as a grid or a
+   list; opening one goes to the editor, whose logo comes back here. Sample data; thumbnails are the template set's.
+   The toolbar of the prototype (bottom) switches between a populated and an empty account and shows the editor's
+   top-left corner. Tokens copied from src/style.css. */
+:root{
+  --canvas:#efeff0;--panel:#ffffff;--field:#f4f4f5;--field-hover:#ebebed;--line:#e6e6e9;--line-strong:#d2d2d7;
+  --ink:#18181b;--ink-2:#52525b;--muted:#8a8a93;--accent:#0b68f5;--accent-hover:#0a5bd8;--accent-soft:#e8f0fe;--accent-ink:#0a56cc;--on-accent:#fff;--danger:#c4321f;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);--side:#f7f7f8;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-hover:#5a9cff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;--danger:#ff8a7a;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);--side:#202022;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-hover:#5a9cff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;--danger:#ff8a7a;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);--side:#202022;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{font:13px/1.45 Inter,system-ui,sans-serif;color:var(--ink);background:var(--panel);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input{font:inherit;color:inherit}
+h1,h2,p{margin:0}
+svg{display:block;flex:none}
+.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+.app{display:grid;grid-template-columns:240px 1fr;height:100vh}
+
+/* ---------- sidebar */
+.side{background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:10px 8px;gap:2px;min-height:0}
+.me{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;text-align:left;width:100%}
+.me:hover{background:var(--field-hover)}
+.av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#ff5f7e,#8a2be2);color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center;flex:none}
+.me b{font-weight:600;display:block;line-height:1.2}.me span{color:var(--muted);font-size:11px}
+.me .chev{margin-left:auto;color:var(--muted)}
+.search{display:flex;align-items:center;gap:6px;height:30px;margin:8px 4px 6px;padding:0 8px;border-radius:7px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);color:var(--muted)}
+.search input{border:0;outline:0;background:none;flex:1;min-width:0;color:var(--ink)}
+.search:focus-within{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.nav{display:flex;align-items:center;gap:9px;height:30px;padding:0 10px;border-radius:7px;width:100%;color:var(--ink-2);text-align:left}
+.nav:hover{background:var(--field-hover);color:var(--ink)}
+.nav[aria-current="page"]{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+.nav .n{margin-left:auto;color:var(--muted);font-size:11px}
+.sep{height:1px;background:var(--line);margin:8px 6px}
+.label{padding:6px 10px 2px;color:var(--muted);font-size:11px;font-weight:500}
+.side .grow{flex:1}
+.store{padding:10px;border-radius:9px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);margin:0 2px 2px}
+.store .bar{height:5px;border-radius:9px;background:var(--field);overflow:hidden;margin:7px 0 5px}
+.store .bar i{display:block;height:100%;width:23%;background:linear-gradient(90deg,#ff5f7e,#8a2be2);border-radius:9px}
+.store span{color:var(--muted);font-size:11px}
+.brandrow{display:flex;align-items:center;gap:8px;padding:8px 10px 2px;color:var(--muted);font-size:11px}
+.brandrow img{width:16px;height:16px;border-radius:4px}
+
+/* ---------- main */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{display:flex;align-items:center;gap:10px;height:52px;padding:0 24px;border-bottom:1px solid var(--line);flex:none}
+.top h1{font-size:15px;font-weight:600}
+.top .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:7px;font-weight:500;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--on-accent)}.btn.primary:hover{background:var(--accent-hover)}
+.btn.ghost{box-shadow:inset 0 0 0 1px var(--line-strong)}.btn.ghost:hover{background:var(--field)}
+.scroll{overflow:auto;flex:1;padding:20px 24px 48px}
+
+.quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:28px}
+.qs{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line);text-align:left;background:var(--panel);transition:box-shadow .12s,transform .12s}
+.qs:hover{box-shadow:inset 0 0 0 1px var(--line-strong),var(--shadow);transform:translateY(-1px)}
+.qs .qi{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff}
+.qs b{display:block;font-weight:600}.qs span{color:var(--muted);font-size:12px}
+.qi.a{background:linear-gradient(135deg,#ff5f7e,#8a2be2)}.qi.b{background:#0b68f5}.qi.c{background:#10a37f}.qi.d{background:#f59e0b}.qi.e{background:var(--field);color:var(--ink-2)}
+
+.bar2{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.bar2 h2{font-size:14px;font-weight:600}
+.bar2 .sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:7px;color:var(--ink-2)}
+.pill:hover,.pill[aria-expanded="true"]{background:var(--field)}
+.seg{display:flex;padding:2px;border-radius:7px;background:var(--field)}
+.seg button{width:28px;height:24px;border-radius:5px;display:grid;place-items:center;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;align-items:start}
+.card{position:relative;border-radius:10px;outline:none}
+.grid .card{border-radius:12px;box-shadow:0 0 0 1px var(--line);background:var(--panel);overflow:hidden}
+.grid .card:hover,.grid .card:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.card .th{aspect-ratio:16/9;background:var(--field);position:relative;overflow:hidden}
+.card .th img{position:absolute;inset:0;margin:auto;max-width:calc(100% - 32px);max-height:calc(100% - 32px);width:auto;height:auto;display:block;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.card .meta{display:flex;align-items:center;gap:10px;padding:12px 14px 14px}
+.card .meta .ico{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;background:var(--field);color:var(--ink-2);margin-top:1px}
+.card .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .tm{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .dots{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:7px;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center;opacity:0;transition:opacity .12s}
+.card:hover .dots,.card:focus-within .dots,.card .dots[aria-expanded="true"]{opacity:1}
+.badge{position:absolute;left:8px;top:8px;height:20px;padding:0 7px;border-radius:5px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px}
+.badge.open{background:var(--accent)}
+
+/* list */
+.list{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:56px 1fr 140px 120px 90px 36px;align-items:center;gap:12px;height:52px;padding:0 8px;border-bottom:1px solid var(--line);border-radius:0}
+.row:hover{background:var(--field)}
+.row img{width:56px;height:36px;object-fit:cover;border-radius:5px;box-shadow:inset 0 0 0 1px var(--line)}
+.row .nm{font-weight:500}
+.row .c{color:var(--muted)}
+.list .hd{height:32px;color:var(--muted);font-size:11px;font-weight:500}
+.list .hd:hover{background:none}
+
+/* menus */
+.menu{position:fixed;z-index:30;min-width:200px;padding:4px;border-radius:9px;background:var(--panel);box-shadow:0 0 0 1px var(--line),var(--shadow)}
+.mi{display:flex;align-items:center;gap:8px;height:30px;padding:0 9px;border-radius:6px;width:100%;text-align:left}
+.mi:hover,.mi:focus-visible{background:var(--accent);color:var(--on-accent);outline:none}
+.mi.danger{color:var(--danger)}.mi.danger:hover{background:var(--danger);color:#fff}
+.mi kbd{margin-left:auto;font:11px Inter;color:inherit;opacity:.6}
+.msep{height:1px;background:var(--line);margin:4px 2px}
+
+/* empty account */
+.empty{display:grid;justify-items:center;text-align:center;gap:10px;padding:56px 16px 24px;color:var(--ink-2)}
+.empty .art{width:120px;height:80px;border-radius:12px;background:var(--field);display:grid;place-items:center;margin-bottom:6px}
+.empty h2{font-size:17px;font-weight:600;color:var(--ink)}
+
+/* trash */
+.notice{padding:10px 12px;border-radius:8px;background:var(--field);color:var(--ink-2);margin-bottom:16px}
+
+/* header: history arrows, goal pills (Figma's Design / FigJam / Slides) */
+.hist{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--ink-2)}
+.hist:hover{background:var(--field)}.hist:disabled{opacity:.35;cursor:default}
+.top h1{margin-left:4px}
+.goals{display:flex;gap:8px}
+.goal{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 8px;border-radius:999px;background:var(--field);box-shadow:inset 0 0 0 1px var(--line);font-weight:500;white-space:nowrap}
+.goal:hover{background:var(--field-hover);box-shadow:inset 0 0 0 1px var(--line-strong)}
+#moreBtn{padding:0 12px 0 14px;gap:4px}
+.gi{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:#fff}
+.gi .ic{width:14px;height:14px}
+.g1{background:#0b68f5}.g2{background:#e8457c}.g3{background:#10a37f}.g4{background:#f26b1d}
+
+/* recommended templates (Figma's "Recommended resources") */
+.rec{border-radius:14px;background:var(--field);padding:16px 18px 18px;margin-bottom:28px}
+.rec-h{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.rec-h h2{font-size:14px;font-weight:600}.rec-h .sp{flex:1}
+.rec-h p{color:var(--muted)}
+.rec-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.rec-grid .tp{display:grid;gap:8px;text-align:left}
+.rec-grid .tp .th{aspect-ratio:16/10;border-radius:9px;overflow:hidden;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
+.rec-grid .tp .th img{width:100%;height:100%;object-fit:cover}
+.rec-grid .tp:hover .th{box-shadow:0 0 0 2px var(--accent)}
+.rec-grid .tp b{font-weight:600;color:var(--ink)}.rec-grid .tp>span:last-child>span{color:var(--muted);font-size:12px}
+.rec.big .rec-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.morelink{color:var(--accent-ink);font-weight:500}
+
+/* prototype toolbar */
+.proto{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;display:flex;gap:4px;padding:4px;border-radius:999px;background:#18181b;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.3);font-size:12px}
+.proto button{height:28px;padding:0 12px;border-radius:999px}
+.proto button[aria-pressed="true"]{background:#fff;color:#18181b}
+
+/* editor corner (prototype view) */
+.edview{position:fixed;inset:0;z-index:35;background:var(--canvas);display:grid;grid-template-rows:44px 1fr}
+.edtop{display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+.homebtn{display:flex;align-items:center;gap:6px;height:32px;padding:0 8px 0 4px;border-radius:7px}
+.homebtn:hover{background:var(--field)}
+.homebtn img{width:24px;height:24px;border-radius:6px}
+.crumb{display:flex;align-items:center;gap:6px;color:var(--muted)}.crumb b{color:var(--ink);font-weight:600}
+.edbody{display:grid;place-items:center;color:var(--muted)}
+.callout{position:absolute;left:12px;top:52px;max-width:300px;padding:10px 12px;border-radius:9px;background:var(--ink);color:var(--panel);font-size:12px}
+.callout::before{content:"";position:absolute;left:18px;top:-6px;border:6px solid transparent;border-top:0;border-bottom-color:var(--ink)}
+
+@media (max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.quick{grid-template-columns:repeat(2,minmax(0,1fr))}.row{grid-template-columns:56px 1fr 36px}.row .c{display:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2H10l2 2h6.5a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-tpl" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l1 12.5h9l1-12.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m19.5 19.5-4-4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.3"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.3"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.3"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.3"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01"/></symbol>
+  <symbol id="i-canvas" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 15l3-3 2 2 3-3"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><rect x="7" y="3.5" width="10" height="17" rx="2.2"/><path d="M10.5 17.5h3"/></symbol>
+  <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 4v11M8 11l4 4 4-4M5 19.5h14"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3.5" y="6" width="12" height="12" rx="2"/><path d="m15.5 10.5 5-3v9l-5-3"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 6 8.5 12l6 6"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 19s-7-4.4-7-9.2A3.8 3.8 0 0 1 12 7.6a3.8 3.8 0 0 1 7 2.2C19 14.6 12 19 12 19z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5M19 4.5V9h-4.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="side" aria-label="Gezinme">
+    <button class="me" type="button" id="meBtn" aria-haspopup="menu"><span class="av">MS</span><span><b>Mert Sakin</b><span>Beta · ücretsiz</span></span><svg class="ic chev"><use href="#i-down"/></svg></button>
+    <label class="search"><svg class="ic"><use href="#i-search"/></svg><input type="search" id="q" placeholder="Ara" aria-label="Projelerde ara"></label>
+    <button class="nav" type="button" data-view="recent" aria-current="page"><svg class="ic"><use href="#i-clock"/></svg>Son kullanılanlar</button>
+    <button class="nav" type="button" data-view="all"><svg class="ic"><use href="#i-folder"/></svg>Projelerim<span class="n" id="nAll"></span></button>
+    <button class="nav" type="button" data-view="templates"><svg class="ic"><use href="#i-tpl"/></svg>Şablonlar</button>
+    <button class="nav" type="button" data-view="trash"><svg class="ic"><use href="#i-trash"/></svg>Çöp kutusu<span class="n" id="nTrash"></span></button>
+    <div class="grow"></div>
+    <div class="store"><b>Depolama</b><div class="bar"><i></i></div><span>470 MB / 2 GB kullanılıyor</span></div>
+    <div class="brandrow"><img src="/favicon.svg" alt="">Shotlight · beta</div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <button class="hist" type="button" aria-label="Geri"><svg class="ic"><use href="#i-back"/></svg></button>
+      <button class="hist" type="button" aria-label="İleri" disabled><svg class="ic" style="transform:scaleX(-1)"><use href="#i-back"/></svg></button>
+      <h1 id="title">Son kullanılanlar</h1>
+      <span class="sp"></span>
+      <div class="goals" role="group" aria-label="Yeni proje başlat">
+        <button class="goal" type="button" data-goal="land"><span class="gi g1"><svg class="ic"><use href="#i-canvas"/></svg></span>Açılış görseli</button>
+        <button class="goal" type="button" data-goal="social"><span class="gi g2"><svg class="ic"><use href="#i-heart"/></svg></span>Sosyal</button>
+        <button class="goal" type="button" data-goal="store"><span class="gi g3"><svg class="ic"><use href="#i-store"/></svg></span>Mağaza seti</button>
+        <button class="goal" type="button" data-goal="video"><span class="gi g4"><svg class="ic"><use href="#i-play"/></svg></span>Video</button>
+        <button class="goal" type="button" id="moreBtn" aria-haspopup="menu">Diğer<svg class="ic"><use href="#i-down"/></svg></button>
+      </div>
+    </header>
+    <div class="scroll" id="scroll"></div>
+  </main>
+</div>
+
+<div class="proto" role="group" aria-label="Prototip">
+  <button type="button" data-p="full" aria-pressed="true">Projeli hesap</button>
+  <button type="button" data-p="empty" aria-pressed="false">Boş hesap</button>
+  <button type="button" data-p="editor" aria-pressed="false">Editörden dönüş</button>
+</div>
+
+<script>
+const T='/public/templates/'.replace('/public','');
+const H=h=>Date.now()-h*3600e3;
+let PROJECTS=[
+  {id:1,name:'Lansman görselleri',thumb:'studio-light.jpg',t:H(.2),boards:3,open:true},
+  {id:2,name:'App Store · Planlayıcı',thumb:'store-classic-light.jpg',t:H(3),boards:5},
+  {id:3,name:'Ürün videosu · v2',thumb:'push-in-dark.jpg',t:H(26),boards:1,video:true},
+  {id:4,name:'Instagram kampanyası',thumb:'trio-light.jpg',t:H(50),boards:4},
+  {id:5,name:'Web sitesi hero',thumb:'hero-light.jpg',t:H(80),boards:2},
+  {id:6,name:'Google Play seti',thumb:'play-tilt-dark.jpg',t:H(130),boards:5},
+  {id:7,name:'Story · yeni özellik',thumb:'story-dark.jpg',t:H(200),boards:1},
+  {id:8,name:'Masa başı çekimi',thumb:'desk-light.jpg',t:H(400),boards:1},
+  {id:9,name:'Bokeh denemesi',thumb:'bokeh-light.jpg',t:H(700),boards:2},
+];
+let TRASH=[{id:20,name:'Eski hero',thumb:'browser-light.jpg',t:H(90),boards:1,deleted:H(30)}];
+const TEMPLATES=[['Stüdyo','studio-light.jpg'],['Başlıklı hero','hero-light.jpg'],['Tarayıcı penceresi','browser-light.jpg'],['Masa başı','desk-light.jpg'],
+  ['App Store · klasik','store-classic-light.jpg'],['App Store · dönüşümlü','store-tilt-light.jpg'],['Kare üçlü','trio-light.jpg'],['Portre · bokeh','bokeh-light.jpg'],
+  ['Story','story-light.jpg'],['Yaklaşarak giriş','push-in-light.jpg'],['Süzülen başlık','float-title-light.jpg'],['Döner tabla','turntable-light.jpg']];
+let view='recent',layout='grid',sort='edited',empty=false;
+const $=s=>document.querySelector(s);
+const ago=t=>{const s=(Date.now()-t)/1000;if(s<60)return 'az önce';if(s<3600)return Math.floor(s/60)+' dakika önce';if(s<86400)return Math.floor(s/3600)+' saat önce';if(s<172800)return 'dün';if(s<604800)return Math.floor(s/86400)+' gün önce';return new Date(t).toLocaleDateString('tr-TR',{day:'numeric',month:'long'});};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+
+const REC=[['Stüdyo','studio-light.jpg','Açılış görseli'],['App Store · klasik','store-classic-light.jpg','Mağaza seti'],['Kare üçlü','trio-light.jpg','Sosyal'],
+  ['Yaklaşarak giriş','push-in-dark.jpg','Video'],['Başlıklı hero','hero-light.jpg','Açılış görseli'],['Story','story-light.jpg','Sosyal'],['Portre · bokeh','bokeh-light.jpg','Sosyal'],['Google Play · dönüşümlü','play-tilt-light.jpg','Mağaza seti']];
+let recShift=0,recClosed=false;
+function rec(bigger){
+  const n=bigger?8:5,items=[];for(let i=0;i<n;i++)items.push(REC[(i+recShift)%REC.length]);
+  return '<section class="rec'+(bigger?' big':'')+'" aria-label="Önerilen şablonlar"><div class="rec-h"><h2>'+(bigger?'Bir şablonla başla':'Önerilen şablonlar')+'</h2>'+
+    (bigger?'<p>· ekran görüntülerin şablona otomatik yerleşir</p>':'')+'<span class="sp"></span>'+
+    '<button class="hist" type="button" data-rec="shift" aria-label="Başka öneriler"><svg class="ic"><use href="#i-refresh"/></svg></button>'+
+    (bigger?'':'<button class="hist" type="button" data-rec="close" aria-label="Kapat"><svg class="ic"><use href="#i-x"/></svg></button>')+'</div>'+
+    '<div class="rec-grid">'+items.map(([nm,t,g])=>'<button class="tp" type="button" data-tpl="'+nm+'"><span class="th"><img src="'+T+t+'" alt=""></span><span><b>'+nm+'</b><br><span>'+g+' · açık ve koyu</span></span></button>').join('')+'</div>'+
+    '<p style="margin-top:14px"><button class="morelink" type="button" data-view-link="templates">Tüm şablonlar →</button></p></section>';
+}
+function quick(){
+  return '<div class="quick">'+[
+    ['a','i-canvas','Boş tuval','Sıfırdan başla'],
+    ['b','i-tpl','Şablondan','14 hazır sahne'],
+    ['c','i-globe','Siteden yakala','Adresi ver, cihazlara yerleşsin'],
+    ['d','i-store','Mağaza seti','App Store ve Google Play'],
+    ['e','i-video','Tanıtım videosu','Hareketli sahne'],
+  ].map(([c,i,b,s])=>'<button class="qs" type="button" data-quick="'+b+'"><span class="qi '+c+'"><svg class="ic" style="width:20px;height:20px"><use href="#'+i+'"/></svg></span><span><b>'+b+'</b><span>'+s+'</span></span></button>').join('')+'</div>';
+}
+function bar(h){
+  return '<div class="bar2"><h2>'+h+'</h2><span class="sp"></span>'+
+    '<button class="pill" type="button" id="sortBtn" aria-haspopup="menu">'+({edited:'Son düzenlenen',name:'Ada göre',created:'Oluşturulma'})[sort]+'<svg class="ic"><use href="#i-down"/></svg></button>'+
+    '<div class="seg" role="group" aria-label="Görünüm"><button type="button" data-layout="grid" aria-pressed="'+(layout==='grid')+'" aria-label="Izgara"><svg class="ic"><use href="#i-grid"/></svg></button>'+
+    '<button type="button" data-layout="list" aria-pressed="'+(layout==='list')+'" aria-label="Liste"><svg class="ic"><use href="#i-list"/></svg></button></div></div>';
+}
+function cards(list,{trash=false}={}){
+  if(layout==='list')return '<div class="list"><div class="row hd"><span></span><span>Ad</span><span class="c">Son düzenleme</span><span class="c">Artboard</span><span class="c">Boyut</span><span></span></div>'+
+    list.map(p=>'<div class="row card" tabindex="0" data-id="'+p.id+'"><img src="'+T+p.thumb+'" alt=""><span class="nm">'+esc(p.name)+(p.open?' <span class="c">· açık</span>':'')+'</span><span class="c">'+ago(p.t)+'</span><span class="c">'+p.boards+'</span><span class="c">'+(12+p.id*7)+' MB</span>'+
+      '<button class="pill" type="button" data-menu="'+p.id+'" aria-label="Seçenekler"><svg class="ic"><use href="#i-dots"/></svg></button></div>').join('')+'</div>';
+  return '<div class="grid">'+list.map(p=>'<div class="card" tabindex="0" data-id="'+p.id+'"><div class="th"><img src="'+T+p.thumb+'" alt="">'+
+      (p.open?'<span class="badge open">Açık</span>':p.video?'<span class="badge"><svg class="ic" style="width:12px;height:12px"><use href="#i-video"/></svg>Video</span>':'')+
+      '<button class="dots" type="button" data-menu="'+p.id+'" aria-label="Seçenekler" aria-haspopup="menu"><svg class="ic"><use href="#i-dots"/></svg></button></div>'+
+      '<div class="meta"><span class="ico"><svg class="ic" style="width:13px;height:13px"><use href="#i-canvas"/></svg></span><span style="min-width:0"><div class="nm">'+esc(p.name)+'</div><div class="tm">'+
+      (trash?'Silindi '+ago(p.deleted):'Düzenlendi '+ago(p.t))+' · '+p.boards+' artboard</div></span></div></div>').join('')+'</div>';
+}
+function sorted(l){const c=l.slice();if(sort==='name')c.sort((a,b)=>a.name.localeCompare(b.name,'tr'));else c.sort((a,b)=>b.t-a.t);return c;}
+function draw(){
+  const q=$('#q').value.trim().toLocaleLowerCase('tr'),f=l=>l.filter(p=>!q||p.name.toLocaleLowerCase('tr').includes(q));
+  const projects=empty?[]:PROJECTS,trash=empty?[]:TRASH;
+  $('#nAll').textContent=projects.length||'';$('#nTrash').textContent=trash.length||'';
+  document.querySelectorAll('.nav').forEach(n=>n.setAttribute('aria-current',n.dataset.view===view?'page':'false'));
+  const titles={recent:'Son kullanılanlar',all:'Projelerim',templates:'Şablonlar',trash:'Çöp kutusu'};$('#title').textContent=titles[view];
+  let h='';
+  if(view==='recent'||view==='all'){
+    if(!projects.length){
+      h+=rec(true);
+      h+='<div class="empty"><h2>Henüz projen yok</h2><p>Yukarıdan bir şablon seç, sağ üstten bir amaçla başla ya da boş tuvalle aç.</p>'+
+        '<button class="btn ghost" type="button" data-quick="Boş tuval" style="margin-top:6px"><svg class="ic"><use href="#i-plus"/></svg>Boş tuval</button></div>';
+    }else{
+      if(view==='recent'&&!recClosed&&!q)h+=rec(false);
+      const l=f(view==='recent'?sorted(projects).slice(0,6):sorted(projects));
+      h+=bar(view==='recent'?'Son kullanılanlar':'Tüm projeler ('+projects.length+')')+(l.length?cards(l):'<p class="empty">Bu aramayla eşleşen proje yok.</p>');
+      if(view==='recent'&&projects.length>6&&!q)h+='<p style="margin-top:18px"><button class="pill" type="button" data-view-link="all">Tüm projeler ('+projects.length+') →</button></p>';
+    }
+  }else if(view==='templates'){
+    h+='<div class="bar2"><h2>Şablondan yeni proje</h2></div><div class="grid">'+TEMPLATES.filter(([n])=>!q||n.toLocaleLowerCase('tr').includes(q)).map(([n,t])=>'<div class="card" tabindex="0"><div class="th"><img src="'+T+t+'" alt=""></div><div class="meta"><span style="min-width:0"><div class="nm">'+n+'</div><div class="tm">Şablon · açık ve koyu</div></span></div></div>').join('')+'</div>';
+  }else{
+    h+='<p class="notice">Çöp kutusundaki projeler 30 gün sonra kalıcı olarak silinir. Geri getirmek için projenin menüsünü aç.</p>';
+    h+=trash.length?cards(f(trash),{trash:true}):'<div class="empty"><h2>Çöp kutusu boş</h2></div>';
+  }
+  $('#scroll').innerHTML=h;
+}
+
+// ---------- menus
+let menuEl=null;
+function closeMenu(){if(menuEl){menuEl.remove();menuEl=null;document.querySelectorAll('[aria-expanded="true"]').forEach(b=>b.setAttribute('aria-expanded','false'));}}
+function openMenu(btn,items,{right=false}={}){
+  closeMenu();const r=btn.getBoundingClientRect();
+  menuEl=document.createElement('div');menuEl.className='menu';menuEl.setAttribute('role','menu');
+  menuEl.innerHTML=items.map(it=>it?'<button class="mi'+(it[2]?' '+it[2]:'')+'" role="menuitem" type="button">'+it[0]+(it[1]?'<kbd>'+it[1]+'</kbd>':'')+'</button>':'<div class="msep"></div>').join('');
+  document.body.appendChild(menuEl);
+  const w=menuEl.offsetWidth,x=right?r.right-w:r.left;menuEl.style.left=Math.max(8,Math.min(x,innerWidth-w-8))+'px';
+  const y=r.bottom+6;menuEl.style.top=(y+menuEl.offsetHeight>innerHeight-8?r.top-menuEl.offsetHeight-6:y)+'px';
+  btn.setAttribute('aria-expanded','true');menuEl.querySelector('.mi').focus();
+  menuEl.addEventListener('click',e=>{const b=e.target.closest('.mi');if(b){toast(b.firstChild.textContent);closeMenu();}});
+}
+const toast=m=>{let t=$('#ptoast');if(!t){t=document.createElement('div');t.id='ptoast';t.style.cssText='position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:50;background:var(--ink);color:var(--panel);padding:8px 12px;border-radius:7px;font-size:12px';document.body.appendChild(t);}
+  t.textContent='Prototip: '+m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>{t.hidden=true;},1600);};
+document.addEventListener('pointerdown',e=>{if(menuEl&&!menuEl.contains(e.target)&&!e.target.closest('[aria-haspopup]'))closeMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
+
+document.addEventListener('click',e=>{
+  const nav=e.target.closest('[data-view]');if(nav){view=nav.dataset.view;draw();return;}
+  const vl=e.target.closest('[data-view-link]');if(vl){view=vl.dataset.viewLink;draw();return;}
+  const lay=e.target.closest('[data-layout]');if(lay){layout=lay.dataset.layout;draw();return;}
+  const m=e.target.closest('[data-menu]');if(m){e.stopPropagation();
+    if(view==='trash')openMenu(m,[['Geri getir'],null,['Kalıcı olarak sil','','danger']],{right:true});
+    else openMenu(m,[['Aç','↵'],['Yeni sekmede aç'],null,['Yeniden adlandır','F2'],['Çoğalt','⌘D'],['Bağlantıyı kopyala'],['Proje dosyası olarak indir'],null,['Çöp kutusuna taşı','⌫','danger']],{right:true});return;}
+  if(e.target.closest('#sortBtn')){openMenu(e.target.closest('#sortBtn'),[['Son düzenlenen'],['Ada göre'],['Oluşturulma']]);menuEl.querySelectorAll('.mi').forEach((b,i)=>b.onclick=()=>{sort=['edited','name','created'][i];closeMenu();draw();});return;}
+  if(e.target.closest('#moreBtn')){openMenu(e.target.closest('#moreBtn'),[['Boş tuval','⌘N'],['Siteden yakala…'],['Ekran kaydı…'],null,['Proje dosyası aç…','⌘O'],['Tüm şablonlar']],{right:true});return;}
+  const g=e.target.closest('[data-goal]');if(g){toast(g.textContent.trim()+' şablonuyla yeni proje → editör');return;}
+  const tp=e.target.closest('[data-tpl]');if(tp){toast(tp.dataset.tpl+' şablonuyla yeni proje → editör');return;}
+  const rc=e.target.closest('[data-rec]');if(rc){if(rc.dataset.rec==='close')recClosed=true;else recShift+=3;draw();return;}
+  if(e.target.closest('#meBtn')){openMenu(e.target.closest('#meBtn'),[['Hesap ayarları'],['Tema: sistem'],['Klavye kısayolları','?'],null,['Çıkış yap']]);return;}
+  const q=e.target.closest('[data-quick]');if(q){toast(q.dataset.quick+' → editör, karşılama kartı');return;}
+  const card=e.target.closest('.card');if(card&&!e.target.closest('button')){toast('projeyi aç → editör');return;}
+});
+document.addEventListener('dblclick',e=>{if(e.target.closest('.card'))toast('projeyi aç → editör');});
+$('#q').addEventListener('input',draw);
+
+// ---------- prototype switches
+document.querySelectorAll('.proto button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.proto button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  document.querySelector('.edview')?.remove();
+  if(b.dataset.p==='editor'){
+    const ed=document.createElement('div');ed.className='edview';
+    ed.innerHTML='<div class="edtop"><button class="homebtn" type="button" aria-label="Ana sayfa"><img src="/favicon.svg" alt=""><svg class="ic" style="color:var(--muted)"><use href="#i-down"/></svg></button>'+
+      '<span class="crumb">Projelerim <span>/</span> <b>Lansman görselleri</b></span></div><div class="edbody">editör</div>'+
+      '<div class="callout">Logo menüsünün ilk satırı "Ana sayfaya dön". Üstteki yol (Projelerim / proje adı) da tıklanınca ana sayfaya döner; proje adına tıklayınca yeniden adlandırılır.</div>';
+    document.body.appendChild(ed);
+    ed.querySelector('.homebtn').addEventListener('click',()=>{ed.remove();document.querySelector('.proto [data-p="full"]').click();});
+    return;
+  }
+  empty=b.dataset.p==='empty';view='recent';draw();
+}));
+draw();
+</script>
+</body>
+</html>

@@ -53,8 +53,14 @@ async function uploadMedia(items,onProgress){
   return {uploaded:todo.length,bytes:total};
 }
 
+const COLS='id,name,version,thumb_key,boards,bytes,created_at,updated_at,deleted_at';
 async function listProjects(){
-  const {data,error}=await (await db()).select('id,name,version,thumb_key,boards,bytes,updated_at').is('deleted_at',null).order('updated_at',{ascending:false});
+  const {data,error}=await (await db()).select(COLS).is('deleted_at',null).order('updated_at',{ascending:false});
+  if(error)throw error;return data;
+}
+// the trash: projects moved there (purged after 30 days by the nightly clean-up, docs/uyelik.md §8)
+async function listTrash(){
+  const {data,error}=await (await db()).select(COLS).not('deleted_at','is',null).order('deleted_at',{ascending:false});
   if(error)throw error;return data;
 }
 async function createProject(name){
@@ -98,6 +104,9 @@ async function openProject(id,onProgress){
 }
 async function renameProject(id,name){const {error}=await (await db()).update({name:name.slice(0,120)}).eq('id',id);if(error)throw error;}
 async function trashProject(id){const {error}=await (await db()).update({deleted_at:new Date().toISOString()}).eq('id',id);if(error)throw error;}
+async function restoreProject(id){const {error}=await (await db()).update({deleted_at:null}).eq('id',id);if(error)throw error;}
+// for good: the row (and its media list) goes; files no project uses any more are removed by the nightly clean-up
+async function destroyProject(id){const {error}=await (await db()).delete().eq('id',id);if(error)throw error;}
 // a copy shares the media (content addressed): only the document and the thumbnail are copied
 async function duplicateProject(id,name){
   const row=await projectRow(id);
@@ -121,4 +130,4 @@ async function thumbURL(p){
   const u=URL.createObjectURL(await (await api('/projects/'+p.id+'/thumb.webp')).blob());thumbs.set(k,u);return u;
 }
 
-export {createProject,duplicateProject,hashOf,listProjects,openProject,projectRow,renameProject,saveProject,thumbURL,trashProject,uploadMedia};
+export {createProject,destroyProject,duplicateProject,hashOf,listProjects,listTrash,openProject,projectRow,renameProject,restoreProject,saveProject,thumbURL,trashProject,uploadMedia};

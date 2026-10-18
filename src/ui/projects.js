@@ -1,12 +1,12 @@
-/* Cloud projects in the studio (io/cloud-projects.js does the work): "Buluta kaydet", the "Projelerim" dialog (open,
-   rename, duplicate, delete, save the current work as a new project) and the conflict dialog. Signed in only; the
-   menu items stay hidden otherwise. The open document's cloud project ({id, version, name} and whose it is) is
-   remembered in the browser, so a reload (the autosave restores the document) still saves into the same project. */
-import {auth,cloudEnabled,onAuth} from '../io/cloud.js';
-import {createProject,duplicateProject,listProjects,openProject,projectRow,renameProject,saveProject,thumbURL,trashProject} from '../io/cloud-projects.js';
+/* Cloud projects in the studio (io/cloud-projects.js does the work): "Buluta kaydet", opening, the actions on a project
+   (rename, duplicate, trash, restore, delete for good, a new project), signing out, and the conflict dialog. The list
+   itself is the home page (ui/home.js). Signed in only; the menu items stay hidden otherwise. The open document's cloud
+   project ({id, version, name} and whose it is) is remembered in the browser, so a reload (the autosave restores the
+   document) still saves into the same project. */
+import {auth,cloudEnabled,onAuth,signOut} from '../io/cloud.js';
+import {createProject,destroyProject,duplicateProject,openProject,projectRow,renameProject,restoreProject,saveProject,trashProject} from '../io/cloud-projects.js';
 import {doc,storeActive} from './boards.js';
 import {historyReady,isDirty,markSaved,putDoc,resetDocument,takeDoc} from './history.js';
-import {icon} from './icons.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
 
@@ -26,7 +26,9 @@ const saveBtn=$('#cloudSaveBtn'),openBtn=$('#cloudOpenBtn');
 const OWNER='shotlight.local.owner';
 const owner=()=>{try{return localStorage.getItem(OWNER);}catch(e){return null;}};
 const setOwner=id=>{try{if(id)localStorage.setItem(OWNER,id);else localStorage.removeItem(OWNER);}catch(e){/* no storage */}};
-let launched=false;  // the launcher has had its chance for this sign-in (reset on signing out)
+// fn() once a user has just signed in (not on a reload with the session carried over): the home page opens (ui/home.js)
+const signInHooks=new Set();
+let launched=false;  // the sign-in hooks have run for this sign-in (reset on signing out)
 if(cloudEnabled)onAuth(async a=>{
   const on=!!a.user;saveBtn.hidden=openBtn.hidden=!on;
   if(!on){launched=false;if(cur)remember(null);return;}
@@ -34,13 +36,11 @@ if(cloudEnabled)onAuth(async a=>{
   const o=owner();
   if(o&&o!==a.user.id){await resetDocument();remember(null);}
   setOwner(a.user.id);showName();
-  // signing in: the projects first when there are any; none: the welcome card (an empty document shows it) or the
-  // work already open here. A reload with the session carried over continues with what is open; a template link opens
-  // the template.
+  // signing in lands on the home page; a reload with the session carried over continues with what is open; a template
+  // link opens the template
   if(launched||/[?&]template=/.test(location.search))return;
   launched=true;
-  if(!a.fresh)return;
-  try{const l=await listProjects();if(l.length)openProjects({launcher:true,list:l});}catch(e){console.warn('Projeler alınamadı:',e);}
+  if(a.fresh)signInHooks.forEach(f=>f());
 });
 // signing out: the document and the autosave are emptied, the work is no longer anyone's here
 async function forgetLocal(){await resetDocument();remember(null);setOwner(null);}
@@ -130,81 +130,41 @@ async function openFromCloud(id,{force=false}={}){
   }catch(e){toast('Proje açılamadı: '+e.message);return false;}
 }
 
-// ---------- the Projelerim dialog
-const ago=t=>{const s=(Date.now()-new Date(t).getTime())/1000;
-  if(s<60)return 'az önce';if(s<3600)return Math.floor(s/60)+' dk önce';if(s<86400)return Math.floor(s/3600)+' sa önce';if(s<172800)return 'dün';
-  return new Date(t).toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:new Date(t).getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
-/* The project list. As a dialog ("Projelerim…"), or as the launcher: full screen, shown when a signed-in user who has
-   cloud projects starts the studio (pre-loaded list). Either way the last card starts a new project: the document is
-   emptied and the welcome card takes over (asks first when the open work has unsaved changes). */
-async function openProjects({launcher=false,list:pre=null}={}){
-  if(!auth.user){toast('Projelerin için giriş yap.');return;}
-  if(document.getElementById('projectsScrim'))return;
-  const sc=document.createElement('div');sc.className='scrim'+(launcher?' launcher':'');sc.id='projectsScrim';
-  sc.innerHTML='<div class="dialog projects-dlg'+(launcher?' launcher-dlg':'')+'" role="dialog" aria-modal="true" aria-labelledby="pjT">'+
-    '<div class="dh"><span id="pjT">'+(launcher?'Projelerin':'Projelerim')+'</span><button class="ib sm" type="button" data-a="close" aria-label="Kapat">'+icon('close-circle')+'</button></div>'+
-    '<div class="db">'+(launcher?'<p class="pj-lead">Kaldığın projeyi aç ya da yeni bir proje başlat.</p>':'')+
-    '<div class="pj-bar"><label class="fld pj-search">'+icon('magnifer',14)+'<input type="search" id="pjSearch" placeholder="Projelerde ara" aria-label="Projelerde ara"></label>'+
-    (launcher?'':'<button class="btn" type="button" data-a="new">'+icon('cloud-check',14)+'<span>Şu anki çalışmayı yeni proje olarak kaydet</span></button>')+'</div>'+
-    '<div class="pj-grid" id="pjGrid" aria-live="polite"><p class="pj-empty">Yükleniyor…</p></div></div></div>';
-  document.body.appendChild(sc);
-  const grid=sc.querySelector('#pjGrid'),search=sc.querySelector('#pjSearch');
-  let list=pre||[];
-  const close=()=>{sc.remove();document.removeEventListener('keydown',key,true);};
-  const key=e=>{if(e.key==='Escape'&&!document.querySelector('.scrim:not(#projectsScrim):not([hidden])')){e.preventDefault();e.stopPropagation();close();}};
-  document.addEventListener('keydown',key,true);
-  function draw(){
-    const q=search.value.trim().toLocaleLowerCase('tr'),shown=list.filter(p=>!q||p.name.toLocaleLowerCase('tr').includes(q)),open=mine();
-    grid.innerHTML='';
-    if(!list.length)grid.innerHTML='<p class="pj-empty">Bulutta henüz projen yok. Yeni bir proje başlat ya da şu anki çalışmanı kaydet.</p>';
-    else if(!shown.length)grid.innerHTML='<p class="pj-empty">Bu aramayla eşleşen proje yok.</p>';
-    for(const p of shown){
-      const c=document.createElement('div');c.className='pj-card';c.dataset.id=p.id;
-      c.innerHTML='<button class="pj-open" type="button"><span class="pj-thumb">'+icon('gallery-wide',24)+'</span><span class="pj-name"></span><span class="pj-meta"></span></button>'+
-        '<div class="pj-acts"><button class="ib sm" type="button" data-a="rename" aria-label="Yeniden adlandır">'+icon('pen-2',14)+'</button>'+
-        '<button class="ib sm" type="button" data-a="dup" aria-label="Çoğalt">'+icon('copy',14)+'</button>'+
-        '<button class="ib sm" type="button" data-a="del" aria-label="Sil">'+icon('trash-bin-minimalistic',14)+'</button></div>';
-      c.querySelector('.pj-name').textContent=p.name;
-      c.querySelector('.pj-meta').textContent=(open&&open.id===p.id?'Açık · ':'')+(p.boards||0)+' artboard · '+ago(p.updated_at);
-      c.querySelector('.pj-open').setAttribute('aria-label',p.name+' projesini aç');
-      grid.appendChild(c);
-      thumbURL(p).then(u=>{if(!u)return;const t=c.querySelector('.pj-thumb');t.innerHTML='<img alt="">';t.firstChild.src=u;}).catch(()=>{});
-    }
-    // the last card: a new project
-    const n=document.createElement('button');n.type='button';n.className='pj-new';n.dataset.a='newproj';
-    n.innerHTML='<span class="pj-new-ic">'+icon('add-circle',28)+'</span><span class="pj-name">Yeni proje oluştur</span><span class="pj-meta">Boş tuval, şablonlar, site yakalama</span>';
-    grid.appendChild(n);
+// ---------- actions on a project ({id, name}); each returns whether something changed
+const openId=()=>{const m=mine();return m?m.id:null;};
+async function renameAction(p){
+  const n=await askName('Yeniden adlandır',p.name,'Kaydet');if(!n||n===p.name)return false;
+  await renameProject(p.id,n);
+  if(openId()===p.id){remember(Object.assign({},cur,{name:n}));markSaved(n);}
+  toast('Proje yeniden adlandırıldı');return true;
+}
+async function duplicateAction(p){toast('Çoğaltılıyor…');await duplicateProject(p.id);toast(p.name+' çoğaltıldı');return true;}
+async function trashAction(p){
+  if(!(await confirmBox('Çöp kutusuna taşı',p.name+' çöp kutusuna taşınacak; 30 gün içinde geri getirebilirsin. Açıksa çalışman bu tarayıcıda kalır.','Taşı')))return false;
+  await trashProject(p.id);if(openId()===p.id)remember(null);toast(p.name+' çöp kutusuna taşındı');return true;
+}
+async function restoreAction(p){await restoreProject(p.id);toast(p.name+' geri getirildi');return true;}
+async function destroyAction(p){
+  if(!(await confirmBox('Kalıcı olarak sil',p.name+' kalıcı olarak silinecek. Bu geri alınamaz.','Kalıcı olarak sil')))return false;
+  await destroyProject(p.id);toast(p.name+' kalıcı olarak silindi');return true;
+}
+// a new, empty document in place of the open one (asks when it has unsaved changes); false when the user declined
+async function newProject(){
+  if(isDirty()&&!(await confirmBox('Yeni proje','Açık çalışmada kaydedilmemiş değişiklikler var; yeni proje onun yerini alır.','Yeni proje')))return false;
+  await resetDocument();remember(null);return true;
+}
+// signing out: unsaved work asks first, then this browser's work is emptied (it is no one's once signed out)
+async function leave(){
+  if(isDirty()){
+    const r=await dialog('Çıkış yap','<p class="pd-text">Kaydedilmemiş değişiklikler var. Çıkınca bu tarayıcıdaki çalışma kapanır.</p>',
+      [['cancel','Vazgeç'],['discard','Kaydetmeden çık'],['save','Buluta kaydet ve çık',true]],{role:'alertdialog'});
+    if(!r||r.v==='cancel')return false;
+    if(r.v==='save'&&!(await saveToCloud()))return false;
   }
-  async function load(){try{list=await listProjects();draw();}catch(e){grid.innerHTML='<p class="pj-empty">Projeler yüklenemedi: '+esc(e.message)+'</p>';}}
-  async function newProject(){
-    if(isDirty()&&!(await confirmBox('Yeni proje','Açık çalışmada kaydedilmemiş değişiklikler var; yeni proje onun yerini alır.','Yeni proje')))return;
-    close();await resetDocument();remember(null);
-  }
-  search.addEventListener('input',draw);
-  sc.addEventListener('click',async e=>{
-    if(e.target===sc){close();return;}
-    const a=e.target.closest('[data-a]'),card=e.target.closest('.pj-card'),p=card&&list.find(x=>x.id===card.dataset.id);
-    if(a&&a.dataset.a==='close'){close();return;}
-    if(a&&a.dataset.a==='new'){close();await saveToCloud({asNew:true});return;}
-    if(a&&a.dataset.a==='newproj'){await newProject();return;}
-    if(!p)return;
-    if(!a&&e.target.closest('.pj-open')){close();await openFromCloud(p.id);return;}
-    if(!a)return;
-    try{
-      if(a.dataset.a==='rename'){const n=await askName('Yeniden adlandır',p.name,'Kaydet');if(!n||n===p.name)return;await renameProject(p.id,n);
-        if(mine()&&cur.id===p.id){remember(Object.assign({},cur,{name:n}));markSaved(n);}toast('Proje yeniden adlandırıldı');}
-      else if(a.dataset.a==='dup'){toast('Çoğaltılıyor…');await duplicateProject(p.id);toast(p.name+' çoğaltıldı');}
-      else if(a.dataset.a==='del'){if(!(await confirmBox('Projeyi sil',p.name+' silinecek. Açıksa çalışman bu tarayıcıda kalır.','Sil')))return;
-        await trashProject(p.id);if(mine()&&cur.id===p.id)remember(null);toast(p.name+' silindi');}
-      await load();
-    }catch(er){toast(er.message);}
-  });
-  if(pre)draw();else await load();
-  sc.querySelector('.pj-search').hidden=list.length<7;  // search only when there is something to search
-  (sc.querySelector('.pj-open')||sc.querySelector('.pj-new')).focus();
+  try{await signOut();await forgetLocal();toast('Çıkış yapıldı');return true;}
+  catch(err){toast('Çıkış yapılamadı: '+err.message);return false;}
 }
 
 saveBtn.addEventListener('click',()=>saveToCloud());
-openBtn.addEventListener('click',()=>openProjects());
 
-export {forgetLocal,openProjects,saveToCloud};
+export {destroyAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction};
