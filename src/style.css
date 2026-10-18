@@ -934,3 +934,15 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .pd-err{margin:6px 0 0;color:var(--danger);font-size:12px}
 @media (max-width:820px){.pj-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pj-bar{flex-wrap:wrap}}
 @media (hover:none){.pj-acts{opacity:1}}
+
+/* the sign-in gate (ui/account.js): covers the studio until the user is signed in */
+.auth-gate{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:16px;background:var(--canvas);overflow:auto}
+.auth-gate.pending{background:var(--canvas)}
+.ag-card{width:380px;max-width:100%;background:var(--panel);border-radius:16px;box-shadow:var(--shadow),0 0 0 1px var(--line);padding:28px 24px 22px}
+.ag-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.01em;margin-bottom:22px}
+.ag-brand img{width:36px;height:36px;border-radius:9px}
+.ag-card h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.ag-sub{margin:6px 0 18px;color:var(--ink-2)}
+.ag-form .si-prov{margin-top:0}
+.ag-form .si-sent-wrap .dfoot{justify-content:center}
+html.gated .toast{z-index:95}

@@ -159,16 +159,22 @@ async function closeProject(){
     if(a==='cancel')return;
     if(a==='save'&&!(await save(false)))return;
   }
+  resetDocument();
+  toast('Proje kapatıldı');
+}
+// an empty document, no file, history and autosave emptied (closing a project; signing out, ui/account.js)
+function resetDocument(){
   doc.assets=[];doc.fonts=[];clearAll();
   past=[];future=[];current=snapshot();currentSig=signature(current);pending='';savedSig=currentSig;syncButtons();
-  fileHandle=null;setFileName('');clearTimeout(saveTimer);autosave(current);
-  toast('Proje kapatıldı');
+  fileHandle=null;setFileName('');clearTimeout(saveTimer);return autosave(current);
 }
 $('#closeProject').addEventListener('click',closeProject);
 
 // Called once after start-up: restores the last session (unless a template was opened) and starts history.
 // Nothing saved (or the last session had no artboards): the document starts empty, with no artboard.
 // The page stays hidden (html.booting) until this is settled, so the default scene never flashes.
+let readyResolve;
+const historyReady=new Promise(r=>{readyResolve=r;});  // the last session is restored (or found empty)
 async function startHistory(templateOpened){
   try{
     if(!templateOpened){
@@ -178,7 +184,7 @@ async function startHistory(templateOpened){
     }
   }finally{document.documentElement.classList.remove('booting');}
   current=snapshot();currentSig=signature(current);syncButtons();
-  setInterval(poll,POLL);
+  setInterval(poll,POLL);readyResolve();
 }
 
 // dev / tests: short description of the stacks (device positions)
@@ -192,4 +198,4 @@ function putDoc(s,name){if(current){past.push(current);future=[];}apply(s);fitAl
 function markSaved(name){fileHandle=null;setFileName(name);savedSig=currentSig;}
 const isDirty=()=>{commitNow();return !!current&&!!(doc.boards.length||doc.assets.length)&&currentSig!==savedSig;};
 
-export {historyInfo,holdHistory,isDirty,markSaved,putDoc,redo,startHistory,takeDoc,undo};
+export {historyInfo,historyReady,holdHistory,isDirty,markSaved,putDoc,redo,resetDocument,startHistory,takeDoc,undo};

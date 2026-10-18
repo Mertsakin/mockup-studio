@@ -11,7 +11,8 @@
     "render": "node tools/render-harness/harness.js renders/out.png tools/render-harness/scenes/default.js",
     "build:site": "node tools/site/build.mjs",
     "storage:dev": "wrangler dev -c services/storage/wrangler.toml --local --port 8787",
-    "accounts:test": "node tools/accounts/test-rls.mjs && node tools/accounts/test-storage.mjs"
+    "accounts:test": "node tools/accounts/test-rls.mjs && node tools/accounts/test-storage.mjs",
+    "dev:accounts": "vite --mode accounts --port 5177 --strictPort"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

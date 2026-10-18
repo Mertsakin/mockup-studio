@@ -11,7 +11,7 @@
 - Hesap silme ve tüm verini indirme.
 
 **Değişmeyenler:**
-- **Hesap isteğe bağlı.** Giriş yapmayan kullanıcı bugünkü gibi her şeyi kullanır; çalışması tarayıcıda kalır. Beta sözü bozulmaz.
+- **Stüdyo giriş ister** (karar 18 Ekim; ilk plan hesabı isteğe bağlı bırakıyordu). Girişsiz açılan stüdyonun yerinde tam ekran bir giriş kartı durur, arkası kullanılamaz (`inert`). Çıkışta ve başka bir hesapla girişte bu tarayıcıdaki çalışma temizlenir (ortak bilgisayarda sonraki kişi öncekinin işini görmesin); kaydedilmemiş değişiklik varsa çıkmadan önce sorulur. Hesap ayarı olmayan yapılar (render düzeneği, testler, `npm run dev`) eskisi gibi girişsiz açılır.
 - **Yerel öncelikli.** Düzenleme sırasında doğruluk kaynağı yine tarayıcıdaki otomatik kayıttır (IndexedDB); bulut onun bir kopyasıdır. İnternet giderse çalışma durmaz, bağlantı gelince eşitlenir.
 - **Render ve dışa aktarım tarayıcıda kalır.** Sunucuya yalnızca proje dosyaları gider.
 

@@ -5,7 +5,7 @@
 import {auth,cloudEnabled,onAuth} from '../io/cloud.js';
 import {createProject,duplicateProject,listProjects,openProject,projectRow,renameProject,saveProject,thumbURL,trashProject} from '../io/cloud-projects.js';
 import {doc,storeActive} from './boards.js';
-import {isDirty,markSaved,putDoc,takeDoc} from './history.js';
+import {historyReady,isDirty,markSaved,putDoc,resetDocument,takeDoc} from './history.js';
 import {icon} from './icons.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
@@ -20,11 +20,22 @@ function showName(){const el=$('#projName');if(cur&&auth.user){el.title='Bulutta
 const mine=()=>cur&&auth.user&&cur.user===auth.user.id?cur:null;
 
 const saveBtn=$('#cloudSaveBtn'),openBtn=$('#cloudOpenBtn');
-if(cloudEnabled)onAuth(a=>{
+/* The work in this browser (the autosave) belongs to whoever signed in with it: signing in as someone else empties it
+   first, so a shared computer never shows one person's work to the next (signing out empties it too: ui/account.js).
+   Work from before accounts (no owner yet) goes to the first one who signs in. */
+const OWNER='shotlight.local.owner';
+const owner=()=>{try{return localStorage.getItem(OWNER);}catch(e){return null;}};
+const setOwner=id=>{try{if(id)localStorage.setItem(OWNER,id);else localStorage.removeItem(OWNER);}catch(e){/* no storage */}};
+if(cloudEnabled)onAuth(async a=>{
   const on=!!a.user;saveBtn.hidden=openBtn.hidden=!on;
-  if(!on&&cur)remember(null);  // signed out: the document stays, it is no longer tied to a project
-  else showName();
+  if(!on){if(cur)remember(null);return;}
+  await historyReady;
+  const o=owner();
+  if(o&&o!==a.user.id){await resetDocument();remember(null);}
+  setOwner(a.user.id);showName();
 });
+// signing out: the document and the autosave are emptied, the work is no longer anyone's here
+async function forgetLocal(){await resetDocument();remember(null);setOwner(null);}
 
 // ---------- small dialogs
 function dialog(title,body,buttons,{role='dialog',cls=''}={}){
@@ -172,4 +183,4 @@ async function openProjects(){
 saveBtn.addEventListener('click',()=>saveToCloud());
 openBtn.addEventListener('click',openProjects);
 
-export {openProjects,saveToCloud};
+export {forgetLocal,openProjects,saveToCloud};

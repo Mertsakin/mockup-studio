@@ -38,11 +38,27 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": [
         "vite",
+        "--mode",
+        "accounts",
         "--port",
         "5177",
         "--strictPort"
       ],
       "port": 5177
+    },
+    {
+      "name": "storage",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "wrangler",
+        "dev",
+        "-c",
+        "services/storage/wrangler.toml",
+        "--local",
+        "--port",
+        "8787"
+      ],
+      "port": 8787
     }
   ]
 }

@@ -1,7 +1,8 @@
-// Signing in with an e-mail link in the studio, end to end, against the local Supabase: the dialog sends the link,
-// the local mail catcher (Mailpit) receives it, the page follows it and comes back signed in (PKCE), the profile shows
-// in the account menu, signing out returns to "Giriş yap". node tools/accounts/test-signin.mjs [studio URL]
-// The studio must run with .env.development.local pointing at the local Supabase (npm run dev, or the "accounts" preview on 5177).
+// Signing in with an e-mail link in the studio, end to end, against the local Supabase: signed out, the gate covers
+// the studio (inert behind it); the gate sends the link, the local mail catcher (Mailpit) receives it, the page follows
+// it and comes back signed in (PKCE), the profile shows in the account menu; signing out brings the gate back and
+// empties this browser's work. node tools/accounts/test-signin.mjs [studio URL]
+// The studio must run with .env.accounts.local pointing at the local Supabase (npm run dev, or the "accounts" preview on 5177).
 import {chromium} from 'playwright';
 import {createClient} from '@supabase/supabase-js';
 import {NODE_OPTS,local} from './local.mjs';
@@ -15,11 +16,11 @@ const errs=[];p.on('pageerror',e=>errs.push(e.message));
 try{
   await p.goto(STUDIO);
   await p.waitForFunction(()=>!document.documentElement.classList.contains('booting'),null,{timeout:60000});
-  ok(await p.isVisible('#signInBtn'),'"Giriş yap" shows in the top bar');
+  await p.waitForSelector('#authGate:not(.pending)',{timeout:15000});
+  ok(await p.isVisible('#authGate .ag-card'),'signed out: the sign-in gate covers the studio');
+  ok(await p.evaluate(()=>!!document.querySelector('#appMenuBtn').closest('[inert]')&&!document.querySelector('#authGate').closest('[inert]')),'the studio behind it is inert, the gate is not');
   ok(await p.evaluate(()=>![...performance.getEntriesByType('resource')].some(r=>/supabase-js|@supabase/.test(r.name))),'supabase-js is not loaded before it is needed');
-  await p.click('#signInBtn');
-  ok(await p.isVisible('#signInScrim .signin-dlg'),'the sign-in dialog opens');
-  if(SHOTS)await p.locator('.signin-dlg').screenshot({path:SHOTS+'/signin.png'});
+  if(SHOTS)await p.screenshot({path:SHOTS+'/gate.png'});
   await p.click('.si-mail .btn');
   ok(await p.isVisible('#siErr')&&/yaz/.test(await p.textContent('#siErr')),'empty address: an inline error, nothing is sent');
   await p.fill('#siEmail','adres');await p.click('.si-mail .btn');
@@ -27,9 +28,9 @@ try{
   await p.fill('#siEmail',email);
   ok(await p.isHidden('#siErr'),'editing the field clears the error');
   await p.click('.si-mail .btn');
-  await p.waitForSelector('#siSent:not([hidden])',{timeout:15000});
+  await p.waitForSelector('#authGate .si-sent-wrap:not([hidden])',{timeout:15000});
   ok(true,'"E-postanı kontrol et" after sending');
-  if(SHOTS)await p.locator('.signin-dlg').screenshot({path:SHOTS+'/signin-sent.png'});
+  if(SHOTS)await p.locator('.ag-card').screenshot({path:SHOTS+'/gate-sent.png'});
   // the local mail catcher
   let link=null;
   for(let i=0;i<30&&!link;i++){
@@ -42,6 +43,9 @@ try{
   await p.goto(link.replace(/&amp;/g,'&'));
   await p.waitForSelector('#acctBtn:not([hidden])',{timeout:20000});
   ok(true,'back in the studio, signed in (avatar in the top bar)');
+  ok(await p.evaluate(()=>!document.querySelector('#authGate')&&!document.querySelector('#appMenuBtn').closest('[inert]')),'the gate is gone and the studio works');
+  // some work to see it emptied on signing out
+  await p.evaluate(()=>{const app=window.__app;if(app&&!app('hasBoard')())app('addBoard')();});
   ok(!/code=/.test(p.url()),'the sign-in code is gone from the address ('+p.url()+')');
   await p.click('#acctBtn');
   ok((await p.textContent('.acct-head span'))===email,'the menu shows the address');
@@ -53,8 +57,11 @@ try{
   await p.reload();await p.waitForSelector('#acctBtn:not([hidden])',{timeout:20000});
   ok(true,'still signed in after a reload');
   await p.click('#acctBtn');await p.click('#acctMenu [data-a="out"]');
-  await p.waitForSelector('#signInBtn:not([hidden])',{timeout:10000});
-  ok(await p.isHidden('#acctBtn'),'signed out: "Giriş yap" again');
+  // unsaved work asks first
+  await p.waitForSelector('text=Kaydetmeden çık',{timeout:5000}).then(()=>p.click('[data-a="discard"]')).catch(()=>{});
+  await p.waitForSelector('#authGate:not(.pending)',{timeout:10000});
+  ok(await p.isHidden('#acctBtn'),'signed out: the gate is back');
+  ok(await p.evaluate(()=>!window.__app||window.__app('doc').boards.length===0),'and this browser\'s work is emptied');
   ok(!errs.length,'no page errors'+(errs.length?': '+errs.join(' | '):''));
 }finally{
   const u=(await admin.auth.admin.listUsers()).data.users.find(x=>x.email===email);if(u)await admin.auth.admin.deleteUser(u.id);

@@ -1,6 +1,6 @@
 # Lansman kurulumu: ücretsiz beta
 
-*18 Ekim 2026 · hesapsız, ücretsiz beta. Hesap ve ödeme v2'de.*
+*18 Ekim 2026 · ücretsiz beta. Stüdyo giriş ister (karar 18 Ekim; hesaplar `docs/uyelik.md`), bu yüzden lansman canlı Supabase'i ve depolama Worker'ını da bekler (`docs/uyelik.md` §10). Ödeme sonra.*
 
 Bu belge, hesapları senin açacağın, gerisini komutlarla kuracağın adımları sırayla veriyor. Kod tarafı hazır:
 
