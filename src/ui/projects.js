@@ -26,13 +26,19 @@ const saveBtn=$('#cloudSaveBtn'),openBtn=$('#cloudOpenBtn');
 const OWNER='shotlight.local.owner';
 const owner=()=>{try{return localStorage.getItem(OWNER);}catch(e){return null;}};
 const setOwner=id=>{try{if(id)localStorage.setItem(OWNER,id);else localStorage.removeItem(OWNER);}catch(e){/* no storage */}};
+let launched=false;  // the launcher has had its chance in this page (reset on signing out)
 if(cloudEnabled)onAuth(async a=>{
   const on=!!a.user;saveBtn.hidden=openBtn.hidden=!on;
-  if(!on){if(cur)remember(null);return;}
+  if(!on){launched=false;if(cur)remember(null);return;}
   await historyReady;
   const o=owner();
   if(o&&o!==a.user.id){await resetDocument();remember(null);}
   setOwner(a.user.id);showName();
+  // starting the studio signed in (a sign-in or a reload): the projects first when there are any; none: the welcome
+  // card (an empty document shows it) or the work that is already open here. A template link opens the template.
+  if(launched||/[?&]template=/.test(location.search))return;
+  launched=true;
+  try{const l=await listProjects();if(l.length)openProjects({launcher:true,list:l});}catch(e){console.warn('Projeler alınamadı:',e);}
 });
 // signing out: the document and the autosave are emptied, the work is no longer anyone's here
 async function forgetLocal(){await resetDocument();remember(null);setOwner(null);}
@@ -126,25 +132,30 @@ async function openFromCloud(id,{force=false}={}){
 const ago=t=>{const s=(Date.now()-new Date(t).getTime())/1000;
   if(s<60)return 'az önce';if(s<3600)return Math.floor(s/60)+' dk önce';if(s<86400)return Math.floor(s/3600)+' sa önce';if(s<172800)return 'dün';
   return new Date(t).toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:new Date(t).getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
-async function openProjects(){
+/* The project list. As a dialog ("Projelerim…"), or as the launcher: full screen, shown when a signed-in user who has
+   cloud projects starts the studio (pre-loaded list). Either way the last card starts a new project: the document is
+   emptied and the welcome card takes over (asks first when the open work has unsaved changes). */
+async function openProjects({launcher=false,list:pre=null}={}){
   if(!auth.user){toast('Projelerin için giriş yap.');return;}
-  const sc=document.createElement('div');sc.className='scrim';sc.id='projectsScrim';
-  sc.innerHTML='<div class="dialog projects-dlg" role="dialog" aria-modal="true" aria-labelledby="pjT">'+
-    '<div class="dh"><span id="pjT">Projelerim</span><button class="ib sm" type="button" data-a="close" aria-label="Kapat">'+icon('close-circle')+'</button></div>'+
-    '<div class="db"><div class="pj-bar"><label class="fld pj-search">'+icon('magnifer',14)+'<input type="search" id="pjSearch" placeholder="Projelerde ara" aria-label="Projelerde ara"></label>'+
-    '<button class="btn primary" type="button" data-a="new">'+icon('cloud-check',14)+'<span>Şu anki çalışmayı yeni proje olarak kaydet</span></button></div>'+
+  if(document.getElementById('projectsScrim'))return;
+  const sc=document.createElement('div');sc.className='scrim'+(launcher?' launcher':'');sc.id='projectsScrim';
+  sc.innerHTML='<div class="dialog projects-dlg'+(launcher?' launcher-dlg':'')+'" role="dialog" aria-modal="true" aria-labelledby="pjT">'+
+    '<div class="dh"><span id="pjT">'+(launcher?'Projelerin':'Projelerim')+'</span><button class="ib sm" type="button" data-a="close" aria-label="Kapat">'+icon('close-circle')+'</button></div>'+
+    '<div class="db">'+(launcher?'<p class="pj-lead">Kaldığın projeyi aç ya da yeni bir proje başlat.</p>':'')+
+    '<div class="pj-bar"><label class="fld pj-search">'+icon('magnifer',14)+'<input type="search" id="pjSearch" placeholder="Projelerde ara" aria-label="Projelerde ara"></label>'+
+    (launcher?'':'<button class="btn" type="button" data-a="new">'+icon('cloud-check',14)+'<span>Şu anki çalışmayı yeni proje olarak kaydet</span></button>')+'</div>'+
     '<div class="pj-grid" id="pjGrid" aria-live="polite"><p class="pj-empty">Yükleniyor…</p></div></div></div>';
   document.body.appendChild(sc);
   const grid=sc.querySelector('#pjGrid'),search=sc.querySelector('#pjSearch');
-  let list=[];
+  let list=pre||[];
   const close=()=>{sc.remove();document.removeEventListener('keydown',key,true);};
   const key=e=>{if(e.key==='Escape'&&!document.querySelector('.scrim:not(#projectsScrim)')){e.preventDefault();e.stopPropagation();close();}};
   document.addEventListener('keydown',key,true);
   function draw(){
     const q=search.value.trim().toLocaleLowerCase('tr'),shown=list.filter(p=>!q||p.name.toLocaleLowerCase('tr').includes(q)),open=mine();
-    if(!list.length){grid.innerHTML='<p class="pj-empty">Bulutta henüz projen yok. Şu anki çalışmanı kaydederek başla.</p>';return;}
-    if(!shown.length){grid.innerHTML='<p class="pj-empty">Bu aramayla eşleşen proje yok.</p>';return;}
     grid.innerHTML='';
+    if(!list.length)grid.innerHTML='<p class="pj-empty">Bulutta henüz projen yok. Yeni bir proje başlat ya da şu anki çalışmanı kaydet.</p>';
+    else if(!shown.length)grid.innerHTML='<p class="pj-empty">Bu aramayla eşleşen proje yok.</p>';
     for(const p of shown){
       const c=document.createElement('div');c.className='pj-card';c.dataset.id=p.id;
       c.innerHTML='<button class="pj-open" type="button"><span class="pj-thumb">'+icon('gallery-wide',24)+'</span><span class="pj-name"></span><span class="pj-meta"></span></button>'+
@@ -157,14 +168,23 @@ async function openProjects(){
       grid.appendChild(c);
       thumbURL(p).then(u=>{if(!u)return;const t=c.querySelector('.pj-thumb');t.innerHTML='<img alt="">';t.firstChild.src=u;}).catch(()=>{});
     }
+    // the last card: a new project
+    const n=document.createElement('button');n.type='button';n.className='pj-new';n.dataset.a='newproj';
+    n.innerHTML='<span class="pj-new-ic">'+icon('add-circle',28)+'</span><span class="pj-name">Yeni proje oluştur</span><span class="pj-meta">Boş tuval, şablonlar, site yakalama</span>';
+    grid.appendChild(n);
   }
   async function load(){try{list=await listProjects();draw();}catch(e){grid.innerHTML='<p class="pj-empty">Projeler yüklenemedi: '+esc(e.message)+'</p>';}}
+  async function newProject(){
+    if(isDirty()&&!(await confirmBox('Yeni proje','Açık çalışmada kaydedilmemiş değişiklikler var; yeni proje onun yerini alır.','Yeni proje')))return;
+    close();await resetDocument();remember(null);
+  }
   search.addEventListener('input',draw);
   sc.addEventListener('click',async e=>{
     if(e.target===sc){close();return;}
     const a=e.target.closest('[data-a]'),card=e.target.closest('.pj-card'),p=card&&list.find(x=>x.id===card.dataset.id);
     if(a&&a.dataset.a==='close'){close();return;}
     if(a&&a.dataset.a==='new'){close();await saveToCloud({asNew:true});return;}
+    if(a&&a.dataset.a==='newproj'){await newProject();return;}
     if(!p)return;
     if(!a&&e.target.closest('.pj-open')){close();await openFromCloud(p.id);return;}
     if(!a)return;
@@ -177,10 +197,12 @@ async function openProjects(){
       await load();
     }catch(er){toast(er.message);}
   });
-  await load();search.focus();
+  if(pre)draw();else await load();
+  sc.querySelector('.pj-search').hidden=list.length<7;  // search only when there is something to search
+  (sc.querySelector('.pj-open')||sc.querySelector('.pj-new')).focus();
 }
 
 saveBtn.addEventListener('click',()=>saveToCloud());
-openBtn.addEventListener('click',openProjects);
+openBtn.addEventListener('click',()=>openProjects());
 
 export {forgetLocal,openProjects,saveToCloud};

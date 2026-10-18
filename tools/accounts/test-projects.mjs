@@ -54,9 +54,9 @@ try{
   ok(A.mediaPuts===puts&&(await row())[0].version===2,'saving again: version 2, no media uploaded again');
 
   const B=await studio('B');
-  await B.click('#acctBtn');await B.click('#acctMenu [data-a="projects"]');
-  await B.waitForSelector('.pj-card');
-  ok((await B.$$('.pj-card')).length===1&&/Test projesi/.test(await B.textContent('.pj-card .pj-name')),'B: Projelerim lists the project');
+  // B signs in with a project in the cloud: the launcher lists it
+  await B.waitForSelector('#projectsScrim.launcher .pj-card',{timeout:15000});
+  ok((await B.$$('.pj-card')).length===1&&/Test projesi/.test(await B.textContent('.pj-card .pj-name')),'B: the launcher lists the project (and a new project card)');
   await B.waitForSelector('.pj-thumb img',{timeout:10000}).catch(()=>{});
   ok(await B.$('.pj-thumb img')!==null,'with its thumbnail');
   if(SHOTS)await B.locator('.projects-dlg').screenshot({path:SHOTS+'/projects.png'});
