@@ -424,6 +424,10 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .tl-time{min-width:100px;text-align:center;font-weight:500}
 .tl-time span{color:var(--muted);font-weight:400}
 .tl-fps{margin-left:8px;color:var(--muted)}
+.tl-zoom{display:inline-flex;align-items:center;gap:2px;color:var(--muted);font-size:11px}
+.tl-zoom #tlZoom{min-width:28px;text-align:center}
+.tl-zoom .ib:disabled{opacity:.35}
+.tl-sep{width:1px;height:16px;background:var(--line);margin:0 6px}
 .btn.sm{height:24px;padding:0 8px;font-size:11px}
 .tl-body{position:relative;display:grid;grid-template-columns:236px minmax(0,1fr);min-height:0;overflow-x:hidden;overflow-y:auto}
 .tl-names{border-right:1px solid var(--line)}
@@ -451,11 +455,12 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .tl-name .caret{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;flex:none}
 .tl-name .caret:hover{background:var(--field)}
 .tl-name.subrow{height:26px;padding-left:46px;color:var(--muted);font-size:11px}
-.tl-lanes{position:relative;min-width:0}
+.tl-lanes{position:relative;min-width:0;overflow:hidden}  /* zoomed in: what is scrolled out stays out */
 .ruler{position:relative;height:24px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
 .tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--line)}
 .tick span{position:absolute;left:4px;top:5px;font-size:10px;color:var(--muted);white-space:nowrap}
 .tick.minor{top:16px}
+.tick.frame{top:20px;border-color:color-mix(in srgb,var(--line) 70%,transparent)}
 .lane{position:relative;height:32px;border-bottom:1px solid var(--line);background:var(--track)}
 .lane.sel{background:color-mix(in srgb,var(--accent-soft) 60%,var(--track))}
 .lane.subl{height:26px;background:var(--panel)}
@@ -488,7 +493,7 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .kpop .ib.sm[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent-soft)}
 .kpop .ib.sm:disabled{opacity:.35}
 .kpop .ib.sm.del:hover{color:var(--danger)}
-.kpop .tip{top:auto;bottom:calc(100% + 6px)}
+.kpop.below .tip{top:auto;bottom:calc(100% + 6px)}  /* the lanes clip: tips go down from a card above a row, up from one below it */
 .kpop .eases button:hover>.tip{opacity:1;transition-delay:.4s}
 .dmark{position:absolute;top:6px;width:20px;height:20px;margin-left:-10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--accent);pointer-events:none}
 .kf{position:absolute;top:9px;width:14px;height:14px;margin-left:-7px;padding:0;cursor:ew-resize;z-index:3}  /* above the duration handle: a key at the end stays clickable */

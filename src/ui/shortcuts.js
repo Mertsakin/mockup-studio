@@ -18,7 +18,7 @@ const SHEET=[
   ['Sıra',[[C+' ]','Öne'],[C+' [','Arkaya'],[S+' '+C+' ]','En öne'],[S+' '+C+' [','En arkaya']]],
   ['Görünüm',[['Z basılı','Yakınlaştır: tıkla ya da alan sürükle; '+O+' ile tıkla uzaklaş'],[S+' F','Seçili cihaza odaklan'],[S+' 1','Tüm artboardlar'],[S+' 2','Etkin artboard'],[C+' tekerlek','Yakınlaştır'],[O+' tekerlek','Kamera yakınlığı']]],
   ['Animasyon (Canlandır)',[['Boşluk','Oynat / durdur'],['K','Anahtar kare'],['← →','Bir kare ('+S+' 1 sn)'],['Home','Başa dön'],
-    [S+' / '+C+' + tık','Anahtar seçimine ekle / çıkar'],['Sürükle (boş alan)','Çerçeve ile anahtar seç'],[C+' A','Katmanın tüm anahtarları (çizelgede)'],['↑ ↓','Önceki / sonraki anahtar kare'],['Çift tık (satır)','O anda anahtar kare'],['⌥ ← →','Seçili anahtarları bir kare kaydır ('+S+' 1 sn)'],['Sil','Seçili anahtarları sil'],['Esc','Anahtar seçimini bırak']]],
+    [S+' / '+C+' + tık','Anahtar seçimine ekle / çıkar'],['Sürükle (boş alan)','Çerçeve ile anahtar seç'],[C+' A','Katmanın tüm anahtarları (çizelgede)'],['↑ ↓','Önceki / sonraki anahtar kare'],['Çift tık (satır)','O anda anahtar kare'],[C+' + tekerlek','Zaman eksenini yakınlaştır'],['Yatay tekerlek','Zaman eksenini kaydır'],[S+' 1','Çizelgeyi sığdır (çizelgede)'],['⌥ ← →','Seçili anahtarları bir kare kaydır ('+S+' 1 sn)'],['Sil','Seçili anahtarları sil'],['Esc','Anahtar seçimini bırak']]],
   ['Dosya',[[C+' S','Kaydet'],[S+' '+C+' S','Farklı kaydet'],[C+' O','Aç'],['?','Bu liste']]]
 ];
 function openSheet(){

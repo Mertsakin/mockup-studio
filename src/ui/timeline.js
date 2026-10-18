@@ -32,7 +32,11 @@ import {$,$$} from '../util.js';
    Editing: a card above the selection (drawCard): the time (typed: seconds, or frames as "36k"; Enter moves the
    selection there), the ease to the next key (mixed when they differ; off when every selected key is the last of its
    value), the design frame (one time, one target) and Sil. Clicking the bar between two keys selects that transition
-   (A.seg) and the card shows its ease; a wide bar draws the ease's curve. The inspector has no key section. */
+   (A.seg) and the card shows its ease; a wide bar draws the ease's curve. The inspector has no key section.
+   View: ⌘ / Ctrl + wheel (and a pinch) zooms the time axis around the pointer, 1× (the whole duration) to 20×; a
+   horizontal wheel pans while zoomed; − / + / ⤢ in the bar and ⇧1 (while the last press was in the timeline) fit.
+   The ruler's labels thin out as the axis shrinks and frame ticks appear when a frame is wide enough; while playing
+   or seeking the playhead is kept in view (the view pages forward). Zoom and scroll are editor state here. */
 const tl=$('#timeline'),names=$('#tlNames'),lanes=$('#tlLanes');
 const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Yatış',scale:'Ölçek',lidAngle:'Kapak açısı',scroll:'Kaydırma',
   x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık',
@@ -73,7 +77,21 @@ const iconOf=o=>{switch(kindOf(o)){case 'camera':return 'camera';case 'light':re
 
 /* ---------- geometry */
 const W=()=>Math.max(40,lanes.clientWidth-44);
-const xOf=t=>12+t/state.anim.dur*W(),tOf=x=>Math.max(0,Math.min(state.anim.dur,(x-12)/W()*state.anim.dur));
+// the time axis: zoom 1 shows the whole duration in W; scroll is the hidden part on the left, in px
+const view={zoom:1,scroll:0},ZOOM_MAX=20;
+let dragging=false;  // a pointer drag in the timeline (the view does not page meanwhile)
+const pps=()=>W()/state.anim.dur*view.zoom;  // px per second
+const maxScroll=()=>Math.max(0,state.anim.dur*pps()-W());
+const xOf=t=>12+t*pps()-view.scroll,tOf=x=>Math.max(0,Math.min(state.anim.dur,(x-12+view.scroll)/pps()));
+// zooms so the time under x (px in the lanes) stays put
+function setZoom(z,x){
+  const cx=x===undefined?12+W()/2:x,t=tOf(cx);view.zoom=Math.max(1,Math.min(ZOOM_MAX,z));
+  view.scroll=Math.max(0,Math.min(maxScroll(),t*pps()+12-cx));draw(true);
+}
+function setScroll(s){const v=Math.max(0,Math.min(maxScroll(),s));if(v!==view.scroll){view.scroll=v;draw(true);}}
+// the ruler's label step: the widest that keeps labels ~110 px apart; frames when a frame is wide enough
+function tickStep(){const p=pps();for(const s of [5/fps(),.25,.5,1,2,5,10])if(s*p>=110)return s;return 10;}
+const fmtTick=s=>(Number.isInteger(s)?String(s):fmtT(s))+' sn';
 
 /* ---------- drawing: the structure is rebuilt only when it changes; the playhead moves every frame */
 let sig='';
@@ -95,10 +113,13 @@ function build(){
   names.innerHTML='<div class="ruler-pad"></div>';lanes.innerHTML='';
   // ruler
   const ruler=document.createElement('div');ruler.className='ruler';
-  const step=dur>15?2:1;let h='';
-  for(let s=0;s<=dur+1e-6;s+=step)h+='<div class="tick" style="left:'+xOf(s)+'px"><span>'+s+' sn</span></div>';
-  for(let s=step/2;s<dur;s+=step)h+='<div class="tick minor" style="left:'+xOf(s)+'px"></div>';
+  view.scroll=Math.min(view.scroll,maxScroll());
+  const step=tickStep(),vis=t=>{const x=xOf(t);return x>-40&&x<lanes.clientWidth+40;};let h='';
+  for(let s=0;s<=dur+1e-6;s+=step)if(vis(s))h+='<div class="tick" style="left:'+xOf(s)+'px"><span>'+fmtTick(+s.toFixed(4))+'</span></div>';
+  for(let s=step/2;s<dur;s+=step)if(vis(s))h+='<div class="tick minor" style="left:'+xOf(s)+'px"></div>';
+  if(pps()/fps()>=7)for(let f=1;f<dur*fps();f++){const t=f/fps();if(vis(t)&&Math.abs(t/(step/2)-Math.round(t/(step/2)))>1e-6)h+='<div class="tick frame" style="left:'+xOf(t)+'px"></div>';}
   ruler.innerHTML=h;lanes.appendChild(ruler);ruler.addEventListener('pointerdown',scrub);
+  $('#tlZoom').textContent=(+view.zoom.toFixed(1))+'×';$('#tlZoomOut').disabled=view.zoom<=1;$('#tlZoomIn').disabled=view.zoom>=ZOOM_MAX;$('#tlFit').disabled=view.zoom<=1;
   R.forEach(({d,name,prop})=>{
     const ref=refOf(d);
     // name cell
@@ -197,7 +218,11 @@ function drawCard(){
   const dl=p.querySelector('#kpDel');if(dl)dl.addEventListener('click',()=>deleteSelected());
   p.addEventListener('pointerdown',e=>e.stopPropagation());
 }
+let headT=-1;  // the playhead's time at the last draw: the view pages only when the playhead moved (not on a pan or zoom)
 function moveHead(){
+  // zoomed in: when the playhead moves out of the view, the view pages so it sits near the left edge
+  if(view.zoom>1&&!dragging&&A.t!==headT){const x=xOf(A.t);if(x<12||x>12+W()){view.scroll=Math.max(0,Math.min(maxScroll(),A.t*pps()-W()*.1));build();}}
+  headT=A.t;
   const ph=$('#tlPh');if(ph)ph.style.left=xOf(A.t)+'px';
   $('#tlTime').innerHTML=fmtT(A.t)+' <span>/ '+fmtT(state.anim.dur)+' sn</span>';
   names.querySelectorAll('.subrow[data-prop]').forEach(n=>{const d=byRef(n.dataset.ref);if(d)n.querySelector('.sub').textContent=fmtV(d,n.dataset.prop,d[n.dataset.prop]);});
@@ -242,8 +267,8 @@ function pickTarget(o,keepKey){
   if(!keepKey)selectKey(null);else draw();
 }
 function loop(e,move,up){
-  const mv=ev=>move(ev),u=ev=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',u);removeEventListener('pointercancel',u);if(up)up(ev);};
-  addEventListener('pointermove',mv);addEventListener('pointerup',u);addEventListener('pointercancel',u);move(e);
+  const mv=ev=>move(ev),u=ev=>{dragging=false;removeEventListener('pointermove',mv);removeEventListener('pointerup',u);removeEventListener('pointercancel',u);if(up)up(ev);};
+  dragging=true;addEventListener('pointermove',mv);addEventListener('pointerup',u);addEventListener('pointercancel',u);move(e);
 }
 // the playhead snaps to keys and whole seconds within 6 px, otherwise to frames
 function scrub(e){
@@ -277,7 +302,7 @@ function dragKey(e,d,t0,prop){
   else if(!was)selectKey(ref,t0,prop);
   const x0=e.clientX,ph=A.t;let moved=false,cur=t0;
   loop(e,ev=>{if(!moved&&Math.abs(ev.clientX-x0)<4)return;moved=true;
-    const want=snapNear(t0+(ev.clientX-x0)/W()*state.anim.dur,ev,ph);
+    const want=snapNear(t0+(ev.clientX-x0)/pps(),ev,ph);
     cur+=moveSelected(want-cur);seek(cur);},
     // a plain click on an already selected diamond (no drag): the selection shrinks to it
     ()=>{guide(null);if(!moved){seek(t0);if(!add&&was)selectKey(ref,t0,prop);}});
@@ -314,13 +339,21 @@ function marquee(e,d,prop){
 function dragFx(e,it,ph){
   if(e.button!==0)return;e.preventDefault();e.stopPropagation();stop();pickTarget(it);
   const f=it.fx[ph],t0=f.t,x0=e.clientX;
-  loop(e,ev=>{const t=t0+(ev.clientX-x0)/W()*state.anim.dur;f.t=Math.max(0,Math.min(state.anim.dur-f.dur,Math.round(t*fps())/fps()));
+  loop(e,ev=>{const t=t0+(ev.clientX-x0)/pps();f.t=Math.max(0,Math.min(state.anim.dur-f.dur,Math.round(t*fps())/fps()));
     renderItems();syncAll();draw();});
 }
 function dragEnd(e){
-  if(e.button!==0)return;e.preventDefault();e.stopPropagation();const d0=state.anim.dur,x0=e.clientX,w=W();
-  loop(e,ev=>{setDuration(Math.round((d0+(ev.clientX-x0)/w*d0)*2)/2);draw(true);});
+  if(e.button!==0)return;e.preventDefault();e.stopPropagation();const d0=state.anim.dur,x0=e.clientX,p=pps();
+  loop(e,ev=>{setDuration(Math.round((d0+(ev.clientX-x0)/p)*2)/2);draw(true);});
 }
+// view: the bar's buttons, ⌘ + wheel zoom around the pointer, horizontal wheel pan (vertical stays the rows' scroll)
+$('#tlZoomIn').addEventListener('click',()=>setZoom(view.zoom*1.5));
+$('#tlZoomOut').addEventListener('click',()=>setZoom(view.zoom/1.5));
+$('#tlFit').addEventListener('click',()=>setZoom(1));
+$('#tlBody').addEventListener('wheel',e=>{
+  if(e.metaKey||e.ctrlKey){e.preventDefault();const r=lanes.getBoundingClientRect();setZoom(view.zoom*Math.exp(-e.deltaY*.01),e.clientX-r.left);}
+  else if(view.zoom>1&&Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setScroll(view.scroll+e.deltaX);}
+},{passive:false});
 $('#tlStart').addEventListener('click',()=>{stop();seek(0);});
 $('#tlPlay').addEventListener('click',play);
 $('#tlLoop').addEventListener('click',()=>{state.anim.loop=!state.anim.loop;draw();});
@@ -422,6 +455,7 @@ addEventListener('keydown',e=>{
   if(mod&&!e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='a'&&ui.tlFocus){stopIt();selectAllKeys(cur());return;}
   if(e.altKey&&!mod&&arrow&&A.sel.length){stopIt();stop();moveSelected((e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:1/fps()));return;}
   if(e.key==='Escape'&&(A.sel.length||A.seg)&&ui.tlFocus){stopIt();selectKey(null);return;}
+  if(e.shiftKey&&e.code==='Digit1'&&!mod&&!e.altKey&&ui.tlFocus){stopIt();setZoom(1);return;}
   if(mod||e.altKey)return;
   if(e.code==='Space'){stopIt();if(!e.repeat)play();}
   else if(e.key==='Home'){stopIt();stop();seek(0);}
