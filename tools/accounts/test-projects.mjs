@@ -28,7 +28,7 @@ async function studio(tag){
   await p.goto(STUDIO);
   await p.waitForFunction(()=>window.__app&&!document.documentElement.classList.contains('booting'),null,{timeout:60000});
   await p.evaluate(async([e,pw])=>{const c=await window.__app('client')();const r=await c.auth.signInWithPassword({email:e,password:pw});if(r.error)throw r.error;},[email,password]);
-  await p.waitForSelector('#acctBtn:not([hidden])');
+  await p.waitForSelector('#acctBtn:not([hidden])',{state:'attached'});
   return p;
 }
 const toastHas=(p,re)=>p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#toast').textContent),re.source,{timeout:30000});
@@ -37,7 +37,7 @@ const row=async()=>(await admin.from('projects').select('*').eq('owner',uid).is(
 try{
   const A=await studio('A');
   // a first sign-in lands on the home page: A starts with a blank canvas
-  await A.waitForSelector('#home [data-a="blank"]',{timeout:15000});await A.click('#home [data-a="blank"]');await A.waitForSelector('#home',{state:'detached'});
+  await A.waitForSelector('#home [data-a="blank"]',{timeout:15000});await A.click('#home [data-a="blank"]');await A.click('#wlBlank');await A.waitForSelector('#home',{state:'detached'});
   // a board with a screenshot on the phone
   await A.evaluate(async()=>{const app=window.__app;if(!app('hasBoard')())app('addBoard')();const st=app('state'),d=st.devices[0];
     const i=new Image();i.src='/tools/landing/src/app-light.png';await i.decode();d.img=i;d.imgName='ekran.png';app('setScreenTexture')(d);app('req')();});

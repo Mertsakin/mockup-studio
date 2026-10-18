@@ -2,7 +2,7 @@
    in, and where the editor's "Ana sayfa" goes back to. A full-screen layer over the editor (the editor behind is inert).
      sidebar   the account (theme, shortcuts, signing out), search, Son kullanılanlar / Projelerim / Şablonlar /
                Çöp kutusu, the storage used
-     top bar   back / forward between views; "Projeye dön" while a document is open; the goals on the right
+     top bar   back / forward between views; the goals on the right
                (Açılış görseli, Sosyal, Mağaza seti, Video: each starts a new, empty project and opens the welcome card
                with that goal, i.e. the address field and the drop area; the store set opens its form)
      content   recommended templates, one row of four ("Bir şablonla başla" for an account without projects), then the
@@ -77,20 +77,19 @@ function frame(){
   const p=auth.profile||{},name=p.name||(auth.user.email||'').split('@')[0],ini=name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const used=p.storage_bytes||0,cap=2*2**30;
   el.innerHTML='<aside class="hm-side" aria-label="Gezinme">'+
-      '<button class="hm-me" type="button" data-a="me" aria-haspopup="menu"><span class="hm-av">'+(p.avatar_url?'<img alt="" referrerpolicy="no-referrer">':esc(ini))+'</span>'+
-        '<span class="hm-mt"><b>'+esc(name)+'</b><span>Beta · ücretsiz</span></span>'+icon('alt-arrow-down',14)+'</button>'+
+      '<div class="hm-logo"><img src="favicon.svg" alt="" width="30" height="30"><b>Shotlight</b><span>studio</span></div>'+
       '<label class="hm-search">'+icon('magnifer',14)+'<input type="search" id="hmQ" placeholder="Ara" aria-label="Projelerde ve şablonlarda ara"></label>'+
       ['recent:clock-circle','all:folder','templates:widget','trash:trash-bin-minimalistic'].map(x=>{const [v,ic]=x.split(':');
         return '<button class="hm-nav" type="button" data-view="'+v+'">'+icon(ic,16)+'<span>'+TITLES[v]+'</span><span class="hm-n" data-count="'+v+'"></span></button>';}).join('')+
       '<span class="hm-grow"></span>'+
-      '<div class="hm-store"><b>Depolama</b><div class="hm-bar"><i style="width:'+Math.min(100,used/cap*100).toFixed(1)+'%"></i></div><span>'+mb(used)+' / 2 GB kullanılıyor</span></div>'+
-      '<div class="hm-brand"><img src="favicon.svg" alt="" width="16" height="16">Shotlight · beta</div>'+
+      '<div class="hm-foot"><div class="hm-store"><div class="hm-bar"><i style="width:'+Math.min(100,used/cap*100).toFixed(1)+'%"></i></div><span>'+mb(used)+' / 2 GB kullanılıyor</span></div>'+
+      '<button class="hm-me" type="button" data-a="me" aria-haspopup="menu"><span class="hm-av">'+(p.avatar_url?'<img alt="" referrerpolicy="no-referrer">':esc(ini))+'</span>'+
+        '<span class="hm-mt"><b>'+esc(name)+'</b><span>Beta · ücretsiz</span></span>'+icon('alt-arrow-up',14)+'</button></div>'+
     '</aside>'+
     '<main class="hm-main"><header class="hm-top">'+
       '<button class="hm-ib" type="button" data-a="back" aria-label="Geri">'+icon('alt-arrow-left',16)+'</button>'+
       '<button class="hm-ib" type="button" data-a="fwd" aria-label="İleri">'+icon('alt-arrow-right',16)+'</button>'+
       '<h1 id="hmTitle"></h1><span class="hm-sp"></span>'+
-      '<button class="hm-back" type="button" data-a="return" id="hmReturn" hidden>'+icon('alt-arrow-left',14)+'Projeye dön</button>'+
       '<div class="hm-goals" role="group" aria-label="Yeni proje başlat">'+GOALS.map(([g,n,ic,c])=>'<button class="hm-goal" type="button" data-goal="'+g+'"><span class="hm-gi '+c+'">'+icon(ic,12)+'</span>'+n+'</button>').join('')+
         '</div>'+
     '</header><div class="hm-scroll" id="hmBody"></div></main>';
@@ -157,7 +156,6 @@ function draw(){
   el.querySelectorAll('.hm-nav').forEach(n=>n.setAttribute('aria-current',n.dataset.view===view?'page':'false'));
   el.querySelector('#hmTitle').textContent=TITLES[view];
   el.querySelector('[data-a="back"]').disabled=!past.length;el.querySelector('[data-a="fwd"]').disabled=!ahead.length;
-  el.querySelector('#hmReturn').hidden=!doc.boards.length;
   const n=el.querySelector('[data-count="all"]');n.textContent=projects&&projects.length?projects.length:'';
   const body=el.querySelector('#hmBody');
   if(!projects){body.innerHTML='<p class="hm-empty">Yükleniyor…</p>';return;}
@@ -224,11 +222,6 @@ async function startTemplate(t){
   finally{holdHistory(false);}
   fillThumbs();
 }
-async function blank({capture=false}={}){
-  if(!(await newProject()))return;
-  hideHome();
-  if(capture){const u=$('#wlUrl');if(u&&!$('#wlUrlRow').hidden)u.focus();else toast('Site yakalama bu sürümde kapalı.');}
-}
 /* a goal: the welcome card as a window over the home page, that goal chosen (the store set: its form). Nothing changes
    until the user starts: then the open work makes way for a new project (asking when it has unsaved changes); once
    the scenes are kept the editor opens on them. Closing the window leaves everything as it was. */
@@ -252,12 +245,12 @@ function onClick(e){
   const tp=t.closest('[data-tpl]');if(tp){const x=tpls.find(y=>y.id===tp.dataset.tpl);if(x)startTemplate(x);return;}
   const a=t.closest('[data-a]');
   if(a){switch(a.dataset.a){
-    case 'return':hideHome();return;
+    case 'return':hideHome();return;  // the open work's card
     case 'back':if(past.length){ahead.push(view);go(past.pop(),{push:false});}return;
     case 'fwd':if(ahead.length){past.push(view);go(ahead.pop(),{push:false});}return;
     case 'recShift':recShift+=4;draw();return;
     case 'recClose':prefs.recClosed=true;savePrefs();draw();return;
-    case 'blank':blank();return;
+    case 'blank':openWelcome('land',hooks());return;  // the welcome card as a window, as the goals
     case 'sort':openMenu(a,[['edited','Son düzenlenen'],['name','Ada göre'],['created','Oluşturulma']].map(([k,l])=>({label:l,on:prefs.sort===k,run:()=>{prefs.sort=k;savePrefs();draw();}})));return;
     case 'me':{const th=document.documentElement.dataset.theme||'system';
       openMenu(a,[{label:'Tema: sistem',on:th==='system',run:()=>theme('system')},{label:'Tema: açık',on:th==='light',run:()=>theme('light')},{label:'Tema: koyu',on:th==='dark',run:()=>theme('dark')},

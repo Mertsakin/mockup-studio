@@ -51,11 +51,6 @@
     <span class="grow"></span>
     <button class="ib narrow-only" type="button" id="rightDrawerBtn" aria-label="Özellikler" aria-expanded="false" aria-controls="inspector"><span data-icon="settings"></span></button>
     <!-- the account (ui/account.js); hidden in a build without accounts -->
-    <div class="menu-wrap acct" id="acctWrap" hidden>
-      <button class="btn" id="signInBtn" type="button">Giriş yap</button>
-      <button class="acct-btn" id="acctBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Hesap" hidden></button>
-      <div class="menu acct-menu" id="acctMenu" role="menu" hidden></div>
-    </div>
     <label class="ib tb-toggle" aria-label="Canlı fotoğraf önizlemesi"><input type="checkbox" id="photoPreview" role="switch"><span data-icon="magic-stick-3" data-size="18"></span><span class="tip">Canlı fotoğraf: kamera durunca önizleme fotoğraf kalitesine geçer (GPU'yu yoğun kullanır)</span></label>
     <div class="menu-wrap">
       <button class="btn primary" id="exportMenuBtn" type="button" aria-haspopup="dialog" aria-expanded="false">Dışa aktar</button>
@@ -140,6 +135,12 @@
           <h3 class="sh">Hazır kompozisyonlar</h3>
           <div class="chips" id="comps"></div>
         </section>
+      </div>
+      <!-- the account (ui/account.js): avatar, name and the storage used; its menu opens upwards -->
+      <div class="menu-wrap acct acct-foot" id="acctWrap" hidden>
+        <button class="btn" id="signInBtn" type="button">Giriş yap</button>
+        <button class="acct-btn" id="acctBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Hesap" hidden></button>
+        <div class="menu acct-menu" id="acctMenu" role="menu" hidden></div>
       </div>
     </aside>
 

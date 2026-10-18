@@ -29,11 +29,11 @@ try{
   ok(await p.evaluate(()=>!!document.querySelector('#leftPanel,#appMenuBtn').closest('[inert]')),'the editor behind it is inert');
   ok(await p.isVisible('.hm-empty >> text=Henüz projen yok'),'and "Henüz projen yok"');
   if(SHOTS)await p.screenshot({path:SHOTS+'/home-empty.png'});
-  await p.click('.hm-empty [data-a="blank"]');
+  await p.click('.hm-empty [data-a="blank"]');await p.waitForSelector('.wl-modal:not([hidden])');await p.click('#wlBlank');
   await p.waitForSelector('#home',{state:'detached'});
-  ok(await p.evaluate(()=>document.documentElement.classList.contains('wl-on')),'"Boş tuval": the editor with the welcome card');
-  // a project to list: a board, saved to the cloud
-  await p.evaluate(()=>{const app=window.__app;app('addBoard')();app('req')();});await p.waitForTimeout(600);
+  ok(await p.evaluate(()=>!document.documentElement.classList.contains('wl-on')&&window.__app('doc').boards.length===1),'"Boş tuval" (its window, then the blank artboard): the editor on a new artboard');
+  // a project to list: the board, saved to the cloud
+  await p.evaluate(()=>{const app=window.__app;if(!app('hasBoard')())app('addBoard')();app('req')();});await p.waitForTimeout(600);
   await clearToast(p);await p.click('#appMenuBtn');await p.click('#cloudSaveBtn');await p.fill('#pdName','Lansman görselleri');await p.keyboard.press('Enter');
   await toastHas(p,/buluta kaydedildi/);
   await p.click('#appMenuBtn');await p.click('#homeBtn');
@@ -83,7 +83,7 @@ try{
   await p.waitForTimeout(600);
   await p.click('#homeTopBtn');await p.waitForSelector('#home .hm-open');
   ok(/Buluta kaydedilmedi/.test(await p.textContent('#home .hm-open')),'unsaved work shows as the first card');
-  ok(await p.isVisible('#hmReturn'),'and "Projeye dön" in the top bar');
+  ok(!(await p.$('#hmReturn')),'no "Projeye dön" in the top bar (the card is the way back)');
   if(SHOTS)await p.screenshot({path:SHOTS+'/home-open.png'});
   await p.click('#home .hm-open');await p.waitForSelector('#home',{state:'detached'});
   ok(await boards(p)===1,'the card goes back to it');
@@ -94,7 +94,7 @@ try{
   await p.waitForSelector('text=Yine de aç',{timeout:5000}).then(()=>p.click('.dialog [data-a="ok"]')).catch(()=>{});
   await toastHas(p,/açıldı/);
   ok(await boards(p)===1&&!(await p.$('#home')),'a project card opens the project (unsaved work asks first)');
-  await p.reload();await p.waitForSelector('#acctBtn:not([hidden])',{timeout:20000});await p.waitForTimeout(2500);
+  await p.reload();await p.waitForSelector('#acctBtn:not([hidden])',{state:'attached',timeout:20000});await p.waitForTimeout(2500);
   ok(!(await p.$('#home')),'a reload stays in the editor');
 
   console.log('trash, list view');

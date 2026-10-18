@@ -41,12 +41,12 @@ try{
   }
   ok(!!link,'the e-mail with the link arrived');
   await p.goto(link.replace(/&amp;/g,'&'));
-  await p.waitForSelector('#acctBtn:not([hidden])',{timeout:20000});
-  ok(true,'back in the studio, signed in (avatar in the top bar)');
+  await p.waitForSelector('#acctBtn:not([hidden])',{state:'attached',timeout:20000});
+  ok(true,'back in the studio, signed in (the account in the left panel)');
   await p.waitForSelector('#home',{timeout:15000});
   ok(true,'signing in lands on the home page');
-  await p.click('#home [data-a="blank"]');await p.waitForSelector('#home',{state:'detached'});
-  ok(await p.evaluate(()=>!document.querySelector('#authGate')&&!document.querySelector('#appMenuBtn').closest('[inert]')),'"Boş tuval": the gate and the home page are gone, the studio works');
+  await p.click('#home [data-a="blank"]');await p.click('#wlBlank');await p.waitForSelector('#home',{state:'detached'});
+  ok(await p.evaluate(()=>!document.querySelector('#authGate')&&!document.querySelector('#appMenuBtn').closest('[inert]')),'"Boş tuval" (its window, then the blank artboard): the gate and the home page are gone, the studio works');
   // some work to see it emptied on signing out
   await p.evaluate(()=>{const app=window.__app;if(app&&!app('hasBoard')())app('addBoard')();});
   ok(!/code=/.test(p.url()),'the sign-in code is gone from the address ('+p.url()+')');
@@ -56,10 +56,13 @@ try{
   ok((await p.textContent('.acct-head b'))===email.split('@')[0],'and the profile name (from the trigger; the open menu updates when it arrives)');
   await p.click('#acctBtn');
   await p.click('#acctBtn');
-  if(SHOTS)await p.screenshot({path:SHOTS+'/signin-menu.png',clip:{x:680,y:0,width:600,height:260}});
-  await p.reload();await p.waitForSelector('#acctBtn:not([hidden])',{timeout:20000});
+  if(SHOTS)await p.screenshot({path:SHOTS+'/signin-menu.png',clip:{x:0,y:520,width:280,height:280}});
+  await p.reload();await p.waitForSelector('#acctBtn:not([hidden])',{state:'attached',timeout:20000});
   ok(true,'still signed in after a reload');
-  await p.click('#acctBtn');await p.click('#acctMenu [data-a="out"]');
+  // signing out from wherever the account shows: the home page's sidebar, or the editor's left panel
+  await p.waitForTimeout(1500);
+  if(await p.$('#home'))await p.click('#home .hm-me').then(()=>p.click('.hm-menu >> text=Çıkış yap'));
+  else{await p.click('#acctBtn');await p.click('#acctMenu [data-a="out"]');}
   // unsaved work asks first
   await p.waitForSelector('text=Kaydetmeden çık',{timeout:5000}).then(()=>p.click('[data-a="discard"]')).catch(()=>{});
   await p.waitForSelector('#authGate:not(.pending)',{timeout:10000});

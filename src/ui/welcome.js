@@ -32,6 +32,9 @@ let goal='land',shown=false,picking=null;  // picking: {ids, chosen} while the p
    when the user starts (an address, files; it may empty the document first and returns false to stop), done() once
    the picked scenes are kept, closed() when the window closes without them. The card lives in the stage otherwise. */
 let modal=null;
+// before() is asking (a question about unsaved work): another press waits for it instead of asking again
+let asking=false;
+async function ready(m){if(!m.before)return true;if(asking)return false;asking=true;try{return !!(await m.before());}finally{asking=false;}}
 const modalBox=document.createElement('div');modalBox.className='wl-modal';modalBox.hidden=true;document.body.appendChild(modalBox);
 const home0={parent:card.parentNode,next:card.nextSibling};
 
@@ -234,7 +237,7 @@ $('#wlCancel').addEventListener('click',()=>{run++;endCapture();$('#wlUrl').focu
 
 // what the card was given: a site address or files (in the window over the home page: before() first)
 async function begin(input){
-  if(modal&&modal.before&&!(await modal.before()))return;
+  if(modal&&!(await ready(modal)))return;
   if(input.files)fromFiles(input.files);
   else fromUrl(input.url);
 }
@@ -269,14 +272,15 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape')dismiss();});
 
 $('#wlBlank').addEventListener('click',async()=>{
   // in the window over the home page: a new project first, then the editor on its first artboard
-  if(modal){const m=modal;if(m.before&&!(await m.before()))return;endModal();if(m.done)m.done();}
+  if(modal){const m=modal;if(!(await ready(m)))return;endModal();if(m.done)m.done();}
   $('#emptyAddBoard').click();
 });
 // a store set has its own form (store.js); the set's artboards close the card
 $('#wlStore').addEventListener('click',()=>{
   // in the window over the home page the set is made the same way: before() first, then the window and home close
   if(!modal){openStoreDialog();return;}
-  const m=modal;openStoreDialog(undefined,{before:m.before,after:()=>{if(modal===m)endModal();if(m.done)m.done();}});
+  // the form takes the window's place (it would open behind it otherwise); closing the form leaves the home page as it was
+  const m=modal;endModal();openStoreDialog(undefined,{before:m.before,after:()=>{if(m.done)m.done();}});
 });
 $('#wlOpen').addEventListener('click',()=>{if(modal){const m=modal;endModal();if(m.done)m.done();}$('#openProjectBtn').click();});
 /* The card for a goal (the home page's goal buttons: ui/home.js): that goal pressed, the address field (or the drop
@@ -300,7 +304,8 @@ function closeModal(){
   if(picking){picking=null;clearAll();holdHistory(false);}
   const m=modal;endModal();if(m.closed)m.closed();return true;
 }
-modalBox.addEventListener('click',e=>{if(e.target===modalBox)closeModal();});
+// a click on the overlay, anywhere outside the card (the card's own box is as wide as the window)
+modalBox.addEventListener('click',e=>{if(!e.target.closest('.wl-card,.wl-pick'))closeModal();});
 // Esc closes the window (on the document: the focus may still be on the home page's button that opened it)
 document.addEventListener('keydown',e=>{if(modal&&e.key==='Escape'&&!picking&&!document.querySelector('.scrim:not([hidden])')){e.preventDefault();e.stopImmediatePropagation();closeModal();}},true);
 

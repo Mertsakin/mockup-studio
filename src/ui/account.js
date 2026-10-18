@@ -83,14 +83,21 @@ if(cloudEnabled){
 }
 
 // ---------- the top bar and the account menu
+const mb=n=>n<2**30?(n/2**20).toFixed(n<10*2**20?1:0).replace('.',',')+' MB':(n/2**30).toFixed(1).replace('.',',')+' GB';
 function initials(a){const n=(a.profile&&a.profile.name)||(a.user&&a.user.email)||'?';return n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();}
 function draw(a){
   const on=!!a.user;
   signBtn.hidden=true;acctBtn.hidden=!on;
   if(!on){closeMenu();return;}
   const p=a.profile||{},url=p.avatar_url||a.user.user_metadata?.avatar_url;
-  acctBtn.innerHTML=url?'<img alt="" referrerpolicy="no-referrer">':'<span class="ini"></span>';
-  if(url)acctBtn.firstChild.src=url;else acctBtn.firstChild.textContent=initials(a);
+  // avatar, name and the cloud storage used (2 GB in the beta)
+  const used=p.storage_bytes||0,name=p.name||(a.user.email||'').split('@')[0];
+  acctBtn.innerHTML='<span class="acct-av">'+(url?'<img alt="" referrerpolicy="no-referrer">':'<span class="ini"></span>')+'</span>'+
+    '<span class="acct-t"><b></b><span class="acct-bar"><i></i></span><span class="acct-n"></span></span>'+icon('alt-arrow-up',14);
+  const av=acctBtn.querySelector('.acct-av').firstChild;if(url)av.src=url;else av.textContent=initials(a);
+  acctBtn.querySelector('.acct-t b').textContent=name;
+  acctBtn.querySelector('.acct-bar i').style.width=Math.min(100,used/2**31*100).toFixed(1)+'%';
+  acctBtn.querySelector('.acct-n').textContent=mb(used)+' / 2 GB';
   acctBtn.setAttribute('aria-label','Hesap: '+(p.name||a.user.email));
   if(!menu.hidden)fillMenu();  // the profile arrived while the menu was open
 }
