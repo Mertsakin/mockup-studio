@@ -3,6 +3,7 @@
    accounts. Accounts are optional: everything works signed out, as in the beta. */
 import {PROVIDERS,auth,client,cloudEnabled,onAuth,signInEmail,signInWith,signOut} from '../io/cloud.js';
 import {icon} from './icons.js';
+import {openProjects} from './projects.js';
 import {toast} from './toast.js';
 import {$} from '../util.js';
 
@@ -37,7 +38,7 @@ function fillMenu(){
   menu.innerHTML='<div class="acct-head"><b></b><span></span></div>'+
     '<div class="mlabel acct-use"></div>'+
     '<div class="msep" role="separator"></div>'+
-    '<button class="mi" role="menuitem" type="button" data-a="projects" disabled>'+icon('folder-with-files')+'<span>Projelerim</span><kbd>yakında</kbd></button>'+
+    '<button class="mi" role="menuitem" type="button" data-a="projects">'+icon('folder-with-files')+'<span>Projelerim…</span></button>'+
     '<div class="msep" role="separator"></div>'+
     '<button class="mi" role="menuitem" type="button" data-a="out">'+icon('logout-2')+'<span>Çıkış yap</span></button>';
   menu.querySelector('.acct-head b').textContent=p.name||'';
@@ -52,6 +53,7 @@ function openMenu(){
 acctBtn.addEventListener('click',e=>{e.stopPropagation();if(menu.hidden)openMenu();else closeMenu();});
 menu.addEventListener('click',async e=>{
   const b=e.target.closest('[data-a]');if(!b)return;closeMenu();
+  if(b.dataset.a==='projects'){openProjects();return;}
   if(b.dataset.a==='out'){try{await signOut();toast('Çıkış yapıldı. Çalışman bu tarayıcıda kalmaya devam eder.');}catch(err){toast('Çıkış yapılamadı: '+err.message);}}
 });
 document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target)&&!acctBtn.contains(e.target))closeMenu();});

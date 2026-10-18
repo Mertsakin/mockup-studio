@@ -153,6 +153,19 @@ async function fromProjectFile(src){
   return attachImages(asDoc(p),images);
 }
 
+/* A document in parts, for the cloud (io/cloud-projects.js): the plain document (as in the autosave: no media, the
+   thumbnails along) and its media as [key, Blob]; and back: a plain document plus key -> Blob. */
+async function docParts(d){
+  const all=docImages(d),media=[];for(const k in all)media.push([k,await imageBlob(all[k])]);
+  return {plain:plainDoc(d),media};
+}
+async function docFromParts(plain,blobs){
+  const p=Object.assign({},plain),images={};
+  for(const k in blobs){try{images[k]=adopt(await loadMedia(URL.createObjectURL(blobs[k]),k),k);}catch(e){console.warn('Medya açılamadı:',k,e);}}
+  delete p.media;delete p.images;delete p.app;
+  return attachImages(asDoc(p),images);
+}
+
 // --- autosave in IndexedDB (localStorage is too small for screenshots); every call is best-effort
 const DB='mockup-studio',STORE='kv';
 let dbP=null;  // one connection, reused
@@ -182,4 +195,4 @@ async function loadAutosave(){
   }catch(e){return null;}
 }
 
-export {asDoc,autosave,needsZip,packAssets,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};
+export {asDoc,autosave,docFromParts,docParts,needsZip,packAssets,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};

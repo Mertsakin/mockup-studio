@@ -184,4 +184,12 @@ async function startHistory(templateOpened){
 // dev / tests: short description of the stacks (device positions)
 const historyInfo=()=>{const f=x=>x.boards.map(b=>b.snap.devices.map(d=>d.py.toFixed(1)+'/'+d.px.toFixed(1)).join(' ')).join(' | ');return {past:past.map(f),current:current&&f(current),future:future.map(f)};};
 
-export {historyInfo,holdHistory,redo,startHistory,undo};
+/* For the cloud projects (ui/projects.js): the document as it is now (a change made a moment ago recorded first);
+   put a document in place of the current one (one undo step, like opening a file); mark the current state as saved
+   under a name (the top bar shows it; no file handle: a cloud project is not a file); unsaved changes since then? */
+function takeDoc(){commitNow();return snapshot();}
+function putDoc(s,name){if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();fileHandle=null;setFileName(name);savedSig=currentSig;}
+function markSaved(name){fileHandle=null;setFileName(name);savedSig=currentSig;}
+const isDirty=()=>{commitNow();return !!current&&!!(doc.boards.length||doc.assets.length)&&currentSig!==savedSig;};
+
+export {historyInfo,holdHistory,isDirty,markSaved,putDoc,redo,startHistory,takeDoc,undo};

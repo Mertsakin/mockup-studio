@@ -1,6 +1,6 @@
 # Üyelik planı: Supabase + Cloudflare R2
 
-*18 Ekim 2026 · durum: 1. ve 2. adım yerel Supabase ile bitti (§8); 0. adım (hesaplar) sende. Ödeme (Paddle) bu planın dışında.*
+*18 Ekim 2026 · durum: 1., 2. ve 3. adım yerel Supabase ile bitti (§8); 0. adım (hesaplar) sende. Ödeme (Paddle) bu planın dışında.*
 
 ## 1. Hedef ve sınırlar
 
@@ -127,11 +127,11 @@ Yerel otomatik kayıt bugün tek belge tutuyor. Üyelikle birlikte açık projen
 | 0 · hesaplar (sen) | Supabase projesi (AB bölgesi), Google ve GitHub OAuth uygulamaları, Cloudflare'de R2 kovası ve Worker | rehberdeki komutlarla bağlantı denemesi |
 | 1 · giriş ✓ | supabase-js (ilk kullanımda yüklenir, stüdyonun açılışı yavaşlamaz), giriş penceresi, üst bar menüsü, profil tetikleyicisi | test kullanıcısıyla headless giriş ve çıkış |
 | 2 · arka uç ✓ | şema, satır düzeyinde yetki, Worker (`services/storage/`), yerel geliştirme için Supabase CLI ve `wrangler dev` | yetki testleri: bir kullanıcı ötekinin satırını ve nesnesini göremez |
-| 3 · buluta kaydet ve aç | hash'leme, eksik medya yükleme, belge sürümü, Projelerim penceresi, küçük resimler | aynı proje iki tarayıcı profilinde; çakışma senaryosu |
+| 3 · buluta kaydet ve aç ✓ | hash'leme, eksik medya yükleme, belge sürümü, Projelerim penceresi, küçük resimler | aynı proje iki tarayıcı profilinde; çakışma senaryosu |
 | 4 · otomatik eşitleme | gecikmeli kayıt, çevrimdışı kuyruk, durum göstergesi, ilk girişte yerel çalışmayı taşıma | ağ kesilip geri gelince eşitlenme, büyük videoyla yükleme |
 | 5 · hesap | verini indir, hesabı sil, gizlilik sayfası, gecelik temizlik | silme sonrası R2 ve veritabanı boş |
 
-**Durum (18 Ekim):** 1. ve 2. adım yerel Supabase ile bitti ve testli: `npm run accounts:test` (yetki 25 + Worker 21 denetim), `node tools/accounts/test-signin.mjs` (stüdyoda e-posta bağlantısıyla giriş, 15 denetim). Projelerim ve buluta kayıt (3. ve 4. adım) sırada. Worker'da yüklemeler imzalı adres yerine Worker'ın kendisinden geçiyor (yerelde de çalışsın, R2 SHA-256'yı doğrulasın diye); 90 MB üstü çok parçalı.
+**Durum (18 Ekim):** 1. ve 2. adım yerel Supabase ile bitti ve testli: `npm run accounts:test` (yetki 25 + Worker 21 denetim), `node tools/accounts/test-signin.mjs` (stüdyoda e-posta bağlantısıyla giriş, 15 denetim). **3. adım (18 Ekim):** "Buluta kaydet" ve "Projelerim" (aç, yeniden adlandır, çoğalt, sil), küçük resimler, çakışma penceresi; `node tools/accounts/test-projects.mjs` (iki tarayıcı profili, 18 denetim). Belge her kayıtta yeni bir adla yüklenir: yarışı kaybeden kayıt diğerinin belgesini ezemez. Sırada 4. adım: otomatik eşitleme, çevrimdışı kuyruk, durum göstergesi, ilk girişte yerel çalışmayı taşıma. Worker'da yüklemeler imzalı adres yerine Worker'ın kendisinden geçiyor (yerelde de çalışsın, R2 SHA-256'yı doğrulasın diye); 90 MB üstü çok parçalı.
 
 Kabaca: 1. ve 2. adım birkaç gün, 3. ve 4. adım bir hafta civarı, 5. adım iki üç gün. Her adım ayrı dalda, doğrulanıp main'e alınır.
 
