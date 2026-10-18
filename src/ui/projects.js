@@ -142,8 +142,13 @@ async function renameAction(p){
 }
 async function duplicateAction(p){toast('Çoğaltılıyor…');await duplicateProject(p.id);toast(p.name+' çoğaltıldı');return true;}
 async function trashAction(p){
-  if(!(await confirmBox('Çöp kutusuna taşı',p.name+' çöp kutusuna taşınacak; 30 gün içinde geri getirebilirsin. Açıksa çalışman bu tarayıcıda kalır.','Taşı')))return false;
-  await trashProject(p.id);if(openId()===p.id)remember(null);toast(p.name+' çöp kutusuna taşındı');return true;
+  // the open project goes with it: its work closes here too (it would stay as an "Açık çalışma" card otherwise)
+  const open=openId()===p.id;
+  const text=p.name+' çöp kutusuna taşınacak; 30 gün içinde geri getirebilirsin.'+(open?' Açık olduğu için kapanacak'+(isDirty()?'; buluta kaydedilmemiş değişiklikler kaybolur.':'.'):'');
+  if(!(await confirmBox('Çöp kutusuna taşı',text,'Taşı')))return false;
+  await trashProject(p.id);
+  if(open){await resetDocument();remember(null);}
+  toast(p.name+' çöp kutusuna taşındı');return true;
 }
 async function restoreAction(p){await restoreProject(p.id);toast(p.name+' geri getirildi');return true;}
 async function destroyAction(p){

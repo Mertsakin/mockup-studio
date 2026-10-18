@@ -1,6 +1,6 @@
 // The home page (ui/home.js), end to end: signing in lands on it; without projects it offers templates and a blank
 // canvas (the welcome card); with projects it lists them; the goal buttons start a project from a template; the
-// editor's "Ana sayfa" comes back; a reload stays in the editor; trash and restore; list view; an e-mail link lands on it.
+// editor's "Ana sayfa" comes back; a reload stays in the editor; trash (the open project closes with it) and restore; list view; an e-mail link lands on it.
 // node tools/accounts/test-home.mjs [studio URL]   (studio on 5177 with --mode accounts, storage Worker on 8787)
 import {chromium} from 'playwright';
 import {createClient} from '@supabase/supabase-js';
@@ -99,9 +99,11 @@ try{
 
   console.log('trash, list view');
   await p.click('#appMenuBtn');await p.click('#homeBtn');await p.waitForSelector('#home .hm-card');
-  await p.hover('.hm-card');await p.click('.hm-card .hm-dots');await p.click('.hm-menu >> text=Çöp kutusuna taşı');await p.click('.dialog [data-a="ok"]');
-  await p.waitForFunction(()=>!document.querySelector('#home .hm-card:not(.hm-open)')&&document.querySelector('#home .hm-open'),null,{timeout:15000}).catch(()=>{});
-  ok(await p.isVisible('#home .hm-open'),'moved to the trash: gone from the list; the work still open here shows as "Açık çalışma"');
+  await p.hover('.hm-card');await p.click('.hm-card .hm-dots');await p.click('.hm-menu >> text=Çöp kutusuna taşı');
+  ok(/Açık olduğu için kapanacak/.test(await p.locator('[role="alertdialog"]').last().textContent()||''),'trashing the open project: the question says it will close');
+  await p.click('.dialog [data-a="ok"]');
+  await p.waitForFunction(()=>!document.querySelector('#home .hm-card'),null,{timeout:15000}).catch(()=>{});
+  ok(!(await p.$('#home .hm-card'))&&await boards(p)===0,'moved to the trash: gone from the list, and the open work closed with it (no "Açık çalışma" card)');
   await p.click('.hm-nav[data-view="trash"]');await p.waitForSelector('#home .hm-card');
   ok(/Silindi/.test(await p.textContent('.hm-card .hm-tm')),'Çöp kutusu lists it');
   await p.hover('.hm-card');await p.click('.hm-card .hm-dots');await p.click('.hm-menu >> text=Geri getir');
