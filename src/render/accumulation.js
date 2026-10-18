@@ -90,7 +90,9 @@ renderer.shadowMap.autoUpdate=false;
    user stops on (and every export) is unchanged. While converging, slow frames take one sample instead of two.
    window.__noAdapt turns it off (measurements). */
 const MOTION={scale:1,ema:0,last:0,lastDirty:-1e9,prev:false,moving:false,lo:null};
-const MIN_SCALE=.5,SLOW_MS=24,FAST_MS=15;
+// slow: under ~26 fps (a 30 Hz power-saving display stays sharp); fast: a 60 Hz frame (16.7 ms) must count as fast, or the
+// scale never recovers from the slow frames of loading
+const MIN_SCALE=.5,SLOW_MS=38,FAST_MS=22;
 function loEnsure(w,h){
   const lo=MOTION.lo;if(lo&&lo.width===w&&lo.height===h)return lo;
   if(lo)lo.dispose();
