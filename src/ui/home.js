@@ -4,9 +4,8 @@
                Çöp kutusu, the storage used
      top bar   back / forward between views; "Projeye dön" while a document is open; the goals on the right
                (Açılış görseli, Sosyal, Mağaza seti, Video: each starts a new, empty project and opens the welcome card
-               with that goal, i.e. the address field and the drop area; the store set opens its form) and Diğer
-               (blank canvas, capture a site, open a project file, every template)
-     content   recommended templates (a big "Bir şablonla başla" panel for an account without projects), then the
+               with that goal, i.e. the address field and the drop area; the store set opens its form)
+     content   recommended templates, one row of four ("Bir şablonla başla" for an account without projects), then the
                projects as a grid or a list (sorted by last edit, name or creation); the trash with restore and delete
                for good. The work open in the editor that is not (yet) a cloud project shows as the first card,
                "Açık çalışma", so the way back to it is always there (Esc too)
@@ -15,7 +14,7 @@
 import {auth,cloudEnabled,onAuth} from '../io/cloud.js';
 import {listProjects,listTrash,thumbURL} from '../io/cloud-projects.js';
 import {activate,clearAll,doc,fillThumbs,storeActive} from './boards.js';
-import {holdHistory} from './history.js';
+import {historyReady,holdHistory} from './history.js';
 import {icon} from './icons.js';
 import {destroyAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,signInHooks,trashAction} from './projects.js';
 import {openTemplate,templates} from './template-gallery.js';
@@ -44,6 +43,10 @@ const ago=t=>{const s=(Date.now()-new Date(t).getTime())/1000;
   return new Date(t).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:new Date(t).getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
 const mb=n=>n<2**30?(n/2**20).toFixed(n<10*2**20?1:0).replace('.',',')+' MB':(n/2**30).toFixed(1).replace('.',',')+' GB';
 const shown=()=>!!el;
+// the home page is remembered for this tab (a reload comes back to it, on the same view)
+const OPEN='shotlight.home.open';
+const remember=v=>{try{if(v)sessionStorage.setItem(OPEN,v);else sessionStorage.removeItem(OPEN);}catch(e){/* no storage */}};
+const remembered=()=>{try{return sessionStorage.getItem(OPEN);}catch(e){return null;}};
 
 // ---------- showing and hiding
 function shut(on){for(const c of document.body.children)if(c!==el&&c.id!=='toast'&&!c.classList.contains('scrim')&&!c.classList.contains('hm-menu')&&!c.classList.contains('wl-modal'))c.inert=on;}
@@ -54,11 +57,11 @@ async function showHome(v){
     document.body.appendChild(el);document.documentElement.classList.add('home-on');shut(true);
     el.addEventListener('click',onClick);el.addEventListener('input',onInput);el.addEventListener('keydown',onKey);
   }
-  past=[];ahead=[];view=v||'recent';
+  past=[];ahead=[];view=v||'recent';remember(view);
   if(doc.boards.length)storeActive();  // a fresh thumbnail of the open work for its card
   frame();el.querySelector('.hm-nav[data-view="'+view+'"]').focus({preventScroll:true});await load();
 }
-function hideHome(){if(!el)return;closeMenu();el.remove();el=null;document.documentElement.classList.remove('home-on');shut(false);}
+function hideHome(){if(!el)return;closeMenu();el.remove();el=null;document.documentElement.classList.remove('home-on');shut(false);remember(null);}
 async function load(){
   projects=null;draw();
   try{[projects,tpls]=await Promise.all([listProjects(),templates()]);mixed=interleave(tpls);}catch(e){projects=[];toast('Projeler alınamadı: '+e.message);}
@@ -66,7 +69,7 @@ async function load(){
   draw();
 }
 async function loadTrash(){try{trash=await listTrash();}catch(e){trash=[];toast(e.message);}}
-function go(v,{push=true}={}){if(v===view)return;if(push){past.push(view);ahead=[];}view=v;q='';const s=el.querySelector('#hmQ');if(s)s.value='';
+function go(v,{push=true}={}){if(v===view)return;if(push){past.push(view);ahead=[];}view=v;remember(v);q='';const s=el.querySelector('#hmQ');if(s)s.value='';
   if(v==='trash'){trash=null;draw();loadTrash().then(draw);}else draw();}
 
 // ---------- the frame: sidebar and top bar (drawn once per showing; the content redraws)
@@ -88,8 +91,8 @@ function frame(){
       '<button class="hm-ib" type="button" data-a="fwd" aria-label="İleri">'+icon('alt-arrow-right',16)+'</button>'+
       '<h1 id="hmTitle"></h1><span class="hm-sp"></span>'+
       '<button class="hm-back" type="button" data-a="return" id="hmReturn" hidden>'+icon('alt-arrow-left',14)+'Projeye dön</button>'+
-      '<div class="hm-goals" role="group" aria-label="Yeni proje başlat">'+GOALS.map(([g,n,ic,c])=>'<button class="hm-goal" type="button" data-goal="'+g+'"><span class="hm-gi '+c+'">'+icon(ic,14)+'</span>'+n+'</button>').join('')+
-        '<button class="hm-goal hm-more" type="button" data-a="more" aria-haspopup="menu">Diğer'+icon('alt-arrow-down',14)+'</button></div>'+
+      '<div class="hm-goals" role="group" aria-label="Yeni proje başlat">'+GOALS.map(([g,n,ic,c])=>'<button class="hm-goal" type="button" data-goal="'+g+'"><span class="hm-gi '+c+'">'+icon(ic,12)+'</span>'+n+'</button>').join('')+
+        '</div>'+
     '</header><div class="hm-scroll" id="hmBody"></div></main>';
   if(p.avatar_url)el.querySelector('.hm-av img').src=p.avatar_url;
 }
@@ -105,7 +108,8 @@ function sorted(l){const c=l.slice();
 const match=n=>!q||n.toLocaleLowerCase('tr').includes(q);
 function rec(big){
   if(!mixed.length)return '';
-  const n=big?8:5,items=[];for(let i=0;i<Math.min(n,mixed.length);i++)items.push(mixed[(i+recShift)%mixed.length]);
+  // one row of four, with and without projects
+  const n=4,items=[];for(let i=0;i<Math.min(n,mixed.length);i++)items.push(mixed[(i+recShift)%mixed.length]);
   return '<section class="hm-rec'+(big?' big':'')+'" aria-label="Önerilen şablonlar"><div class="hm-rec-h"><h2>'+(big?'Bir şablonla başla':'Önerilen şablonlar')+'</h2>'+
     (big?'<p>ekran görüntülerin şablona sonra eklenir</p>':'')+'<span class="hm-sp"></span>'+
     '<button class="hm-ib" type="button" data-a="recShift" aria-label="Başka öneriler">'+icon('refresh',16)+'</button>'+
@@ -255,8 +259,6 @@ function onClick(e){
     case 'recClose':prefs.recClosed=true;savePrefs();draw();return;
     case 'blank':blank();return;
     case 'sort':openMenu(a,[['edited','Son düzenlenen'],['name','Ada göre'],['created','Oluşturulma']].map(([k,l])=>({label:l,on:prefs.sort===k,run:()=>{prefs.sort=k;savePrefs();draw();}})));return;
-    case 'more':openMenu(a,[{label:'Boş tuval',run:()=>blank()},{label:'Siteden yakala…',run:()=>startGoal('land')},null,
-      {label:'Proje dosyası aç…',key:'⌘O',run:()=>{hideHome();$('#openProjectBtn').click();}},{label:'Tüm şablonlar',run:()=>go('templates')}],{right:true});return;
     case 'me':{const th=document.documentElement.dataset.theme||'system';
       openMenu(a,[{label:'Tema: sistem',on:th==='system',run:()=>theme('system')},{label:'Tema: açık',on:th==='light',run:()=>theme('light')},{label:'Tema: koyu',on:th==='dark',run:()=>theme('dark')},
         null,{label:'Klavye kısayolları',key:'?',run:()=>{hideHome();$('#keysBtn').click();}},null,{label:'Çıkış yap',run:async()=>{if(await leave())hideHome();}}]);return;}
@@ -280,9 +282,21 @@ function onKey(e){
 }
 
 // ---------- wiring: signing in lands here; the editor's menus come back here
+/* A reload with the session carried over (not a sign-in: that has its hook): back to the home page when it was open in
+   this tab, or when there is nothing to continue (an empty document; the editor would only show its welcome card).
+   A template link opens the template instead. */
+let started=false;
+async function resume(){
+  started=true;
+  if(/[?&]template=/.test(location.search))return;
+  await historyReady;
+  const v=remembered();
+  if(auth.user&&!el&&(v||!doc.boards.length))showHome(TITLES[v]?v:'recent');
+}
 if(cloudEnabled){
   signInHooks.add(()=>showHome());
-  onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user)hideHome();else if(el){frame();draw();}});
+  onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user){hideHome();started=false;}else if(el){frame();draw();}
+    else if(!a.fresh&&!started)resume();});
   $('#homeBtn').addEventListener('click',()=>showHome());
   $('#homeTopBtn').addEventListener('click',()=>showHome());
   // the welcome card's close: the window over the home page closes; the editor's own card goes back home

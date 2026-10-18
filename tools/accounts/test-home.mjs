@@ -25,7 +25,7 @@ try{
   console.log('no projects');
   let p=await page();await signIn(p);
   await p.waitForSelector('#home .hm-rec.big .hm-tp',{timeout:20000});
-  ok(true,'signing in lands on the home page: "Bir şablonla başla" with templates');
+  ok((await p.$$('.hm-rec .hm-tp')).length===4,'signing in lands on the home page: "Bir şablonla başla" with four templates');
   ok(await p.evaluate(()=>!!document.querySelector('#leftPanel,#appMenuBtn').closest('[inert]')),'the editor behind it is inert');
   ok(await p.isVisible('.hm-empty >> text=Henüz projen yok'),'and "Henüz projen yok"');
   if(SHOTS)await p.screenshot({path:SHOTS+'/home-empty.png'});
@@ -42,7 +42,7 @@ try{
   ok(await p.isVisible('.hm-card .hm-badge'),'marked as the open one');
   await p.waitForSelector('.hm-card .hm-thi img',{timeout:10000}).catch(()=>{});
   ok(!!(await p.$('.hm-card .hm-thi img')),'with its thumbnail');
-  ok(!!(await p.$('.hm-rec:not(.big)')),'recommended templates above the projects');
+  ok(!!(await p.$('.hm-rec:not(.big)'))&&(await p.$$('.hm-rec .hm-tp')).length===4,'recommended templates above the projects, one row of four');
   if(SHOTS)await p.screenshot({path:SHOTS+'/home-full.png'});
   await p.click('.hm-card');await p.waitForSelector('#home',{state:'detached'});
   ok(await boards(p)===1,'clicking the open project goes back to it');
@@ -59,7 +59,7 @@ try{
   await p.click('#wlClose');await p.waitForSelector('.wl-modal',{state:'hidden'});
   ok(!!(await p.$('#home'))&&await boards(p)===1,'× closes the window: still on the home page, nothing changed');
   await p.click('.hm-goal[data-goal="video"]');await p.waitForSelector('.wl-modal:not([hidden])');await p.keyboard.press('Escape');await p.waitForSelector('.wl-modal',{state:'hidden'});
-  ok(!!(await p.$('#home')),'Esc closes it too');
+  ok(!!(await p.$('#home'))&&!(await p.$('.hm-more')),'Esc closes it too (and there is no Diğer menu)');
   await p.click('.hm-goal[data-goal="store"]');
   ok(await p.waitForSelector('.scrim .store-dlg',{timeout:5000}).then(()=>true,()=>false),'"Mağaza seti": the store set form over the home page');
   await p.keyboard.press('Escape');await p.waitForTimeout(300);
@@ -77,10 +77,10 @@ try{
   await p.waitForSelector('.dialog [data-a="discard"]',{timeout:3000}).then(()=>p.click('.dialog [data-a="discard"]')).catch(()=>{});
   await p.waitForSelector('#home',{timeout:10000});
   ok(true,'"Projeyi kapat": the home page');
-  // a blank canvas from Diğer: unsaved work for the rest
-  await p.click('.hm-more');await p.click('.hm-menu >> text=Boş tuval');await p.waitForSelector('#home',{state:'detached'});
+  // a blank artboard from the welcome window: unsaved work for the rest
+  await p.click('.hm-goal[data-goal="land"]');await p.waitForSelector('.wl-modal:not([hidden])');await p.click('#wlBlank');await p.waitForSelector('#home',{state:'detached'});
   // unsaved work: listed as "Açık çalışma", the way back
-  await p.evaluate(()=>{const app=window.__app;app('addBoard')();app('req')();});await p.waitForTimeout(600);
+  await p.waitForTimeout(600);
   await p.click('#homeTopBtn');await p.waitForSelector('#home .hm-open');
   ok(/Buluta kaydedilmedi/.test(await p.textContent('#home .hm-open')),'unsaved work shows as the first card');
   ok(await p.isVisible('#hmReturn'),'and "Projeye dön" in the top bar');
@@ -100,7 +100,7 @@ try{
   console.log('trash, list view');
   await p.click('#appMenuBtn');await p.click('#homeBtn');await p.waitForSelector('#home .hm-card');
   await p.hover('.hm-card');await p.click('.hm-card .hm-dots');await p.click('.hm-menu >> text=Çöp kutusuna taşı');await p.click('.dialog [data-a="ok"]');
-  await p.waitForFunction(()=>!document.querySelector('#home .hm-card:not(.hm-open)'),null,{timeout:15000});
+  await p.waitForFunction(()=>!document.querySelector('#home .hm-card:not(.hm-open)')&&document.querySelector('#home .hm-open'),null,{timeout:15000}).catch(()=>{});
   ok(await p.isVisible('#home .hm-open'),'moved to the trash: gone from the list; the work still open here shows as "Açık çalışma"');
   await p.click('.hm-nav[data-view="trash"]');await p.waitForSelector('#home .hm-card');
   ok(/Silindi/.test(await p.textContent('.hm-card .hm-tm')),'Çöp kutusu lists it');
@@ -125,6 +125,14 @@ try{
   await p.goto(link.replace(/&amp;/g,'&'));
   await p.waitForSelector('#home .hm-card',{timeout:20000});
   ok(true,'returning from an e-mail link lands on the home page');
+  await p.click('.hm-nav[data-view="trash"]');await p.waitForSelector('.hm-nav[data-view="trash"][aria-current="page"]');
+  await p.reload();await p.waitForSelector('#home .hm-nav[data-view="trash"][aria-current="page"]',{timeout:20000});
+  ok(true,'a reload on the home page comes back to it, on the same view');
+  await p.click('.hm-nav[data-view="all"]');await p.waitForSelector('#home .hm-card');
+  await clearToast(p);await p.click('.hm-card');await toastHas(p,/açıldı/);await p.waitForSelector('#home',{state:'detached'});
+  await p.click('#appMenuBtn');await p.click('#closeProject');await p.waitForSelector('#home');  // an empty document
+  await p.reload();await p.waitForSelector('#home',{timeout:20000});
+  ok(!(await p.$('.wl-modal:not([hidden])'))&&await p.isVisible('#home'),'a reload with an empty document: the home page, not the editor\'s welcome card');
   ok(!errs.length,'no page errors'+(errs.length?': '+errs.join(' | '):''));
 }finally{await admin.auth.admin.deleteUser(uid).catch(()=>{});await b.close();}
 console.log(fails?fails+' failed':'all passed');process.exit(fails?1:0);
