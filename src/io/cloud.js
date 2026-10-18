@@ -12,14 +12,20 @@ const cloudEnabled=!!(URL_&&KEY);
 
 let clientP=null;
 const subs=new Set();
-const auth={user:null,profile:null,ready:false};  // ready: the stored session (if any) has been looked at
+/* ready: the stored session (if any) has been looked at. fresh: the current user has just signed in, as opposed to a
+   session carried over from before (a reload): the page returned from a sign-in (?code= or #access_token=, read before
+   the client removes it) or saw nobody signed in first (the gate) */
+const auth={user:null,profile:null,ready:false,fresh:false};
+const cameFromSignIn=/[?&]code=/.test(location.search)||/access_token=/.test(location.hash);  // PKCE / implicit return
+let sawSignedOut=false;
 function client(){
   if(!cloudEnabled)return Promise.reject(new Error('Hesaplar bu sürümde kapalı.'));
   return clientP||(clientP=import('@supabase/supabase-js').then(({createClient})=>{
     const c=createClient(URL_,KEY,{auth:{flowType:'pkce',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     c.auth.onAuthStateChange((ev,session)=>{
       const u=session?session.user:null,changed=(u&&u.id)!==(auth.user&&auth.user.id);
-      auth.user=u;if(!u)auth.profile=null;
+      if(changed&&u)auth.fresh=cameFromSignIn||sawSignedOut;
+      auth.user=u;if(!u){auth.profile=null;auth.fresh=false;sawSignedOut=true;}
       if(changed&&u)loadProfile();
       if(changed||ev==='INITIAL_SESSION'){auth.ready=true;emit();}
     });
@@ -56,6 +62,6 @@ function storedSession(){
   return false;
 }
 if(cloudEnabled&&(storedSession()||/[?&]code=/.test(location.search)||/access_token=|error_description=/.test(location.hash)))client().catch(e=>console.warn('Oturum açılamadı:',e));
-else{auth.ready=true;}
+else{auth.ready=true;sawSignedOut=true;}
 
 export {PROVIDERS,STORAGE_URL,accessToken,auth,client,cloudEnabled,onAuth,rename,signInEmail,signInWith,signOut};

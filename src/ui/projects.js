@@ -26,7 +26,7 @@ const saveBtn=$('#cloudSaveBtn'),openBtn=$('#cloudOpenBtn');
 const OWNER='shotlight.local.owner';
 const owner=()=>{try{return localStorage.getItem(OWNER);}catch(e){return null;}};
 const setOwner=id=>{try{if(id)localStorage.setItem(OWNER,id);else localStorage.removeItem(OWNER);}catch(e){/* no storage */}};
-let launched=false;  // the launcher has had its chance in this page (reset on signing out)
+let launched=false;  // the launcher has had its chance for this sign-in (reset on signing out)
 if(cloudEnabled)onAuth(async a=>{
   const on=!!a.user;saveBtn.hidden=openBtn.hidden=!on;
   if(!on){launched=false;if(cur)remember(null);return;}
@@ -34,10 +34,12 @@ if(cloudEnabled)onAuth(async a=>{
   const o=owner();
   if(o&&o!==a.user.id){await resetDocument();remember(null);}
   setOwner(a.user.id);showName();
-  // starting the studio signed in (a sign-in or a reload): the projects first when there are any; none: the welcome
-  // card (an empty document shows it) or the work that is already open here. A template link opens the template.
+  // signing in: the projects first when there are any; none: the welcome card (an empty document shows it) or the
+  // work already open here. A reload with the session carried over continues with what is open; a template link opens
+  // the template.
   if(launched||/[?&]template=/.test(location.search))return;
   launched=true;
+  if(!a.fresh)return;
   try{const l=await listProjects();if(l.length)openProjects({launcher:true,list:l});}catch(e){console.warn('Projeler alınamadı:',e);}
 });
 // signing out: the document and the autosave are emptied, the work is no longer anyone's here
@@ -149,7 +151,7 @@ async function openProjects({launcher=false,list:pre=null}={}){
   const grid=sc.querySelector('#pjGrid'),search=sc.querySelector('#pjSearch');
   let list=pre||[];
   const close=()=>{sc.remove();document.removeEventListener('keydown',key,true);};
-  const key=e=>{if(e.key==='Escape'&&!document.querySelector('.scrim:not(#projectsScrim)')){e.preventDefault();e.stopPropagation();close();}};
+  const key=e=>{if(e.key==='Escape'&&!document.querySelector('.scrim:not(#projectsScrim):not([hidden])')){e.preventDefault();e.stopPropagation();close();}};
   document.addEventListener('keydown',key,true);
   function draw(){
     const q=search.value.trim().toLocaleLowerCase('tr'),shown=list.filter(p=>!q||p.name.toLocaleLowerCase('tr').includes(q)),open=mine();
