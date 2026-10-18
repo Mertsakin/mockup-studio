@@ -33,8 +33,10 @@ const W=word('shotlight'),CAP=font.tables.os2.sCapHeight/font.unitsPerEm*SIZE;
 
 // ---------- files
 const files=[];
-files.push(write('shotlight-icon.svg',icon({id:'a'})));
-files.push(write('shotlight-icon-small.svg',icon({small:true,id:'b'})));
+// the files carry a real size (no width / height: viewers draw a 100 x 100 px image and enlarge it)
+const sized=(svg,px)=>svg.replace('<svg xmlns="http://www.w3.org/2000/svg" ',`<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" `);
+files.push(write('shotlight-icon.svg',sized(icon({id:'a'}),1024)));
+files.push(write('shotlight-icon-small.svg',sized(icon({small:true,id:'b'}),48)));
 for(const k of ['on-light','on-dark']){
   // the word alone: from the top of the ascenders to the bottom of the descender (g)
   const h=W.bottom-W.top;

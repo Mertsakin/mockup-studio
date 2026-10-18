@@ -1,7 +1,8 @@
 // The Shotlight mark ("rim light": a sphere half lit, the moment light falls on an object). Pure: returns
 // SVG text. Design steps and alternatives: wireframes/logo.html, wireframes/logo-graphite.html. Built by build.mjs.
 //   icon({small, plate, id, colors}) -> SVG (viewBox 0 0 100 100); colors overrides parts of C (variants: wireframes/logo-color.html)
-// The large drawing (64 px and up) has a soft terminator, a softbox glow in the plate's upper right, a contact shadow
+// The large drawing (64 px and up) has a soft terminator (a gradient mask, not a blur filter: filters are rasterised
+// at the SVG's own size by many viewers and editors and came out pixelated), a softbox glow in the plate's upper right, a contact shadow
 // under the sphere and a faint rim on its dark side. The small drawing (48 px and below) drops the blur, the rim and
 // the shadow and makes the sphere and its crescent bigger, so they stay legible as a favicon.
 // bg: plate top / bottom; glow: the softbox glow; edge: the plate's top edge highlight; sphere: dark side inner / outer;
@@ -17,27 +18,37 @@ const CORNER=22.37;  // the plate's corner radius in % of its side (iOS-like)
 
 function icon({small=false,plate=true,id='sl',colors={}}={}){
   const C=Object.assign({},BASE,colors),u=id+(small?'s':'l'),cx=50,r=small?36:(plate?30:44),cy=small||!plate?50:47;
-  // the lit side reaches past the sphere on the outside (the clip draws the edge), so the blur softens only the terminator
+  // the lit side (in the sphere's turned frame): the right half plus a half ellipse (rx = r·k) bulging into the left; it
+  // reaches past the sphere on the outside, the clip draws the edge
   const k=small?.30:.42,e=r+10,lit=`M${cx} ${cy-e}H${cx+e}V${cy+e}H${cx}V${cy+r}A${r*k} ${r} 0 0 1 ${cx} ${cy-r}Z`;
   const soft=!small,floor=!small&&plate;
+  // the lit gradient runs across the lit side's own box (right top to left bottom), in user space so the soft drawing,
+  // which fills a larger square, keeps the same colours
+  // soft terminator: the lit gradient covers the whole square, through a mask that is white on the right half and, on
+  // the left, an elliptical gradient from white inside the terminator ellipse to black just outside it (W: half the soft
+  // band, as a fraction of the ellipse). The ellipse is a little taller than the sphere (TALL) so it is still fully
+  // white where it meets the right half at the sphere's poles (otherwise a step shows there). The ellipse goes first so
+  // the white half covers its fade on the right.
+  const W=.28,TALL=1.3,mask=`<mask id="${u}mk" maskUnits="userSpaceOnUse" x="${cx-e}" y="${cy-e}" width="${2*e}" height="${2*e}"><ellipse cx="${cx}" cy="${cy}" rx="${(r*k*(1+W)).toFixed(3)}" ry="${(r*TALL*(1+W)).toFixed(3)}" fill="url(#${u}mg)"/><rect x="${cx}" y="${cy-e}" width="${e}" height="${2*e}" fill="#fff"/></mask>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 <defs>
 <linearGradient id="${u}bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.bg[0]}"/><stop offset="1" stop-color="${C.bg[1]}"/></linearGradient>
 <radialGradient id="${u}gw" cx=".92" cy=".04" r=".75"><stop offset="0" stop-color="${C.glow}" stop-opacity=".2"/><stop offset="1" stop-color="${C.glow}" stop-opacity="0"/></radialGradient>
 <linearGradient id="${u}gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.edge}" stop-opacity=".22"/><stop offset=".5" stop-color="${C.edge}" stop-opacity="0"/></linearGradient>
 <radialGradient id="${u}sp" cx=".35" cy=".35" r=".75"><stop offset="0" stop-color="${C.sphere[0]}"/><stop offset="1" stop-color="${C.sphere[1]}"/></radialGradient>
-<linearGradient id="${u}lt" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.lit[0]}"/><stop offset=".55" stop-color="${C.lit[1]}"/><stop offset="1" stop-color="${C.lit[2]}"/></linearGradient>
+<linearGradient id="${u}lt" gradientUnits="userSpaceOnUse" x1="${cx+e}" y1="${cy-e}" x2="${(cx-r*k).toFixed(3)}" y2="${cy+e}"><stop offset="0" stop-color="${C.lit[0]}"/><stop offset=".55" stop-color="${C.lit[1]}"/><stop offset="1" stop-color="${C.lit[2]}"/></linearGradient>
 <radialGradient id="${u}fl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${C.floor}" stop-opacity=".75"/><stop offset="1" stop-color="${C.floor}" stop-opacity="0"/></radialGradient>
 ${Array.isArray(C.rim)?`<linearGradient id="${u}rm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${C.rim[0]}"/><stop offset="1" stop-color="${C.rim[1]}"/></linearGradient>
 `:''}<clipPath id="${u}cl"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
-${soft?`<filter id="${u}bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>`:''}
+${soft?`<radialGradient id="${u}mg"><stop offset="0" stop-color="#fff"/><stop offset="${((1-W)/(1+W)).toFixed(4)}" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>
+${mask}`:''}
 </defs>
 ${plate?`<rect width="100" height="100" rx="${CORNER}" fill="url(#${u}bg)"/><rect width="100" height="100" rx="${CORNER}" fill="url(#${u}gw)"/><rect x=".5" y=".5" width="99" height="99" rx="${CORNER}" fill="none" stroke="url(#${u}gl)"/>${C.outline?`<rect x=".4" y=".4" width="99.2" height="99.2" rx="${CORNER-.4}" fill="none" stroke="${C.outline}" stroke-width="${small?1.6:.8}"/>`:''}`:''}
 ${floor?`<ellipse cx="${cx+2}" cy="${cy+r+3.5}" rx="${r*.95}" ry="4.2" fill="url(#${u}fl)"/>`:''}
 <g transform="rotate(-35 ${cx} ${cy})">
 <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${u}sp)"/>
 ${small||!C.rim?'':`<circle cx="${cx}" cy="${cy}" r="${r-.6}" fill="none" stroke="${Array.isArray(C.rim)?`url(#${u}rm)`:C.rim}" stroke-width="1.1" opacity="${Array.isArray(C.rim)?'.9':'.55'}"/>`}
-<g clip-path="url(#${u}cl)"><path d="${lit}" fill="url(#${u}lt)"${soft?` filter="url(#${u}bl)"`:''}/></g>
+<g clip-path="url(#${u}cl)">${soft?`<rect x="${cx-e}" y="${cy-e}" width="${2*e}" height="${2*e}" fill="url(#${u}lt)" mask="url(#${u}mk)"/>`:`<path d="${lit}" fill="url(#${u}lt)"/>`}</g>
 </g>
 </svg>`;
 }

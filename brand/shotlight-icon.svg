@@ -1,20 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100">
 <defs>
 <linearGradient id="albg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#ecebe7"/></linearGradient>
 <radialGradient id="algw" cx=".92" cy=".04" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
 <linearGradient id="algl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
 <radialGradient id="alsp" cx=".35" cy=".35" r=".75"><stop offset="0" stop-color="#ff5f7e"/><stop offset="1" stop-color="#8a2be2"/></radialGradient>
-<linearGradient id="allt" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#fff6ef"/><stop offset="1" stop-color="#ffcdb8"/></linearGradient>
+<linearGradient id="allt" gradientUnits="userSpaceOnUse" x1="90" y1="7" x2="37.400" y2="87"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#fff6ef"/><stop offset="1" stop-color="#ffcdb8"/></linearGradient>
 <radialGradient id="alfl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#7a2a6a" stop-opacity=".75"/><stop offset="1" stop-color="#7a2a6a" stop-opacity="0"/></radialGradient>
 <linearGradient id="alrm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb0c2"/><stop offset="1" stop-color="#b48cff"/></linearGradient>
 <clipPath id="alcl"><circle cx="50" cy="47" r="30"/></clipPath>
-<filter id="albl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>
+<radialGradient id="almg"><stop offset="0" stop-color="#fff"/><stop offset="0.5625" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>
+<mask id="almk" maskUnits="userSpaceOnUse" x="10" y="7" width="80" height="80"><ellipse cx="50" cy="47" rx="16.128" ry="49.920" fill="url(#almg)"/><rect x="50" y="7" width="40" height="80" fill="#fff"/></mask>
 </defs>
 <rect width="100" height="100" rx="22.37" fill="url(#albg)"/><rect width="100" height="100" rx="22.37" fill="url(#algw)"/><rect x=".5" y=".5" width="99" height="99" rx="22.37" fill="none" stroke="url(#algl)"/><rect x=".4" y=".4" width="99.2" height="99.2" rx="21.970000000000002" fill="none" stroke="#e4e1db" stroke-width="0.8"/>
 <ellipse cx="52" cy="80.5" rx="28.5" ry="4.2" fill="url(#alfl)"/>
 <g transform="rotate(-35 50 47)">
 <circle cx="50" cy="47" r="30" fill="url(#alsp)"/>
 <circle cx="50" cy="47" r="29.4" fill="none" stroke="url(#alrm)" stroke-width="1.1" opacity=".9"/>
-<g clip-path="url(#alcl)"><path d="M50 7H90V87H50V77A12.6 30 0 0 1 50 17Z" fill="url(#allt)" filter="url(#albl)"/></g>
+<g clip-path="url(#alcl)"><rect x="10" y="7" width="80" height="80" fill="url(#allt)" mask="url(#almk)"/></g>
 </g>
 </svg>
