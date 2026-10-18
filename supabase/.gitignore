@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# OAuth client secrets for local testing (docs/uyelik.md); never commit
+.env
