@@ -21,11 +21,10 @@
 <div class="app">
   <!-- ============ top bar ============ -->
   <header class="topbar">
-    <button class="ib home-btn" type="button" id="homeTopBtn" aria-label="Ana sayfa" hidden><span data-icon="widget"></span><span class="tip">Ana sayfa</span></button>
+    <button class="ib home-btn" type="button" id="homeTopBtn" aria-label="Ana sayfa" hidden><span data-icon="home"></span><span class="tip">Ana sayfa</span></button>
     <div class="menu-wrap">
       <button class="appbtn" id="appMenuBtn" type="button" aria-label="Menü" aria-haspopup="menu" aria-expanded="false"><img class="mark" src="favicon.svg" alt="" aria-hidden="true"><span class="proj" id="projName">Adsız proje</span><span data-icon="alt-arrow-down" data-size="12"></span></button>
       <div class="menu" id="appMenu" role="menu" hidden>
-        <button class="mi" role="menuitem" type="button" id="homeBtn" hidden><span data-icon="alt-arrow-left"></span>Ana sayfa</button>
         <button class="mi" role="menuitem" type="button" id="openProjectBtn"><span data-icon="folder-open"></span>Proje aç…<kbd>⌘O</kbd></button>
         <button class="mi" role="menuitem" type="button" id="saveProject"><span data-icon="diskette"></span>Projeyi kaydet<kbd>⌘S</kbd></button>
         <button class="mi" role="menuitem" type="button" id="saveProjectAs"><span data-icon="diskette"></span>Farklı kaydet…<kbd>⇧⌘S</kbd></button>
@@ -36,7 +35,7 @@
         <button class="mi" role="menuitem" type="button" id="keysBtn"><span data-icon="keyboard"></span>Klavye kısayolları<kbd>?</kbd></button>
         <div class="msep" role="separator"></div>
         <div class="mlabel">Tema</div>
-        <div class="seg seg-menu" id="themeSeg" role="group" aria-label="Tema"><button type="button" data-theme="system">Sistem</button><button type="button" data-theme="light">Açık</button><button type="button" data-theme="dark">Koyu</button></div>
+        <div class="seg seg-menu" id="themeSeg" role="group" aria-label="Tema"><button type="button" data-theme="system" aria-label="Sistem" title="Sistem"><span data-icon="monitor" data-size="16"></span></button><button type="button" data-theme="light" aria-label="Açık" title="Açık"><span data-icon="sun" data-size="16"></span></button><button type="button" data-theme="dark" aria-label="Koyu" title="Koyu"><span data-icon="moon" data-size="16"></span></button></div>
       </div>
       <input type="file" id="openProject" accept=".json,.zip,application/json,application/zip" hidden>
     </div>

@@ -1060,3 +1060,7 @@ html.home-on .scrim{z-index:86}  /* over the home page and the welcome window (8
 /* a reload on the home page: its look (sidebar and page) covers the editor from the first paint (index.html) */
 html.home-boot::after{content:"";position:fixed;inset:0;z-index:69;background:linear-gradient(to right,var(--canvas) 0 240px,var(--line) 240px 241px,var(--panel) 241px)}
 @media (max-width:900px){html.home-boot::after{background:var(--panel)}}
+
+/* the app menu's theme switch: icons (Sistem / Açık / Koyu in their labels) */
+#themeSeg{width:max-content}
+#themeSeg button{width:36px;display:grid;place-items:center}

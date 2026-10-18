@@ -5,7 +5,7 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const set=JSON.parse(readFileSync(require.resolve('@iconify-json/solar/icons.json'),'utf8'));
-const NAMES=`cursor move restart planet smartphone tablet laptop monitor window-frame display gallery-wide widget sun-2 lightbulb
+const NAMES=`cursor move restart planet smartphone tablet laptop monitor window-frame display gallery-wide widget home sun-2 lightbulb
 sun-fog sun gallery-add gallery frame target maximize-square play hamburger-menu alt-arrow-down alt-arrow-right alt-arrow-up undo-left
 undo-right add-circle minus-circle eye eye-closed menu-dots refresh link trash-bin-minimalistic copy layers-minimalistic layers
 align-vertical-center align-horizontal-center align-bottom upload-minimalistic global camera settings folder-open diskette

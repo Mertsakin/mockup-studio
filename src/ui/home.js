@@ -314,9 +314,8 @@ onRoute(r=>follow(r));
 if(cloudEnabled){
   // a sign-in: where the visitor was going before the sign-in page (ui/router.js takeNext), the home page otherwise
   signInHooks.add(()=>{const n=takeNext();if(n)follow(n,{initial:true,addr:false});else showHome('recent',{replace:true});});
-  onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user){hideHome({fromURL:true});started=false;}else if(el){frame();draw();}
+  onAuth(a=>{for(const id of ['#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user){hideHome({fromURL:true});started=false;}else if(el){frame();draw();}
     else if(!a.fresh&&!started)resume();});
-  $('#homeBtn').addEventListener('click',()=>showHome());
   $('#homeTopBtn').addEventListener('click',()=>showHome());
   // the welcome card's close: the window over the home page closes; the editor's own card goes back home
   $('#wlClose').addEventListener('click',()=>{if(!closeWelcomeModal())showHome();});

@@ -36,7 +36,7 @@ try{
   await p.evaluate(()=>{const app=window.__app;if(!app('hasBoard')())app('addBoard')();app('req')();});await p.waitForTimeout(600);
   await clearToast(p);await p.click('#appMenuBtn');await p.click('#cloudSaveBtn');await p.fill('#pdName','Lansman görselleri');await p.keyboard.press('Enter');
   await toastHas(p,/buluta kaydedildi/);
-  await p.click('#appMenuBtn');await p.click('#homeBtn');
+  await p.click('#homeTopBtn');
   await p.waitForSelector('#home .hm-card',{timeout:15000});
   ok(/Lansman görselleri/.test(await p.textContent('.hm-card .hm-nm')),'"Ana sayfa" in the editor\'s menu: the project is listed');
   ok(await p.isVisible('.hm-card .hm-badge'),'marked as the open one');
@@ -98,7 +98,7 @@ try{
   ok(!(await p.$('#home')),'a reload stays in the editor');
 
   console.log('trash, list view');
-  await p.click('#appMenuBtn');await p.click('#homeBtn');await p.waitForSelector('#home .hm-card');
+  await p.click('#homeTopBtn');await p.waitForSelector('#home .hm-card');
   await p.hover('.hm-card');await p.click('.hm-card .hm-dots');await p.click('.hm-menu >> text=Çöp kutusuna taşı');
   ok(/Açık olduğu için kapanacak/.test(await p.locator('[role="alertdialog"]').last().textContent()||''),'trashing the open project: the question says it will close');
   await p.click('.dialog [data-a="ok"]');
