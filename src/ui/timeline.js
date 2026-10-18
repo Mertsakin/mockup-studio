@@ -268,7 +268,7 @@ function moveHead(){
   if(view.zoom>1&&!dragging&&A.t!==headT){const x=xOf(A.t);if(x<12||x>12+W()){view.scroll=Math.max(0,Math.min(maxScroll(),A.t*pps()-W()*.1));build();}}
   headT=A.t;
   const ph=$('#tlPh');if(ph)ph.style.left=xOf(A.t)+'px';
-  $('#tlTime').innerHTML=fmtT(A.t)+' <span>/ '+fmtT(state.anim.dur)+' sn</span>';
+  const tf=$('#tlT');if(document.activeElement!==tf)tf.value=fmtT(A.t);$('#tlDur').textContent='/ '+fmtT(state.anim.dur)+' sn';
   names.querySelectorAll('.subrow[data-prop]').forEach(n=>{const d=byRef(n.dataset.ref);if(d)n.querySelector('.sub').textContent=fmtV(d,n.dataset.prop,d[n.dataset.prop]);});
   names.querySelectorAll('.tl-name').forEach(n=>{if(n.querySelector('.knav'))syncNav(n);});
 }
@@ -399,6 +399,10 @@ $('#tlBody').addEventListener('wheel',e=>{
   else if(view.zoom>1&&Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setScroll(view.scroll+e.deltaX);}
 },{passive:false});
 $('#tlStart').addEventListener('click',()=>{stop();seek(0);});
+// the bar's time: typed in seconds ("1,2") or frames ("36k"); Enter seeks there, Esc gives the playhead's time back
+{const tf=$('#tlT');const go=()=>{const t=parseT(tf.value);if(Number.isFinite(t)){stop();seek(t);}tf.value=fmtT(A.t);};
+  tf.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();go();tf.blur();}else if(e.key==='Escape'){e.preventDefault();tf.value=fmtT(A.t);tf.blur();}});
+  tf.addEventListener('change',go);tf.addEventListener('focus',()=>tf.select());}
 $('#tlPlay').addEventListener('click',play);
 $('#tlLoop').addEventListener('click',()=>{state.anim.loop=!state.anim.loop;draw();});
 // timeline height (kept per browser)

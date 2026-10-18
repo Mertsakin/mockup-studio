@@ -12,6 +12,7 @@
     "build:site": "node tools/site/build.mjs",
     "storage:dev": "wrangler dev -c services/storage/wrangler.toml --local --port 8787",
     "accounts:test": "node tools/accounts/test-rls.mjs && node tools/accounts/test-storage.mjs",
+    "timeline:test": "node tools/timeline/test-keys.mjs",
     "dev:accounts": "vite --mode accounts --port 5177 --strictPort"
   },
   "devDependencies": {
