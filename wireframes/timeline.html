@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zaman çizelgesi · anahtar kare düzenleme</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Prototype of the Canlandır timeline's keyframe editing (ui/timeline.js, ui/animate.js). Tokens copied from
+   src/style.css. The timeline below is a working model: the data is fake, the interactions are the proposal. */
+:root{
+  --canvas:#efeff0;--panel:#ffffff;--field:#f4f4f5;--field-hover:#ebebed;--line:#e6e6e9;--line-strong:#d2d2d7;--danger:#c4321f;
+  --ink:#18181b;--ink-2:#52525b;--muted:#8a8a93;--accent:#0b68f5;--accent-soft:#e8f0fe;--accent-ink:#0a56cc;--on-accent:#fff;
+  --key:#f5a524;--key-ink:#b26b00;--track:#f7f7f8;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);--r:6px;--h:28px;color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;--danger:#ff8a7a;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
+  --key:#f5b13d;--key-ink:#ffcf7a;--track:#2c2c2f;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;--danger:#ff8a7a;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
+  --key:#f5b13d;--key-ink:#ffcf7a;--track:#2c2c2f;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font:13px/19px Inter,system-ui,sans-serif;color:var(--ink);background:var(--canvas)}
+button,input{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input{cursor:text}
+kbd{display:inline-block;min-width:18px;padding:0 5px;border-radius:4px;background:var(--field);box-shadow:inset 0 -1px 0 var(--line-strong);font-size:11px;line-height:18px;text-align:center;color:var(--ink-2)}
+h1,h2,h3,p{margin:0}
+.page{max-width:1240px;margin:0 auto;padding:28px 16px 64px}
+.intro{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:20px}
+.intro h1{font-size:22px;line-height:28px;font-weight:600}
+.intro p{color:var(--ink-2);margin-top:6px;max-width:80ch}
+.theme{height:28px;padding:0 10px;border-radius:var(--r);background:var(--panel);box-shadow:0 0 0 1px var(--line);font-weight:500;flex:none}
+h2{font-size:15px;font-weight:600;margin:32px 0 10px}
+h2 small{font-weight:400;color:var(--muted);margin-left:8px}
+.lead{color:var(--ink-2);max-width:90ch;margin-bottom:12px}
+
+/* before */
+.before{margin:0;background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:8px;position:relative}
+.before img{display:block;width:100%;height:auto;border-radius:6px}
+.before .n{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;box-shadow:0 0 0 2px var(--panel)}
+.pains{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 0;padding:0;list-style:none;counter-reset:p}
+.pains li{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:10px 12px 10px 40px;position:relative;color:var(--ink-2);font-size:12px;line-height:17px}
+.pains li::before{counter-increment:p;content:counter(p);position:absolute;left:10px;top:10px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}
+.pains b{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
+
+/* cards */
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rule{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:12px 14px}
+.rule b{display:block;font-weight:600;margin-bottom:2px}
+.rule span{color:var(--ink-2);font-size:12px;line-height:17px}
+.rule .tag{display:inline-block;margin-left:6px;font-size:10px;line-height:16px;padding:0 6px;border-radius:8px;background:var(--accent-soft);color:var(--accent-ink);font-weight:500;vertical-align:1px}
+table{border-collapse:collapse;width:100%;background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);overflow:hidden}
+td,th{padding:7px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:12px}
+th{font-weight:600;background:var(--field)}
+tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap;width:220px}
+.q{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:12px 14px;margin-bottom:8px}
+.q b{font-weight:600}
+.q p{color:var(--ink-2);font-size:12px;line-height:17px;margin-top:3px}
+.try{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 10px;padding:0;list-style:none;color:var(--ink-2);font-size:12px}
+.try li::before{content:"→ ";color:var(--muted)}
+
+/* ===== the timeline (mirrors .tl in style.css, with the proposal's additions) ===== */
+.proto{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line),var(--shadow);overflow:hidden;user-select:none}
+.tl{position:relative;display:grid;grid-template-rows:36px minmax(0,1fr);height:300px;background:var(--panel);min-width:0}
+.tl-bar{display:flex;align-items:center;gap:2px;padding:0 10px;border-bottom:1px solid var(--line)}
+.ib{position:relative;width:var(--h);height:var(--h);display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r);flex:none;color:var(--ink-2)}
+.ib:hover{background:var(--field);color:var(--ink)}
+.ib[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-ink)}
+.ib svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ib.sm{width:24px;height:24px}.ib.sm svg{width:13px;height:13px}
+.tl-time{min-width:110px;text-align:center;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.tl-time input{width:46px;text-align:right;font-weight:500;border-radius:4px;padding:1px 3px;background:transparent}
+.tl-time input:hover,.tl-time input:focus{background:var(--field);outline:none}
+.tl-time span{color:var(--muted);font-weight:400}
+.grow{flex:1}
+.btn{height:var(--h);padding:0 12px;border-radius:var(--r);font-weight:500;background:var(--field);display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--field-hover)}
+.btn.sm{height:24px;padding:0 8px;font-size:11px}
+.tl-fps{margin-left:8px;color:var(--muted)}
+.zoomer{display:inline-flex;align-items:center;gap:2px;margin-right:6px;color:var(--muted);font-size:11px}
+.zoomer .ib{color:var(--muted)}
+.sep{width:1px;height:16px;background:var(--line);margin:0 6px}
+.tl-body{position:relative;display:grid;grid-template-columns:236px minmax(0,1fr);min-height:0;overflow:hidden}
+.tl-names{border-right:1px solid var(--line);overflow:hidden}
+.ruler-pad{height:24px;border-bottom:1px solid var(--line)}
+.tl-name{display:flex;align-items:center;gap:6px;height:32px;padding:0 6px 0 8px;border-bottom:1px solid var(--line);cursor:default}
+.tl-name .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tl-name .knav{margin-left:auto}
+.tl-name .sub{margin-left:0;min-width:44px;text-align:right}
+.tl-name[aria-selected="true"]{background:var(--accent-soft)}
+.tl-name[aria-selected="true"] .nm{color:var(--accent-ink)}
+.tl-name .sub{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+.tl-name .caret{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;flex:none;color:var(--muted)}
+.tl-name .caret:hover{background:var(--field)}
+.tl-name .caret svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tl-name .ic{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;color:var(--ink-2)}
+.tl-name.subrow{height:26px;padding-left:46px;color:var(--muted);font-size:11px}
+/* NEW: the key navigator in every row: ◀ ◆ ▶ (previous key, key / un-key at the playhead, next key) */
+.knav{display:inline-flex;align-items:center;gap:0;margin-left:6px;flex:none;opacity:0;transition:opacity .12s}
+.tl-name:hover .knav,.tl-name[aria-selected="true"] .knav,.knav.has{opacity:1}
+.knav button{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;color:var(--muted)}
+.knav button:hover{background:var(--field);color:var(--ink)}
+.knav button:disabled{opacity:.3;cursor:default}
+.knav button:disabled:hover{background:none}
+.knav svg{width:9px;height:9px;fill:currentColor}
+.knav .kd{width:18px}
+.knav .kd i{display:block;width:8px;height:8px;transform:rotate(45deg);border-radius:1px;border:1.5px solid var(--line-strong)}
+.knav .kd.anim i{border-color:var(--key)}
+.knav .kd.at i{background:var(--key);border-color:var(--key)}
+.knav .kd:hover i{border-color:var(--key-ink)}
+.tl-lanes{position:relative;min-width:0;overflow:hidden;cursor:default}
+.ruler{position:relative;height:24px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--panel)}
+.tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--line)}
+.tick span{position:absolute;left:4px;top:5px;font-size:10px;color:var(--muted);white-space:nowrap}
+.tick.minor{top:16px}
+.tick.frame{top:19px;border-color:var(--line)}
+.lane{position:relative;height:32px;border-bottom:1px solid var(--line);background:var(--track)}
+.lane.sel{background:color-mix(in srgb,var(--accent-soft) 60%,var(--track))}
+.lane.subl{height:26px;background:var(--panel)}
+.seg-bar{position:absolute;top:13px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--key) 35%,transparent);cursor:pointer}
+.seg-bar:hover{background:color-mix(in srgb,var(--key) 55%,transparent)}
+.seg-bar.on{background:color-mix(in srgb,var(--accent) 45%,transparent);box-shadow:0 0 0 1px var(--accent)}
+.lane.subl .seg-bar{top:11px;height:4px}
+/* NEW: the ease of a segment is drawn on the bar when there is room (a tiny curve) */
+.seg-bar svg{position:absolute;left:50%;top:-6px;width:18px;height:18px;margin-left:-9px;fill:none;stroke:var(--key-ink);stroke-width:1.5;opacity:.75;pointer-events:none}
+.seg-bar.on svg{stroke:var(--accent-ink)}
+.lane.subl .seg-bar svg{top:-7px}
+.dmark{position:absolute;top:6px;width:20px;height:20px;margin-left:-10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--accent);pointer-events:none;opacity:.7}
+.kf{position:absolute;top:9px;width:14px;height:14px;margin-left:-7px;padding:0;cursor:ew-resize;z-index:1}
+.lane.subl .kf{top:6px}
+.kf::before{content:"";position:absolute;inset:2px;transform:rotate(45deg);background:var(--key);border-radius:2px;box-shadow:0 0 0 1.5px var(--panel)}
+.kf.small::before{inset:3px}
+/* NEW: a summary key where only some values have keys is half filled */
+.kf.part::before{background:linear-gradient(90deg,var(--key) 50%,var(--panel) 50%);box-shadow:0 0 0 1.5px var(--panel),inset 0 0 0 1.5px var(--key)}
+.kf:hover::before{transform:rotate(45deg) scale(1.2)}
+.kf.on::before{background:var(--accent);box-shadow:0 0 0 1.5px var(--panel),0 0 0 3px var(--accent)}
+.kf.part.on::before{background:linear-gradient(90deg,var(--accent) 50%,var(--panel) 50%);box-shadow:0 0 0 1.5px var(--panel),0 0 0 3px var(--accent),inset 0 0 0 1.5px var(--accent)}
+.end{position:absolute;top:0;bottom:0;width:10px;margin-left:-5px;cursor:ew-resize;z-index:2}
+.end::before{content:"";position:absolute;left:4px;top:0;bottom:0;width:2px;background:var(--line-strong)}
+.end span{position:absolute;top:26px;right:9px;font-size:10px;color:var(--muted);white-space:nowrap}
+.ph{position:absolute;top:0;bottom:0;width:0;border-left:1.5px solid var(--accent);pointer-events:none;z-index:3}
+.ph::before{content:"";position:absolute;left:-6px;top:0;width:11px;height:12px;background:var(--accent);clip-path:polygon(0 0,100% 0,100% 60%,50% 100%,0 60%)}
+/* NEW: marquee, selection range with stretch handles, snap guide */
+.marq{position:absolute;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);pointer-events:none;z-index:4}
+.range{position:absolute;top:0;height:0;border-top:1.5px dashed color-mix(in srgb,var(--accent) 55%,transparent);pointer-events:none;z-index:2}
+.range i{position:absolute;top:-5px;width:9px;height:9px;border-radius:2px;background:var(--panel);box-shadow:0 0 0 1.5px var(--accent);cursor:col-resize;pointer-events:auto}
+.range i.l{left:-5px}.range i.r{right:-5px}
+.snapg{position:absolute;top:0;bottom:0;border-left:1px dashed var(--key-ink);pointer-events:none;z-index:3}
+/* NEW: the edit card above the selection */
+.kpop{position:absolute;z-index:6;display:flex;align-items:center;gap:4px;height:34px;padding:0 6px 0 10px;border-radius:8px;background:var(--panel);box-shadow:0 0 0 1px var(--line),var(--shadow);font-size:12px;white-space:nowrap}
+.kpop::after{content:"";position:absolute;left:var(--ax,20px);bottom:-5px;width:8px;height:8px;background:var(--panel);transform:rotate(45deg);box-shadow:1px 1px 0 var(--line)}
+.kpop.below::after{bottom:auto;top:-5px;box-shadow:-1px -1px 0 var(--line)}
+.kpop b{font-weight:600;margin-right:2px}
+.kpop .tf{display:inline-flex;align-items:center;gap:3px;height:24px;padding:0 6px;border-radius:5px;background:var(--field);color:var(--ink-2)}
+.kpop .tf input{width:40px;text-align:right;color:var(--ink);font-weight:500}
+.kpop .tf input:focus{outline:none}
+.kpop .eases{display:inline-flex;gap:2px;height:24px;padding:2px;border-radius:5px;background:var(--field)}
+.kpop .eases button{position:relative;width:26px;border-radius:4px;color:var(--ink-2);display:grid;place-items:center}
+.kpop .eases button:hover{background:var(--field-hover);color:var(--ink)}
+.kpop .eases button[aria-pressed="true"]{background:var(--panel);color:var(--accent-ink);box-shadow:0 0 0 1px var(--line)}
+.kpop .eases button[aria-pressed="mixed"]{color:var(--muted)}
+.kpop .eases svg{width:18px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.kpop .ib.sm{color:var(--ink-2)}
+.kpop .ib.sm.on{color:var(--accent-ink);background:var(--accent-soft)}
+.kpop .ib.sm.del:hover{color:var(--danger)}
+.tip{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--panel);font-size:11px;line-height:14px;padding:4px 7px;border-radius:5px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .1s;z-index:9}
+.kpop .tip{top:auto;bottom:calc(100% + 6px)}
+.kpop button:hover>.tip,.ib:hover>.tip,.knav button:hover>.tip{opacity:1;transition-delay:.4s}
+/* context menu */
+.menu{position:fixed;z-index:40;background:var(--panel);border-radius:8px;box-shadow:0 0 0 1px var(--line),var(--shadow);padding:4px;min-width:208px;font-size:12px}
+.menu button{display:flex;width:100%;align-items:center;gap:8px;height:26px;padding:0 8px;border-radius:5px;text-align:left}
+.menu button:hover{background:var(--field)}
+.menu button kbd{margin-left:auto;background:none;box-shadow:none;color:var(--muted)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.menu .sub{padding:4px 8px 2px;color:var(--muted);font-size:11px}
+.tl-empty{position:absolute;left:calc(50% + 100px);top:64px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 228px);padding:8px 12px;border-radius:var(--r);background:var(--panel);box-shadow:0 0 0 1px var(--line);text-align:center;color:var(--muted);pointer-events:none;z-index:5}
+.status{display:flex;gap:14px;padding:8px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;background:var(--panel)}
+.status b{color:var(--ink-2);font-weight:500}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="intro">
+    <div>
+      <h1>Zaman çizelgesi · anahtar kare düzenleme</h1>
+      <p>Canlandır modundaki zaman çizelgesinin kullanımını kolaylaştıran öneri. Aşağıdaki çizelge çalışan bir model: veri sahte (telefon, kamera, ışık), etkileşimler önerinin kendisi. Önce bugünkü hâl ve sorunlar, sonra prototip, değişiklik listesi ve onay isteyen kararlar.</p>
+    </div>
+    <button class="theme" id="theme" type="button">Koyu tema</button>
+  </div>
+
+  <h2>Bugün<small>renders/timeline-before.png · telefon: "Aşağıdan yüksel" + "Süzülme", kamera: "Yaklaşarak gir", ışık: "Solarak yan"</small></h2>
+  <figure class="before">
+    <img src="assets/timeline-before.jpg" alt="Bugünkü zaman çizelgesi">
+    <span class="n" style="left:42%;top:38%">1</span>
+    <span class="n" style="left:9%;top:38%">2</span>
+    <span class="n" style="left:60%;top:18%">3</span>
+    <span class="n" style="left:93%;top:60%">4</span>
+    <span class="n" style="left:42%;top:82%">5</span>
+  </figure>
+  <ol class="pains">
+    <li><b>Tek anahtar seçilir, tek anahtar taşınır</b>Bir hareketi bütünüyle geciktirmek ya da hızlandırmak için her elması tek tek sürüklemek gerekir. Çerçeve seçimi, Shift ile ekleme, birlikte taşıma yok.</li>
+    <li><b>Çizelgeden anahtar eklenmez</b>Anahtar yalnızca sağ paneldeki ◆ düğmeleri ya da K ile eklenir; satırda "bu anda anahtar" ve önceki/sonraki anahtara gitme yok.</li>
+    <li><b>Yakınlaştırma yok</b>30 sn'lik bir animasyonda bir kare arayla duran iki anahtar üst üste biner; 5 sn'de bile 1,20 ve 1,25 ayırt edilmez.</li>
+    <li><b>Düzenleme uzakta</b>Seçili anahtarın zamanı, geçiş türü ve "Tasarım karesi yap" sağ panelde, çizelgeden 1000 px ötede; zaman sayıyla yazılamaz.</li>
+    <li><b>Özet elmas bilgi vermez</b>Hangi değerlerin o anda anahtarı var belli değil; geçiş türü anahtara bağlı ("sonraki kareye geçiş"), oysa kullanıcı iki anahtar arasındaki <em>geçişi</em> düşünür.</li>
+    <li><b>Pano ve kopyalama yok</b>Bir hareketi çoğaltmak ya da başka bir ana taşımak için hazır hareketi yeniden uygulamak gerekir.</li>
+  </ol>
+
+  <h2>Öneri: etkileşimli prototip</h2>
+  <ul class="try">
+    <li>Boş alanda sürükle: <b>çerçeve seçimi</b> (satırlar arası da) · Shift/⌘ + tık: ekle/çıkar · ⌘A: seçili katmanın tüm anahtarları</li>
+    <li>Seçili bir elması sürükle: <b>hepsi birlikte</b> taşınır (kareye, saniyeye, diğer anahtarlara ve imlece yapışır; ⌘ yapışmasız)</li>
+    <li>Seçim kesikli çizgisinin <b>uç tutamaçları</b>: aralığı esnet (hareketi yavaşlat / hızlandır)</li>
+    <li>Satır adının yanında <b>◀ ◆ ▶</b>: önceki anahtar · bu anda anahtar ekle/kaldır · sonraki anahtar</li>
+    <li>Boş alana <b>çift tık</b>: o anda anahtar · <b>geçiş çubuğuna</b> tık: geçiş türü · sağ tık: menü</li>
+    <li>⌘ + tekerlek: yakınlaştır · tekerlek: kaydır · ↑/↓ önceki/sonraki anahtar · ⌥←/→ seçimi bir kare kaydır · ⌘C/⌘V/⌘D · Sil</li>
+  </ul>
+  <div class="proto">
+    <section class="tl" id="timeline" aria-label="Zaman çizelgesi">
+      <div class="tl-bar">
+        <button class="ib" type="button" id="tlStart" aria-label="Başa dön"><svg viewBox="0 0 24 24"><path d="M19 5v14L9 12zM6 5v14"/></svg><span class="tip">Başa dön <kbd>Home</kbd></span></button>
+        <button class="ib" type="button" id="tlPlay" aria-label="Oynat"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg><span class="tip">Oynat / durdur <kbd>Boşluk</kbd></span></button>
+        <button class="ib" type="button" id="tlLoop" aria-label="Döngü" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 12V9a3 3 0 0 1 3-3h13l-3-3m3 3-3 3M20 12v3a3 3 0 0 1-3 3H4l3 3m-3-3 3-3"/></svg><span class="tip">Döngü</span></button>
+        <span class="tl-time" id="tlTime"><input id="tlT" aria-label="Zaman (sn)" value="1,20"><span id="tlDur">/ 5,00 sn</span></span>
+        <span class="grow"></span>
+        <span class="zoomer">
+          <button class="ib sm" type="button" id="zOut" aria-label="Uzaklaş"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          <span id="zLbl">1×</span>
+          <button class="ib sm" type="button" id="zIn" aria-label="Yakınlaş"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+          <button class="ib sm" type="button" id="zFit" aria-label="Tümünü sığdır"><svg viewBox="0 0 24 24"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/></svg><span class="tip">Tümünü sığdır <kbd>⇧1</kbd></span></button>
+        </span>
+        <span class="sep"></span>
+        <button class="btn sm" type="button">Hazır hareket ekle</button>
+        <span class="tl-fps">30 fps</span>
+      </div>
+      <div class="tl-body" id="tlBody">
+        <div class="tl-names" id="tlNames"></div>
+        <div class="tl-lanes" id="tlLanes" tabindex="0"></div>
+      </div>
+    </section>
+    <div class="status"><span>Seçim: <b id="stSel">yok</b></span><span>Son işlem: <b id="stLast">–</b></span><span class="grow"></span><span>Bu bir prototip: sahne çizilmez, değerler sahte.</span></div>
+  </div>
+
+  <h2>Ne değişiyor</h2>
+  <div class="rules">
+    <div class="rule"><b>Çoklu seçim<span class="tag">istenen</span></b><span>Çerçeve seçimi, Shift/⌘ ile ekleme, ⌘A. Seçim anahtar düzeyinde tutulur (<code>A.sel</code> → anahtar listesi); özet elmasa tıklamak o andaki tüm değer anahtarlarını seçer. Taşıma, silme, geçiş türü ve kopyalama seçimin tümüne uygulanır.</span></div>
+    <div class="rule"><b>Birlikte taşıma ve esnetme<span class="tag">istenen</span></b><span>Seçili bir elması sürüklemek hepsini aynı miktar kaydırır; aralığın uçlarındaki tutamaçlar zamanı orantılı esnetir. Başka bir anahtarın üstüne düşen taşıma durur (bugünkü kural). Tasarım karesi anahtarıyla birlikte gider.</span></div>
+    <div class="rule"><b>Satırda ◀ ◆ ▶</b><span>Her satırda anahtar gezgini: önceki / sonraki anahtara atla, imlecin bulunduğu anda anahtar ekle ya da (varsa) kaldır. Özet satırda poz (tüm değerler), değer satırında o değer. Sağ paneldeki ◆ düğmeleri kalır, aynı işi yapar.</span></div>
+    <div class="rule"><b>Düzenleme kartı</b><span>Seçimin üstünde küçük bir kart: zaman alanı (yazılır), geçiş türü (4 ikon), tasarım karesi, sil. Sağ paneldeki "Anahtar kare" bölümü kalkar; panel yalnızca değer alanları ve ◆'leri gösterir.</span></div>
+    <div class="rule"><b>Geçiş çubuğu seçilir</b><span>İki anahtar arasındaki çubuğa tıklamak geçişi seçer ve kartta türünü gösterir; çubuğun üstünde türün küçük eğrisi. Veri modeli değişmez (ease hâlâ soldaki anahtarda), yalnızca sunum "geçiş" olur.</span></div>
+    <div class="rule"><b>Yakınlaştırma ve kaydırma</b><span>⌘ + tekerlek imlecin altında yakınlaştırır (1×–20×), tekerlek kaydırır, ⇧1 sığdırır. Yakınken cetvel kare çizgilerini gösterir. Oynatırken imleç görünür kalacak şekilde kayar.</span></div>
+    <div class="rule"><b>Özet elmas: tam / kısmi</b><span>O anda tüm değerlerin anahtarı varsa dolu, bazılarının varsa yarım dolu elmas. Katlanmadan hangi anın "poz" olduğu görünür.</span></div>
+    <div class="rule"><b>Pano</b><span>⌘C / ⌘X / ⌘V imleçte yapıştırır (ilk anahtar imlece gelir, aralıklar korunur; aynı hedef, ya da seçili hedefte aynı adlı değerler). ⌘D seçimi imlece çoğaltır. Sağ tık menüsünde de.</span></div>
+    <div class="rule"><b>Zaman alanı</b><span>Üst çubuktaki zaman yazılabilir (sn ya da kare: "1,2" / "36k"). Kartta seçimin başlangıcı yazılır, seçim oraya taşınır.</span></div>
+  </div>
+
+  <h2>Kısayollar<small>bugünküler korunur; yenileri kalın</small></h2>
+  <table>
+    <tr><th>Tuş</th><th>İşlev</th></tr>
+    <tr><td><kbd>Boşluk</kbd> · <kbd>Home</kbd></td><td>Oynat / durdur · başa dön</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd> · <kbd>⇧</kbd></td><td>Bir kare · bir saniye</td></tr>
+    <tr><td><b><kbd>↑</kbd> <kbd>↓</kbd></b></td><td><b>Seçili katmanın önceki / sonraki anahtarına git</b> (Blender'daki gibi)</td></tr>
+    <tr><td><kbd>K</kbd></td><td>Seçili hedefin tüm değerlerine bu anda anahtar (poz)</td></tr>
+    <tr><td><b><kbd>⌥</kbd> + <kbd>←</kbd> <kbd>→</kbd></b></td><td><b>Seçili anahtarları bir kare kaydır</b> (⇧ ile bir saniye)</td></tr>
+    <tr><td><b>Shift / ⌘ + tık · sürükle · <kbd>⌘A</kbd> · <kbd>Esc</kbd></b></td><td><b>Seçime ekle · çerçeve seçimi · katmanın tüm anahtarları · seçimi bırak</b></td></tr>
+    <tr><td><b><kbd>⌘C</kbd> <kbd>⌘X</kbd> <kbd>⌘V</kbd> <kbd>⌘D</kbd></b></td><td><b>Kopyala / kes / imlece yapıştır / imlece çoğalt</b></td></tr>
+    <tr><td><kbd>Sil</kbd></td><td>Seçili anahtarları sil (son anahtar silinince değer olduğu yerde kalır)</td></tr>
+    <tr><td><b><kbd>⌘</kbd> + tekerlek · tekerlek · <kbd>⇧1</kbd></b></td><td><b>Yakınlaştır · kaydır · tümünü sığdır</b></td></tr>
+    <tr><td><b>Çift tık</b></td><td><b>Satırda o anda anahtar ekle</b></td></tr>
+  </table>
+
+  <h2>Onay istenen kararlar</h2>
+  <div class="q"><b>1. Düzenleme kartı sağ paneldeki "Anahtar kare" bölümünün yerine geçsin mi?</b><p>Önerim: evet, tek yer olsun. Alternatif: ikisi de kalsın (kart hızlı işler, panel ayrıntı); ama aynı şeyi iki yerde göstermek kafa karıştırır.</p></div>
+  <div class="q"><b>2. Lanlerde sürükleme = çerçeve seçimi, kaydırma yalnızca cetvelden.</b><p>Bugün boş alanı sürüklemek imleci kaydırıyor. Öneride lan boşluğu çerçeve seçimi, cetvel (ve imlecin başı) kaydırma; boş alana tek tık yine imleci oraya götürür. After Effects / Figma düzeni.</p></div>
+  <div class="q"><b>3. Esnetme tutamaçları ilk sürüme girsin mi?</b><p>İki ve daha fazla anahtar seçiliyken uçlardaki tutamaçlar. Küçük ek iş, ama "hareketi yavaşlat" için en kısa yol. İstemezsen çıkarırım.</p></div>
+  <div class="q"><b>4. Geçiş türü "geçiş" olarak sunulsun (çubuk seçilir) mi, anahtarda mı kalsın?</b><p>Veri aynı; yalnızca etkileşim değişir. Çubuk seçilince kartta "Geçiş · 0,00 → 1,20 sn". Anahtar seçiliyken kart yine "sonraki geçiş" türünü gösterir (bugünkü gibi), ikisi de çalışır.</p></div>
+  <div class="q"><b>5. Kapsam</b><p>Uygulama sırası: (a) seçim modeli + çerçeve + birlikte taşıma + Sil + ⌘A, (b) satır gezgini ◀ ◆ ▶ ve çift tık, (c) kart ve geçiş çubuğu, (d) yakınlaştırma / kaydırma, (e) pano ve esnetme. Her adım kendi başına kullanılabilir; her birinden sonra ekran görüntüsüyle gösteririm.</p></div>
+</div>
+
+<script>
+/* ---------- fake data: what the "before" screenshot has */
+const fps=30,snap=t=>Math.round(t*fps)/fps,half=.5/fps;
+const K=(t,v,e='smooth')=>({t,v,ease:e});
+const T=[
+  {ref:'cam',name:'Kamera',icon:'cam',tracks:{zoom:[K(0,.8),K(1.5,1)]}},
+  {ref:'d1',name:'Telefon',icon:'phone',designT:1.2,tracks:{
+    py:[K(0,-6,'back'),K(1.2,0),K(1.25,.8),K(2.5,0),K(3.75,.8),K(5,0)],
+    scale:[K(0,.92,'back'),K(1.2,1)],
+    rz:[K(0,0),K(1.25,1.2),K(2.5,0),K(3.75,1.2),K(5,0)]}},
+  {ref:'l1',name:'Oktabox',icon:'lamp',tracks:{intensity:[K(0,0),K(1,1.2)]}}];
+T.forEach(o=>{for(const p in o.tracks)o.tracks[p].forEach(k=>{k.o=o;k.p=p;});});
+const LABEL={zoom:'Yakınlık',py:'Dikey',scale:'Ölçek',rz:'Yatış',intensity:'Yoğunluk'};
+const EASE={smooth:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,linear:x=>x,hold:x=>x<1?0:1,back:x=>{const c=1.70158,c3=c+1;return 1+c3*Math.pow(x-1,3)+c*Math.pow(x-1,2);}};
+const EASES=[['smooth','Yumuşak','M2 11 C 7 11, 11 1, 16 1'],['linear','Doğrusal','M2 11 L 16 1'],['hold','Ani','M2 11 L 14 11 L 14 1 L 16 1'],['back','Geri tepme','M2 11 C 6 11, 9 -3, 16 1']];
+const ICON={cam:'<svg class="ic" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',phone:'<svg class="ic" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18h4"/></svg>',lamp:'<svg class="ic" viewBox="0 0 24 24"><path d="M8 3h8l3 9H5zM12 12v5M8 21h8"/></svg>'};
+const MONO=k=>k==='zoom'||k==='scale'?v=>v.toFixed(2)+'×':k==='rz'?v=>Math.round(v)+'°':k==='intensity'?v=>v.toFixed(2):v=>v.toFixed(1);
+const fmtT=t=>t.toFixed(2).replace('.',',');
+const tracked=o=>Object.keys(o.tracks).filter(p=>o.tracks[p].length);
+const timesOf=o=>[...new Set(tracked(o).flatMap(p=>o.tracks[p].map(k=>+k.t.toFixed(4))))].sort((a,b)=>a-b);
+const keyIn=(tr,t)=>tr.find(k=>Math.abs(k.t-t)<half);
+const sortTr=tr=>tr.sort((a,b)=>a.t-b.t);
+function interp(tr,t){const n=tr.length;if(!n)return 0;if(t<=tr[0].t)return tr[0].v;if(t>=tr[n-1].t)return tr[n-1].v;let i=0;while(tr[i+1].t<t)i++;const a=tr[i],b=tr[i+1];return a.v+(b.v-a.v)*(EASE[a.ease]||EASE.smooth)((t-a.t)/(b.t-a.t));}
+
+/* ---------- editor state */
+const S={dur:5,t:1.2,loop:true,playing:false,selRef:'d1',open:new Set(['d1']),sel:new Set(),seg:null,zoom:1,scroll:0,clip:null};
+const $=s=>document.querySelector(s),names=$('#tlNames'),lanes=$('#tlLanes');
+const PAD=12,W=()=>Math.max(40,lanes.clientWidth-44);
+const pps=()=>W()/S.dur*S.zoom;
+const xOf=t=>PAD+t*pps()-S.scroll,tOf=x=>Math.max(0,Math.min(S.dur,(x-PAD+S.scroll)/pps()));
+const maxScroll=()=>Math.max(0,S.dur*pps()-W());
+const byRef=r=>T.find(o=>o.ref===r);
+const status=(what)=>{$('#stLast').textContent=what;};
+function selInfo(){const n=S.sel.size;if(S.seg)return 'geçiş · '+fmtT(S.seg.t0)+' → '+fmtT(S.seg.t1)+' sn';if(!n)return 'yok';const ts=[...S.sel].map(k=>k.t);const a=Math.min(...ts),b=Math.max(...ts);return n+' anahtar · '+(b-a<half?fmtT(a)+' sn':fmtT(a)+'–'+fmtT(b)+' sn');}
+
+/* ---------- drawing */
+function rows(){const r=[];T.forEach(o=>{r.push({o,prop:null});if(S.open.has(o.ref))tracked(o).forEach(p=>r.push({o,prop:p}));});return r;}
+function tickStep(){const p=pps();for(const s of [.1,.25,.5,1,2,5])if(s*p>=70)return s;return 5;}
+function build(){
+  names.innerHTML='<div class="ruler-pad"></div>';lanes.innerHTML='';
+  const ruler=document.createElement('div');ruler.className='ruler';
+  const step=tickStep();let h='';
+  for(let s=0;s<=S.dur+1e-6;s+=step)h+='<div class="tick" style="left:'+xOf(s)+'px"><span>'+String(+s.toFixed(2)).replace('.',',')+' sn</span></div>';
+  for(let s=step/2;s<S.dur;s+=step)h+='<div class="tick minor" style="left:'+xOf(s)+'px"></div>';
+  if(pps()/fps>=7)for(let f=1;f<S.dur*fps;f++){if(Math.abs((f/fps)%(step/2))<1e-6)continue;h+='<div class="tick frame" style="left:'+xOf(f/fps)+'px"></div>';}
+  ruler.innerHTML=h;lanes.appendChild(ruler);ruler.addEventListener('pointerdown',scrub);
+  rows().forEach(({o,prop})=>{
+    const n=document.createElement('div');n.className='tl-name'+(prop?' subrow':'');
+    const tr=prop?o.tracks[prop]:null,times=prop?tr.map(k=>k.t):timesOf(o);
+    const at=prop?!!keyIn(tr,S.t):tracked(o).every(p=>keyIn(o.tracks[p],S.t));
+    const prev=times.filter(t=>t<S.t-half).pop(),next=times.find(t=>t>S.t+half);
+    const nav='<span class="knav'+(at?' has':'')+'"><button type="button" class="pv" aria-label="Önceki anahtar"'+(prev===undefined?' disabled':'')+'><svg viewBox="0 0 10 10"><path d="M8 1 2 5l6 4z"/></svg></button>'+
+      '<button type="button" class="kd'+(at?' at':times.length?' anim':'')+'" aria-label="Bu anda anahtar"><i></i><span class="tip">'+(at?'Bu andaki anahtarı kaldır':prop?'Bu anda '+LABEL[prop].toLowerCase()+' anahtarı':'Bu anda poz anahtarı (tüm değerler)')+' <kbd>K</kbd></span></button>'+
+      '<button type="button" class="nx" aria-label="Sonraki anahtar"'+(next===undefined?' disabled':'')+'><svg viewBox="0 0 10 10"><path d="M2 1l6 4-6 4z"/></svg></button></span>';
+    if(prop)n.innerHTML='<span class="nm">'+LABEL[prop]+'</span>'+nav+'<span class="sub">'+MONO(prop)(interp(tr,S.t))+'</span>';
+    else{n.setAttribute('aria-selected',String(S.selRef===o.ref));
+      n.innerHTML='<button type="button" class="caret" aria-label="Değerleri göster"><svg viewBox="0 0 10 10"><path d="'+(S.open.has(o.ref)?'M2 4l3 3 3-3':'M4 2l3 3-3 3')+'"/></svg></button>'+ICON[o.icon]+'<span class="nm">'+o.name+'</span>'+nav+'<span class="sub"></span>';n.title=tracked(o).length+' animasyonlu değer';
+      n.querySelector('.caret').addEventListener('click',e=>{e.stopPropagation();S.open.has(o.ref)?S.open.delete(o.ref):S.open.add(o.ref);draw();});}
+    n.querySelector('.pv').addEventListener('click',e=>{e.stopPropagation();seek(prev);});
+    n.querySelector('.nx').addEventListener('click',e=>{e.stopPropagation();seek(next);});
+    n.querySelector('.kd').addEventListener('click',e=>{e.stopPropagation();S.selRef=o.ref;toggleKey(o,prop);});
+    n.addEventListener('click',()=>{S.selRef=o.ref;draw();});
+    names.appendChild(n);
+    const lane=document.createElement('div');lane.className='lane'+(prop?' subl':'')+(!prop&&S.selRef===o.ref?' sel':'');lane.dataset.ref=o.ref;if(prop)lane.dataset.prop=prop;
+    // segments (clickable: select the transition)
+    for(let j=0;j<times.length-1;j++){const b=document.createElement('div');b.className='seg-bar';const x0=xOf(times[j]),x1=xOf(times[j+1]);b.style.left=x0+'px';b.style.width=(x1-x0)+'px';
+      const ks=prop?[tr[j]]:tracked(o).map(p=>keyIn(o.tracks[p],times[j])).filter(Boolean);const es=new Set(ks.map(k=>k.ease));
+      const on=S.seg&&S.seg.ref===o.ref&&S.seg.prop===prop&&Math.abs(S.seg.t0-times[j])<half;if(on)b.classList.add('on');
+      if(x1-x0>40&&es.size===1){const e=EASES.find(x=>x[0]===[...es][0]);b.innerHTML='<svg viewBox="0 0 18 12"><path d="'+e[2]+'"/></svg>';}
+      b.title='Geçiş: '+(es.size===1?EASES.find(x=>x[0]===[...es][0])[1]:'karışık')+' · '+fmtT(times[j])+' → '+fmtT(times[j+1])+' sn (tıkla: türünü değiştir)';
+      // a press on the bar: a click selects the transition, a drag is a marquee (the bars cover most of a lane)
+      b.addEventListener('pointerdown',e=>{e.stopPropagation();if(e.button!==0)return;marquee(e,o,prop,()=>{S.sel.clear();S.seg={ref:o.ref,prop,t0:times[j],t1:times[j+1]};S.selRef=o.ref;status('geçiş seçildi');draw();});});
+      lane.appendChild(b);}
+    if(!prop&&o.designT!==undefined){const m=document.createElement('span');m.className='dmark';m.style.left=xOf(o.designT)+'px';m.title='Tasarım karesi ('+fmtT(o.designT)+' sn)';lane.appendChild(m);}
+    times.forEach(t=>{
+      const ks=prop?[keyIn(tr,t)]:tracked(o).map(p=>keyIn(o.tracks[p],t)).filter(Boolean);
+      const part=!prop&&ks.length<tracked(o).length,on=ks.every(k=>S.sel.has(k));
+      const b=document.createElement('button');b.type='button';b.className='kf'+(prop?' small':'')+(part?' part':'')+(on?' on':'');b.style.left=xOf(t)+'px';
+      b.title=fmtT(t)+' sn'+(part?' · '+ks.map(k=>LABEL[k.p]).join(', '):'');b.setAttribute('aria-label',(prop?LABEL[prop]+', ':'')+'anahtar kare, '+fmtT(t)+' sn');
+      b.addEventListener('pointerdown',e=>dragKeys(e,o,ks));
+      b.addEventListener('contextmenu',e=>{e.preventDefault();if(!ks.every(k=>S.sel.has(k))){S.sel.clear();ks.forEach(k=>S.sel.add(k));S.seg=null;draw();}menu(e.clientX,e.clientY);});
+      lane.appendChild(b);});
+    lane.addEventListener('pointerdown',e=>{if(e.target!==lane)return;marquee(e,o,prop);});
+    lanes.appendChild(lane);});
+  const end=document.createElement('div');end.className='end';end.style.left=xOf(S.dur)+'px';end.innerHTML='<span>'+fmtT(S.dur).replace(',00','')+' sn</span>';end.title='Süreyi değiştirmek için sürükle';lanes.appendChild(end);
+  const ph=document.createElement('div');ph.className='ph';ph.id='tlPh';ph.style.left=xOf(S.t)+'px';lanes.appendChild(ph);
+  drawRange();drawPop();
+  $('#zLbl').textContent=(+S.zoom.toFixed(1))+'×';$('#tlT').value=fmtT(S.t);$('#tlDur').textContent='/ '+fmtT(S.dur)+' sn';$('#stSel').textContent=selInfo();
+  $('#tlPlay').innerHTML=(S.playing?'<svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>':'<svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>')+'<span class="tip">'+(S.playing?'Durdur':'Oynat')+' <kbd>Boşluk</kbd></span>';
+}
+// the selection's range: a dashed line through its rows with stretch handles when it spans time
+function drawRange(){
+  lanes.querySelectorAll('.range').forEach(e=>e.remove());if(S.sel.size<2)return;
+  const ts=[...S.sel].map(k=>k.t),a=Math.min(...ts),b=Math.max(...ts);if(b-a<half)return;
+  const ls=[...lanes.querySelectorAll('.lane')].filter(l=>[...S.sel].some(k=>k.o.ref===l.dataset.ref&&(!l.dataset.prop||l.dataset.prop===k.p)));
+  const top=Math.min(...ls.map(l=>l.offsetTop)),bot=Math.max(...ls.map(l=>l.offsetTop+l.offsetHeight));
+  const r=document.createElement('div');r.className='range';r.style.left=xOf(a)+'px';r.style.width=(xOf(b)-xOf(a))+'px';r.style.top=(top+bot)/2+'px';
+  r.innerHTML='<i class="l" title="Esnet: başlangıcı taşı"></i><i class="r" title="Esnet: bitişi taşı"></i>';
+  r.querySelector('.l').addEventListener('pointerdown',e=>stretch(e,'l'));r.querySelector('.r').addEventListener('pointerdown',e=>stretch(e,'r'));lanes.appendChild(r);
+}
+// the edit card above the selection (or the selected transition)
+function drawPop(){
+  const old=lanes.querySelector('.kpop');if(old)old.remove();
+  const ks=[...S.sel];if(!ks.length&&!S.seg)return;
+  let a,b,eases,title,lanesHit,single=null;
+  if(S.seg){const o=byRef(S.seg.ref);const kk=S.seg.prop?[keyIn(o.tracks[S.seg.prop],S.seg.t0)]:tracked(o).map(p=>keyIn(o.tracks[p],S.seg.t0)).filter(Boolean);
+    a=S.seg.t0;b=S.seg.t1;eases=new Set(kk.map(k=>k.ease));title='Geçiş';lanesHit=[...lanes.querySelectorAll('.lane')].filter(l=>l.dataset.ref===S.seg.ref&&(l.dataset.prop||null)===S.seg.prop);}
+  else{const ts=ks.map(k=>k.t);a=Math.min(...ts);b=Math.max(...ts);eases=new Set(ks.map(k=>k.ease));
+    const refs=new Set(ks.map(k=>k.o.ref));title=ks.length===1?LABEL[ks[0].p]:(refs.size===1?ks.length+' anahtar':ks.length+' anahtar · '+refs.size+' katman');
+    if(ks.length===1||(refs.size===1&&b-a<half))single=ks[0].o;
+    lanesHit=[...lanes.querySelectorAll('.lane')].filter(l=>ks.some(k=>k.o.ref===l.dataset.ref&&(!l.dataset.prop||l.dataset.prop===k.p)));}
+  const top=Math.min(...lanesHit.map(l=>l.offsetTop));
+  const p=document.createElement('div');p.className='kpop';
+  const isDesign=single&&single.designT!==undefined&&Math.abs(single.designT-a)<half;
+  p.innerHTML='<b>'+title+'</b>'+
+    (S.seg?'<span class="tf">'+fmtT(a)+' → '+fmtT(b)+' sn</span>':'<span class="tf"><input id="kpT" value="'+fmtT(a)+'" aria-label="Zaman (sn)"><span>sn</span></span>')+
+    '<span class="eases" role="group" aria-label="Geçiş türü">'+EASES.map(e=>'<button type="button" data-ease="'+e[0]+'" aria-pressed="'+(eases.size>1?'mixed':eases.has(e[0]))+'"><svg viewBox="0 0 18 12"><path d="'+e[2]+'"/></svg><span class="tip">'+e[1]+(S.seg?'':' (sonraki geçiş)')+'</span></button>').join('')+'</span>'+
+    (S.seg?'':'<button type="button" class="ib sm'+(isDesign?' on':'')+'" id="kpDesign" aria-pressed="'+!!isDesign+'"'+(single?'':' disabled')+'><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5z"/><path d="M8 14l3 3 5-6"/></svg><span class="tip">'+(isDesign?'Tasarım karesi: Tasarla ve durağan görsel bu anı gösterir':'Tasarım karesi yap')+'</span></button>'+
+    '<button type="button" class="ib sm del" id="kpDel"><svg viewBox="0 0 24 24"><path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13"/></svg><span class="tip">Sil <kbd>⌫</kbd></span></button>');
+  lanes.appendChild(p);
+  const cx=(xOf(a)+xOf(b))/2;let left=cx-p.offsetWidth/2;left=Math.max(4,Math.min(lanes.clientWidth-p.offsetWidth-4,left));
+  let y=top-p.offsetHeight-8;if(y<26){y=Math.max(...lanesHit.map(l=>l.offsetTop+l.offsetHeight))+8;p.classList.add('below');}
+  p.style.left=left+'px';p.style.top=y+'px';p.style.setProperty('--ax',(cx-left-4)+'px');
+  p.querySelectorAll('[data-ease]').forEach(b=>b.addEventListener('click',()=>{setEase(b.dataset.ease);}));
+  const tf=p.querySelector('#kpT');if(tf){tf.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();moveTo(parseT(tf.value));}if(e.key==='Escape'){tf.blur();lanes.focus();}e.stopPropagation();});tf.addEventListener('change',()=>moveTo(parseT(tf.value)));}
+  const d=p.querySelector('#kpDesign');if(d)d.addEventListener('click',()=>{if(!single)return;single.designT=a;status('tasarım karesi: '+fmtT(a)+' sn');draw();});
+  const dl=p.querySelector('#kpDel');if(dl)dl.addEventListener('click',delSel);
+  p.addEventListener('pointerdown',e=>e.stopPropagation());
+}
+function moveHead(){const ph=$('#tlPh');if(ph)ph.style.left=xOf(S.t)+'px';$('#tlT').value=fmtT(S.t);
+  names.querySelectorAll('.subrow').forEach((n,i)=>{});}
+function draw(){build();}
+const parseT=s=>{s=String(s).trim().replace(',','.');if(/k$/i.test(s))return parseFloat(s)/fps;return parseFloat(s);};
+
+/* ---------- time */
+function seek(t){if(t===undefined||!Number.isFinite(t))return;S.t=Math.max(0,Math.min(S.dur,t));
+  // keep the playhead in view
+  const x=xOf(S.t);if(x<PAD)S.scroll=Math.max(0,S.scroll-(PAD-x));else if(x>W()+PAD)S.scroll=Math.min(maxScroll(),S.scroll+(x-W()-PAD));
+  draw();}
+let raf=0,last=0;
+function play(){if(S.playing){stop();return;}S.playing=true;if(S.t>=S.dur-1e-6)S.t=0;last=performance.now();
+  const tick=now=>{if(!S.playing)return;let t=S.t+(now-last)/1000;last=now;if(t>=S.dur){if(S.loop)t%=S.dur;else{t=S.dur;S.playing=false;}}seek(t);if(S.playing)raf=requestAnimationFrame(tick);};raf=requestAnimationFrame(tick);draw();}
+function stop(){if(!S.playing)return;S.playing=false;cancelAnimationFrame(raf);draw();}
+function loop(e,move,up){const mv=ev=>move(ev),u=ev=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',u);removeEventListener('pointercancel',u);if(up)up(ev);};addEventListener('pointermove',mv);addEventListener('pointerup',u);addEventListener('pointercancel',u);move(e);}
+// snapping: frames always; whole seconds, other keys and the playhead within 6 px (⌘ off)
+function snapNear(t,ev,exclude){const cands=T.flatMap(timesOf).concat([...Array(Math.floor(S.dur)+1).keys()],[S.t]).filter(c=>!exclude||!exclude.has(+c.toFixed(4)));
+  if(!(ev.metaKey||ev.ctrlKey)){const near=cands.find(c=>Math.abs(xOf(c)-xOf(t))<6);if(near!==undefined){guide(near);return near;}}guide(null);return snap(t);}
+function guide(t){let g=lanes.querySelector('.snapg');if(t==null){if(g)g.remove();return;}if(!g){g=document.createElement('div');g.className='snapg';lanes.appendChild(g);}g.style.left=xOf(t)+'px';}
+function scrub(e){if(e.button!==0)return;e.preventDefault();stop();const r=lanes.getBoundingClientRect();loop(e,ev=>{seek(snapNear(tOf(ev.clientX-r.left),ev));},()=>guide(null));}
+
+/* ---------- selection */
+function dragKeys(e,o,ks){
+  if(e.button!==0)return;e.preventDefault();e.stopPropagation();stop();S.seg=null;S.selRef=o.ref;
+  const add=e.shiftKey||e.metaKey||e.ctrlKey,was=ks.every(k=>S.sel.has(k));
+  if(add){if(was)ks.forEach(k=>S.sel.delete(k));else ks.forEach(k=>S.sel.add(k));draw();if(was)return;}
+  else if(!was){S.sel.clear();ks.forEach(k=>S.sel.add(k));draw();}
+  const x0=e.clientX,orig=new Map([...S.sel].map(k=>[k,k.t])),anchor=ks[0],sel=[...S.sel];
+  const tmin=Math.min(...sel.map(k=>k.t)),tmax=Math.max(...sel.map(k=>k.t));let moved=false;
+  loop(e,ev=>{if(!moved&&Math.abs(ev.clientX-x0)<4)return;moved=true;
+    const excl=new Set(sel.map(k=>+orig.get(k).toFixed(4)));
+    let dt=snapNear(orig.get(anchor)+(ev.clientX-x0)/pps(),ev,excl)-orig.get(anchor);
+    dt=Math.max(-tmin,Math.min(S.dur-tmax,dt));dt=snap(dt);
+    // not onto another key of the same value
+    if(sel.some(k=>k.o.tracks[k.p].some(x=>!S.sel.has(x)&&Math.abs(x.t-(orig.get(k)+dt))<half)))return;
+    sel.forEach(k=>{if(k.o.designT!==undefined&&Math.abs(k.o.designT-orig.get(k))<half&&!k.p0)k.o.designT=orig.get(k)+dt;k.t=orig.get(k)+dt;});
+    T.forEach(t=>tracked(t).forEach(p=>sortTr(t.tracks[p])));status('taşındı: '+(dt>=0?'+':'')+fmtT(dt)+' sn');draw();},
+    ()=>{guide(null);if(!moved)seek(anchor.t);});
+}
+let lastClick={t:0,x:0,y:0};
+function marquee(e,o,prop,onClick){
+  if(e.button!==0)return;e.preventDefault();stop();const r=lanes.getBoundingClientRect(),x0=e.clientX-r.left,y0=e.clientY-r.top;
+  const add=e.shiftKey||e.metaKey||e.ctrlKey,base=add?new Set(S.sel):new Set();let box=null,moved=false;
+  loop(e,ev=>{const x=ev.clientX-r.left,y=ev.clientY-r.top;if(!moved&&Math.hypot(x-x0,y-y0)<4)return;moved=true;
+    if(!box){box=document.createElement('div');box.className='marq';lanes.appendChild(box);}
+    const L=Math.min(x,x0),Tt=Math.min(y,y0),Rr=Math.max(x,x0),B=Math.max(y,y0);box.style.left=L+'px';box.style.top=Tt+'px';box.style.width=(Rr-L)+'px';box.style.height=(B-Tt)+'px';
+    S.sel=new Set(base);S.seg=null;
+    lanes.querySelectorAll('.kf').forEach(k=>{const kr=k.getBoundingClientRect(),cx=kr.x+kr.width/2-r.left,cy=kr.y+kr.height/2-r.top;if(cx>=L&&cx<=Rr&&cy>=Tt&&cy<=B)k.classList.add('on');else if(!base.size)k.classList.remove('on');});
+    // keys whose centre is in the box
+    const lanesEls=[...lanes.querySelectorAll('.lane')];lanesEls.forEach(l=>{const lt=l.offsetTop,lb=lt+l.offsetHeight;if(lb<Tt||lt>B)return;const ob=byRef(l.dataset.ref);
+      const props=l.dataset.prop?[l.dataset.prop]:tracked(ob);props.forEach(p=>ob.tracks[p].forEach(k=>{const kx=xOf(k.t);if(kx>=L&&kx<=Rr)S.sel.add(k);}));});
+    $('#stSel').textContent=selInfo();},
+    ()=>{if(box)box.remove();if(!moved){
+      const now=performance.now(),dbl=now-lastClick.t<400&&Math.hypot(x0-lastClick.x,y0-lastClick.y)<5;lastClick={t:dbl?0:now,x:x0,y:y0};
+      if(dbl){const t=snap(tOf(x0));S.selRef=o.ref;seek(t);addKey(o,prop,t);return;}
+      if(onClick){onClick();return;}S.sel.clear();S.seg=null;S.selRef=o.ref;seek(snap(tOf(x0)));return;}status('çerçeve seçimi: '+S.sel.size+' anahtar');draw();});
+}
+function stretch(e,side){
+  if(e.button!==0)return;e.preventDefault();e.stopPropagation();const sel=[...S.sel],orig=new Map(sel.map(k=>[k,k.t]));
+  const a=Math.min(...orig.values()),b=Math.max(...orig.values()),x0=e.clientX;
+  loop(e,ev=>{const d=(ev.clientX-x0)/pps();let na=a,nb=b;if(side==='l')na=Math.max(0,Math.min(b-1/fps,a+d));else nb=Math.min(S.dur,Math.max(a+1/fps,b+d));
+    const s=(nb-na)/(b-a);const nt=new Map(sel.map(k=>[k,snap(na+(orig.get(k)-a)*s)]));
+    if(sel.some(k=>k.o.tracks[k.p].some(x=>!S.sel.has(x)&&Math.abs(x.t-nt.get(k))<half)))return;
+    if(new Set([...nt.values()].map(t=>t.toFixed(4))).size<new Set([...orig.values()].map(t=>t.toFixed(4))).size)return;
+    sel.forEach(k=>{if(k.o.designT!==undefined&&Math.abs(k.o.designT-k.t)<half)k.o.designT=nt.get(k);k.t=nt.get(k);});T.forEach(t=>tracked(t).forEach(p=>sortTr(t.tracks[p])));
+    status('esnetildi: ×'+s.toFixed(2));draw();});
+}
+function moveTo(t){if(!Number.isFinite(t)||!S.sel.size)return;const sel=[...S.sel],a=Math.min(...sel.map(k=>k.t)),dt=snap(Math.max(0,t)-a);
+  if(sel.some(k=>k.t+dt>S.dur+1e-6)||sel.some(k=>k.o.tracks[k.p].some(x=>!S.sel.has(x)&&Math.abs(x.t-(k.t+dt))<half))){status('taşınamadı: yer dolu');draw();return;}
+  sel.forEach(k=>{if(k.o.designT!==undefined&&Math.abs(k.o.designT-k.t)<half)k.o.designT=k.t+dt;k.t+=dt;});T.forEach(o=>tracked(o).forEach(p=>sortTr(o.tracks[p])));status('zaman yazıldı');draw();}
+function setEase(e){let ks;if(S.seg){const o=byRef(S.seg.ref);ks=S.seg.prop?[keyIn(o.tracks[S.seg.prop],S.seg.t0)]:tracked(o).map(p=>keyIn(o.tracks[p],S.seg.t0)).filter(Boolean);}else ks=[...S.sel];
+  ks.forEach(k=>{k.ease=e;});status('geçiş: '+EASES.find(x=>x[0]===e)[1]);draw();}
+function delSel(){if(!S.sel.size)return;const n=S.sel.size;S.sel.forEach(k=>{const tr=k.o.tracks[k.p];tr.splice(tr.indexOf(k),1);if(!tr.length)delete k.o.tracks[k.p];});S.sel.clear();status(n+' anahtar silindi');draw();}
+function addKey(o,prop,t){const props=prop?[prop]:tracked(o);const made=[];props.forEach(p=>{const tr=o.tracks[p];if(keyIn(tr,t))return;const k={t,v:interp(tr,t),ease:'smooth',o,p};tr.push(k);sortTr(tr);made.push(k);});
+  S.sel.clear();S.seg=null;props.forEach(p=>{const k=keyIn(o.tracks[p],t);if(k)S.sel.add(k);});status(made.length?'anahtar eklendi: '+fmtT(t)+' sn':'zaten anahtar var');draw();}
+function toggleKey(o,prop){const t=snap(S.t),props=prop?[prop]:tracked(o);
+  if(props.every(p=>keyIn(o.tracks[p],t))){props.forEach(p=>{const tr=o.tracks[p],k=keyIn(tr,t);tr.splice(tr.indexOf(k),1);if(!tr.length)delete o.tracks[p];});S.sel.clear();status('anahtar kaldırıldı');draw();}
+  else addKey(o,prop,t);}
+function selectAll(){const o=byRef(S.selRef);if(!o)return;S.sel.clear();S.seg=null;tracked(o).forEach(p=>o.tracks[p].forEach(k=>S.sel.add(k)));status('katmanın tüm anahtarları');draw();}
+function copySel(cut){if(!S.sel.size)return;const a=Math.min(...[...S.sel].map(k=>k.t));S.clip=[...S.sel].map(k=>({ref:k.o.ref,p:k.p,dt:k.t-a,v:k.v,ease:k.ease}));status((cut?'kesildi: ':'kopyalandı: ')+S.clip.length+' anahtar');if(cut)delSel();else draw();}
+function paste(){if(!S.clip)return;const t0=snap(S.t);S.sel.clear();S.seg=null;let n=0;
+  S.clip.forEach(c=>{let o=byRef(c.ref);if(!o||(S.selRef!==c.ref&&byRef(S.selRef).tracks[c.p]))o=byRef(S.selRef);if(!o.tracks[c.p])return;const t=snap(t0+c.dt);if(t>S.dur)return;const tr=o.tracks[c.p];let k=keyIn(tr,t);if(k){k.v=c.v;k.ease=c.ease;}else{k={t,v:c.v,ease:c.ease,o,p:c.p};tr.push(k);sortTr(tr);}S.sel.add(k);n++;});
+  status('yapıştırıldı: '+n+' anahtar · '+fmtT(t0)+' sn');draw();}
+function dup(){if(!S.sel.size)return;copySel(false);paste();status('çoğaltıldı');}
+function nudge(dt){if(!S.sel.size)return;const sel=[...S.sel];if(sel.some(k=>k.t+dt<-1e-6||k.t+dt>S.dur+1e-6))return;if(sel.some(k=>k.o.tracks[k.p].some(x=>!S.sel.has(x)&&Math.abs(x.t-(k.t+dt))<half)))return;
+  sel.forEach(k=>{if(k.o.designT!==undefined&&Math.abs(k.o.designT-k.t)<half)k.o.designT=snap(k.t+dt);k.t=snap(k.t+dt);});T.forEach(o=>tracked(o).forEach(p=>sortTr(o.tracks[p])));status('kaydırıldı '+(dt>0?'+':'')+fmtT(dt)+' sn');draw();}
+function jump(dir){const o=byRef(S.selRef);const ts=o?timesOf(o):[...new Set(T.flatMap(timesOf))].sort((a,b)=>a-b);const t=dir>0?ts.find(x=>x>S.t+half):ts.filter(x=>x<S.t-half).pop();if(t!==undefined)seek(t);}
+
+/* ---------- context menu */
+let mn=null;
+function menu(x,y){closeMenu();mn=document.createElement('div');mn.className='menu';mn.setAttribute('role','menu');
+  const n=S.sel.size;mn.innerHTML='<div class="sub">'+n+' anahtar</div>'+
+    '<button data-a="copy">Kopyala<kbd>⌘C</kbd></button><button data-a="cut">Kes<kbd>⌘X</kbd></button><button data-a="paste">İmlece yapıştır<kbd>⌘V</kbd></button><button data-a="dup">İmlece çoğalt<kbd>⌘D</kbd></button><hr>'+
+    '<div class="sub">Geçiş türü</div>'+EASES.map(e=>'<button data-ease="'+e[0]+'">'+e[1]+'</button>').join('')+'<hr>'+
+    '<button data-a="design">Tasarım karesi yap</button><button data-a="del">Sil<kbd>⌫</kbd></button>';
+  mn.style.left=Math.min(innerWidth-220,x)+'px';mn.style.top=y+'px';document.body.appendChild(mn);
+  mn.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;closeMenu();
+    if(b.dataset.ease)setEase(b.dataset.ease);else switch(b.dataset.a){case 'copy':copySel();break;case 'cut':copySel(true);break;case 'paste':paste();break;case 'dup':dup();break;case 'del':delSel();break;
+      case 'design':{const k=[...S.sel][0];if(k){k.o.designT=k.t;status('tasarım karesi: '+fmtT(k.t)+' sn');draw();}}}});
+}
+function closeMenu(){if(mn){mn.remove();mn=null;}}
+addEventListener('pointerdown',e=>{if(mn&&!mn.contains(e.target))closeMenu();},true);
+
+/* ---------- bar, zoom, keys */
+$('#tlStart').addEventListener('click',()=>{stop();seek(0);});
+$('#tlPlay').addEventListener('click',play);
+$('#tlLoop').addEventListener('click',()=>{S.loop=!S.loop;$('#tlLoop').setAttribute('aria-pressed',String(S.loop));});
+$('#tlT').addEventListener('keydown',e=>{if(e.key==='Enter'){seek(parseT(e.target.value));e.target.blur();}e.stopPropagation();});
+$('#tlT').addEventListener('change',e=>seek(parseT(e.target.value)));
+function setZoom(z,cx){const t=tOf(cx===undefined?W()/2+PAD:cx);S.zoom=Math.max(1,Math.min(20,z));S.scroll=Math.max(0,Math.min(maxScroll(),t*pps()-(cx===undefined?W()/2+PAD:cx)+PAD));draw();}
+$('#zIn').addEventListener('click',()=>setZoom(S.zoom*1.5));$('#zOut').addEventListener('click',()=>setZoom(S.zoom/1.5));$('#zFit').addEventListener('click',()=>setZoom(1));
+lanes.addEventListener('wheel',e=>{e.preventDefault();const r=lanes.getBoundingClientRect();
+  if(e.metaKey||e.ctrlKey)setZoom(S.zoom*Math.exp(-e.deltaY*.01),e.clientX-r.left);
+  else{S.scroll=Math.max(0,Math.min(maxScroll(),S.scroll+(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY)));draw();}},{passive:false});
+new ResizeObserver(()=>draw()).observe(lanes);
+addEventListener('keydown',e=>{
+  const t=e.target;if(t&&/^(INPUT|TEXTAREA)$/.test(t.tagName))return;
+  const mod=e.metaKey||e.ctrlKey,k=e.key.toLowerCase();
+  const stopIt=()=>{e.preventDefault();};
+  if(e.code==='Space'){stopIt();if(!e.repeat)play();}
+  else if(e.key==='Home'){stopIt();stop();seek(0);}
+  else if(e.key==='Escape'){S.sel.clear();S.seg=null;closeMenu();draw();}
+  else if(mod&&k==='a'){stopIt();selectAll();}
+  else if(mod&&k==='c'){stopIt();copySel();}
+  else if(mod&&k==='x'){stopIt();copySel(true);}
+  else if(mod&&k==='v'){stopIt();paste();}
+  else if(mod&&k==='d'){stopIt();dup();}
+  else if(e.shiftKey&&e.key==='!'||e.shiftKey&&e.code==='Digit1'){stopIt();setZoom(1);}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){stopIt();stop();const d=(e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:1/fps);if(e.altKey)nudge(d);else seek(snap(S.t+d));}
+  else if(e.key==='ArrowUp'||e.key==='ArrowDown'){stopIt();stop();jump(e.key==='ArrowDown'?1:-1);}
+  else if(k==='k'&&!e.repeat){stopIt();const o=byRef(S.selRef);if(o)toggleKey(o,null);}
+  else if(e.key==='Delete'||e.key==='Backspace'){if(S.sel.size){stopIt();delSel();}}
+});
+$('#theme').addEventListener('click',()=>{const r=document.documentElement,d=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches);r.dataset.theme=d?'light':'dark';$('#theme').textContent=d?'Koyu tema':'Açık tema';});
+draw();
+// start with the phone's summary key at 1,20 s selected, like the "before" screenshot
+(()=>{const o=byRef('d1');tracked(o).forEach(p=>{const k=keyIn(o.tracks[p],1.2);if(k)S.sel.add(k);});draw();})();
+</script>
+</body>
+</html>
