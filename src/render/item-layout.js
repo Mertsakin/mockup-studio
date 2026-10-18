@@ -33,9 +33,13 @@ const hModeOf=it=>isFrame(it)?it.hMode||'fixed':'hug';
 const anchorOff=(it,w,h)=>it.anc&&isFrame(it)?[wModeOf(it)==='hug'?w/2:0,hModeOf(it)==='hug'?h/2:0]:[0,0];
 
 let cache={key:'',out:null};
+// everything a node's view is drawn from: the geometry, and the text's drawing fields too (the view is a copy of the
+// item, so a colour, fill, alignment, shadow or effect change must refresh it, or the live canvas and the export keep
+// drawing the old one)
 function signature(items,W,H){
   return W+'x'+H+'|'+fontEpoch()+'|'+JSON.stringify(items.map(it=>[it.id,it.parent,it.kind,it.x,it.y,it.w,it.h,it.wMode,it.hMode,it.wPct,it.hPct,it.rot,
-    it.size,it.wrap,it.text,it.font,it.weight,it.italic,it.ls,it.lh,it.layout,it.abs,it.anc,it.img?imgDims(it.img).join():0]));
+    it.size,it.wrap,it.text,it.font,it.weight,it.italic,it.ls,it.lh,it.layout,it.abs,it.anc,it.img?imgDims(it.img).join():0,
+    it.color,it.color2,it.fill,it.align,it.shadow,it.fx]));
 }
 
 function resolve(items,W,H){
