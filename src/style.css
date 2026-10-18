@@ -1047,3 +1047,7 @@ html.home-on .scrim{z-index:82}
 .wl-modal{position:fixed;inset:0;z-index:84;display:grid;place-items:center;overflow:auto;padding:24px 16px;background:rgba(0,0,0,.32)}
 .wl-modal .welcome.in-modal{position:relative;inset:auto;padding:0;width:100%;display:grid;place-items:center;overflow:visible}
 .wl-modal .wl-card,.wl-modal .wl-pick{box-shadow:0 0 0 1px var(--line),0 24px 64px rgba(0,0,0,.28)}
+
+/* a reload on the home page: its look (sidebar and page) covers the editor from the first paint (index.html) */
+html.home-boot::after{content:"";position:fixed;inset:0;z-index:69;background:linear-gradient(to right,var(--canvas) 0 240px,var(--line) 240px 241px,var(--panel) 241px)}
+@media (max-width:900px){html.home-boot::after{background:var(--panel)}}

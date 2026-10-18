@@ -59,7 +59,7 @@ async function showHome(v){
   }
   past=[];ahead=[];view=v||'recent';remember(view);
   if(doc.boards.length)storeActive();  // a fresh thumbnail of the open work for its card
-  frame();el.querySelector('.hm-nav[data-view="'+view+'"]').focus({preventScroll:true});await load();
+  frame();document.documentElement.classList.remove('home-boot');el.querySelector('.hm-nav[data-view="'+view+'"]').focus({preventScroll:true});await load();
 }
 function hideHome(){if(!el)return;closeMenu();el.remove();el=null;document.documentElement.classList.remove('home-on');shut(false);remember(null);}
 async function load(){
@@ -288,14 +288,15 @@ function onKey(e){
 let started=false;
 async function resume(){
   started=true;
-  if(/[?&]template=/.test(location.search))return;
+  if(/[?&]template=/.test(location.search)){document.documentElement.classList.remove('home-boot');return;}
   await historyReady;
   const v=remembered();
   if(auth.user&&!el&&(v||!doc.boards.length))showHome(TITLES[v]?v:'recent');
+  else document.documentElement.classList.remove('home-boot');
 }
 if(cloudEnabled){
   signInHooks.add(()=>showHome());
-  onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user){hideHome();started=false;}else if(el){frame();draw();}
+  onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user){hideHome();started=false;document.documentElement.classList.remove('home-boot');}else if(el){frame();draw();}
     else if(!a.fresh&&!started)resume();});
   $('#homeBtn').addEventListener('click',()=>showHome());
   $('#homeTopBtn').addEventListener('click',()=>showHome());

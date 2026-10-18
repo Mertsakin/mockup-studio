@@ -10,6 +10,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/src/style.css">
+<!-- a reload while the home page was open in this tab: covered as the home page from the first paint, so the editor never
+     shows before it (ui/home.js removes the class once the home page is drawn, or decides not to show it) -->
+<script>try{if(sessionStorage.getItem('shotlight.home.open'))document.documentElement.classList.add('home-boot');}catch(e){}</script>
 </head>
 <body>
 <!-- one-time hint after the first scenes from the welcome card (welcome.js), under the export button -->
