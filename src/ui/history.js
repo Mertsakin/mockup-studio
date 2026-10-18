@@ -161,7 +161,9 @@ async function closeProject(){
   }
   resetDocument();
   toast('Proje kapatıldı');
+  closeHooks.forEach(f=>f());
 }
+const closeHooks=new Set();  // fn() after "Projeyi kapat" (the home page opens: ui/home.js)
 // an empty document, no file, history and autosave emptied (closing a project; signing out, ui/account.js)
 function resetDocument(){
   doc.assets=[];doc.fonts=[];clearAll();
@@ -198,4 +200,4 @@ function putDoc(s,name){if(current){past.push(current);future=[];}apply(s);fitAl
 function markSaved(name){fileHandle=null;setFileName(name);savedSig=currentSig;}
 const isDirty=()=>{commitNow();return !!current&&!!(doc.boards.length||doc.assets.length)&&currentSig!==savedSig;};
 
-export {historyInfo,historyReady,holdHistory,isDirty,markSaved,putDoc,redo,resetDocument,startHistory,takeDoc,undo};
+export {closeHooks,historyInfo,historyReady,holdHistory,isDirty,markSaved,putDoc,redo,resetDocument,startHistory,takeDoc,undo};

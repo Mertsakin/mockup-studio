@@ -28,8 +28,15 @@ import {$,$$} from '../util.js';
    removes the rest. History is held meanwhile, so the whole thing is one undo step (back to the empty document). */
 const root=document.documentElement,card=$('#welcome'),start=$('#wlStart'),pick=$('#wlPick');
 let goal='land',shown=false,picking=null;  // picking: {ids, chosen} while the picker is up
+/* modal: the card opened over the home page (ui/home.js) as a window of its own, {before, done, closed}: before() runs
+   when the user starts (an address, files; it may empty the document first and returns false to stop), done() once
+   the picked scenes are kept, closed() when the window closes without them. The card lives in the stage otherwise. */
+let modal=null;
+const modalBox=document.createElement('div');modalBox.className='wl-modal';modalBox.hidden=true;document.body.appendChild(modalBox);
+const home0={parent:card.parentNode,next:card.nextSibling};
 
 function sync(){
+  if(modal){card.hidden=false;shown=true;return;}
   const on=!hasBoard()||!!picking;
   if(on===shown)return;
   shown=on;card.hidden=!on;root.classList.toggle('wl-on',on);
@@ -164,11 +171,14 @@ function confirm(){
   const video=goal==='video';
   if(video)keep.filter(id=>!picking.tpl.has(id)).forEach(id=>{activate(id);state.devices.forEach(d=>{if(d.img&&!d.video)applyPreset('scroll',d);});});
   activate(keep[0]);
-  picking=null;holdHistory(false);sync();setUi({kind:'board'});
+  picking=null;holdHistory(false);
+  const m=modal;if(m)endModal();
+  sync();setUi({kind:'board'});
   if(video)setMode('animate');
   coach();
   requestAnimationFrame(()=>fitAll());
   toast(keep.length+' artboard eklendi');
+  if(m&&m.done)m.done();
 }
 // back to the start card: the scenes go, the document is empty again
 function back(){
@@ -222,8 +232,9 @@ async function fromUrl(raw){
 function endCapture(keep){start.classList.remove('wl-busy');$('#wlProg').hidden=!keep;$('#wlCancel').hidden=true;$('#wlGo').textContent='Mockup oluştur';}
 $('#wlCancel').addEventListener('click',()=>{run++;endCapture();$('#wlUrl').focus();});
 
-// what the card was given: a site address or files
-function begin(input){
+// what the card was given: a site address or files (in the window over the home page: before() first)
+async function begin(input){
+  if(modal&&modal.before&&!(await modal.before()))return;
   if(input.files)fromFiles(input.files);
   else fromUrl(input.url);
 }
@@ -256,16 +267,41 @@ exportBtn.addEventListener('click',dismiss);
 window.addEventListener('resize',()=>{if(!tip.hidden)place();});
 window.addEventListener('keydown',e=>{if(e.key==='Escape')dismiss();});
 
-$('#wlBlank').addEventListener('click',()=>$('#emptyAddBoard').click());
+$('#wlBlank').addEventListener('click',async()=>{
+  // in the window over the home page: a new project first, then the editor on its first artboard
+  if(modal){const m=modal;if(m.before&&!(await m.before()))return;endModal();if(m.done)m.done();}
+  $('#emptyAddBoard').click();
+});
 // a store set has its own form (store.js); the set's artboards close the card
-$('#wlStore').addEventListener('click',()=>openStoreDialog());
-$('#wlOpen').addEventListener('click',()=>$('#openProjectBtn').click());
+$('#wlStore').addEventListener('click',()=>{
+  // in the window over the home page the set is made the same way: before() first, then the window and home close
+  if(!modal){openStoreDialog();return;}
+  const m=modal;openStoreDialog(undefined,{before:m.before,after:()=>{if(modal===m)endModal();if(m.done)m.done();}});
+});
+$('#wlOpen').addEventListener('click',()=>{if(modal){const m=modal;endModal();if(m.done)m.done();}$('#openProjectBtn').click();});
 /* The card for a goal (the home page's goal buttons: ui/home.js): that goal pressed, the address field (or the drop
-   area) focused; 'store' opens the store set form over it. The document must be empty (the card shows then). */
-function openWelcome(g){
-  if(g==='store'){requestAnimationFrame(()=>openStoreDialog());return;}
+   area) focused. With hooks ({before, done, closed}) it opens as a window over the home page and nothing in the
+   document changes until the user starts; without, it is the editor's own card (an empty document). */
+function openWelcome(g,hooks){
+  if(hooks){
+    modal=hooks;modalBox.appendChild(card);modalBox.hidden=false;modalBox.inert=false;card.classList.add('in-modal');card.hidden=false;shown=true;
+  }
   const b=$('#welcome [data-goal="'+g+'"]');if(b)b.click();
   showStart();
 }
+// the window closes: the card goes back to the stage (scenes being picked are dropped, as with Geri)
+function endModal(){
+  modal=null;card.classList.remove('in-modal');modalBox.hidden=true;
+  home0.parent.insertBefore(card,home0.next);shown=null;sync();
+}
+function closeModal(){
+  if(!modal)return false;
+  run++;endCapture();
+  if(picking){picking=null;clearAll();holdHistory(false);}
+  const m=modal;endModal();if(m.closed)m.closed();return true;
+}
+modalBox.addEventListener('click',e=>{if(e.target===modalBox)closeModal();});
+// Esc closes the window (on the document: the focus may still be on the home page's button that opened it)
+document.addEventListener('keydown',e=>{if(modal&&e.key==='Escape'&&!picking&&!document.querySelector('.scrim:not([hidden])')){e.preventDefault();e.stopImmediatePropagation();closeModal();}},true);
 
-export {begin as startWelcome,openWelcome};
+export {begin as startWelcome,closeModal as closeWelcomeModal,openWelcome};

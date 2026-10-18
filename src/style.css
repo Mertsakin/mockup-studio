@@ -1044,3 +1044,8 @@ html.home-on .scrim{z-index:82}
 .topbar .home-btn{margin-right:2px}
 .wl-card{position:relative}
 .wl-x{position:absolute;top:12px;right:12px}
+
+/* the welcome card as a window over the home page (ui/welcome.js openWelcome with hooks) */
+.wl-modal{position:fixed;inset:0;z-index:84;display:grid;place-items:center;overflow:auto;padding:24px 16px;background:rgba(0,0,0,.32)}
+.wl-modal .welcome.in-modal{position:relative;inset:auto;padding:0;width:100%;display:grid;place-items:center;overflow:visible}
+.wl-modal .wl-card,.wl-modal .wl-pick{box-shadow:0 0 0 1px var(--line),0 24px 64px rgba(0,0,0,.28)}

@@ -20,7 +20,9 @@ import {icon} from './icons.js';
 import {destroyAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,signInHooks,trashAction} from './projects.js';
 import {openTemplate,templates} from './template-gallery.js';
 import {toast} from './toast.js';
-import {openWelcome} from './welcome.js';
+import {closeWelcomeModal,openWelcome} from './welcome.js';
+import {openStoreDialog} from './store.js';
+import {closeHooks} from './history.js';
 import {setUi} from './ui-state.js';
 import {fitAll} from './workspace.js';
 import {$} from '../util.js';
@@ -44,7 +46,7 @@ const mb=n=>n<2**30?(n/2**20).toFixed(n<10*2**20?1:0).replace('.',',')+' MB':(n/
 const shown=()=>!!el;
 
 // ---------- showing and hiding
-function shut(on){for(const c of document.body.children)if(c!==el&&c.id!=='toast'&&!c.classList.contains('scrim')&&!c.classList.contains('hm-menu'))c.inert=on;}
+function shut(on){for(const c of document.body.children)if(c!==el&&c.id!=='toast'&&!c.classList.contains('scrim')&&!c.classList.contains('hm-menu')&&!c.classList.contains('wl-modal'))c.inert=on;}
 async function showHome(v){
   if(!auth.user)return;
   if(!el){
@@ -223,10 +225,13 @@ async function blank({capture=false}={}){
   hideHome();
   if(capture){const u=$('#wlUrl');if(u&&!$('#wlUrlRow').hidden)u.focus();else toast('Site yakalama bu sürümde kapalı.');}
 }
-// a goal: a new, empty project; the welcome card asks for the address or the screenshots, with that goal chosen
-async function startGoal(g){
-  if(!(await newProject()))return;
-  hideHome();openWelcome(g);
+/* a goal: the welcome card as a window over the home page, that goal chosen (the store set: its form). Nothing changes
+   until the user starts: then the open work makes way for a new project (asking when it has unsaved changes); once
+   the scenes are kept the editor opens on them. Closing the window leaves everything as it was. */
+const hooks=()=>({before:()=>newProject(),done:()=>hideHome(),after:()=>hideHome()});
+function startGoal(g){
+  if(g==='store'){openStoreDialog(undefined,hooks());return;}
+  openWelcome(g,hooks());
 }
 function projectMenu(btn,p){
   const run=f=>async()=>{try{if(await f(p)){await load();}}catch(e){toast(e.message);}};
@@ -250,7 +255,7 @@ function onClick(e){
     case 'recClose':prefs.recClosed=true;savePrefs();draw();return;
     case 'blank':blank();return;
     case 'sort':openMenu(a,[['edited','Son düzenlenen'],['name','Ada göre'],['created','Oluşturulma']].map(([k,l])=>({label:l,on:prefs.sort===k,run:()=>{prefs.sort=k;savePrefs();draw();}})));return;
-    case 'more':openMenu(a,[{label:'Boş tuval',run:()=>blank()},{label:'Siteden yakala…',run:()=>blank({capture:true})},null,
+    case 'more':openMenu(a,[{label:'Boş tuval',run:()=>blank()},{label:'Siteden yakala…',run:()=>startGoal('land')},null,
       {label:'Proje dosyası aç…',key:'⌘O',run:()=>{hideHome();$('#openProjectBtn').click();}},{label:'Tüm şablonlar',run:()=>go('templates')}],{right:true});return;
     case 'me':{const th=document.documentElement.dataset.theme||'system';
       openMenu(a,[{label:'Tema: sistem',on:th==='system',run:()=>theme('system')},{label:'Tema: açık',on:th==='light',run:()=>theme('light')},{label:'Tema: koyu',on:th==='dark',run:()=>theme('dark')},
@@ -262,7 +267,7 @@ const theme=v=>{const b=document.querySelector('#themeSeg [data-theme="'+v+'"]')
 function onInput(e){if(e.target.id==='hmQ'){q=e.target.value.trim().toLocaleLowerCase('tr');draw();}}
 // Esc goes back to the open work (on the document: the focus may be anywhere while the home page shows)
 document.addEventListener('keydown',e=>{
-  if(el&&e.key==='Escape'&&doc.boards.length&&!menu&&!document.querySelector('.scrim:not([hidden])')){e.preventDefault();e.stopPropagation();hideHome();}
+  if(el&&e.key==='Escape'&&doc.boards.length&&!menu&&!document.querySelector('.scrim:not([hidden]),.wl-modal:not([hidden])')){e.preventDefault();e.stopPropagation();hideHome();}
 },true);
 function onKey(e){
   const open=e.target.closest&&e.target.closest('.hm-open');if(open&&e.target===open&&e.key==='Enter'){e.preventDefault();hideHome();return;}
@@ -280,7 +285,10 @@ if(cloudEnabled){
   onAuth(a=>{for(const id of ['#homeBtn','#homeTopBtn','#wlClose'])$(id).hidden=!a.user;if(!a.user)hideHome();else if(el){frame();draw();}});
   $('#homeBtn').addEventListener('click',()=>showHome());
   $('#homeTopBtn').addEventListener('click',()=>showHome());
-  $('#wlClose').addEventListener('click',()=>showHome());
+  // the welcome card's close: the window over the home page closes; the editor's own card goes back home
+  $('#wlClose').addEventListener('click',()=>{if(!closeWelcomeModal())showHome();});
+  // "Projeyi kapat": always back to the home page
+  closeHooks.add(()=>{if(auth.user)showHome();});
   $('#cloudOpenBtn').addEventListener('click',()=>showHome('all'));
 }
 

@@ -136,8 +136,9 @@ async function generate(o){
 }
 
 /* ---------- dialog */
-// pre: screenshots to start with (the welcome card's files); a click event otherwise
-function openDialog(pre){
+// pre: screenshots to start with (the welcome card's files); a click event otherwise. hooks (the home page):
+// {before: async () => go on?, after} around making the set
+function openDialog(pre,hooks){
   const sc=document.createElement('div');sc.className='scrim';
   sc.innerHTML='<div class="dialog store-dlg" role="dialog" aria-modal="true" aria-labelledby="stTitle"><div class="dh"><span id="stTitle">Mağaza seti oluştur</span>'+
     '<button class="ib sm" type="button" data-a="cancel" aria-label="Kapat"><span>✕</span></button></div><div class="db">'+
@@ -188,13 +189,18 @@ function openDialog(pre){
     const z=STORE_SIZES.find(x=>x.id===q('#stSize').value)||STORE_SIZES[0];
     const lines=parse(q('#stLines').value);
     const n=z.single?1:o.n;
-    close();generate({size:z,n,single:!!z.single,layout:z.single&&o.layout==='pano'?'classic':o.layout,theme:o.theme,font:o.font,shots:o.shots,
-      lines:[...Array(n)].map((_,i)=>lines[i]||parse(SAMPLE[i%SAMPLE.length])[0])});
+    close();
+    (async()=>{
+      if(hooks&&hooks.before&&!(await hooks.before()))return;
+      await generate({size:z,n,single:!!z.single,layout:z.single&&o.layout==='pano'?'classic':o.layout,theme:o.theme,font:o.font,shots:o.shots,
+        lines:[...Array(n)].map((_,i)=>lines[i]||parse(SAMPLE[i%SAMPLE.length])[0])});
+      if(hooks&&hooks.after)hooks.after();
+    })();
   });
   sc.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape')close();});
   sync();q('#stSize').focus();
 }
-$('#storeSetBtn').addEventListener('click',openDialog);
+$('#storeSetBtn').addEventListener('click',()=>openDialog());
 
 /* ---------- the board's size: one list for the aspect ratios, the store sizes and a custom size. A store size makes the
    artboard exactly that big and switches the export to 24-bit PNG */

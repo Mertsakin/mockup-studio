@@ -50,15 +50,35 @@ try{
   console.log('goal buttons, the way back, reopening, reload');
   ok(await p.isVisible('#homeTopBtn'),'the editor shows a home button at the left of the top bar');
   await p.click('#homeTopBtn');await p.waitForSelector('#home .hm-goal');
-  await p.click('.hm-goal[data-goal="social"]');await p.waitForSelector('#home',{state:'detached'});
-  ok(await p.evaluate(()=>document.documentElement.classList.contains('wl-on')&&document.querySelector('#welcome [data-goal="social"]').getAttribute('aria-pressed')==='true'),'"Sosyal": a new project, the welcome card with Sosyal gönderi chosen');
+  // the goals: the welcome card as a window over the home page; nothing changes until the user starts
+  await p.click('.hm-goal[data-goal="social"]');await p.waitForSelector('.wl-modal:not([hidden]) #welcome');
+  ok(!!(await p.$('#home'))&&await boards(p)===1,'"Sosyal": the welcome window opens over the home page, the open project stays');
+  ok(await p.evaluate(()=>document.querySelector('#welcome [data-goal="social"]').getAttribute('aria-pressed')==='true'),'with Sosyal gönderi chosen');
   ok(await p.waitForFunction(()=>{const u=document.querySelector('#wlUrl'),r=document.querySelector('#wlUrlRow');return r.hidden||document.activeElement===u;},null,{timeout:3000}).then(()=>true,()=>false),'the address field is focused (when capture is on)');
-  ok(await p.isVisible('#wlClose'),'the welcome card has a close button');
-  await p.click('#wlClose');await p.waitForSelector('#home .hm-card');
-  ok(true,'closing it returns to the home page');
-  await p.click('.hm-goal[data-goal="store"]');await p.waitForSelector('.scrim .store-dlg, .scrim [id^="st"]',{timeout:8000}).catch(()=>{});
-  ok(await p.evaluate(()=>!!document.querySelector('.scrim:not([hidden]) .dialog')),'"Mağaza seti": the store set form');
+  if(SHOTS)await p.screenshot({path:SHOTS+'/home-goal.png'});
+  await p.click('#wlClose');await p.waitForSelector('.wl-modal',{state:'hidden'});
+  ok(!!(await p.$('#home'))&&await boards(p)===1,'× closes the window: still on the home page, nothing changed');
+  await p.click('.hm-goal[data-goal="video"]');await p.waitForSelector('.wl-modal:not([hidden])');await p.keyboard.press('Escape');await p.waitForSelector('.wl-modal',{state:'hidden'});
+  ok(!!(await p.$('#home')),'Esc closes it too');
+  await p.click('.hm-goal[data-goal="store"]');
+  ok(await p.waitForSelector('.scrim .store-dlg',{timeout:5000}).then(()=>true,()=>false),'"Mağaza seti": the store set form over the home page');
   await p.keyboard.press('Escape');await p.waitForTimeout(300);
+  ok(!!(await p.$('#home'))&&await boards(p)===1,'closing the form leaves everything as it was');
+  // starting: screenshots dropped into the window -> scenes -> kept -> the editor on the new project
+  await p.click('.hm-goal[data-goal="land"]');await p.waitForSelector('.wl-modal:not([hidden])');
+  await p.setInputFiles('#wlFile','tools/landing/src/app-light.png');
+  await p.waitForSelector('#wlAdd:not([disabled])',{timeout:30000});
+  ok(!!(await p.$('#home')),'the scenes are picked in the window, over the home page');
+  await clearToast(p);await p.click('#wlAdd');
+  await p.waitForSelector('#home',{state:'detached'});
+  ok(await boards(p)>=1&&await p.evaluate(()=>!document.documentElement.classList.contains('wl-on')&&document.querySelector('.wl-modal').hidden),'"Artboard ekle": the editor opens on the new project');
+  // "Projeyi kapat" always goes home
+  await p.click('#appMenuBtn');await p.click('#closeProject');
+  await p.waitForSelector('.dialog [data-a="discard"]',{timeout:3000}).then(()=>p.click('.dialog [data-a="discard"]')).catch(()=>{});
+  await p.waitForSelector('#home',{timeout:10000});
+  ok(true,'"Projeyi kapat": the home page');
+  // a blank canvas from Diğer: unsaved work for the rest
+  await p.click('.hm-more');await p.click('.hm-menu >> text=Boş tuval');await p.waitForSelector('#home',{state:'detached'});
   // unsaved work: listed as "Açık çalışma", the way back
   await p.evaluate(()=>{const app=window.__app;app('addBoard')();app('req')();});await p.waitForTimeout(600);
   await p.click('#homeTopBtn');await p.waitForSelector('#home .hm-open');
