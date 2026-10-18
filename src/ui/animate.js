@@ -25,7 +25,7 @@ import {setUi,ui} from './ui-state.js';
    Text effects (it.fx, render/text.js) are not keys: they draw from the time the layout's clock gives (setItemClock).
    The camera and the lights record through the same path: their edits (fields, light map, orbit drag, angle presets)
    end in applyTransform → req, like a device's. */
-const A={t:0,playing:false,sel:[]};  // sel: the selected keys, entries {ref, prop, t} (see "key selection" below)
+const A={t:0,playing:false,sel:[],seg:null};  // sel: the selected keys, entries {ref, prop, t}; seg: the selected transition (see "key selection" below)
 const subs=[];
 function onAnim(fn){subs.push(fn);}
 const emit=()=>subs.forEach(f=>f());
@@ -109,7 +109,7 @@ function record(o,k,prev,cur){
     const t=snapT(A.t,fps());
     // first key of this value: its design-frame value stays as it was
     if((!tr||!tr.length)&&Math.abs(t-dt)>=halfFrame(fps()))put(o,k,dt,prev);
-    const key=put(o,k,t,cur);A.sel=entriesAt(o,key.t,null);
+    const key=put(o,k,t,cur);A.sel=entriesAt(o,key.t,null);A.seg=null;
   } else put(o,k,dt,cur);
   if(!emitQueued){emitQueued=true;requestAnimationFrame(()=>{emitQueued=false;emit();});}
 }
@@ -120,10 +120,10 @@ let emitQueued=false;
 function addPoseKey(o){
   if(!o)return;const t=snapT(A.t,fps());
   propsOf(o).forEach(k=>put(o,k,t,o[k]));
-  A.sel=entriesAt(o,t,null);emit();
+  A.sel=entriesAt(o,t,null);A.seg=null;emit();
 }
 // the diamond beside a slider: keys that one value at the playhead
-function keyProp(o,k){if(!o)return;const t=snapT(A.t,fps());put(o,k,t,o[k]);A.sel=[{ref:refOf(o),prop:k,t}];emit();}
+function keyProp(o,k){if(!o)return;const t=snapT(A.t,fps());put(o,k,t,o[k]);A.sel=[{ref:refOf(o),prop:k,t}];A.seg=null;emit();}
 function keysAt(o,t,prop){return (prop?[prop]:tracked(o)).map(k=>keyIn(o.tracks[k],t,fps())).filter(Boolean);}
 // the ◆ of a timeline row (and a double-click on a lane): keys the value at the playhead, or removes its key there; on
 // a summary row a pose (every value), or, when every animated value already has a key there, removes them all (a
@@ -132,14 +132,17 @@ function toggleKeyAt(o,prop){
   if(!o)return;const t=snapT(A.t,fps()),ks=keysAt(o,t,prop);
   if(ks.length&&(prop||ks.length>=tracked(o).length)){
     (prop?[prop]:tracked(o)).forEach(k=>{const tr=o.tracks[k],key=keyIn(tr,t,fps());if(!key)return;tr.splice(tr.indexOf(key),1);if(!tr.length)delete o.tracks[k];});
-    A.sel=A.sel.filter(e=>!(e.ref===refOf(o)&&Math.abs(e.t-t)<halfFrame(fps())&&(!prop||e.prop===prop)));applyNow();syncSliders();emit();
+    A.sel=A.sel.filter(e=>!(e.ref===refOf(o)&&Math.abs(e.t-t)<halfFrame(fps())&&(!prop||e.prop===prop)));A.seg=null;applyNow();syncSliders();emit();
   }else if(prop)keyProp(o,prop);else addPoseKey(o);
 }
 
 /* ---------- key selection (editor state): A.sel is a list of value keys {ref, prop, t}. A summary diamond on the
    timeline stands for every value's key at that time (entriesAt). The entries resolve to the key objects on demand
    (selectedKeys), so a restore (undo, another board) keeps the selection as long as those keys still exist. Moving,
-   deleting, the ease and the design frame apply to the whole selection. */
+   deleting, the ease and the design frame apply to the whole selection.
+   A.seg is a selected transition (the bar between two keys on the timeline): {ref, prop|null, t0, t1}; its ease is
+   the left key's (on a summary row: every value's key at t0, segKeys). Selecting one drops the key selection and the
+   other way round. */
 const sameKey=(a,b)=>a.ref===b.ref&&a.prop===b.prop&&Math.abs(a.t-b.t)<halfFrame(fps());
 // the entries a diamond stands for: one value's key, or (prop null) every value's key at t
 function entriesAt(o,t,prop){return (prop?[prop]:tracked(o)).filter(k=>keyIn(o.tracks[k],t,fps())).map(k=>({ref:refOf(o),prop:k,t}));}
@@ -147,15 +150,17 @@ const isSelected=(ref,t,prop)=>A.sel.some(e=>sameKey(e,{ref,prop,t}));
 // selects a diamond's keys: mode 'set' (default) replaces the selection, 'add' adds, 'toggle' adds or removes them;
 // ref null clears
 function selectKey(ref,t,prop,mode){
-  if(ref==null){if(A.sel.length){A.sel=[];emit();}return;}
-  const o=byRef(ref);if(!o)return;const es=entriesAt(o,t,prop);
+  if(ref==null){if(A.sel.length||A.seg){A.sel=[];A.seg=null;emit();}return;}
+  const o=byRef(ref);if(!o)return;const es=entriesAt(o,t,prop);A.seg=null;
   if(mode==='toggle'){if(es.length&&es.every(e=>isSelected(e.ref,e.t,e.prop)))A.sel=A.sel.filter(s=>!es.some(e=>sameKey(e,s)));else es.forEach(e=>{if(!isSelected(e.ref,e.t,e.prop))A.sel.push(e);});}
   else if(mode==='add')es.forEach(e=>{if(!isSelected(e.ref,e.t,e.prop))A.sel.push(e);});
   else A.sel=es;
   emit();
 }
-function selectKeys(list){A.sel=list.slice();emit();}
-function selectAllKeys(o){if(!o)return;A.sel=tracked(o).flatMap(k=>o.tracks[k].map(x=>({ref:refOf(o),prop:k,t:x.t})));emit();}
+function selectKeys(list){A.sel=list.slice();A.seg=null;emit();}
+function selectAllKeys(o){if(!o)return;A.sel=tracked(o).flatMap(k=>o.tracks[k].map(x=>({ref:refOf(o),prop:k,t:x.t})));A.seg=null;emit();}
+function selectSeg(ref,prop,t0,t1){A.sel=[];A.seg={ref,prop:prop||null,t0,t1};emit();}
+const segKeys=()=>{const s=A.seg,o=s&&byRef(s.ref);return o?keysAt(o,s.t0,s.prop):[];};
 // the selected keys that still exist: [{o, prop, key}]
 function selectedKeys(){const out=[];A.sel.forEach(e=>{const o=byRef(e.ref),key=o&&o.tracks&&o.tracks[e.prop]&&keyIn(o.tracks[e.prop],e.t,fps());if(key)out.push({o,prop:e.prop,key});});return out;}
 function deleteSelected(){
@@ -165,7 +170,7 @@ function deleteSelected(){
     if(!tr.length)delete o.tracks[prop];});
   A.sel=[];applyNow();syncSliders();emit();return true;
 }
-function setEase(e){selectedKeys().forEach(x=>{x.key.ease=e;});applyNow();emit();}
+function setEase(e){(A.seg?segKeys():selectedKeys().map(x=>x.key)).forEach(k=>{k.ease=e;});applyNow();emit();}
 // moves the selected keys by dt seconds, together (snapped to frames, kept within the duration, never onto another
 // key of the same value: then nothing moves). A target's design frame moves along when every key it has at that
 // time is in the selection. Returns the dt applied.
@@ -247,7 +252,7 @@ function applyPreset(id,o){
     if(k!=='scroll'){const off=D[k]-interp(tr,dt);if(Math.abs(off)>1e-9)tr.forEach(x=>{x.v+=off;});}
     o.tracks[k]=tr;
   }
-  A.sel=[];applyNow();syncSliders();emit();return over;
+  A.sel=[];A.seg=null;applyNow();syncSliders();emit();return over;
 }
 
 /* ---------- playback (real time; the preview renders one sample per frame) */
@@ -269,7 +274,7 @@ function stop(){if(!A.playing)return;A.playing=false;cancelAnimationFrame(raf);s
 
 /* ---------- mode */
 function setMode(m){
-  if(ui.mode===m)return;stop();if(m!=='animate')A.sel=[];
+  if(ui.mode===m)return;stop();if(m!=='animate'){A.sel=[];A.seg=null;}
   setUi({mode:m});document.documentElement.dataset.mode=m;applyNow();renderItems();syncSliders();emit();
 }
 // another board (or undo / open project): fields come from the snapshot (design frame); show what the mode shows
@@ -277,9 +282,10 @@ onBoards(()=>{
   stop();applied.clear();
   if(A.t>state.anim.dur)A.t=state.anim.dur;
   A.sel=A.sel.filter(e=>{const o=byRef(e.ref);return !!(o&&o.tracks&&o.tracks[e.prop]&&keyIn(o.tracks[e.prop],e.t,fps()));});
+  if(A.seg){const o=byRef(A.seg.ref),hf=halfFrame(fps());if(!o||!keysAt(o,A.seg.t0,A.seg.prop).length||!timesOf(o).some(t=>Math.abs(t-A.seg.t1)<hf))A.seg=null;}
   applyNow();observe();syncSliders();emit();
 });
 
 const anyAnim=()=>targets().some(hasAnim)||state.items.some(hasFx);
 export {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,
-  onAnim,play,presetsFor,seek,selectAllKeys,selectKey,selectKeys,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,targets,toggleKeyAt};
+  onAnim,play,presetsFor,seek,segKeys,selectAllKeys,selectKey,selectKeys,selectSeg,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,targets,toggleKeyAt};

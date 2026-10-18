@@ -5,7 +5,7 @@ import {selLight} from '../lights/runtime.js';
 import {fmtM,mmFromFov} from '../render/lens.js';
 import {designT,halfFrame,hasAnim,isDevice,keyIn,kindOf,propsOf,refOf,timesOf,tracked} from '../state/anim.js';
 import {sel,selItem,state} from '../state/state.js';
-import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,selectAllKeys,selectKey,selectKeys,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets,toggleKeyAt} from './animate.js';
+import {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,onAnim,play,presetsFor,seek,segKeys,selectAllKeys,selectKey,selectKeys,selectSeg,selectedKeys,setDesignFrame,setDuration,setEase,setMode,stop,targets,toggleKeyAt} from './animate.js';
 import {sizeOf} from './boards.js';
 import {duration,fmtDur,hasVideo} from '../devices/video.js';
 import {icon} from './icons.js';
@@ -28,7 +28,11 @@ import {$,$$} from '../util.js';
    inspector drops the selection.
    Adding keys from the timeline: every row's name cell has a key navigator ◀ ◆ ▶ (previous key, key / un-key at
    the playhead, next key; shown on hover, on the selected row and while a key is at the playhead), a double-click
-   on a lane keys that row at the clicked time, ↑ / ↓ jump to the previous / next key of the current target. */
+   on a lane keys that row at the clicked time, ↑ / ↓ jump to the previous / next key of the current target.
+   Editing: a card above the selection (drawCard): the time (typed: seconds, or frames as "36k"; Enter moves the
+   selection there), the ease to the next key (mixed when they differ; off when every selected key is the last of its
+   value), the design frame (one time, one target) and Sil. Clicking the bar between two keys selects that transition
+   (A.seg) and the card shows its ease; a wide bar draws the ease's curve. The inspector has no key section. */
 const tl=$('#timeline'),names=$('#tlNames'),lanes=$('#tlLanes');
 const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Yatış',scale:'Ölçek',lidAngle:'Kapak açısı',scroll:'Kaydırma',
   x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık',
@@ -74,7 +78,7 @@ const xOf=t=>12+t/state.anim.dur*W(),tOf=x=>Math.max(0,Math.min(state.anim.dur,(
 /* ---------- drawing: the structure is rebuilt only when it changes; the playhead moves every frame */
 let sig='';
 function structure(){
-  return JSON.stringify([state.anim.dur,ui.kind,state.selected,state.selItem,state.selLight,A.sel,[...open],devNames(),lightNames(),state.items.map(it=>[it.name,it.fx||0]),
+  return JSON.stringify([state.anim.dur,ui.kind,state.selected,state.selItem,state.selLight,A.sel,A.seg,[...open],devNames(),lightNames(),state.items.map(it=>[it.name,it.fx||0]),
     targets().map(o=>[refOf(o),designT(o),o.tracks?tracked(o).map(k=>[k,o.tracks[k].map(x=>[x.t,x.ease])]):0])]);
 }
 function rows(){const r=[];
@@ -120,7 +124,12 @@ function build(){
     const lane=document.createElement('div');lane.className='lane'+(prop?' subl':'')+(!prop&&isSel(d)?' sel':'');if(prop===FXROW)lane.dataset.fx='1';
     const ts=prop===FXROW?[]:prop?d.tracks[prop].map(k=>k.t):timesOf(d);
     let lh='';
-    for(let j=0;j<ts.length-1;j++)lh+='<div class="seg-bar" style="left:'+xOf(ts[j])+'px;width:'+(xOf(ts[j+1])-xOf(ts[j]))+'px"></div>';
+    // the bars between keys: click selects the transition (its ease is the left key's); wide ones draw the ease
+    for(let j=0;j<ts.length-1;j++){
+      const es=new Set(keysAt(d,ts[j],prop===FXROW?null:prop).map(k=>k.ease)),e1=es.size===1?EASES.find(x=>x[0]===[...es][0]):null,w=xOf(ts[j+1])-xOf(ts[j]);
+      const on=A.seg&&A.seg.ref===ref&&A.seg.prop===(prop||null)&&Math.abs(A.seg.t0-ts[j])<halfFrame(fps());
+      lh+='<div class="seg-bar'+(on?' on':'')+'" data-t0="'+ts[j]+'" data-t1="'+ts[j+1]+'" style="left:'+xOf(ts[j])+'px;width:'+w+'px" title="Geçiş: '+(e1?e1[1]:'karışık')+' · '+fmtT(ts[j])+' → '+fmtT(ts[j+1])+' sn (tıkla: türünü seç)">'+(w>40&&e1?EASE_SVG(e1[2]):'')+'</div>';
+    }
     // the design frame (what Tasarla and the still image show) on the device's summary row
     if(!prop&&hasAnim(d))lh+='<span class="dmark" style="left:'+xOf(designT(d))+'px" title="Tasarım karesi ('+fmtT(designT(d))+' sn): Tasarla bu anı gösterir, oradaki değişiklikler bu kareye yazılır"></span>';
     lane.innerHTML=lh;
@@ -147,6 +156,46 @@ function build(){
   end.title='Süreyi değiştirmek için sürükle (en fazla 30 sn)'+(vids.length?'. Ekran videosu: '+vids.map(fmtDur).join(', '):'');end.addEventListener('pointerdown',dragEnd);lanes.appendChild(end);
   const ph=document.createElement('div');ph.className='ph';ph.id='tlPh';lanes.appendChild(ph);
   $('#tlEmpty').hidden=anyAnim()||state.devices.some(hasVideo);
+  drawCard();
+}
+/* ---------- the edit card above the selected keys, or the selected transition */
+const EASE_SVG=path=>'<svg viewBox="0 0 36 22" aria-hidden="true"><path d="'+path+'"/></svg>';
+const parseT=s=>{const m=/^(-?\d*[.,]?\d+)\s*(k|kare)?$/i.exec(String(s).trim());if(!m)return NaN;const v=+m[1].replace(',','.');return m[2]?v/fps():v;};
+function drawCard(){
+  const old=lanes.querySelector('.kpop');if(old)old.remove();
+  const ks=selectedKeys(),seg=A.seg;if(!ks.length&&!seg)return;
+  let a,b,keys,title,hit,single=null,last=false;
+  if(seg){const o=byRef(seg.ref);if(!o)return;keys=segKeys();a=seg.t0;b=seg.t1;title='Geçiş';
+    hit=[...lanes.querySelectorAll('.lane')].filter(l=>l.dataset.ref===seg.ref&&!l.dataset.fx&&(l.dataset.prop||null)===seg.prop);}
+  else{keys=ks.map(x=>x.key);const ts=keys.map(k=>k.t);a=Math.min(...ts);b=Math.max(...ts);const owners=new Set(ks.map(x=>x.o));
+    title=ks.length===1?LABEL[ks[0].prop]:owners.size===1?ks.length+' anahtar kare':ks.length+' anahtar kare · '+owners.size+' katman';
+    if(owners.size===1&&b-a<halfFrame(fps()))single=ks[0].o;
+    hit=[...lanes.querySelectorAll('.lane')].filter(l=>!l.dataset.fx&&ks.some(x=>refOf(x.o)===l.dataset.ref&&(!l.dataset.prop||l.dataset.prop===x.prop)));
+    last=ks.every(({o,prop,key})=>o.tracks[prop][o.tracks[prop].length-1]===key);}  // nothing follows: no transition to shape
+  if(!hit.length)return;
+  const es=new Set(keys.map(k=>k.ease)),isDesign=!!single&&Math.abs(designT(single)-a)<halfFrame(fps());
+  const p=document.createElement('div');p.className='kpop';p.setAttribute('role','group');p.setAttribute('aria-label',title);
+  p.innerHTML='<b></b>'+(seg?'<span class="tf">'+fmtT(a)+' → '+fmtT(b)+' sn</span>':'<label class="tf"><input id="kpT" value="'+fmtT(a)+'" aria-label="Zaman (sn ya da kare: 36k)" spellcheck="false"><span>sn</span></label>')+
+    '<span class="eases" role="group" aria-label="Geçiş türü">'+EASES.map(([k,n,path])=>'<button type="button" data-ease="'+k+'" aria-pressed="'+(es.size>1?'mixed':es.has(k))+'"'+(last?' disabled':'')+'>'+EASE_SVG(path)+'<span class="tip">'+n+(seg?'':last?' · son kare: sonrası sabit kalır':' (sonraki kareye geçiş)')+'</span></button>').join('')+'</span>'+
+    (seg?'':'<button type="button" class="ib sm" id="kpDesign" aria-pressed="'+isDesign+'"'+(single?'':' disabled')+'>'+icon('target',14)+'<span class="tip">'+(isDesign?'Tasarım karesi: Tasarla ve durağan görsel bu anı gösterir':single?'Tasarım karesi yap':'Tasarım karesi: tek bir an seçiliyken')+'</span></button>'+
+      '<button type="button" class="ib sm del" id="kpDel" aria-label="Sil">'+icon('trash-bin-minimalistic',14)+'<span class="tip">Sil <kbd>⌫</kbd></span></button>');
+  p.firstChild.textContent=title;
+  lanes.appendChild(p);
+  // above the topmost row of the selection, centred on its span; when the ruler is in the way, right under that row
+  // (not under the whole selection: the body scrolls, and a card outside it cannot be clicked)
+  const first=hit.reduce((m,l)=>l.offsetTop<m.offsetTop?l:m),top=first.offsetTop;
+  const cx=(xOf(a)+xOf(b))/2,left=Math.max(4,Math.min(lanes.clientWidth-p.offsetWidth-4,cx-p.offsetWidth/2));
+  let y=top-p.offsetHeight-8;if(y<26){y=top+first.offsetHeight+8;p.classList.add('below');}
+  p.style.left=left+'px';p.style.top=y+'px';p.style.setProperty('--ax',Math.max(10,Math.min(p.offsetWidth-10,cx-left))+'px');
+  p.querySelectorAll('[data-ease]').forEach(x=>x.addEventListener('click',()=>setEase(x.dataset.ease)));
+  const tf=p.querySelector('#kpT');
+  // Enter and the change on blur both end here; the first wins (the rebuild removes the field, which blurs it)
+  if(tf){let done=false;const go=()=>{if(done)return;done=true;const t=parseT(tf.value);if(!Number.isFinite(t)||!moveSelected(t-a))draw(true);};
+    tf.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();go();}else if(e.key==='Escape'){e.preventDefault();draw(true);}});
+    tf.addEventListener('change',go);}
+  const dz=p.querySelector('#kpDesign');if(dz)dz.addEventListener('click',()=>setDesignFrame());
+  const dl=p.querySelector('#kpDel');if(dl)dl.addEventListener('click',()=>deleteSelected());
+  p.addEventListener('pointerdown',e=>e.stopPropagation());
 }
 function moveHead(){
   const ph=$('#tlPh');if(ph)ph.style.left=xOf(A.t)+'px';
@@ -240,6 +289,7 @@ function dragKey(e,d,t0,prop){
 let lastClick={at:0,x:0,y:0};
 function marquee(e,d,prop){
   if(e.button!==0)return;e.preventDefault();stop();ui.tlFocus=true;
+  const bar=e.target.classList.contains('seg-bar')?e.target:null;
   const r=lanes.getBoundingClientRect(),x0=e.clientX-r.left,y0=e.clientY-r.top;
   const keep=e.shiftKey||e.metaKey||e.ctrlKey,base=keep?A.sel.slice():[];let box=null,moved=false;
   loop(e,ev=>{const x=ev.clientX-r.left,y=ev.clientY-r.top;if(!moved&&Math.hypot(x-x0,y-y0)<4)return;moved=true;
@@ -256,8 +306,9 @@ function marquee(e,d,prop){
     ()=>{if(box)box.remove();
       if(moved){selectKeys(A.sel);return;}
       const now=performance.now(),dbl=now-lastClick.at<400&&Math.hypot(x0-lastClick.x,y0-lastClick.y)<5;lastClick={at:dbl?0:now,x:x0,y:y0};
-      pickTarget(d,dbl);const t=tOf(x0);seek(Math.round(t*fps())/fps());
-      if(dbl&&prop!==FXROW)toggleKeyAt(d,prop||null);});
+      if(dbl&&prop!==FXROW){pickTarget(d,true);seek(Math.round(tOf(x0)*fps())/fps());toggleKeyAt(d,prop||null);return;}
+      if(bar){pickTarget(d,true);selectSeg(refOf(d),prop===FXROW?null:prop,+bar.dataset.t0,+bar.dataset.t1);return;}
+      pickTarget(d);seek(Math.round(tOf(x0)*fps())/fps());});
 }
 // an effect bar: moves the effect in time (snapped to frames, kept within the duration)
 function dragFx(e,it,ph){
@@ -283,7 +334,7 @@ $('#tlResize').addEventListener('pointerdown',e=>{e.preventDefault();const h0=tl
 // the key selection (like the canvas)
 document.addEventListener('pointerdown',e=>{if(A.playing&&!e.target.closest('#tlPlay,#tlLoop'))stop();
   ui.tlFocus=!!e.target.closest('#timeline');
-  if(!ui.tlFocus&&A.sel.length&&!e.target.closest('#inspector,.menu'))selectKey(null);},true);
+  if(!ui.tlFocus&&(A.sel.length||A.seg)&&!e.target.closest('#inspector,.menu'))selectKey(null);},true);
 
 /* ---------- presets: menu on the timeline, chips in the inspector */
 const menu=document.createElement('div');menu.className='menu';menu.setAttribute('role','menu');menu.hidden=true;menu.style.position='fixed';document.body.appendChild(menu);
@@ -306,12 +357,7 @@ document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.ta
 const chips=$('#presetChips'),itemChips=$('#itemPresetChips');
 [[chips,PRESETS],[itemChips,ITEM_PRESETS],[$('#camPresetChips'),CAM_PRESETS],[$('#lightPresetChips'),LIGHT_ANIM]].forEach(([el,list])=>list.forEach(p=>{const b=document.createElement('button');b.type='button';b.dataset.preset=p.id;b.textContent=p.n;b.title=p.hint;b.addEventListener('click',()=>runPreset(p.id));el.appendChild(b);}));
 
-/* ---------- inspector: key panel, ◆ beside the sliders, pose key */
-const easeGrid=$('#easeGrid');
-EASES.forEach(([k,n,path])=>{const b=document.createElement('button');b.type='button';b.className='ease';b.dataset.ease=k;
-  b.innerHTML='<svg viewBox="0 0 36 22" aria-hidden="true"><path d="'+path+'"/></svg><span></span>';b.lastChild.textContent=n;b.addEventListener('click',()=>setEase(k));easeGrid.appendChild(b);});
-$('#keyDelete').addEventListener('click',()=>deleteSelected());
-$('#keyDesign').addEventListener('click',()=>setDesignFrame());
+/* ---------- inspector: ◆ beside the sliders, pose key */
 $('#poseKey').addEventListener('click',()=>addPoseKey(sel()));
 $('#itemPoseKey').addEventListener('click',()=>addPoseKey(selItem()));
 $('#camPoseKey').addEventListener('click',()=>addPoseKey(state.scene));
@@ -332,18 +378,10 @@ function ensureDots(){
 const moved=[['lidSlot'],['scrollSlot'],['posterSlot']].map(([id])=>{const el=$('#'+id),mark=document.createComment(id);el.parentNode.insertBefore(mark,el);return {el,mark};});
 function placeSlots(animate){moved.forEach(({el,mark})=>{if(animate){if(el.parentNode!==$('#animSlots'))$('#animSlots').appendChild(el);}else if(el.previousSibling!==mark)mark.parentNode.insertBefore(el,mark.nextSibling);});}
 $('#devSliders').closest('.sec').classList.add('anim-keep');
-$('#keySec').classList.add('anim-keep');$('#presetChips').closest('.sec').classList.add('anim-keep');
-// the key panel follows the inspector: under the header of the panel that shows the target
-const keySec=$('#keySec'),keyMark=document.createComment('keySec');keySec.parentNode.insertBefore(keyMark,keySec);
-const KEY_HOME={item:'#inspItem>.head',camera:'#inspBoard>.head',light:'#inspLight>.head'};
-function placeKeySec(kind){
-  const h=KEY_HOME[kind]&&$(KEY_HOME[kind]);
-  if(h){if(keySec.previousSibling!==h)h.after(keySec);}
-  else if(keySec.previousSibling!==keyMark)keyMark.after(keySec);
-}
+$('#presetChips').closest('.sec').classList.add('anim-keep');
 function syncInspector(){
   ensureDots();
-  const d=cur(),animate=ui.mode==='animate',kind=d?kindOf(d):null;placeKeySec(kind);
+  const d=cur(),animate=ui.mode==='animate',kind=d?kindOf(d):null;
   $('#animNote').hidden=!(d&&isDevice(d)&&!animate&&hasAnim(d));
   if(!d)return;
   $('#animNoteT').textContent=fmtT(designT(d));
@@ -353,20 +391,6 @@ function syncInspector(){
     const tr=d.tracks&&d.tracks[k],at=animate&&!!keyIn(tr,t,fps()),an=!!tr&&tr.length>1&&tr.some(x=>Math.abs(x.v-tr[0].v)>1e-9);
     el.classList.toggle('at',at);el.classList.toggle('anim',an&&!at);el.hidden=!propsOf(d).includes(k);});
   const pose=keysAt(d,t,null);$(POSE_BTN[kind]).classList.toggle('at',animate&&pose.length>0&&pose.length>=propsOf(d).length);
-  // key panel: the selected key of this target
-  const all=animate?selectedKeys():[],ks=all.filter(x=>x.o===d);
-  $('#keySec').hidden=!ks.length;
-  if(ks.length){
-    const ts=ks.map(x=>x.key.t),a=Math.min(...ts),b=Math.max(...ts),one=b-a<halfFrame(fps()),props=[...new Set(ks.map(x=>x.prop))];
-    $('#keyTitle').textContent=(ks.length===1?'Anahtar kare':ks.length+' anahtar kare')+' · '+(one?fmtT(a):fmtT(a)+'–'+fmtT(b))+' sn';
-    $('#keyWhat').textContent=(props.length<=3?props.map(k=>LABEL[k]).join(', '):props.length+' değer')+(ks.length>1?' · birlikte taşınır ve silinir':'')+(all.length>ks.length?' · diğer katmanlarda '+(all.length-ks.length)+' anahtar daha':'');
-    const last=ks.every(({o,prop,key})=>o.tracks[prop][o.tracks[prop].length-1]===key);
-    $('#keyEaseWrap').hidden=last;$('#keyLast').hidden=!last;
-    const isDesign=one&&Math.abs(designT(d)-a)<halfFrame(fps());
-    $('#keyDesign').hidden=isDesign||!one;$('#keyIsDesign').hidden=!isDesign;
-    const es=new Set(ks.map(x=>x.key.ease));$('#keyEaseLbl').textContent='Sonraki kareye geçiş'+(es.size>1?' (karışık)':'');
-    easeGrid.querySelectorAll('.ease').forEach(b=>b.setAttribute('aria-pressed',String(es.size===1&&es.has(b.dataset.ease))));
-  }
   // a move this device type cannot make (lid on a phone) is left out, not greyed out
   if(isDevice(d))chips.querySelectorAll('button').forEach(b=>{b.hidden=!presetOk(PRESETS.find(p=>p.id===b.dataset.preset),d);});
 }
@@ -397,7 +421,7 @@ addEventListener('keydown',e=>{
   // the selection's keys: ⌘A (while the last press was in the timeline), ⌥ ← / → nudge, Esc
   if(mod&&!e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='a'&&ui.tlFocus){stopIt();selectAllKeys(cur());return;}
   if(e.altKey&&!mod&&arrow&&A.sel.length){stopIt();stop();moveSelected((e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:1/fps()));return;}
-  if(e.key==='Escape'&&A.sel.length&&ui.tlFocus){stopIt();selectKey(null);return;}
+  if(e.key==='Escape'&&(A.sel.length||A.seg)&&ui.tlFocus){stopIt();selectKey(null);return;}
   if(mod||e.altKey)return;
   if(e.code==='Space'){stopIt();if(!e.repeat)play();}
   else if(e.key==='Home'){stopIt();stop();seek(0);}
