@@ -4,8 +4,34 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8098",
+        "-d",
+        "site"
+      ],
+      "port": 8098
+    },
+    {
+      "name": "capture",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "PORT=8099",
+        "ALLOWED_ORIGINS=http://localhost:8098",
+        "node",
+        "services/capture/server.mjs"
+      ],
+      "port": 8099
     }
   ]
 }

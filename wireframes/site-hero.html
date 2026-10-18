@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Site hero yönleri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Prototype: three directions for the new website's hero (minimal, studio / photographer). The editor window is HTML;
+   its canvas is the real embed player (<mockup-view>, mode mouse+loop) playing wireframes/assets/hero-demo.mockup.json
+   (tools/site/hero-demo.mjs). The timeline, playhead and property values follow the same 8 s loop. Open from the dev
+   server: /wireframes/site-hero.html */
+:root{--sw-bg:#fff;--sw-ink:#18181b;--sw-line:#e4e4e7}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{font:14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:var(--bg);color:var(--ink);transition:background .3s,color .3s}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+h1,p{margin:0}
+
+/* the direction switcher (prototype only) */
+.switch{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:50;display:flex;gap:4px;padding:4px;border-radius:999px;
+  background:var(--sw-bg);color:var(--sw-ink);box-shadow:0 0 0 1px var(--sw-line),0 10px 30px rgba(0,0,0,.18);font-size:13px}
+.switch button{height:32px;padding:0 14px;border-radius:999px;font-weight:500;white-space:nowrap}
+.switch button[aria-pressed="true"]{background:#18181b;color:#fff}
+
+/* ---------- directions: tokens */
+[data-dir="a"]{--bg:#f3f2ef;--ink:#141416;--sub:#5f6068;--accent:#141416;--on-accent:#fff;
+  --ui:#ffffff;--ui-2:#f6f6f7;--ui-line:#e7e7ea;--ui-ink:#18181b;--ui-sub:#8a8a93;--ui-acc:#0b68f5;--board:#e9e8e4;--key:#18181b}
+[data-dir="b"]{--bg:#fbfbfa;--ink:#111;--sub:#6b6b70;--accent:#111;--on-accent:#fff;
+  --ui:#ffffff;--ui-2:#f5f5f6;--ui-line:#e6e6e9;--ui-ink:#18181b;--ui-sub:#8a8a93;--ui-acc:#0b68f5;--board:#eceae6;--key:#18181b}
+[data-dir="c"]{--bg:#0d0d0f;--ink:#f4f4f5;--sub:#9a9aa3;--accent:#f4f4f5;--on-accent:#0d0d0f;
+  --ui:#1c1c1f;--ui-2:#232327;--ui-line:#2e2e33;--ui-ink:#ececee;--ui-sub:#80808a;--ui-acc:#5a9cff;--board:#2a2b30;--key:#ececee}
+
+/* ---------- shared bits */
+.nav{display:flex;align-items:center;justify-content:space-between;max-width:1240px;margin:0 auto;padding:22px 24px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em}
+.brand i{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--bg) 0 18%,transparent 19%),var(--ink)}
+.brand em{font-style:normal;font-size:11px;font-weight:500;color:var(--sub);border:1px dashed var(--sub);border-radius:4px;padding:0 5px}
+.links{display:flex;gap:28px;color:var(--sub)}
+.links a{color:inherit;text-decoration:none}
+.btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:500;text-decoration:none;white-space:nowrap}
+.btn.sm{height:36px;padding:0 16px;font-size:13px}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 20%,transparent)}
+.display{font-family:"Inter Tight",Inter,sans-serif;font-weight:600;letter-spacing:-.035em;line-height:1.02}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.02em}
+
+/* ---------- the editor window */
+.ed{--w:1180px;width:100%;max-width:var(--w);border-radius:14px;overflow:hidden;background:var(--ui);color:var(--ui-ink);font-size:12px;
+  box-shadow:0 0 0 1px var(--ui-line),0 30px 80px -20px rgba(0,0,0,.25),0 12px 30px -12px rgba(0,0,0,.15);display:grid;grid-template-rows:42px 1fr 132px}
+.ed-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 12px;border-bottom:1px solid var(--ui-line)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:var(--ui-line)}
+.file{margin-left:14px;font-weight:500}.file span{color:var(--ui-sub);font-weight:400}
+.seg{display:flex;background:var(--ui-2);border-radius:7px;padding:2px}
+.seg b{font-weight:500;padding:4px 12px;border-radius:5px;color:var(--ui-sub)}
+.seg b.on{background:var(--ui);color:var(--ui-ink);box-shadow:0 0 0 1px var(--ui-line)}
+.ed-top .act{justify-self:end;background:var(--ui-acc);color:#fff;border-radius:6px;padding:5px 12px;font-weight:500}
+.ed-mid{display:grid;grid-template-columns:184px 1fr 212px;min-height:0;height:470px}
+.pane{border-right:1px solid var(--ui-line);padding:12px 10px;overflow:hidden}
+.pane.r{border-right:0;border-left:1px solid var(--ui-line)}
+.pane h4{margin:0 0 8px;font-size:11px;font-weight:600;color:var(--ui-sub);text-transform:none}
+.layer{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:5px}
+.layer.on{background:color-mix(in srgb,var(--ui-acc) 14%,transparent);color:var(--ui-ink)}
+.layer i{width:14px;height:14px;border-radius:3px;border:1.5px solid currentColor;opacity:.6}
+.layer.sub{padding-left:22px;color:var(--ui-sub)}
+.canvas{position:relative;background:var(--ui-2);display:grid;place-items:center;padding:22px;overflow:hidden}
+.board{position:relative;width:100%;aspect-ratio:16/9;background:var(--board);border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.board-name{position:absolute;left:0;top:-17px;font-size:11px;color:var(--ui-sub)}
+.board mockup-view{position:absolute;inset:0}
+.prop{display:grid;grid-template-columns:1fr auto 12px;align-items:center;gap:6px;height:28px;padding:0 8px;margin-bottom:4px;border-radius:5px;background:var(--ui-2)}
+.prop span{color:var(--ui-sub)}.prop b{font-weight:500;font-variant-numeric:tabular-nums}
+.prop .kd{width:8px;height:8px;transform:rotate(45deg);background:var(--ui-acc);border-radius:1px}
+.prop.live b{color:var(--ui-acc)}
+.sep{height:1px;background:var(--ui-line);margin:12px 0}
+.ed-tl{border-top:1px solid var(--ui-line);display:grid;grid-template-columns:184px 1fr;font-size:11px;position:relative}
+.tl-names{border-right:1px solid var(--ui-line);padding-top:24px}
+.tl-names div{height:24px;display:flex;align-items:center;padding:0 12px;color:var(--ui-sub)}
+.tl-names div b{font-weight:500;color:var(--ui-ink);margin-right:6px}
+.tl-track{position:relative;padding-top:24px;margin:0 14px}
+.ruler{position:absolute;left:0;right:0;top:0;height:24px;border-bottom:1px solid var(--ui-line);color:var(--ui-sub)}
+.ruler span{position:absolute;top:5px;transform:translateX(-50%)}
+.row{position:relative;height:24px;border-bottom:1px solid color-mix(in srgb,var(--ui-line) 60%,transparent)}
+.row .bar{position:absolute;top:11px;height:2px;background:color-mix(in srgb,var(--ui-acc) 35%,transparent)}
+.row .k{position:absolute;top:8px;width:8px;height:8px;margin-left:-4px;transform:rotate(45deg);background:var(--key);border-radius:1px}
+.row .k.hit{background:var(--ui-acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-acc) 25%,transparent)}
+.head{position:absolute;top:0;bottom:0;width:0;pointer-events:none}
+.head::before{content:"";position:absolute;top:0;left:-6px;width:12px;height:14px;background:var(--ui-acc);clip-path:polygon(0 0,100% 0,100% 60%,50% 100%,0 60%)}
+.head::after{content:"";position:absolute;top:12px;bottom:0;left:-.5px;width:1px;background:var(--ui-acc)}
+.time{position:absolute;left:12px;top:5px;color:var(--ui-sub);font-variant-numeric:tabular-nums}
+
+/* ---------- A: Galeri (centered, warm paper) */
+.dir-a .hero{text-align:center;padding:72px 24px 0;max-width:1240px;margin:0 auto}
+.dir-a .eyebrow{color:var(--sub);margin-bottom:22px}
+.dir-a h1{font-size:clamp(44px,6.6vw,88px)}
+.dir-a .lead{max-width:560px;margin:24px auto 0;color:var(--sub);font-size:17px}
+.dir-a .ctas{display:flex;gap:10px;justify-content:center;margin-top:32px}
+.dir-a .stage{display:flex;justify-content:center;padding:64px 24px 96px}
+
+/* ---------- B: Kontakt (split, spec sheet) */
+.dir-b .wrap{display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:56px;align-items:center;padding:56px 0 96px 24px;max-width:1440px;margin:0 auto}
+.dir-b .spec{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;color:var(--sub);border-top:1px solid color-mix(in srgb,var(--ink) 12%,transparent);padding-top:16px;margin-bottom:40px}
+.dir-b .spec b{color:var(--ink);font-weight:500}
+.dir-b h1{font-size:clamp(40px,4.6vw,66px)}
+.dir-b .lead{margin-top:22px;color:var(--sub);font-size:16px;max-width:380px}
+.dir-b .ctas{display:flex;gap:10px;margin-top:30px}
+.dir-b .note{margin-top:18px;color:var(--sub);font-size:13px}
+.dir-b .stage{margin-right:-140px}
+.dir-b .ed{--w:1180px}
+
+/* ---------- C: Karanlık oda (dark, spotlight) */
+.dir-c{background:radial-gradient(60% 50% at 50% 62%,#24252b 0%,transparent 70%),var(--bg)}
+.dir-c .hero{max-width:1240px;margin:0 auto;padding:64px 24px 0;display:grid;grid-template-columns:1fr auto;gap:40px;align-items:end}
+.dir-c h1{font-size:clamp(44px,6vw,84px)}
+.dir-c h1 span{color:var(--sub)}
+.dir-c .side{max-width:320px;color:var(--sub);padding-bottom:10px}
+.dir-c .side .btn{margin-top:20px}
+.dir-c .stage{display:flex;justify-content:center;padding:56px 24px 96px}
+.dir-c .ed{box-shadow:0 0 0 1px var(--ui-line),0 40px 120px -20px rgba(0,0,0,.8)}
+.dir-c .meta{display:flex;justify-content:space-between;max-width:1180px;margin:-72px auto 0;padding:0 24px 80px;color:var(--sub)}
+
+/* narrow screens: the editor keeps its canvas and timeline */
+@media (max-width:900px){
+  .links{display:none}
+  .ed-mid{grid-template-columns:1fr;height:auto}.pane{display:none}.canvas{padding:14px}
+  .ed-tl{grid-template-columns:1fr}.tl-names{display:none}.time{display:none}
+  .file{display:none}.ed-top .act{white-space:nowrap;padding:5px 10px}
+  .dir-b .wrap{grid-template-columns:1fr;padding:32px 16px 72px}.dir-b .stage{margin-right:0}
+  .dir-c .hero{grid-template-columns:1fr}.dir-c .meta{display:none}
+  .nav{padding:16px}.dir-a .hero,.dir-c .hero{padding-left:16px;padding-right:16px}
+}
+</style>
+</head>
+<body data-dir="a">
+
+<!-- one hero is mounted at a time (one 3D player on the page) -->
+<main id="root"></main>
+
+<nav class="switch" aria-label="Yön">
+  <button type="button" data-d="a" aria-pressed="true">A · Galeri</button>
+  <button type="button" data-d="b" aria-pressed="false">B · Kontakt</button>
+  <button type="button" data-d="c" aria-pressed="false">C · Karanlık oda</button>
+</nav>
+
+<template id="editor">
+  <div class="ed" role="img" aria-label="Stüdyonun editörü: tuvalde dönen bir dizüstü ve telefon, altta anahtar kareli zaman çizelgesi">
+    <div class="ed-top">
+      <div style="display:flex;align-items:center"><div class="dots"><i></i><i></i><i></i></div><div class="file">Lansman <span>· 16:9</span></div></div>
+      <div class="seg"><b>Tasarla</b><b class="on">Canlandır</b></div>
+      <div class="act">Dışa aktar</div>
+    </div>
+    <div class="ed-mid">
+      <div class="pane">
+        <h4>Katmanlar</h4>
+        <div class="layer">Artboard 1</div>
+        <div class="layer sub on" data-l="cam"><i></i>Kamera</div>
+        <div class="layer sub" data-l="lap"><i></i>Dizüstü</div>
+        <div class="layer sub" data-l="ph"><i></i>Telefon</div>
+        <div class="layer sub"><i></i>Işık · Stüdyo</div>
+      </div>
+      <div class="canvas"><div class="board"><span class="board-name">Artboard 1</span>
+        <mockup-view src="/embed.html?src=/wireframes/assets/hero-demo.mockup.json&bg=transparent" mode="mouse+loop" ratio="16/9" alt="Dönen dizüstü ve telefon mockup'ı"></mockup-view></div></div>
+      <div class="pane r">
+        <h4>Kamera</h4>
+        <div class="prop live"><span>Y dönüş</span><b data-v="camRy">0°</b><i class="kd"></i></div>
+        <div class="prop live"><span>Yakınlık</span><b data-v="camZoom">1,00×</b><i class="kd"></i></div>
+        <div class="prop"><span>Objektif</span><b>50 mm</b><i></i></div>
+        <div class="sep"></div>
+        <h4>Dizüstü</h4>
+        <div class="prop live"><span>Kapak açısı</span><b data-v="lid">0°</b><i class="kd"></i></div>
+        <div class="prop"><span>Renk</span><b>Gümüş</b><i></i></div>
+        <div class="sep"></div>
+        <h4>Telefon</h4>
+        <div class="prop live"><span>Y dönüş</span><b data-v="phRy">0°</b><i class="kd"></i></div>
+      </div>
+    </div>
+    <div class="ed-tl">
+      <div class="tl-names"><div><b>Kamera</b>dönüş</div><div><b>Kamera</b>yakınlık</div><div><b>Dizüstü</b>kapak</div><div><b>Telefon</b>dönüş</div></div>
+      <div class="tl-track">
+        <div class="ruler"></div>
+        <div class="row" data-tr="camRy"></div><div class="row" data-tr="camZoom"></div><div class="row" data-tr="lid"></div><div class="row" data-tr="phRy"></div>
+        <div class="head"></div>
+      </div>
+      <div class="time mono">0,0 / 8,0 sn</div>
+    </div>
+  </div>
+</template>
+
+<template id="dir-a">
+  <div class="dir-a">
+    <header class="nav"><div class="brand"><i></i>Marka <em>ad bekliyor</em></div>
+      <div class="links"><a href="#">Özellikler</a><a href="#">Şablonlar</a><a href="#">SSS</a></div><a class="btn sm" href="#">Stüdyoyu aç</a></header>
+    <section class="hero">
+      <p class="eyebrow mono">ÜCRETSİZ BETA · HESAP GEREKMEZ</p>
+      <h1 class="display">Ekran görüntün,<br>stüdyo ışığında.</h1>
+      <p class="lead">Cihazları diz, ışığı kur, anahtar karelerle canlandır. Fotoğraf gerçekliğinde görsel ve video, doğrudan tarayıcında.</p>
+      <div class="ctas"><a class="btn" href="#">Stüdyoyu aç</a><a class="btn ghost" href="#">Şablonlara bak</a></div>
+    </section>
+    <div class="stage" data-slot></div>
+  </div>
+</template>
+
+<template id="dir-b">
+  <div class="dir-b">
+    <header class="nav"><div class="brand"><i></i>Marka <em>ad bekliyor</em></div>
+      <div class="links"><a href="#">Özellikler</a><a href="#">Şablonlar</a><a href="#">SSS</a></div><a class="btn sm" href="#">Stüdyoyu aç</a></header>
+    <section class="wrap">
+      <div>
+        <div class="spec mono"><span>Objektif</span><b>50 mm · f/4</b><span>Işık</span><b>Stüdyo · 3 kaynak</b><span>Render</span><b>Yol izleme · 64 örnek</b><span>Çıktı</span><b>3840 px · MP4 · WebM</b></div>
+        <h1 class="display">Mockup'ını bir fotoğrafçı gibi çek.</h1>
+        <p class="lead">Telefon, tablet, dizüstü ve monitörü tek sahnede kur. Objektifi, ışığı ve hareketi sen seç; gerisi gerçek ışıkla render.</p>
+        <div class="ctas"><a class="btn" href="#">Stüdyoyu aç</a><a class="btn ghost" href="#">Örnekler</a></div>
+        <p class="note">Ücretsiz beta. Hesap yok, kurulum yok.</p>
+      </div>
+      <div class="stage" data-slot></div>
+    </section>
+  </div>
+</template>
+
+<template id="dir-c">
+  <div class="dir-c">
+    <header class="nav"><div class="brand"><i></i>Marka <em>ad bekliyor</em></div>
+      <div class="links"><a href="#">Özellikler</a><a href="#">Şablonlar</a><a href="#">SSS</a></div><a class="btn sm" href="#">Stüdyoyu aç</a></header>
+    <section class="hero">
+      <h1 class="display">Işığı sen kur.<br><span>Gerisi render.</span></h1>
+      <div class="side">Ekran görüntünü yükle, cihazı yerleştir, anahtar karelerle canlandır. Fotoğraf kalitesinde görsel ve video, tarayıcında.<br><a class="btn" href="#">Stüdyoyu aç · ücretsiz beta</a></div>
+    </section>
+    <div class="stage" data-slot></div>
+    <div class="meta mono"><span>50 MM · F/4 · 64 ÖRNEK</span><span>CANLI · FAREYİ GEZDİR</span></div>
+  </div>
+</template>
+
+<script src="/embed/mockup-view.js"></script>
+<script>
+// the demo's tracks (tools/site/hero-demo.mjs): [time s, value]
+const DUR=8,TR={camRy:[[0,-16],[4,10],[8,-16]],camZoom:[[0,1.12],[4,1.34],[8,1.12]],lid:[[0,78],[1.6,108],[6.4,108],[8,78]],phRy:[[0,-18],[2.5,-52],[5.5,-10],[8,-18]]};
+const smooth=x=>x*x*(3-2*x);
+const at=(k,t)=>{for(let i=0;i<k.length-1;i++){const [t0,v0]=k[i],[t1,v1]=k[i+1];if(t<=t1)return v0+(v1-v0)*smooth((t-t0)/(t1-t0));}return k[k.length-1][1];};
+const fmt={camRy:v=>Math.round(v)+'°',camZoom:v=>v.toFixed(2).replace('.',',')+'×',lid:v=>Math.round(v)+'°',phRy:v=>Math.round(v)+'°'};
+let t0=performance.now(),raf=0;
+
+function mount(d){
+  document.body.dataset.dir=d;
+  document.querySelectorAll('.switch button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.d===d)));
+  const root=document.getElementById('root');root.innerHTML='';
+  root.appendChild(document.getElementById('dir-'+d).content.cloneNode(true));
+  const ed=document.getElementById('editor').content.cloneNode(true);
+  root.querySelector('[data-slot]').appendChild(ed);
+  // ruler and keys
+  const ruler=root.querySelector('.ruler');for(let s=0;s<=DUR;s++){const e=document.createElement('span');e.style.left=s/DUR*100+'%';e.textContent=s;ruler.appendChild(e);}
+  root.querySelectorAll('.row').forEach(r=>{const k=TR[r.dataset.tr];
+    const bar=document.createElement('i');bar.className='bar';bar.style.left='0';bar.style.right='0';r.appendChild(bar);
+    k.forEach(([t])=>{const e=document.createElement('i');e.className='k';e.style.left=t/DUR*100+'%';e.dataset.t=t;r.appendChild(e);});});
+  t0=performance.now();
+}
+// the player's clock starts with its first frame: restart ours then
+addEventListener('message',e=>{if(e.data&&e.data.mockup==='ready')t0=performance.now();});
+function tick(){
+  raf=requestAnimationFrame(tick);
+  const t=((performance.now()-t0)/1000)%DUR,root=document.getElementById('root');
+  const head=root.querySelector('.head');if(!head)return;
+  head.style.left=t/DUR*100+'%';
+  root.querySelector('.time').textContent=t.toFixed(1).replace('.',',')+' / 8,0 sn';
+  for(const n in TR){const el=root.querySelector('[data-v="'+n+'"]');if(el)el.textContent=fmt[n](at(TR[n],t));}
+  root.querySelectorAll('.k').forEach(k=>k.classList.toggle('hit',Math.abs(+k.dataset.t-t)<.18||(+k.dataset.t===DUR&&t<.18)));
+}
+document.querySelectorAll('.switch button').forEach(b=>b.addEventListener('click',()=>mount(b.dataset.d)));
+mount(new URLSearchParams(location.search).get('d')||'a');tick();
+</script>
+</body>
+</html>
