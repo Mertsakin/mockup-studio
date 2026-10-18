@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shotlight logo · grafit</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Refinement of the graphite "rim light" icon (wireframes/logo.html): four steps, each adding one idea, then the
+   favicon-sized drawing and wordmark options. */
+:root{--bg:#f4f4f5;--card:#fff;--ink:#18181b;--sub:#71717a;--line:#e4e4e7}
+*{box-sizing:border-box}
+body{margin:0;font:13px/1.5 Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.page{max-width:1200px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:20px;font-weight:500;margin:0 0 4px}
+h2{font-size:15px;font-weight:500;margin:36px 0 12px}
+.lead{color:var(--sub);margin:0 0 20px;max-width:80ch}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{background:var(--card);border-radius:16px;box-shadow:0 0 0 1px var(--line);padding:18px;display:grid;gap:14px;align-content:start}
+.card h3{font-size:13px;font-weight:500;margin:0}.card p{margin:0;color:var(--sub);font-size:12px}
+.big{display:grid;place-items:center;padding:6px 0}
+.ic{filter:drop-shadow(0 10px 22px rgba(0,0,0,.22)) drop-shadow(0 2px 4px rgba(0,0,0,.14))}
+.row{display:flex;align-items:flex-end;gap:14px}
+.row svg{display:block}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{display:grid;place-items:center;height:56px;border-radius:10px}.chip.l{background:#f3f2ef}.chip.d{background:#0d0d0f}
+.words{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.word{display:flex;align-items:center;gap:12px;height:72px;padding:0 20px;border-radius:12px;font-size:26px;letter-spacing:-.03em}
+.word.l{background:#f3f2ef;color:#141416}.word.d{background:#0d0d0f;color:#f4f4f5}
+.w1{font-family:"Inter Tight";font-weight:600}.w2{font-family:Manrope;font-weight:700;letter-spacing:-.04em}.w3{font-family:"Inter Tight";font-weight:500;letter-spacing:-.01em}
+.w3 b{font-weight:700}
+.tab{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:8px 8px 0 0;background:#e8e8ea;width:max-content;font-size:12px}
+@media (max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.words{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Grafit · inceltme</h1>
+  <p class="lead">Her adım bir öncekine tek bir fikir ekliyor. Sağa doğru ikon "çizimden" "fotoğrafa" yaklaşıyor; hangisinde durmak istediğini seç (ya da birinden bir öğeyi diğerine alalım).</p>
+  <div class="grid" id="steps"></div>
+
+  <h2>Küçük boyut çizimi</h2>
+  <p class="lead">32 px ve altında ayrıntılar (kenar çizgisi, yumuşak geçiş, gölge) kaybolur ve bulanıklaşır. Küçük boyutlar için küre büyütülür, geçiş keskinleşir, kenar çizgisi kalkar. Solda büyük çizimin küçültülmüşü, sağda küçük boyut çizimi.</p>
+  <div class="grid" id="small"></div>
+
+  <h2>Kelime markası</h2>
+  <p class="lead">Üç yazı karakteri denemesi, seçilen ikonla. Hepsi küçük harf; marka adı cümle içinde "Shotlight" yazılır.</p>
+  <div class="words" id="words"></div>
+</div>
+<script>
+const G={bg:['#3d3f46','#0b0c0f'],sphere:['#1d1e23','#08080a'],lit:['#ffffff','#ecebe6','#a9a69d'],rim:'#5d606a'};
+/* one icon on a 100-unit square. o: {soft (terminator blur), glow (softbox glow in the plate's upper right),
+   floor (contact shadow), bounce (warm light on the dark side's lower left), small (favicon drawing), plate} */
+let n=0;
+function icon(size,o={}){
+  const u='g'+(n++),plate=o.plate!==false,small=!!o.small,cx=50,cy=small?50:(o.floor?47:50),r=small?36:(plate?30:44),rr=22.37;
+  // the lit side reaches past the sphere on the outside (the clip makes the edge), so the blur softens only the terminator
+  const k=small?.30:.42,e=r+10,lit=`M${cx} ${cy-e} H${cx+e} V${cy+e} H${cx} V${cy+r} A${r*k} ${r} 0 0 1 ${cx} ${cy-r} Z`;
+  return `<svg class="${plate&&size>=48?'ic':''}" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">
+  <defs>
+    <linearGradient id="bg${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${G.bg[0]}"/><stop offset="1" stop-color="${G.bg[1]}"/></linearGradient>
+    <radialGradient id="gw${u}" cx=".92" cy=".04" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="sp${u}" cx=".35" cy=".35" r=".75"><stop offset="0" stop-color="${G.sphere[0]}"/><stop offset="1" stop-color="${G.sphere[1]}"/></radialGradient>
+    <linearGradient id="lt${u}" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${G.lit[0]}"/><stop offset=".55" stop-color="${G.lit[1]}"/><stop offset="1" stop-color="${G.lit[2]}"/></linearGradient>
+    <radialGradient id="bo${u}" cx=".12" cy=".9" r=".55"><stop offset="0" stop-color="#c9a27a" stop-opacity=".55"/><stop offset="1" stop-color="#c9a27a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="fl${u}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".75"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gl${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <clipPath id="cl${u}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
+    <filter id="bl${u}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${o.soft||0}"/></filter>
+  </defs>
+  ${plate?`<rect width="100" height="100" rx="${rr}" fill="url(#bg${u})"/>${o.glow?`<rect width="100" height="100" rx="${rr}" fill="url(#gw${u})"/>`:''}<rect x=".5" y=".5" width="99" height="99" rx="${rr}" fill="none" stroke="url(#gl${u})"/>`:''}
+  ${o.floor?`<ellipse cx="${cx+2}" cy="${cy+r+3.5}" rx="${r*.95}" ry="4.2" fill="url(#fl${u})"/>`:''}
+  <g transform="rotate(-35 ${cx} ${cy})">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#sp${u})"/>
+    ${o.bounce?`<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#bo${u})" transform="rotate(35 ${cx} ${cy})"/>`:''}
+    ${small?'':`<circle cx="${cx}" cy="${cy}" r="${r-.6}" fill="none" stroke="${G.rim}" stroke-width="1.1" opacity=".55"/>`}
+    <g clip-path="url(#cl${u})"><path d="${lit}" fill="url(#lt${u})" ${o.soft?`filter="url(#bl${u})"`:''}/></g>
+  </g>
+</svg>`;
+}
+const STEPS=[
+  {n:'1 · Çıkış',d:'Bugünkü grafit: keskin geçiş, düz zemin.',o:{}},
+  {n:'2 · Yumuşak geçiş',d:'Aydınlık ile karanlık arası (terminatör) yumuşar: küre daha hacimli, gerçek ışık gibi.',o:{soft:1.6}},
+  {n:'3 · Softbox',d:'Zeminin sağ üstünde ışık kaynağının izi: ışığın nereden geldiği okunur.',o:{soft:1.6,glow:true}},
+  {n:'4 · Temas gölgesi',d:'Küre bir yüzeye oturur, altında yumuşak gölge: ürünün kendi işi (cihaz + gölge).',o:{soft:1.6,glow:true,floor:true}},
+];
+document.getElementById('steps').innerHTML=STEPS.map(s=>`<section class="card">
+  <h3>${s.n}</h3><p>${s.d}</p>
+  <div class="big">${icon(150,s.o)}</div>
+  <div class="row">${icon(64,s.o)}${icon(32,s.o)}${icon(16,s.o)}</div>
+  <div class="pair"><div class="chip l">${icon(36,s.o)}</div><div class="chip d">${icon(36,s.o)}</div></div>
+</section>`).join('');
+const S=STEPS[3].o;
+document.getElementById('small').innerHTML=[32,16].map(z=>`<section class="card">
+  <h3>${z} px</h3><p>Büyük çizim (sol) · küçük çizim (sağ), 3× büyütülmüş ve gerçek boyutta.</p>
+  <div class="row" style="justify-content:center;gap:28px"><div style="image-rendering:pixelated">${icon(z*3,S)}</div><div>${icon(z*3,{small:true,glow:true})}</div></div>
+  <div class="row" style="justify-content:center;gap:28px">${icon(z,S)}${icon(z,{small:true,glow:true})}</div>
+</section>`).join('')+`<section class="card" style="grid-column:span 2"><h3>Sekmede</h3><p>Tarayıcı sekmesinde ve yer imlerinde küçük çizim.</p>
+  <div class="tab">${icon(16,{small:true,glow:true})}Shotlight · stüdyo</div>
+  <div class="tab" style="background:#2a2a2e;color:#eee">${icon(16,{small:true,glow:true})}Shotlight · stüdyo</div></section>`;
+const W=[{c:'w1',n:'Inter Tight 600',h:'shotlight'},{c:'w2',n:'Manrope 700',h:'shotlight'},{c:'w3',n:'Inter Tight 500 + 700',h:'shot<b>light</b>'}];
+document.getElementById('words').innerHTML=W.map(w=>`<section class="card"><h3>${w.n}</h3>
+  <div class="word l ${w.c}">${icon(40,S)}<span>${w.h}</span></div>
+  <div class="word d ${w.c}">${icon(40,S)}<span>${w.h}</span></div></section>`).join('');
+</script>
+</body>
+</html>

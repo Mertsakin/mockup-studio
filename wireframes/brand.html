@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shotlight marka dosyaları</title>
+<link rel="icon" href="/brand/favicon.ico" sizes="any">
+<link rel="icon" href="/brand/shotlight-icon-small.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* The finished brand files (brand/, made by tools/brand/build.mjs), shown as they are. */
+:root{--bg:#f4f4f5;--card:#fff;--ink:#18181b;--sub:#71717a;--line:#e4e4e7}
+*{box-sizing:border-box}
+body{margin:0;font:13px/1.5 Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.page{max-width:1100px;margin:0 auto;padding:32px 20px 64px;display:grid;gap:16px}
+h1{font-size:20px;font-weight:500;margin:0}
+.lead{color:var(--sub);margin:0}
+.card{background:var(--card);border-radius:16px;box-shadow:0 0 0 1px var(--line);padding:20px;display:grid;gap:12px}
+.card h2{font-size:14px;font-weight:500;margin:0}
+.card code{color:var(--sub);font-size:12px}
+.row{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.row figure{margin:0;display:grid;gap:6px;justify-items:center;color:var(--sub);font-size:11px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pane{border-radius:12px;display:grid;place-items:center;padding:36px 20px}
+.pane.l{background:#f3f2ef}.pane.d{background:#0d0d0f}
+.pane img{height:56px}
+.ic{filter:drop-shadow(0 10px 22px rgba(0,0,0,.22)) drop-shadow(0 2px 4px rgba(0,0,0,.14))}
+.px img{image-rendering:pixelated}
+@media (max-width:800px){.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Shotlight · marka dosyaları</h1>
+  <p class="lead">Kenar ışığı, grafit, temas gölgeli. Kaynak: <code>tools/brand/mark.mjs</code>, üretim: <code>node tools/brand/build.mjs</code> → <code>brand/</code>. Bu sekmenin simgesi de favicon.</p>
+
+  <section class="card"><h2>Uygulama ikonu · büyük çizim <code>shotlight-icon.svg</code></h2>
+    <div class="row">
+      <figure><img class="ic" src="/brand/shotlight-icon-512.png" width="200" height="200" alt="Shotlight uygulama ikonu">512</figure>
+      <figure><img class="ic" src="/brand/shotlight-icon-192.png" width="120" height="120" alt="">192</figure>
+      <figure><img class="ic" src="/brand/shotlight-icon-180.png" width="90" height="90" alt="">180 · apple-touch</figure>
+      <figure><img class="ic" src="/brand/shotlight-icon-64.png" width="64" height="64" alt="">64</figure>
+    </div></section>
+
+  <section class="card"><h2>Küçük çizim · favicon <code>shotlight-icon-small.svg</code>, <code>favicon.ico</code></h2>
+    <div class="row px">
+      <figure><img src="/brand/shotlight-icon-48.png" width="48" height="48" alt="">48</figure>
+      <figure><img src="/brand/shotlight-icon-32.png" width="32" height="32" alt="">32</figure>
+      <figure><img src="/brand/shotlight-icon-16.png" width="16" height="16" alt="">16</figure>
+      <figure><img src="/brand/shotlight-icon-32.png" width="96" height="96" alt="">32 · 3×</figure>
+      <figure><img src="/brand/shotlight-icon-16.png" width="96" height="96" alt="">16 · 6×</figure>
+    </div></section>
+
+  <section class="card"><h2>Kelime markası · Inter Tight 600, yola çevrilmiş <code>shotlight-wordmark-on-light.svg</code> · <code>-on-dark.svg</code></h2>
+    <div class="pair"><div class="pane l"><img src="/brand/shotlight-wordmark-on-light.svg" alt="Shotlight"></div><div class="pane d"><img src="/brand/shotlight-wordmark-on-dark.svg" alt="Shotlight"></div></div>
+    <div class="pair"><div class="pane l"><img src="/brand/shotlight-text-on-light.svg" alt="Shotlight" style="height:40px"></div><div class="pane d"><img src="/brand/shotlight-text-on-dark.svg" alt="Shotlight" style="height:40px"></div></div>
+  </section>
+</div>
+</body>
+</html>

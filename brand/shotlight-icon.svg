@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+<linearGradient id="albg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d3f46"/><stop offset="1" stop-color="#0b0c0f"/></linearGradient>
+<radialGradient id="algw" cx=".92" cy=".04" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="algl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<radialGradient id="alsp" cx=".35" cy=".35" r=".75"><stop offset="0" stop-color="#1d1e23"/><stop offset="1" stop-color="#08080a"/></radialGradient>
+<linearGradient id="allt" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#ecebe6"/><stop offset="1" stop-color="#a9a69d"/></linearGradient>
+<radialGradient id="alfl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".75"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+<clipPath id="alcl"><circle cx="50" cy="47" r="30"/></clipPath>
+<filter id="albl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>
+</defs>
+<rect width="100" height="100" rx="22.37" fill="url(#albg)"/><rect width="100" height="100" rx="22.37" fill="url(#algw)"/><rect x=".5" y=".5" width="99" height="99" rx="22.37" fill="none" stroke="url(#algl)"/>
+<ellipse cx="52" cy="80.5" rx="28.5" ry="4.2" fill="url(#alfl)"/>
+<g transform="rotate(-35 50 47)">
+<circle cx="50" cy="47" r="30" fill="url(#alsp)"/>
+<circle cx="50" cy="47" r="29.4" fill="none" stroke="#5d606a" stroke-width="1.1" opacity=".55"/>
+<g clip-path="url(#alcl)"><path d="M50 7H90V87H50V77A12.6 30 0 0 1 50 17Z" fill="url(#allt)" filter="url(#albl)"/></g>
+</g>
+</svg>

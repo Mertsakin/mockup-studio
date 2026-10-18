@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shotlight logo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Inter+Tight:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Prototype: the "rim light" mark (a sphere half lit, the moment light falls on an object) as a gradient app icon.
+   Each variant is one SVG (symbol below) at app-icon, toolbar and favicon sizes, with the wordmark on light and dark. */
+:root{--bg:#f4f4f5;--card:#fff;--ink:#18181b;--sub:#71717a;--line:#e4e4e7}
+*{box-sizing:border-box}
+body{margin:0;font:13px/1.5 Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.page{max-width:1200px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:20px;font-weight:500;margin:0 0 4px}
+.lead{color:var(--sub);margin:0 0 24px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.card{background:var(--card);border-radius:16px;box-shadow:0 0 0 1px var(--line);padding:20px;display:grid;gap:16px}
+.card h2{font-size:14px;font-weight:500;margin:0}.card h2 span{color:var(--sub);font-weight:400}
+.sizes{display:flex;align-items:flex-end;gap:18px}
+.sizes svg{display:block}
+.ic{filter:drop-shadow(0 8px 18px rgba(0,0,0,.18)) drop-shadow(0 2px 4px rgba(0,0,0,.12))}
+.word{display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;border-radius:10px;font:600 22px/1 "Inter Tight",Inter,sans-serif;letter-spacing:-.03em}
+.word.l{background:#f3f2ef;color:#141416}.word.d{background:#0d0d0f;color:#f4f4f5}
+.word svg{flex:none}
+.tab{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:8px 8px 0 0;background:#e8e8ea;width:max-content;font-size:12px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Shotlight · kenar ışığı</h1>
+  <p class="lead">Yarısı aydınlık küre: ışığın nesneye düştüğü an. Uygulama ikonu (yuvarlatılmış kare), araç çubuğu ve sekme boyutları, kelime markasıyla.</p>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+/* A variant: {id, name, note, bg: [top, bottom] (icon background), sphere: dark side [inner, outer], lit: [bright, mid, edge]
+   (the lit crescent, top-right to the terminator), rim (the faint edge on the dark side), angle (light direction, deg)} */
+const V=[
+  {id:'graphite',name:'Grafit',note:'stüdyo, nötr',bg:['#3b3d44','#0c0d10'],sphere:['#1b1c21','#0a0a0c'],lit:['#ffffff','#e9e7e2','#9a988f'],rim:'#5a5c66',angle:-35},
+  {id:'dusk',name:'Gün batımı',note:'sıcak ışık',bg:['#ff9a4d','#d9356f'],sphere:['#5a1631','#2a0716'],lit:['#fff8ee','#ffd9a8','#f08a5d'],rim:'#ff9c7a',angle:-35},
+  {id:'blue',name:'Mavi saat',note:'serin, teknik',bg:['#4b8bff','#1a2470'],sphere:['#141a4d','#080b26'],lit:['#ffffff','#ffe2b8','#f2a65a'],rim:'#6f8cff',angle:-35},
+  {id:'paper',name:'Kâğıt',note:'açık zemin',bg:['#fbfaf7','#dedbd4'],sphere:['#2a2b30','#0f1012'],lit:['#ffffff','#f1efe9','#c7c3ba'],rim:'#77787f',angle:-35},
+  {id:'spectrum',name:'Spektrum',note:'renkli ışık',bg:['#1c1d22','#050506'],sphere:['#121216','#050506'],lit:['#ffe9a8','#ff7a6b','#7a5cff'],rim:'#3a3550',angle:-35},
+  {id:'violet',name:'Mor',note:'yaratıcı araç',bg:['#8e6bff','#3a1fa8'],sphere:['#1e1150','#0b0526'],lit:['#ffffff','#e8dcff','#b49cff'],rim:'#a68cff',angle:-35},
+];
+// one icon: a 100-unit rounded square, the sphere (r 30) lit from the upper right; the terminator is a half ellipse
+function icon(v,size,{plate=true}={}){
+  const u=v.id+'-'+size+(plate?'':'-np'),cx=50,cy=50,r=plate?30:44,a=v.angle;
+  const rr=22.37;  // iOS-like corner (22.37 % of the side)
+  // the lit side: a crescent, the right half of the circle less a half ellipse (the terminator) bulging into it
+  const k=.42,lit=`M${cx} ${cy-r} A${r} ${r} 0 0 1 ${cx} ${cy+r} A${r*k} ${r} 0 0 1 ${cx} ${cy-r} Z`;
+  return `<svg class="${plate&&size>=48?'ic':''}" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">
+  <defs>
+    <linearGradient id="bg-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${v.bg[0]}"/><stop offset="1" stop-color="${v.bg[1]}"/></linearGradient>
+    <radialGradient id="sp-${u}" cx=".35" cy=".35" r=".75"><stop offset="0" stop-color="${v.sphere[0]}"/><stop offset="1" stop-color="${v.sphere[1]}"/></radialGradient>
+    <linearGradient id="lt-${u}" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${v.lit[0]}"/><stop offset=".55" stop-color="${v.lit[1]}"/><stop offset="1" stop-color="${v.lit[2]}"/></linearGradient>
+    <linearGradient id="gl-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>
+  ${plate?`<rect width="100" height="100" rx="${rr}" fill="url(#bg-${u})"/><rect x=".5" y=".5" width="99" height="99" rx="${rr}" fill="none" stroke="url(#gl-${u})"/>`:''}
+  <g transform="rotate(${a} ${cx} ${cy})">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#sp-${u})"/>
+    <circle cx="${cx}" cy="${cy}" r="${r-.6}" fill="none" stroke="${v.rim}" stroke-width="${size<40?0:1.2}" opacity=".7"/>
+    <path d="${lit}" fill="url(#lt-${u})"/>
+  </g>
+</svg>`;
+}
+document.getElementById('grid').innerHTML=V.map(v=>`<section class="card">
+  <h2>${v.name} <span>· ${v.note}</span></h2>
+  <div class="sizes">${icon(v,128)}${icon(v,64)}${icon(v,32)}${icon(v,16)}</div>
+  <div class="word l">${icon(v,30)}shotlight</div>
+  <div class="word d">${icon(v,30)}shotlight</div>
+  <div class="tab">${icon(v,16)}Shotlight · stüdyo</div>
+</section>`).join('');
+</script>
+</body>
+</html>
