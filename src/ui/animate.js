@@ -25,7 +25,7 @@ import {setUi,ui} from './ui-state.js';
    Text effects (it.fx, render/text.js) are not keys: they draw from the time the layout's clock gives (setItemClock).
    The camera and the lights record through the same path: their edits (fields, light map, orbit drag, angle presets)
    end in applyTransform → req, like a device's. */
-const A={t:0,playing:false,sel:null};  // sel: selected key {ref, t, prop|null} (null prop = summary key: every value at t)
+const A={t:0,playing:false,sel:[]};  // sel: the selected keys, entries {ref, prop, t} (see "key selection" below)
 const subs=[];
 function onAnim(fn){subs.push(fn);}
 const emit=()=>subs.forEach(f=>f());
@@ -109,7 +109,7 @@ function record(o,k,prev,cur){
     const t=snapT(A.t,fps());
     // first key of this value: its design-frame value stays as it was
     if((!tr||!tr.length)&&Math.abs(t-dt)>=halfFrame(fps()))put(o,k,dt,prev);
-    const key=put(o,k,t,cur);A.sel={ref:refOf(o),t:key.t,prop:null};
+    const key=put(o,k,t,cur);A.sel=entriesAt(o,key.t,null);
   } else put(o,k,dt,cur);
   if(!emitQueued){emitQueued=true;requestAnimationFrame(()=>{emitQueued=false;emit();});}
 }
@@ -120,33 +120,62 @@ let emitQueued=false;
 function addPoseKey(o){
   if(!o)return;const t=snapT(A.t,fps());
   propsOf(o).forEach(k=>put(o,k,t,o[k]));
-  A.sel={ref:refOf(o),t,prop:null};emit();
+  A.sel=entriesAt(o,t,null);emit();
 }
 // the diamond beside a slider: keys that one value at the playhead
-function keyProp(o,k){if(!o)return;const t=snapT(A.t,fps());put(o,k,t,o[k]);A.sel={ref:refOf(o),t,prop:k};emit();}
+function keyProp(o,k){if(!o)return;const t=snapT(A.t,fps());put(o,k,t,o[k]);A.sel=[{ref:refOf(o),prop:k,t}];emit();}
 function keysAt(o,t,prop){return (prop?[prop]:tracked(o)).map(k=>keyIn(o.tracks[k],t,fps())).filter(Boolean);}
-const selectedKeys=()=>{const s=A.sel,o=s&&byRef(s.ref);return o?keysAt(o,s.t,s.prop):[];};
-function selectKey(ref,t,prop){A.sel=ref==null?null:{ref,t,prop:prop||null};emit();}
+
+/* ---------- key selection (editor state): A.sel is a list of value keys {ref, prop, t}. A summary diamond on the
+   timeline stands for every value's key at that time (entriesAt). The entries resolve to the key objects on demand
+   (selectedKeys), so a restore (undo, another board) keeps the selection as long as those keys still exist. Moving,
+   deleting, the ease and the design frame apply to the whole selection. */
+const sameKey=(a,b)=>a.ref===b.ref&&a.prop===b.prop&&Math.abs(a.t-b.t)<halfFrame(fps());
+// the entries a diamond stands for: one value's key, or (prop null) every value's key at t
+function entriesAt(o,t,prop){return (prop?[prop]:tracked(o)).filter(k=>keyIn(o.tracks[k],t,fps())).map(k=>({ref:refOf(o),prop:k,t}));}
+const isSelected=(ref,t,prop)=>A.sel.some(e=>sameKey(e,{ref,prop,t}));
+// selects a diamond's keys: mode 'set' (default) replaces the selection, 'add' adds, 'toggle' adds or removes them;
+// ref null clears
+function selectKey(ref,t,prop,mode){
+  if(ref==null){if(A.sel.length){A.sel=[];emit();}return;}
+  const o=byRef(ref);if(!o)return;const es=entriesAt(o,t,prop);
+  if(mode==='toggle'){if(es.length&&es.every(e=>isSelected(e.ref,e.t,e.prop)))A.sel=A.sel.filter(s=>!es.some(e=>sameKey(e,s)));else es.forEach(e=>{if(!isSelected(e.ref,e.t,e.prop))A.sel.push(e);});}
+  else if(mode==='add')es.forEach(e=>{if(!isSelected(e.ref,e.t,e.prop))A.sel.push(e);});
+  else A.sel=es;
+  emit();
+}
+function selectKeys(list){A.sel=list.slice();emit();}
+function selectAllKeys(o){if(!o)return;A.sel=tracked(o).flatMap(k=>o.tracks[k].map(x=>({ref:refOf(o),prop:k,t:x.t})));emit();}
+// the selected keys that still exist: [{o, prop, key}]
+function selectedKeys(){const out=[];A.sel.forEach(e=>{const o=byRef(e.ref),key=o&&o.tracks&&o.tracks[e.prop]&&keyIn(o.tracks[e.prop],e.t,fps());if(key)out.push({o,prop:e.prop,key});});return out;}
 function deleteSelected(){
-  const s=A.sel,o=s&&byRef(s.ref);if(!o)return false;
-  (s.prop?[s.prop]:tracked(o)).forEach(k=>{const tr=o.tracks[k],ex=keyIn(tr,s.t,fps());if(!ex)return;
+  const ks=selectedKeys();if(!ks.length)return false;
+  ks.forEach(({o,prop,key})=>{const tr=o.tracks[prop];if(!tr)return;const i=tr.indexOf(key);if(i>=0)tr.splice(i,1);
     // the last key of a value: the value stays where it is, without animation
-    if(tr.length===1)delete o.tracks[k];else tr.splice(tr.indexOf(ex),1);});
-  A.sel=null;applyNow();syncSliders();emit();return true;
+    if(!tr.length)delete o.tracks[prop];});
+  A.sel=[];applyNow();syncSliders();emit();return true;
 }
-function setEase(e){selectedKeys().forEach(k=>{k.ease=e;});applyNow();emit();}
-// moves the selected keys to time t (not onto another key of the same value); the design frame moves with its keys
-function moveSelected(t){
-  const s=A.sel,o=s&&byRef(s.ref);if(!o)return;
-  t=Math.max(0,Math.min(state.anim.dur,snapT(t,fps())));
-  const ks=keysAt(o,s.t,s.prop),props=s.prop?[s.prop]:tracked(o);
-  const clash=props.some(k=>(o.tracks[k]||[]).some(x=>!ks.includes(x)&&Math.abs(x.t-t)<halfFrame(fps())));
-  if(clash)return;
-  if(!s.prop&&Math.abs(designT(o)-s.t)<halfFrame(fps()))o.designT=t;
-  ks.forEach(k=>{k.t=t;});props.forEach(k=>sortKeys(o.tracks[k]));s.t=t;applyNow();emit();
+function setEase(e){selectedKeys().forEach(x=>{x.key.ease=e;});applyNow();emit();}
+// moves the selected keys by dt seconds, together (snapped to frames, kept within the duration, never onto another
+// key of the same value: then nothing moves). A target's design frame moves along when every key it has at that
+// time is in the selection. Returns the dt applied.
+function moveSelected(dt){
+  const ks=selectedKeys();if(!ks.length)return 0;
+  const ts=ks.map(x=>x.key.t),hf=halfFrame(fps());
+  dt=snapT(Math.max(-Math.min(...ts),Math.min(state.anim.dur-Math.max(...ts),dt)),fps());
+  if(Math.abs(dt)<1e-9)return 0;
+  const moving=new Set(ks.map(x=>x.key));
+  if(ks.some(({o,prop,key})=>o.tracks[prop].some(x=>!moving.has(x)&&Math.abs(x.t-(key.t+dt))<hf)))return 0;
+  const owners=new Set(ks.map(x=>x.o));
+  owners.forEach(o=>{const at=keysAt(o,designT(o),null);if(at.length&&at.every(k=>moving.has(k)))o.designT=snapT(designT(o)+dt,fps());});
+  ks.forEach(({key})=>{key.t=snapT(key.t+dt,fps());});
+  owners.forEach(o=>tracked(o).forEach(k=>sortKeys(o.tracks[k])));
+  A.sel.forEach(e=>{e.t=snapT(e.t+dt,fps());});applyNow();emit();return dt;
 }
-// makes the selected key's time the target's design frame (what Tasarla and the still image show)
-function setDesignFrame(){const s=A.sel,o=s&&byRef(s.ref);if(!o)return;o.designT=s.t;emit();}
+// makes the selected keys' time the design frame of their target (what Tasarla and the still image show); only when
+// the selection sits at one time
+function setDesignFrame(){const ks=selectedKeys();if(!ks.length)return;const ts=ks.map(x=>x.key.t);if(Math.max(...ts)-Math.min(...ts)>=halfFrame(fps()))return;
+  new Set(ks.map(x=>x.o)).forEach(o=>{o.designT=ts[0];});emit();}
 // the latest time anything happens: keys, design frames, text effects
 const fxEnd=it=>Math.max(0,...['in','out'].map(k=>it.fx&&it.fx[k]?it.fx[k].t+it.fx[k].dur:0));
 function setDuration(dur){
@@ -208,7 +237,7 @@ function applyPreset(id,o){
     if(k!=='scroll'){const off=D[k]-interp(tr,dt);if(Math.abs(off)>1e-9)tr.forEach(x=>{x.v+=off;});}
     o.tracks[k]=tr;
   }
-  A.sel=null;applyNow();syncSliders();emit();return over;
+  A.sel=[];applyNow();syncSliders();emit();return over;
 }
 
 /* ---------- playback (real time; the preview renders one sample per frame) */
@@ -230,17 +259,17 @@ function stop(){if(!A.playing)return;A.playing=false;cancelAnimationFrame(raf);s
 
 /* ---------- mode */
 function setMode(m){
-  if(ui.mode===m)return;stop();if(m!=='animate')A.sel=null;
+  if(ui.mode===m)return;stop();if(m!=='animate')A.sel=[];
   setUi({mode:m});document.documentElement.dataset.mode=m;applyNow();renderItems();syncSliders();emit();
 }
 // another board (or undo / open project): fields come from the snapshot (design frame); show what the mode shows
 onBoards(()=>{
   stop();applied.clear();
   if(A.t>state.anim.dur)A.t=state.anim.dur;
-  if(A.sel&&!byRef(A.sel.ref))A.sel=null;
+  A.sel=A.sel.filter(e=>{const o=byRef(e.ref);return !!(o&&o.tracks&&o.tracks[e.prop]&&keyIn(o.tracks[e.prop],e.t,fps()));});
   applyNow();observe();syncSliders();emit();
 });
 
 const anyAnim=()=>targets().some(hasAnim)||state.items.some(hasFx);
-export {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,deleteSelected,hasFx,keyProp,keysAt,moveSelected,
-  onAnim,play,presetsFor,seek,selectKey,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,targets};
+export {A,CAM_PRESETS,ITEM_PRESETS,LIGHT_ANIM,PRESETS,addPoseKey,anyAnim,applyAt,applyNow,applyPreset,byRef,deleteSelected,entriesAt,hasFx,isSelected,keyProp,keysAt,moveSelected,
+  onAnim,play,presetsFor,seek,selectAllKeys,selectKey,selectKeys,selectedKeys,setDesignFrame,setDuration,setEase,setMode,setQuiet,stop,targets};

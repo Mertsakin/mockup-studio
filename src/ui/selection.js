@@ -234,7 +234,8 @@ function unframeSelection(){
 addEventListener('keydown',e=>{
   if(typing(e.target))return;
   const k=e.key.toLowerCase(),mod=e.metaKey||e.ctrlKey;
-  if(mod&&k==='a'&&!e.shiftKey&&!e.altKey){if(!state.devices.length&&!state.items.length)return;e.preventDefault();e.stopImmediatePropagation();selectAll();return;}
+  if(mod&&k==='a'&&!e.shiftKey&&!e.altKey){if(ui.tlFocus&&ui.mode==='animate')return;  // the timeline's keys (timeline.js)
+    if(!state.devices.length&&!state.items.length)return;e.preventDefault();e.stopImmediatePropagation();selectAll();return;}
   if(mod&&e.altKey&&e.code==='KeyG'&&!e.shiftKey){if(!items2D().length)return;e.preventDefault();e.stopImmediatePropagation();frameSelection(false);return;}
   if(mod&&e.shiftKey&&e.code==='KeyG'&&!e.altKey){if(!items2D().some(isFrame))return;e.preventDefault();e.stopImmediatePropagation();unframeSelection();return;}
   if(!mod&&!e.altKey&&e.shiftKey&&e.code==='KeyA'){if(!items2D().length)return;e.preventDefault();e.stopImmediatePropagation();frameSelection(true);return;}

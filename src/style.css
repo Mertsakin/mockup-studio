@@ -457,6 +457,13 @@ html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
 .kf::before{content:"";position:absolute;inset:2px;transform:rotate(45deg);background:var(--key);border-radius:2px;box-shadow:0 0 0 1.5px var(--panel)}
 .kf.small::before{inset:3px}
 .kf.on::before{background:var(--accent);box-shadow:0 0 0 1.5px var(--panel),0 0 0 3px var(--accent)}
+/* a summary diamond where only some values have a key */
+.kf.part::before{background:linear-gradient(90deg,var(--key) 50%,var(--panel) 50%);box-shadow:0 0 0 1.5px var(--panel),inset 0 0 0 1.5px var(--key)}
+.kf.part.on::before{background:linear-gradient(90deg,var(--accent) 50%,var(--panel) 50%);box-shadow:0 0 0 1.5px var(--panel),0 0 0 3px var(--accent),inset 0 0 0 1.5px var(--accent)}
+.kf:hover::before{transform:rotate(45deg) scale(1.2)}
+/* marquee selection and the snap guide of a dragged key (timeline.js) */
+.marq{position:absolute;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);pointer-events:none;z-index:4}
+.snapg{position:absolute;top:0;bottom:0;border-left:1px dashed var(--key-ink);pointer-events:none;z-index:3}
 /* text effect span on an item's row (timeline.js): drag to move */
 .fx-bar{position:absolute;top:7px;height:18px;padding:0 6px;border-radius:4px;background:color-mix(in srgb,var(--accent) 22%,var(--track));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent-ink);font-size:10.5px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:ew-resize;user-select:none;box-sizing:border-box}
 .fx-bar.out{background:color-mix(in srgb,var(--accent) 12%,var(--track))}
