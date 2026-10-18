@@ -1,6 +1,6 @@
 # Üyelik planı: Supabase + Cloudflare R2
 
-*18 Ekim 2026 · durum: plan, kararlar bekliyor (§9). Ödeme (Paddle) bu planın dışında, sonraki adım.*
+*18 Ekim 2026 · durum: plan onaylandı, kararlar §9'da. Ödeme (Paddle) bu planın dışında, sonraki adım.*
 
 ## 1. Hedef ve sınırlar
 
@@ -21,7 +21,7 @@
 
 ```
 Stüdyo (tarayıcı)
- ├─ Supabase Auth ........ giriş: Google, GitHub, e-posta bağlantısı (PKCE)
+ ├─ Supabase Auth ........ giriş: Google, GitHub, Apple, e-posta bağlantısı (PKCE)
  ├─ Supabase Postgres .... profiller, projeler, medya kayıtları (satır düzeyinde yetki: herkes yalnızca kendi satırını görür)
  └─ Depolama Worker'ı .... Cloudflare Worker + R2 bağlaması
        - Supabase oturum jetonunu doğrular (JWKS)
@@ -89,7 +89,7 @@ u/<kullanıcı>/p/<proje>/thumb.webp     küçük resim
   - `GET /m/<hash>` ve `GET /p/<proje>/…`: sahiplik denetimiyle okuma; tarayıcı önbelleği için `immutable` (içerik adresi değişmez).
   - `DELETE /account`: kullanıcının önekindeki her şeyi siler.
 - Sınırlar bugünkülerle aynı: video 200 MB, model 50 MB. Yalnızca bilinen içerik türleri kabul edilir.
-- Kota: beta için kullanıcı başına öneri 2 GB (§9).
+- Kota: beta için kullanıcı başına 2 GB ve 100 proje.
 
 ## 5. Stüdyoda eşitleme
 
@@ -105,7 +105,7 @@ Yerel otomatik kayıt bugün tek belge tutuyor. Üyelikle birlikte açık projen
 ## 6. Arayüz
 
 - **Üst bar:** girişsiz "Giriş yap"; girişli kullanıcı avatarı ve menüsü (Projelerim, Hesap, Çıkış). Dosya adının yanında kayıt durumu: *Kaydedildi* / *Kaydediliyor…* / *Çevrimdışı · sonra eşitlenecek*.
-- **Giriş penceresi:** Google, GitHub, "E-postama bağlantı gönder". Şifre yok.
+- **Giriş penceresi:** Google, GitHub, Apple, "E-postama bağlantı gönder". Şifre yok.
 - **Projelerim:** küçük resimli ızgara, arama, yeni proje, aç, yeniden adlandır, çoğalt, sil (çöp kutusu), son değişiklik tarihi.
 - **İlk girişte:** tarayıcıdaki çalışma varsa "Bu çalışmayı hesabına kaydet?" diye sorulur.
 - **Karşılama kartı:** girişliyse "Proje aç…"ın yerinde son projeler.
@@ -133,10 +133,43 @@ Yerel otomatik kayıt bugün tek belge tutuyor. Üyelikle birlikte açık projen
 
 Kabaca: 1. ve 2. adım birkaç gün, 3. ve 4. adım bir hafta civarı, 5. adım iki üç gün. Her adım ayrı dalda, doğrulanıp main'e alınır.
 
-## 9. Karar bekleyenler
+## 9. Kararlar (18 Ekim 2026)
 
-1. **Giriş yöntemleri:** öneri Google + GitHub (hedef kitle geliştiriciler) + e-posta bağlantısı; şifre yok. Apple ile giriş masaüstü uygulamayla birlikte düşünülebilir.
-2. **Buluta kayıt:** öneri otomatik (girişliyken her proje bulutta). Alternatif: yalnızca "Buluta kaydet" denince.
-3. **Beta kotası:** öneri kullanıcı başına 2 GB ve 100 proje.
-4. **Bölge:** öneri AB (Supabase Frankfurt, R2 AB yetki alanı).
-5. **Depolama:** öneri R2 + Worker. Alternatif: tamamen Supabase Storage (daha az parça, trafik ücretli).
+1. **Giriş yöntemleri:** Google, GitHub, Apple ve e-posta bağlantısı; şifre yok. Apple için Apple Developer hesabı gerekir (masaüstü uygulamasının imzalanması için de gerekecek).
+2. **Buluta kayıt:** otomatik. Girişli kullanıcının her projesi bulutta; değişiklikten birkaç saniye sonra eşitlenir.
+3. **Beta kotası:** kullanıcı başına 2 GB ve 100 proje.
+4. **Depolama:** R2 + Worker.
+5. **Bölge:** AB (Supabase Frankfurt, R2 AB yetki alanı). Ayrıca sorulmadı, öneri olarak alındı; değiştirmek istersen şimdi söyle, kurulumdan sonra taşımak zahmetli.
+
+## 10. Adım 0: senin açacağın hesaplar
+
+Sırası önemli değil; her biri bittiğinde bilgileri bana (ya da yerel `.env.local` dosyasına) ver. Gizli anahtarları sohbete yazma; nereye konacaklarını aşağıda yazdım.
+
+**Supabase**
+1. supabase.com'da hesap aç, yeni proje: ad `shotlight`, bölge **Central EU (Frankfurt)**, güçlü bir veritabanı şifresi (parola yöneticine kaydet).
+2. Project Settings → API: **Project URL** ve **anon public** anahtarını not et. Bunlar tarayıcıya giren, herkese açık değerler; `.env.local` dosyasına `VITE_SUPABASE_URL` ve `VITE_SUPABASE_ANON_KEY` olarak yazılır.
+3. **service_role** anahtarı gizlidir: yalnızca Worker'ın gizli değişkenine (`wrangler secret put`) girecek. Hiçbir dosyaya yazma.
+4. Authentication → URL Configuration: Site URL `https://shotlight.studio`, ek yönlendirme adresleri `http://localhost:5173/**` ve `https://shotlight.studio/studio/**`.
+
+**Google ile giriş**
+1. Google Cloud Console → APIs & Services → OAuth consent screen: uygulama adı Shotlight, destek e-postası, alan adı.
+2. Credentials → OAuth client ID → Web application. Yetkili yönlendirme adresi: Supabase'in Authentication → Providers → Google sayfasında gösterdiği adres (`https://<proje>.supabase.co/auth/v1/callback`).
+3. Client ID ve secret'ı Supabase'teki Google sağlayıcısına gir.
+
+**GitHub ile giriş**
+1. GitHub → Settings → Developer settings → OAuth Apps → New OAuth App. Homepage `https://shotlight.studio`, callback yine Supabase'in verdiği adres.
+2. Client ID ve secret'ı Supabase'teki GitHub sağlayıcısına gir.
+
+**Apple ile giriş** (Apple Developer hesabı gerekir, yıllık ücretli)
+1. Certificates, Identifiers & Profiles: bir App ID ve ona bağlı bir **Services ID** (ör. `studio.shotlight.web`), "Sign in with Apple" açık; alan adı ve dönüş adresi Supabase'in verdiği adres.
+2. Bir **Sign in with Apple anahtarı** (.p8) oluştur; Team ID, Key ID ve Services ID ile Supabase'teki Apple sağlayıcısına gir. Supabase bu bilgilerden gizli değeri kendisi üretir; anahtarın 6 ayda bir yenilenmesi gerekir, hatırlatıcı kur.
+
+**E-posta bağlantısı**
+- Supabase'in kendi e-posta gönderimi saatte birkaç e-postayla sınırlıdır; beta için yeterli değil. Bir e-posta servisi (ör. Resend ya da Postmark) aç, alan adını doğrula, SMTP bilgilerini Supabase → Authentication → SMTP Settings'e gir. Gönderen: `giris@shotlight.studio`.
+
+**Cloudflare R2 ve Worker**
+1. Cloudflare panosu → R2 → Create bucket: `shotlight-projects`, konum **European Union (EU) jurisdiction**.
+2. Workers & Pages → Worker oluşturmayı ben `services/storage/` altından `wrangler deploy` ile yapacağım; senden yalnızca R2'nin açık olması ve `wrangler login` ile giriş yapman gerekiyor.
+
+**Yerel geliştirme**
+- Şemayı ve Worker'ı canlı projeye dokunmadan denemek için Supabase CLI yerel bir Supabase'i Docker'da çalıştırır. Docker Desktop'ın açık olması yeterli; Adım 1 ve 2'ye bununla başlayabilirim, hesaplar sonra bağlanır.
