@@ -1,4 +1,5 @@
-import {hasVideo,showFrames} from '../devices/video.js';
+import {openExportFrames} from '../devices/video-decode.js';
+import {hasVideo,videoDevices} from '../devices/video.js';
 import {LRT} from '../lights/runtime.js';
 import {pauseLive,renderNow} from '../render/accumulation.js';
 import {applyMix} from '../render/mix.js';
@@ -26,6 +27,9 @@ import {scheduleEnv} from '../render/environment.js';
    Deterministic: frame i shows t = i / fps whatever the machine's speed.
    Motion blur: the frame's samples are spread over half a frame interval around t (a 180° shutter), so only what
    moves blurs, like a real camera. The screenshot scroll is set once per frame (redrawing it per sample is costly).
+   Screen videos: their frames come from a WebCodecs decoder walking each video in order (devices/video-decode.js;
+   seeking the <video> element is its fallback), drawn once per frame before the samples, so the motion blur
+   sub-samples see one still frame.
    Source: the active board, or the sequence (doc.sequence, state/sequence.js): the boards one after another in one
    file. A body frame of the sequence is a frame of its board (restored from the board's snapshot: restore, no
    layout, thumbnails or history meanwhile). A frame inside a transition's window is two renders blended in 2D
@@ -73,19 +77,21 @@ async function renderVideo(onProgress){
   // the sequence drives the scene through other boards: nothing it does is an edit (recorder muted, history held)
   if(seq){storeActive();A.mute=true;holdHistory(true);}
   pauseLive(true);
+  let screens=null;  // the screen videos' frame source (decoder or seek), opened per live board
   try{
     setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
     const dt=1/fps(),S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
     // what the live board has: anything in 3D moving (devices, camera, lights) gets motion blur; moving lights also
-    // rebuild the reflections per frame; screen videos are seeked to the frame
-    let F=null;const flags=()=>{F={moving:targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove:state.lights.some(hasAnim),video:state.devices.some(hasVideo),dur:state.anim.dur};};
-    flags();
+    // rebuild the reflections per frame; its screen videos get a frame source (the decoder, or the seek path)
+    let F=null;const flags=async()=>{F={moving:targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove:state.lights.some(hasAnim),dur:state.anim.dur};
+      if(screens){await screens.close();screens=null;}screens=state.devices.some(hasVideo)?await openExportFrames(videoDevices()):null;};
+    await flags();
     /* one frame of the live board at its local time t into a context (W x H). mix(t): in a camera flight, the values in
-       between to write after the board's own (per sub-sample too); the lights' reflections rebuild when they move */
+       between to write after the board's own (per sub-sample too); relight: the lights' reflections rebuild per frame */
     const frame=async(gc,t,mix,relight)=>{
       const lightsMove=F.lightsMove||!!relight;
-      const setup=(tt,full)=>{applyAt(tt,full?{sync:true}:{scroll:false});if(mix){const m=mix(tt);m.cam=m.cam||null;applyMix(m);}};
-      setup(t,true);if(F.video)await showFrames(t);if(lightsMove)scheduleEnv(true);  // screen videos: the exact frame, drawn before the samples
+      const setup=(tt,full)=>{applyAt(tt,full?{sync:true,video:false}:{scroll:false});if(mix){const m=mix(tt);m.cam=m.cam||null;applyMix(m);}};
+      setup(t,true);if(screens)await screens.show(t);if(lightsMove)scheduleEnv(true);  // screen videos: the exact frame, drawn before the samples
       // the focus is the frame's own (its time): the motion blur sub-samples keep it (render/lens.js)
       holdFocus(true);
       try{
@@ -119,11 +125,11 @@ async function renderVideo(onProgress){
       else{const board=f.b&&f.u>=1?f.b.board:f.a.board,t=f.b&&f.u>=1?f.b.t:f.a.t;if(last&&!last.tr&&last.board===board)last.frames.push({i,t});else runs.push({board,frames:[{i,t}]});}
     }
     let shown=null;  // the board whose scene is live now
-    const use=id=>{if(shown===id)return;const b=boardById(id);restore(b.snap);applyTransform();scheduleEnv(true);shown=id;flags();};
+    const use=async id=>{if(shown===id)return;const b=boardById(id);restore(b.snap);applyTransform();scheduleEnv(true);shown=id;await flags();};
     let done=0;
     for(const run of runs){
       if(!run.tr){
-        use(run.board);
+        await use(run.board);
         for(const {i,t} of run.frames){if(cancel)return null;await frame(g,t,null);await enc.add(out,i);onProgress(++done,n);await breathe();}
         continue;
       }
@@ -137,9 +143,9 @@ async function renderVideo(onProgress){
       const per=Math.max(1,Math.min(12,Math.floor(GROUP_BYTES/(W*H*4*2))));
       for(let k=0;k<run.frames.length;k+=per){
         const grp=run.frames.slice(k,k+per),ca=[],cb=[];
-        use(run.a);
+        await use(run.a);
         for(const {f} of grp){if(cancel)return null;const c=mkCanvas(W,H),e=ease(f.u);await frame(c.getContext('2d'),f.a.t,fly?mixFor(a,f.a.t,b,f.b.t,e,'a'):null,lm);ca.push(c);await breathe();}
-        use(run.b);
+        await use(run.b);
         for(const {f} of grp){if(cancel)return null;const c=mkCanvas(W,H),e=ease(f.u);await frame(c.getContext('2d'),f.b.t,fly?mixFor(a,f.a.t,b,f.b.t,e,'b'):null,lm);cb.push(c);await breathe();}
         for(let j=0;j<grp.length;j++){if(cancel)return null;blend(g,W,H,ca[j],cb[j],tr,ease(grp[j].f.u));await enc.add(out,grp[j].i);onProgress(++done,n);}
         await breathe();
@@ -148,6 +154,7 @@ async function renderVideo(onProgress){
     return await enc.finish();
   }finally{
     state.format=stillFormat;enc.close();holdFocus(false);
+    if(screens)await screens.close();  // the screens back on their <video> frames
     hidden.forEach(o=>{o.visible=true;});
     if(seq&&home){restore(home.snap);applyTransform();scheduleEnv(true);}  // the board the user had, as it was stored
     pauseLive(false);renderer.setPixelRatio(pr);invalidateLayout();layout();
