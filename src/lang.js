@@ -4,8 +4,8 @@
    does the same once for the static markup before anything is drawn (text nodes and the aria-label / title /
    placeholder / alt attributes; one pass, like hydrateIcons). A text that reads differently in two places carries
    a context after '@' ('Geçiş@bg'; in markup data-t="Geçiş@bg"): the dictionary keys it that way, Turkish drops it.
-   The choice: ?lang=en (remembered) > localStorage shotlight.lang > the browser's language, Turkish or English;
-   anything else is Turkish. No imports: the sign-in page (src/login.js) loads it without the editor. */
+   The choice: ?lang=en (remembered) > localStorage shotlight.lang > the browser's language: Turkish in a Turkish
+   browser, English anywhere else (English is the default). No imports: the sign-in page (src/login.js) loads it without the editor. */
 const KEY='shotlight.lang';
 const LANGS={tr:'Türkçe',en:'English'};
 let dict=null;
@@ -14,8 +14,7 @@ function pick(){
   try{q=new URLSearchParams(location.search).get('lang');}catch(e){/* no location */}
   if(q&&LANGS[q]){try{localStorage.setItem(KEY,q);}catch(e){/* private mode */}return q;}
   try{const s=localStorage.getItem(KEY);if(s&&LANGS[s])return s;}catch(e){/* private mode */}
-  const n=(navigator.language||'').slice(0,2).toLowerCase();
-  return LANGS[n]?n:'tr';
+  return (navigator.language||'').slice(0,2).toLowerCase()==='tr'?'tr':'en';
 }
 const LANG=pick();
 const LOCALE=LANG==='tr'?'tr-TR':'en-US';

@@ -1,7 +1,7 @@
 // The English UI (src/lang.js, src/lang-en.js), end to end in headless Chromium: the studio opened with ?lang=en must
 // show no Turkish anywhere the test can reach (the static markup, the menus, the inspectors, the timeline, the
-// shortcut sheet, the template gallery, the welcome card, the empty-screen placeholder), and the same page opened
-// without the parameter in a Turkish browser must still be Turkish.
+// shortcut sheet, the template gallery, the welcome card, the empty-screen placeholder), the same page opened
+// without the parameter in a Turkish browser must still be Turkish, and any other browser gets English (the default).
 // node tools/i18n/test-ui-lang.mjs [studio URL]   (a plain `npm run dev` on 5173; no accounts needed)
 import {chromium} from 'playwright';
 
@@ -96,9 +96,9 @@ try{
   ok(await p.evaluate(()=>document.documentElement.lang)==='en','html[lang] follows navigator.language');
   await p.context().close();
 
-  console.log('German browser, no parameter: Turkish is the default');
+  console.log('German browser, no parameter: English is the default');
   p=await open('','de-DE');
-  ok(await p.evaluate(()=>document.documentElement.lang)==='tr','an unsupported browser language falls back to Turkish');
+  ok(await p.evaluate(()=>document.documentElement.lang)==='en','any other browser language gets English');
   await p.context().close();
 }catch(e){console.error(e);fails++;}
 finally{await b.close();}
