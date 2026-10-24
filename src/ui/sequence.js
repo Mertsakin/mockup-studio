@@ -117,7 +117,7 @@ function build(){
     el.innerHTML=KIND_SVG[tr.kind]+(tr.kind==='cut'?'':'<small>'+fmt1(tr.dur)+'</small>')+'<span class="tip">'+KINDS[tr.kind].n+(tr.kind==='cut'?'':' · '+fmt1(tr.dur)+' sn')+(bad?' · ortamlar farklı: çapraz solma gibi davranır':'')+' (tıkla: düzenle)</span>';
     el.setAttribute('aria-label','Geçiş: '+KINDS[tr.kind].n);
     el.addEventListener('pointerdown',e=>e.stopPropagation());
-    el.addEventListener('click',e=>{e.stopPropagation();stop();S.sel={tr:i-1};draw();});
+    el.addEventListener('click',e=>{e.stopPropagation();stop();S.sel=S.sel&&S.sel.tr===i-1?null:{tr:i-1};draw();});
     lane.appendChild(el);
   });
   const add=document.createElement('button');add.type='button';add.className='seq-add';add.style.left=(L.length?xOf(T)+12:PAD)+'px';add.setAttribute('aria-label','Sıraya artboard ekle');
@@ -159,7 +159,7 @@ function drawCard(){
   p.querySelectorAll('[data-color]').forEach(x=>x.addEventListener('click',()=>{tr.color=x.dataset.color;change();}));
   p.querySelector('[data-a="cut"]').addEventListener('click',()=>{s.transitions[i]=newTransition('cut');change();});
   const tf=p.querySelector('[data-f="dur"]');
-  tf.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();tf.blur();}else if(e.key==='Escape'){e.preventDefault();draw();}});
+  tf.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();tf.blur();}else if(e.key==='Escape'){e.preventDefault();S.sel=null;draw();}});
   tf.addEventListener('change',()=>{const v=parseFloat(tf.value.replace(',','.'));
     if(Number.isFinite(v)){tr.dur=Math.round(Math.max(TR_MIN,Math.min(maxT,v))*100)/100;if(v>maxT+1e-6)toast('Geçiş en çok '+fmt1(maxT)+' sn olabilir: iki geçiş aynı artboardda üst üste binemez');}
     change();});
@@ -344,8 +344,12 @@ $('#seqAddAll').addEventListener('click',addAll);
 $('#seqExport').addEventListener('click',()=>{stop();openVideoExport('seq');});
 onBoards(()=>{if(S.on)draw();});
 new ResizeObserver(()=>{if(S.on)draw();}).observe(view);
-// a press anywhere else stops the sequence (the board's own playback does the same, timeline.js)
-document.addEventListener('pointerdown',e=>{if(S.playing&&!e.target.closest('#tlPlay,#tlLoop'))stop();},true);
+// a press anywhere else stops the sequence (the board's own playback does the same, timeline.js); a press outside
+// the timeline panel (and its menus) also drops the selection and the transition card, like the keyframe selection
+document.addEventListener('pointerdown',e=>{
+  if(S.playing&&!e.target.closest('#tlPlay,#tlLoop'))stop();
+  if(S.sel&&S.on&&!e.target.closest('#timeline,.menu')){S.sel=null;draw();}
+},true);
 // the loop toggle of the bar applies to the sequence here
 const toggleLoop=()=>{seq().loop=!seq().loop;dirty();draw();};
 const SEQ={active,setView,draw,play,stop,seek,key,toggleLoop,playing:()=>S.playing,loop:()=>seq().loop!==false,count:()=>seq().clips.length,time:()=>S.t,parseSeek:t=>{if(Number.isFinite(t))seek(t);}};
