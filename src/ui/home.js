@@ -21,6 +21,7 @@ import {openTemplate,templates} from './template-gallery.js';
 import {toast} from './toast.js';
 import {closeWelcomeModal,openWelcome} from './welcome.js';
 import {openStoreDialog} from './store.js';
+import {openSheet} from './shortcuts.js';
 import {closeHooks} from './history.js';
 import {setUi} from './ui-state.js';
 import {fitAll} from './workspace.js';
@@ -270,7 +271,7 @@ function onClick(e){
     case 'sort':openMenu(a,[['edited','Son düzenlenen'],['name','Ada göre'],['created','Oluşturulma']].map(([k,l])=>({label:l,on:prefs.sort===k,run:()=>{prefs.sort=k;savePrefs();draw();}})));return;
     case 'me':{const th=document.documentElement.dataset.theme||'system';
       openMenu(a,[{seg:THEME_SEG,label:'Tema',value:th,pick:theme},
-        null,{label:'Klavye kısayolları',key:'?',run:()=>{hideHome();$('#keysBtn').click();}},
+        null,{label:'Klavye kısayolları',key:'?',run:openSheet},  // a dialog over the home page: the page and its address stay
         null,{label:'Verini indir',run:()=>downloadDataAction()},{label:'Hesabı sil…',danger:true,run:()=>deleteAccountAction()},
         null,{label:'Çıkış yap',run:async()=>{if(await leave())hideHome();}}]);return;}
   }}
