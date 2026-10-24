@@ -184,25 +184,26 @@ class RecordSession{
       for(const t of targets){
         const dpr=Math.min(DPR_MAX,MAX_PX_W/t.width,Math.max(1,+t.dpr||o.dpr)),maxH=Math.min(MAX_H,Math.floor(MAX_PX_H/dpr)),mobile=!!t.mobile;
         this.send({type:'status',text:'Ekran görüntüsü alınıyor…'+(targets.length>1?' ('+t.width+' px)':'')});
-        await cdp.send('Emulation.setDeviceMetricsOverride',{width:t.width,height:t.height,deviceScaleFactor:dpr,mobile});
+        // the page laid out at the target's width and scale; the viewport keeps the target's height (as Playwright's
+        // screenshots do: the clip is in document coordinates, captureBeyondViewport renders what lies below)
+        await cdp.send('Emulation.setDeviceMetricsOverride',{width:t.width,height:t.height,deviceScaleFactor:dpr,mobile,screenWidth:t.width,screenHeight:t.height});
+        await p.waitForTimeout(full?250:120);
         let top=0,height=t.height;
         if(full){
           // walk down so lazy content loads, like the capture endpoint; the shot starts at the top (or the selector)
           await p.evaluate(async max=>{const step=innerHeight*.8,end=Math.min(document.documentElement.scrollHeight,max);
             for(let y=0;y<end;y+=step){scrollTo(0,y);await new Promise(r=>setTimeout(r,120));}scrollTo(0,0);},maxH).catch(()=>{});
           await p.waitForLoadState('networkidle',{timeout:3000}).catch(()=>{});
+          await p.waitForTimeout(200);
           const h=await p.evaluate(()=>Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0)).catch(()=>t.height);
           if(selector){const y=await p.evaluate(s=>{try{const e=document.querySelector(s);return e?Math.max(0,Math.round(e.getBoundingClientRect().top+scrollY)):null;}catch(err){return null;}},selector).catch(()=>null);
             if(y==null)missing=true;else top=Math.min(y,Math.max(0,h-t.height));}
           height=Math.max(t.height,Math.min(h-top,maxH));
-          // the page laid out at its full height (fixed bars stay at the top once; 100vh sections grow, as in the capture)
-          await cdp.send('Emulation.setDeviceMetricsOverride',{width:t.width,height,deviceScaleFactor:dpr,mobile});
-          await p.waitForTimeout(150);
         }else{
-          top=await p.evaluate(()=>Math.round(scrollY)).catch(()=>0);
-          await p.waitForTimeout(100);
+          const lm=await cdp.send('Page.getLayoutMetrics').catch(()=>null);
+          top=Math.round(lm&&lm.visualViewport?lm.visualViewport.pageY:await p.evaluate(()=>scrollY).catch(()=>0));
         }
-        const r=await cdp.send('Page.captureScreenshot',{format:'jpeg',quality:85,captureBeyondViewport:true,clip:{x:0,y:top,width:t.width,height,scale:1}});
+        const r=await cdp.send('Page.captureScreenshot',{format:'jpeg',quality:85,captureBeyondViewport:full,clip:{x:0,y:top,width:t.width,height,scale:1}});
         shots[t.id]='data:image/jpeg;base64,'+r.data;
       }
     }catch(e){this.send({type:'error',message:'Ekran görüntüsü alınamadı ('+reason(e)+')'});}
