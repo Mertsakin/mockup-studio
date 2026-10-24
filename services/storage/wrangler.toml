@@ -1,6 +1,6 @@
 # The storage Worker (docs/uyelik.md §4): R2 behind the user's Supabase session. Local: npm run storage:dev (Miniflare,
-# a local R2, .dev.vars for the local Supabase). Deploy: npx wrangler deploy -c services/storage/wrangler.toml, with
-# the secret SUPABASE_SERVICE_ROLE_KEY set by: npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY -c services/storage/wrangler.toml
+# a local R2, .dev.vars for the local Supabase). Deploy: npx wrangler deploy -c services/storage/wrangler.toml. No
+# secret: everything, account deletion included, runs with the user's own token (the anon key is public).
 name = "shotlight-storage"
 main = "src/index.js"
 compatibility_date = "2025-09-01"

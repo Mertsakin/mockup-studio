@@ -17,9 +17,9 @@
      PUT    /projects/<id>/doc/<version>.json   body (≤ 20 MB JSON)
      GET    /projects/<id>/doc/<version>.json
      PUT|GET /projects/<id>/thumb.webp   (≤ 2 MB)
-     DELETE /account                     every object of the user, then the user (cascades to the database)
-   Environment: BUCKET (R2), SUPABASE_URL, SUPABASE_ANON_KEY, ALLOWED_ORIGINS (comma-separated; empty: any, local only),
-   SUPABASE_SERVICE_ROLE_KEY (secret; only DELETE /account uses it). */
+     DELETE /account                     every object of the user, then their rows and the user (delete_account)
+   Environment: BUCKET (R2), SUPABASE_URL, SUPABASE_ANON_KEY, ALLOWED_ORIGINS (comma-separated; empty: any, local only).
+   No service role key: account deletion runs as the user (supabase/migrations/ delete_account). */
 
 const LIMITS={image:30*2**20,video:200*2**20,model:50*2**20};
 const TYPES={'image/png':'image','image/jpeg':'image','image/webp':'image','image/svg+xml':'image','image/gif':'image',
@@ -155,14 +155,16 @@ async function handle(req,env){
     return fail(405,'Desteklenmiyor');
   }
 
-  // ---------- the account itself
+  // ---------- the account itself ("Hesabı sil"). The files first: should that fail, the account is as it was and the
+  // user can try again; then the rows and the user in one transaction, with the user's own token (delete_account
+  // deletes only its caller). The token is useless after this (the user is gone), so the Worker forgets it too.
   if(parts[0]==='account'&&M==='DELETE'){
-    if(!env.SUPABASE_SERVICE_ROLE_KEY)return fail(500,'Sunucu ayarı eksik');
     const n=await deletePrefix(env.BUCKET,me);
-    const r=await fetch(env.SUPABASE_URL+'/auth/v1/admin/users/'+uid,{method:'DELETE',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY}});
-    if(!r.ok)return fail(500,'Hesap silinemedi');
+    const r=await rest(env,token,'rpc/delete_account',{method:'POST',body:'{}'});
+    if(!r.ok){const e=await r.json().catch(()=>({}));console.error('delete_account:',r.status,e.message||'');return fail(500,'Hesap silinemedi');}
+    const rows=await r.json();
     seen.delete(token.slice(7));
-    return json({deleted:true,objects:n});
+    return json({deleted:true,objects:n,projects:rows.projects||0,media:rows.media||0});
   }
   return fail(404,'Bulunamadı');
 }

@@ -1,6 +1,6 @@
 # Üyelik planı: Supabase + Cloudflare R2
 
-*18 Ekim 2026 · durum: 1., 2. ve 3. adım yerel Supabase ile bitti (§8); 0. adım (hesaplar) sende. Ödeme (Paddle) bu planın dışında.*
+*24 Ekim 2026 · durum: 1., 2. ve 3. adım ile 5. adımın stüdyo tarafı (verini indir, hesabı sil) yerel Supabase ile bitti (§8); 0. adım (hesaplar) sende. Ödeme (Paddle) bu planın dışında.*
 
 ## 1. Hedef ve sınırlar
 
@@ -27,7 +27,7 @@ Stüdyo (tarayıcı)
        - Supabase oturum jetonunu doğrular (JWKS)
        - yükleme ve indirme için kısa ömürlü imzalı adresler verir
        - kota ve boyut sınırlarını uygular
-       - hesap silmede kullanıcının tüm nesnelerini siler
+       - hesap silmede kullanıcının tüm nesnelerini, sonra `delete_account` ile satırlarını ve kullanıcıyı siler
 ```
 
 **Neden dosyalar Supabase Storage'da değil de R2'de:**
@@ -87,7 +87,7 @@ u/<kullanıcı>/p/<proje>/thumb.webp     küçük resim
 - Worker uç noktaları:
   - `POST /upload` `{project, files:[{hash, bytes, type}]}`: eksik olan her dosya için 10 dakikalık imzalı PUT adresi. Zaten var olanlar atlanır.
   - `GET /m/<hash>` ve `GET /p/<proje>/…`: sahiplik denetimiyle okuma; tarayıcı önbelleği için `immutable` (içerik adresi değişmez).
-  - `DELETE /account`: kullanıcının önekindeki her şeyi siler.
+  - `DELETE /account`: kullanıcının önekindeki her şeyi siler, sonra kullanıcının kendi jetonuyla `delete_account()` fonksiyonunu çağırır (profil, projeler, medya ve `auth.users` satırı tek işlemde; servis anahtarı gerekmez).
 - Sınırlar bugünkülerle aynı: video 200 MB, model 50 MB. Yalnızca bilinen içerik türleri kabul edilir.
 - Kota: beta için kullanıcı başına 2 GB ve 100 proje.
 
@@ -110,16 +110,16 @@ Yerel otomatik kayıt bugün tek belge tutuyor. Üyelikle birlikte açık projen
 - **Projeler:** ana sayfada; arama, aç, yeniden adlandır, çoğalt, çöp kutusuna taşı, geri getir, kalıcı sil, son değişiklik tarihi.
 - **İlk girişte:** tarayıcıdaki çalışma varsa "Bu çalışmayı hesabına kaydet?" diye sorulur.
 - **Karşılama kartı:** girişliyse "Proje aç…"ın yerinde son projeler.
-- **Hesap:** ad ve avatar, kullanılan alan, tüm verini indir (ZIP: her proje bir `.mockup.zip`), hesabı sil (onaylı, geri alınamaz).
+- **Hesap:** ad ve avatar, kullanılan alan; hesap menüsünde (editörde sol panelin altı, ana sayfada kenar çubuğu) **Verini indir**: bütün projeler, çöp kutusundakiler dahil, tek ZIP'te (her proje kendi `.mockup.zip` / `.mockup.json` dosyası, adı projeden, çakışanlara sayı; `README.txt` listeyi ve hesap kaydını yazar; ilerleme kartında "3 / 12", Vazgeç) ve **Hesabı sil**: pencere ne silineceğini sayar (proje, kullanılan alan), "Hesabı sil" yazarak onay; sonra çıkış, tarayıcıdaki çalışma boşaltılır, giriş sayfası "Hesabın silindi" der. Geri alınamaz.
 - **Gizlilik sayfası:** hangi verinin nerede tutulduğu. Supabase ve R2 bölgesi AB (KVKK ve GDPR için).
 
 ## 7. Güvenlik
 
-- Tarayıcıya yalnızca Supabase'in herkese açık (anon) anahtarı girer. Gizli anahtar yalnızca Worker'da ve gecelik temizlik işinde.
+- Tarayıcıya yalnızca Supabase'in herkese açık (anon) anahtarı girer. Gizli anahtar yalnızca gecelik temizlik işinde; Worker'da yok.
 - Worker her istekte jetonu doğrular, nesne yolunu kullanıcının kendi önekine zorlar.
 - İmzalı adresler kısa ömürlü; içerik türü ve boyutu adreste sabitlenir.
 - Giriş akışı PKCE. Masaüstü uygulaması aynı akışı özel bir adres şemasıyla (`shotlight://`) kullanır; bunun için ayrıca kod gerekmeyecek şekilde kurulur.
-- Hesap silme: veritabanında zincirleme silme, Worker'da önek silme, Supabase'te kullanıcı silme. Hepsi tek bir uç noktadan.
+- Hesap silme: tek uç nokta (`DELETE /account`). Önce Worker R2 önekini siler (başarısız olursa hesap olduğu gibi kalır, yeniden denenir), sonra `delete_account()` kullanıcının jetonuyla profil, projeler, medya ve `auth.users` satırını tek işlemde siler (cascade). Kullanıcı yalnızca kendini silebilir (`auth.uid()`); aynı e-postayla yeniden giriş sıfırdan başlar.
 
 ## 8. Adımlar
 
@@ -130,9 +130,9 @@ Yerel otomatik kayıt bugün tek belge tutuyor. Üyelikle birlikte açık projen
 | 2 · arka uç ✓ | şema, satır düzeyinde yetki, Worker (`services/storage/`), yerel geliştirme için Supabase CLI ve `wrangler dev` | yetki testleri: bir kullanıcı ötekinin satırını ve nesnesini göremez |
 | 3 · buluta kaydet ve aç ✓ | hash'leme, eksik medya yükleme, belge sürümü, Projelerim penceresi, küçük resimler | aynı proje iki tarayıcı profilinde; çakışma senaryosu |
 | 4 · otomatik eşitleme | gecikmeli kayıt, çevrimdışı kuyruk, durum göstergesi, ilk girişte yerel çalışmayı taşıma | ağ kesilip geri gelince eşitlenme, büyük videoyla yükleme |
-| 5 · hesap | verini indir, hesabı sil, gizlilik sayfası, gecelik temizlik | silme sonrası R2 ve veritabanı boş |
+| 5 · hesap (stüdyo tarafı ✓) | verini indir ✓, hesabı sil ✓, gizlilik sayfası (taslak `landing/gizlilik.html`), gecelik temizlik | silme sonrası R2 ve veritabanı boş: `test-storage.mjs`, `test-rls.mjs`; stüdyoda `test-account.mjs` |
 
-**Durum (18 Ekim):** 1. ve 2. adım yerel Supabase ile bitti ve testli: `npm run accounts:test` (yetki 25 + Worker 21 denetim), `node tools/accounts/test-signin.mjs` (stüdyoda e-posta bağlantısıyla giriş, 15 denetim). **3. adım (18 Ekim):** "Buluta kaydet" ve "Projelerim" (aç, yeniden adlandır, çoğalt, sil), küçük resimler, çakışma penceresi; `node tools/accounts/test-projects.mjs` (iki tarayıcı profili, 18 denetim). Belge her kayıtta yeni bir adla yüklenir: yarışı kaybeden kayıt diğerinin belgesini ezemez. Sırada 4. adım: otomatik eşitleme, çevrimdışı kuyruk, durum göstergesi, ilk girişte yerel çalışmayı taşıma. Worker'da yüklemeler imzalı adres yerine Worker'ın kendisinden geçiyor (yerelde de çalışsın, R2 SHA-256'yı doğrulasın diye); 90 MB üstü çok parçalı.
+**Durum (18 Ekim):** 1. ve 2. adım yerel Supabase ile bitti ve testli: `npm run accounts:test` (yetki 31 + Worker 28 denetim), `node tools/accounts/test-signin.mjs` (stüdyoda e-posta bağlantısıyla giriş, 15 denetim). **3. adım (18 Ekim):** "Buluta kaydet" ve "Projelerim" (aç, yeniden adlandır, çoğalt, sil), küçük resimler, çakışma penceresi; `node tools/accounts/test-projects.mjs` (iki tarayıcı profili, 18 denetim). Belge her kayıtta yeni bir adla yüklenir: yarışı kaybeden kayıt diğerinin belgesini ezemez. Sırada 4. adım: otomatik eşitleme, çevrimdışı kuyruk, durum göstergesi, ilk girişte yerel çalışmayı taşıma. Worker'da yüklemeler imzalı adres yerine Worker'ın kendisinden geçiyor (yerelde de çalışsın, R2 SHA-256'yı doğrulasın diye); 90 MB üstü çok parçalı. **5. adımın stüdyo tarafı (24 Ekim):** hesap menüsünde "Verini indir" ve "Hesabı sil" (§6, §7); `node tools/accounts/test-account.mjs` (iki projeli hesap: ZIP'te iki proje dosyası + README, `fromProjectFile` ile açılır; silme sonrası Supabase'de satır ve kullanıcı yok, Worker'da nesne yok, stüdyo giriş sayfasında, aynı e-posta sıfırdan kaydolur). Gecelik temizlik hâlâ sırada.
 
 Kabaca: 1. ve 2. adım birkaç gün, 3. ve 4. adım bir hafta civarı, 5. adım iki üç gün. Her adım ayrı dalda, doğrulanıp main'e alınır.
 
@@ -151,7 +151,7 @@ Sırası önemli değil; her biri bittiğinde bilgileri bana (ya da yerel `.env.
 **Supabase**
 1. supabase.com'da hesap aç, yeni proje: ad `shotlight`, bölge **Central EU (Frankfurt)**, güçlü bir veritabanı şifresi (parola yöneticine kaydet).
 2. Project Settings → API: **Project URL** ve **anon public** anahtarını not et. Bunlar tarayıcıya giren, herkese açık değerler; `.env.local` dosyasına `VITE_SUPABASE_URL` ve `VITE_SUPABASE_ANON_KEY` olarak yazılır.
-3. **service_role** anahtarı gizlidir: yalnızca Worker'ın gizli değişkenine (`wrangler secret put`) girecek. Hiçbir dosyaya yazma.
+3. **service_role** anahtarı gizlidir: yalnızca gecelik temizlik işinde kullanılacak; Worker'a girmez (hesap silme de kullanıcının kendi jetonuyla çalışır). Hiçbir dosyaya yazma.
 4. Authentication → URL Configuration: Site URL `https://shotlight.studio`, ek yönlendirme adresleri `http://localhost:5177/**` ve `https://shotlight.studio/studio/**`. Girişten dönüş her zaman stüdyonun köküdür (`/studio/`); giriş sayfası (`/studio/login`) oturumu kendisi tamamlamaz.
 
 **Google ile giriş**

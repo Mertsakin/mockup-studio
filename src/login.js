@@ -18,6 +18,8 @@ gate.innerHTML='<div class="ag-card"><div class="ag-brand"><img src="favicon.svg
 document.body.appendChild(gate);html.classList.remove('booting');
 const form=signInForm(gate.querySelector('.ag-form'));form.focus();
 
+// the account was just deleted (ui/projects.js leaves the flag for this page)
+try{if(sessionStorage.getItem('shotlight.deleted')){sessionStorage.removeItem('shotlight.deleted');toast('Hesabın silindi.');}}catch(e){/* no storage */}
 // the provider sent the visitor back with an error (cancelled, not allowed): say so once
 {const h=new URLSearchParams(location.hash.slice(1)),s=new URLSearchParams(location.search),m=h.get('error_description')||s.get('error_description');
   if(m){toast('Giriş tamamlanamadı: '+m.replace(/\+/g,' '));history.replaceState(null,'',location.pathname);}}

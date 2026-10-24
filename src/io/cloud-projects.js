@@ -6,8 +6,8 @@
    (optimistic lock). A conflict throws {conflict: true} and leaves the stored version as it was: the fresh name means
    the other device's document is never overwritten. Opening reverses it; media come from the browser cache when the
    same hash was fetched before (immutable). */
-import {STORAGE_URL,accessToken,client} from './cloud.js';
-import {docFromParts,docParts} from './project.js';
+import {STORAGE_URL,accessToken,auth,client,loadProfile} from './cloud.js';
+import {docFromParts,docParts,fileFromParts} from './project.js';
 
 const SINGLE_MAX=80*2**20,PART=32*2**20;
 const err=(m,extra)=>Object.assign(new Error(m),extra||{});
@@ -122,6 +122,46 @@ async function duplicateProject(id,name){
   }
   return copy;
 }
+// how many projects the account holds, the trash included ("Hesabı sil" says what goes)
+async function countProjects(){const {count,error}=await (await db()).select('id',{count:'exact',head:true});if(error)throw error;return count||0;}
+
+/* "Verini indir": every project of the account, the trash included, in one ZIP: each as the studio's own project file
+   (.mockup.zip with a video or model, .mockup.json otherwise; it opens with "Proje aç…"), named after the project, and
+   a README that lists them and the account record. The document and media come down as when a project opens; the
+   file is built from the blobs without decoding the images. onProgress(i, n, name) before each project; the busy
+   card's Vazgeç throws out of it. Returns {blob, count, total}: the files packed, the projects there were. */
+async function exportAccount(onProgress){
+  const {data:rows,error}=await (await db()).select('id,name,doc_key,boards,created_at,updated_at,deleted_at').order('created_at');
+  if(error)throw error;
+  const JSZip=(await import('jszip')).default,zip=new JSZip(),used={},lines=[];
+  const safe=s=>(s||'').replace(/[\\/:*?"<>|]+|\p{Cc}+/gu,' ').replace(/\s+/g,' ').trim().slice(0,80)||'Adsız proje';
+  const unique=n=>{const k=n.toLocaleLowerCase('tr');used[k]=(used[k]||0)+1;return used[k]>1?n.replace(/(\.mockup\.(zip|json))$/,' ('+used[k]+')$1'):n;};
+  const when=t=>t?new Date(t).toLocaleString('tr-TR',{dateStyle:'long',timeStyle:'short'}):'';
+  let count=0,lost=0;
+  for(let i=0;i<rows.length;i++){
+    const p=rows[i];onProgress&&onProgress(i,rows.length,p.name);
+    if(!p.doc_key){lines.push('  (dosya yok)  '+p.name+': hiç kaydedilmemiş');continue;}
+    const plain=await (await api(docPath(p.id,p.doc_key))).json(),blobs={};
+    for(const [k,h] of Object.entries(plain.media||{})){try{blobs[k]=await (await api('/media/'+h)).blob();}catch(e){lost++;}}
+    const f=await fileFromParts(plain,blobs),name=unique(safe(p.name)+(f.zip?'.mockup.zip':'.mockup.json'));
+    zip.file(name,f.blob);count++;
+    lines.push('  '+name+'  ←  '+p.name+(p.deleted_at?' (çöp kutusunda)':'')+' · '+(p.boards||0)+' artboard · son değişiklik '+when(p.updated_at));
+  }
+  await loadProfile().catch(()=>{});  // the space used, as it is now
+  const u=auth.user||{},pr=auth.profile||{};
+  const readme=['Shotlight · hesap verisi','========================','','Hesap: '+(u.email||''),'İndirme: '+when(new Date()),'',
+    'Projeler ('+count+(rows.length>count?' / '+rows.length:'')+'), çöp kutusundakiler dahil. Her dosya stüdyoda "Proje aç…" ile açılır.',
+    ...(rows.length?lines:['  (bulutta kayıtlı proje yok)']),
+    ...(lost?['','Bulunamayan medya dosyası: '+lost+' (ilgili ekran ya da görsel yer tutucu kalır).']:[]),
+    '','Hesap kaydı','-----------','  Ad: '+(pr.name||''),'  E-posta: '+(u.email||''),'  Profil resmi: '+(pr.avatar_url||u.user_metadata?.avatar_url||'yok'),
+    '  Plan: '+(pr.plan||''),'  Bulutta kullanılan alan: '+Math.round((pr.storage_bytes||0)/2**20*10)/10+' MB','  Kayıt: '+when(pr.created_at||u.created_at),
+    '  Şifre tutulmaz; giriş sağlayıcıyla ya da e-posta bağlantısıyla yapılır.',''].join('\n');
+  zip.file('README.txt',readme);
+  return {blob:await zip.generateAsync({type:'blob',compression:'STORE'}),count,total:rows.length};
+}
+// "Hesabı sil": the Worker removes the files, then the rows and the user (delete_account). Returns what went.
+async function deleteAccount(){return (await api('/account',{method:'DELETE'})).json();}
+
 // a thumbnail as an object URL (the Worker needs the token, so an <img src> cannot fetch it)
 const thumbs=new Map();
 async function thumbURL(p){
@@ -130,4 +170,4 @@ async function thumbURL(p){
   const u=URL.createObjectURL(await (await api('/projects/'+p.id+'/thumb.webp')).blob());thumbs.set(k,u);return u;
 }
 
-export {createProject,destroyProject,duplicateProject,hashOf,listProjects,listTrash,openProject,projectRow,renameProject,restoreProject,saveProject,thumbURL,trashProject,uploadMedia};
+export {countProjects,createProject,deleteAccount,destroyProject,duplicateProject,exportAccount,hashOf,listProjects,listTrash,openProject,projectRow,renameProject,restoreProject,saveProject,thumbURL,trashProject,uploadMedia};

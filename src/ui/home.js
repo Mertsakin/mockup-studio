@@ -1,6 +1,6 @@
 /* The home page (design: wireframes/home.html, after Figma's file browser): where a signed-in user lands on signing
    in, and where the editor's "Ana sayfa" goes back to. A full-screen layer over the editor (the editor behind is inert).
-     sidebar   the account (theme, shortcuts, signing out), search, Son kullanılanlar / Projelerim / Şablonlar /
+     sidebar   the account (theme, shortcuts, Verini indir, Hesabı sil, signing out), search, Son kullanılanlar / Projelerim / Şablonlar /
                Çöp kutusu, the storage used
      top bar   back / forward between views; the goals on the right
                (Açılış görseli, Sosyal, Mağaza seti, Video: each starts a new, empty project and opens the welcome card
@@ -16,7 +16,7 @@ import {listProjects,listTrash,thumbURL} from '../io/cloud-projects.js';
 import {activate,clearAll,doc,fillThumbs,storeActive} from './boards.js';
 import {historyReady,holdHistory} from './history.js';
 import {icon} from './icons.js';
-import {destroyAction,discardAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction} from './projects.js';
+import {deleteAccountAction,destroyAction,discardAction,downloadDataAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction} from './projects.js';
 import {openTemplate,templates} from './template-gallery.js';
 import {toast} from './toast.js';
 import {closeWelcomeModal,openWelcome} from './welcome.js';
@@ -262,7 +262,9 @@ function onClick(e){
     case 'sort':openMenu(a,[['edited','Son düzenlenen'],['name','Ada göre'],['created','Oluşturulma']].map(([k,l])=>({label:l,on:prefs.sort===k,run:()=>{prefs.sort=k;savePrefs();draw();}})));return;
     case 'me':{const th=document.documentElement.dataset.theme||'system';
       openMenu(a,[{label:'Tema: sistem',on:th==='system',run:()=>theme('system')},{label:'Tema: açık',on:th==='light',run:()=>theme('light')},{label:'Tema: koyu',on:th==='dark',run:()=>theme('dark')},
-        null,{label:'Klavye kısayolları',key:'?',run:()=>{hideHome();$('#keysBtn').click();}},null,{label:'Çıkış yap',run:async()=>{if(await leave())hideHome();}}]);return;}
+        null,{label:'Klavye kısayolları',key:'?',run:()=>{hideHome();$('#keysBtn').click();}},
+        null,{label:'Verini indir',run:()=>downloadDataAction()},{label:'Hesabı sil…',danger:true,run:()=>deleteAccountAction()},
+        null,{label:'Çıkış yap',run:async()=>{if(await leave())hideHome();}}]);return;}
   }}
   const card=t.closest('.hm-item');if(card&&view!=='trash'){const p=byId(card.dataset.id);if(p)openP(p);}
 }

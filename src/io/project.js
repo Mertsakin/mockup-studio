@@ -116,16 +116,20 @@ function attachImages(d,images){d.boards.forEach(b=>{b.snap.images=images;});d.a
 /* Project file. Without video or model: one JSON with the images inlined as data URLs (.mockup.json, as before). With a
    screen video or an imported 3D model: a ZIP (.mockup.zip) holding project.json (no inlined media) and media/<key>.<ext> for every image and video
    (a video as a data URL would triple the memory and freeze the save). Returns {blob, zip}. */
-const needsZip=d=>Object.keys(docImages(d)).some(k=>isVideoKey(k)||isModelKey(k));
-async function toProjectFile(d){
-  const all=docImages(d),base=Object.assign({app:'mockup-studio'},plainDoc(d));
-  if(needsZip(d)){
+const zipKeys=keys=>keys.some(k=>isVideoKey(k)||isModelKey(k));
+const needsZip=d=>zipKeys(Object.keys(docImages(d)));
+async function toProjectFile(d){const {plain,media}=await docParts(d);return fileFromParts(plain,Object.fromEntries(media));}
+// the same file from a document in parts (the cloud's, io/cloud-projects.js: "Verini indir" packs every project
+// without decoding its images): the plain document plus key -> Blob
+async function fileFromParts(plain,blobs){
+  const base=Object.assign({app:'mockup-studio'},plain);delete base.media;delete base.images;
+  if(zipKeys(Object.keys(blobs))){
     const JSZip=(await import('jszip')).default,zip=new JSZip(),media=[];
-    for(const k in all){const b=await imageBlob(all[k]),name='media/'+k+'.'+extOf(b);zip.file(name,b);media.push(name);}
+    for(const k in blobs){const name='media/'+k+'.'+extOf(blobs[k]);zip.file(name,blobs[k]);media.push(name);}
     zip.file('project.json',JSON.stringify(Object.assign(base,{media})));
     return {blob:await zip.generateAsync({type:'blob',compression:'STORE'}),zip:true};
   }
-  const images={};for(const k in all)images[k]=await blobToDataUrl(await imageBlob(all[k]));
+  const images={};for(const k in blobs)images[k]=await blobToDataUrl(blobs[k]);
   return {blob:new Blob([JSON.stringify(Object.assign(base,{images}))],{type:'application/json'}),zip:false};
 }
 const isZip=u8=>u8.length>3&&u8[0]===0x50&&u8[1]===0x4b&&u8[2]===3&&u8[3]===4;
@@ -195,4 +199,4 @@ async function loadAutosave(){
   }catch(e){return null;}
 }
 
-export {asDoc,autosave,docFromParts,docParts,needsZip,packAssets,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};
+export {asDoc,autosave,docFromParts,docParts,fileFromParts,needsZip,packAssets,fromProjectFile,loadAutosave,restore,signature,snapshot,toProjectFile};

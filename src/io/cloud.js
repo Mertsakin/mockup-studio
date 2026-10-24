@@ -37,6 +37,7 @@ function client(){
 const emit=()=>subs.forEach(f=>{try{f(auth);}catch(e){console.error(e);}});
 // fn(auth) on every change of the signed-in user (and once the stored session is known)
 function onAuth(fn){subs.add(fn);if(auth.ready)fn(auth);return ()=>subs.delete(fn);}
+// the profile again (storage_bytes moves with every upload: what "Hesabı sil" and the data download report)
 async function loadProfile(){
   const c=await client(),{data}=await c.from('profiles').select('*').maybeSingle();
   auth.profile=data||null;emit();
@@ -53,6 +54,9 @@ async function signInEmail(email){
   if(error)throw error;
 }
 async function signOut(){const c=await client();await c.auth.signOut();}
+// the stored session dropped without asking the server (the account was just deleted: the sign-out may be refused, and
+// a token left behind would send the sign-in page straight back here)
+function forgetSession(){try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(/^sb-.*-auth-token/.test(k))localStorage.removeItem(k);}}catch(e){/* no storage */}}
 async function accessToken(){const c=await client(),{data}=await c.auth.getSession();return data.session?data.session.access_token:null;}
 async function rename(name){
   const c=await client(),{data,error}=await c.from('profiles').update({name}).eq('id',auth.user.id).select().single();
@@ -67,4 +71,4 @@ function storedSession(){
 if(cloudEnabled&&(storedSession()||/[?&]code=/.test(location.search)||/access_token=|error_description=/.test(location.hash)))client().catch(e=>console.warn('Oturum açılamadı:',e));
 else{auth.ready=true;sawSignedOut=true;}
 
-export {PROVIDERS,STORAGE_URL,accessToken,auth,client,cloudEnabled,onAuth,rename,signInEmail,signInWith,signOut};
+export {PROVIDERS,STORAGE_URL,accessToken,auth,client,cloudEnabled,forgetSession,loadProfile,onAuth,rename,signInEmail,signInWith,signOut};

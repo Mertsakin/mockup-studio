@@ -1,5 +1,6 @@
 // Row level security and the account functions against the local Supabase (supabase/migrations/): two users, each
-// may see and change only their own rows; quota, project limit and the optimistic lock. node tools/accounts/test-rls.mjs
+// may see and change only their own rows; quota, project limit, the optimistic lock and account deletion (a user deletes
+// only themself). node tools/accounts/test-rls.mjs
 import {createClient} from '@supabase/supabase-js';
 import {NODE_OPTS,local} from './local.mjs';
 
@@ -74,6 +75,18 @@ try{
   ok(!!om.error,'orphan_media is not callable by users');
   const fm=await A.c.rpc('forget_media',{p_owner:A.id,p_hash:h1});
   ok(!!fm.error,'forget_media is not callable by users');
+
+  console.log('delete_account');
+  await B.c.rpc('add_media',{p_hash:hex(),p_bytes:500,p_type:'image/png'});await B.c.from('projects').insert({name:'B projesi'});
+  const an=await createClient(L.url,L.anon,NODE_OPTS).rpc('delete_account');
+  ok(!!an.error,'delete_account needs a signed-in user ('+(an.error?.message||'no error')+')');
+  const dl=await B.c.rpc('delete_account');
+  ok(!dl.error&&dl.data?.projects===1&&dl.data?.media===1,'B deletes their own account: 1 project and 1 file went'+(dl.error?' ('+dl.error.message+')':''));
+  ok(((await admin.from('profiles').select('id').eq('id',B.id)).data||[]).length===0,'B\'s profile, projects and media are gone (cascade)');
+  ok(!(await admin.auth.admin.getUserById(B.id)).data?.user,'and the auth user with them: signing in again starts from nothing');
+  ok(((await admin.from('projects').select('id').eq('owner',A.id)).data||[]).length===2&&((await admin.from('media').select('hash').eq('owner',A.id)).data||[]).length===1,'A\'s projects and media are untouched');
+  const again=await B.c.rpc('delete_account');
+  ok(!!again.error||(again.data?.projects===0&&again.data?.media===0),'B\'s old token deletes nothing else');
 }finally{
   await admin.auth.admin.deleteUser(A.id);await admin.auth.admin.deleteUser(B.id);
   const left=await admin.from('profiles').select('id').in('id',[A.id,B.id]);

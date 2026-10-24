@@ -83,11 +83,15 @@ try{
   ok((await A.call(`/projects/${pr.id}/thumb.webp`,{method:'PUT',body:big(3*2**20)})).status===413,'a thumbnail over 2 MB is refused');
 
   console.log('account deletion');
+  const bpng=rnd(2048),hb=sha(bpng);await B.call('/media/'+hb,{method:'PUT',headers:{'Content-Type':'image/png'},body:bpng});
   const del=await A.call('/account',{method:'DELETE'});const dj=await del.json();
   ok(del.ok&&dj.objects>=4,'DELETE /account removes the user\'s objects ('+dj.objects+')');
+  ok(dj.projects===1&&dj.media===2,'and reports the rows that went (1 project, 2 files)');
   const prof=await admin.from('profiles').select('id').eq('id',A.id);
-  ok((prof.data||[]).length===0,'and the user with their rows');
+  ok((prof.data||[]).length===0,'the profile and its rows are gone');
+  ok(!(await admin.auth.admin.getUserById(A.id)).data?.user,'and the user itself (no service role key: delete_account ran as the user)');
   ok((await A.call('/media/'+h)).status===401,'the old token no longer works');
+  ok((await B.call('/media/'+hb)).ok,'B\'s file is still there');
 }finally{
   await admin.auth.admin.deleteUser(A.id).catch(()=>{});await admin.auth.admin.deleteUser(B.id).catch(()=>{});
   if(worker)worker.kill();

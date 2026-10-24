@@ -1,11 +1,14 @@
 /* Cloud projects in the studio (io/cloud-projects.js does the work): "Buluta kaydet", opening, the actions on a project
-   (rename, duplicate, trash, restore, delete for good, a new project), signing out, and the conflict dialog. The list
+   (rename, duplicate, trash, restore, delete for good, a new project), signing out, the conflict dialog, and the
+   account's own actions ("Verini indir", "Hesabı sil"; the account menus in ui/account.js and ui/home.js call them). The list
    itself is the home page (ui/home.js). Signed in only; the menu items stay hidden otherwise. The open document's cloud
    project ({id, version, name} and whose it is) is remembered in the browser, so a reload (the autosave restores the
    document) still saves into the same project. */
-import {auth,cloudEnabled,onAuth,signOut} from '../io/cloud.js';
-import {createProject,destroyProject,duplicateProject,openProject,projectRow,renameProject,restoreProject,saveProject,trashProject} from '../io/cloud-projects.js';
+import {auth,cloudEnabled,forgetSession,loadProfile,onAuth,signOut} from '../io/cloud.js';
+import {countProjects,createProject,deleteAccount,destroyProject,duplicateProject,exportAccount,openProject,projectRow,renameProject,restoreProject,saveProject,trashProject} from '../io/cloud-projects.js';
+import {offer} from '../export/export.js';
 import {doc,storeActive} from './boards.js';
+import {busy,isCancel} from './busy.js';
 import {historyReady,isDirty,markSaved,putDoc,resetDocument,takeDoc} from './history.js';
 import {go,parse,toLogin} from './router.js';
 import {toast} from './toast.js';
@@ -47,18 +50,21 @@ if(cloudEnabled)onAuth(async a=>{
 async function forgetLocal(){await resetDocument();remember(null);setOwner(null);}
 
 // ---------- small dialogs
-function dialog(title,body,buttons,{role='dialog',cls=''}={}){
+// buttons [value, label, primary, danger]; valid(text): the input must satisfy it (the primary button waits for it)
+function dialog(title,body,buttons,{role='dialog',cls='',valid=null}={}){
   return new Promise(res=>{
     const sc=document.createElement('div');sc.className='scrim';
     sc.innerHTML='<div class="dialog '+cls+'" role="'+role+'" aria-modal="true" aria-labelledby="pdT"><div class="dh"><span id="pdT"></span></div><div class="db">'+body+
-      '<div class="dfoot">'+buttons.map(([v,l,primary])=>'<button class="btn'+(primary?' primary':'')+'" type="button" data-a="'+v+'">'+l+'</button>').join('')+'</div></div></div>';
+      '<div class="dfoot">'+buttons.map(([v,l,primary,danger])=>'<button class="btn'+(primary?' primary':'')+(danger?' danger':'')+'" type="button" data-a="'+v+'">'+l+'</button>').join('')+'</div></div></div>';
     sc.querySelector('#pdT').textContent=title;document.body.appendChild(sc);
-    const inp=sc.querySelector('input');
+    const inp=sc.querySelector('input'),prim=sc.querySelector('.btn.primary');
+    const good=()=>!inp||!!inp.value.trim()&&(!valid||valid(inp.value));
     const done=v=>{sc.remove();document.removeEventListener('keydown',key,true);res(v==null?null:{v,text:inp?inp.value.trim():''});};
     const key=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();done(null);}else if(e.key==='Enter'&&inp&&document.activeElement===inp){e.preventDefault();ok();}};
-    const ok=()=>{if(inp&&!inp.value.trim()){const er=sc.querySelector('.pd-err');er.hidden=false;inp.setAttribute('aria-invalid','true');inp.focus();return;}done(buttons.find(b=>b[2])[0]);};
+    const ok=()=>{if(!good()){const er=sc.querySelector('.pd-err');er.hidden=false;inp.setAttribute('aria-invalid','true');inp.focus();return;}done(buttons.find(b=>b[2])[0]);};
     document.addEventListener('keydown',key,true);
-    if(inp)inp.addEventListener('input',()=>{sc.querySelector('.pd-err').hidden=true;inp.removeAttribute('aria-invalid');});
+    if(inp&&valid&&prim)prim.disabled=true;
+    if(inp)inp.addEventListener('input',()=>{sc.querySelector('.pd-err').hidden=true;inp.removeAttribute('aria-invalid');if(valid&&prim)prim.disabled=!good();});
     sc.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(e.target===sc){done(null);return;}if(!a)return;
       const b=buttons.find(x=>x[0]===a.dataset.a);if(b&&b[2]&&inp)ok();else done(a.dataset.a);});
     (inp||sc.querySelector('.btn.primary')||sc.querySelector('.btn')).focus();
@@ -82,6 +88,7 @@ async function thumbBlob(d){
   return new Promise(r=>c.toBlob(r,'image/webp',.82));
 }
 const mb=n=>(n/2**20).toFixed(n<10*2**20?1:0).replace('.',',')+' MB';
+const pad=n=>String(n).padStart(2,'0');
 
 // ---------- save
 let saving=false;
@@ -181,6 +188,48 @@ async function leave(){
   catch(err){leavingNow=false;toast('Çıkış yapılamadı: '+err.message);return false;}
 }
 
+// ---------- the account itself (docs/uyelik.md §5, step 5; the privacy note promises both)
+// "Verini indir": every cloud project, the trash included, as project files in one ZIP (io/cloud-projects.js
+// exportAccount), with the busy card counting the projects; Vazgeç stops it
+let exporting=false;
+async function downloadDataAction(){
+  if(!auth.user||exporting)return false;
+  exporting=true;
+  const b=busy('Verin hazırlanıyor',{stage:p=>p==null?'Projeler indiriliyor':'Dosya hazırlanıyor'});
+  try{
+    const r=await exportAccount((i,n,name)=>b.step(i,n,name));
+    if(!r.total){toast('Bulutta kayıtlı projen yok; indirilecek bir şey yok.');return false;}
+    b.progress(1);
+    const d=new Date();offer('shotlight-hesap-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.zip',r.blob);
+    toast(r.count+' proje indirildi');return true;
+  }catch(e){
+    if(!isCancel(e))toast('Verin indirilemedi: '+e.message);return false;
+  }finally{b.close();exporting=false;}
+}
+/* "Hesabı sil": asks with what goes (projects, the space used), confirmed by typing the words; then the Worker removes
+   the files, the rows and the user (DELETE /account). Out as on signing out, without the question (there is nothing
+   left to save to): the stored session is dropped (the server may refuse the sign-out of a user who is gone), this
+   browser's work is emptied, the sign-in page says the account is gone (src/login.js reads the flag). */
+async function deleteAccountAction(){
+  if(!auth.user)return false;
+  let n=null;try{[n]=await Promise.all([countProjects(),loadProfile()]);}catch(e){/* the question still makes sense without the count */}
+  const used=auth.profile&&auth.profile.storage_bytes||0;
+  const what=n==null?'projelerin ve dosyaların':(n?'<b>'+n+' proje</b>'+(n>1?' (çöp kutusundakiler dahil)':'')+' ve bulutta <b>'+mb(used)+'</b> dosya':'bulutta hiç projen yok');
+  const r=await dialog('Hesabı sil','<p class="pd-text">Hesabın kalıcı olarak silinecek: '+what+'. Bu geri alınamaz; önce verini indirmek istersen Vazgeç\'e bas.</p>'+
+    '<label class="lbl block" for="pdConfirm" style="margin-top:12px">Onaylamak için <b>Hesabı sil</b> yaz</label><input type="text" id="pdConfirm" autocomplete="off" spellcheck="false" style="width:100%" aria-describedby="pdErr"><p class="pd-err" id="pdErr" role="alert" hidden>Onaylamak için "Hesabı sil" yazman gerekiyor.</p>',
+    [['no','Vazgeç'],['ok','Hesabı sil',true,true]],{role:'alertdialog',valid:t=>t.trim().toLocaleLowerCase('tr')==='hesabı sil'});
+  if(!r||r.v!=='ok')return false;
+  toast('Hesap siliniyor…');
+  leavingNow=true;
+  try{await deleteAccount();}
+  catch(e){leavingNow=false;toast(e.auth?'Oturum kapalı: yeniden giriş yap.':'Hesap silinemedi: '+e.message);return false;}
+  try{await signOut();}catch(e){/* the user is gone: the server may refuse */}
+  forgetSession();
+  await forgetLocal();
+  try{sessionStorage.setItem('shotlight.deleted','1');}catch(e){/* no storage */}
+  toLogin();return true;
+}
+
 saveBtn.addEventListener('click',()=>saveToCloud());
 
-export {isLeaving,destroyAction,discardAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction};
+export {isLeaving,deleteAccountAction,destroyAction,discardAction,downloadDataAction,duplicateAction,leave,newProject,openFromCloud,openId,renameAction,restoreAction,saveToCloud,signInHooks,trashAction};

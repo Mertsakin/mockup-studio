@@ -1,7 +1,8 @@
 /* Full-screen progress for still exports (a photo-quality render takes half a minute or more): a scrim over the
    whole editor with a card in the dialog style: title, what is happening now, a progress bar, percent and the time
    left, "2 / 5" for batches, and Vazgeç.
-   const b = busy('Fotoğraf hazırlanıyor'); b.step(i, n, name); b.progress(p 0..1 | null: indeterminate); b.close().
+   const b = busy('Fotoğraf hazırlanıyor', {stage}); b.step(i, n, name); b.progress(p 0..1 | null: indeterminate); b.close().
+   stage(p) names what is happening for the line under the title; the default is the path tracer's stages.
    Cancelling: b.progress throws a CANCEL error once Vazgeç was pressed; the path tracer calls it from its loop
    (via onProgress), so the render stops there and its own finally blocks restore the scene. isCancel(e) tells it apart.
    The card fades in after a moment (CSS): a fast export that ends sooner never flashes it. */
@@ -21,7 +22,7 @@ const fmtTime=s=>s<60?Math.max(1,Math.round(s))+' sn':Math.floor(s/60)+' dk '+St
 // what the path tracer's progress means (render/pathtrace.js: sampling up to .9, then denoising)
 const stageOf=p=>p==null?'Sahne hazırlanıyor':p<.9?'Işık izleniyor':p<1?'Gürültü temizleniyor':'Dosya hazırlanıyor';
 
-function busy(title){
+function busy(title,{stage=stageOf}={}){
   if(!el)build();
   const $=s=>el.querySelector(s),bar=$('.busy-prog'),fill=bar.firstChild,btn=$('button');
   let cancelled=false,t0=0,p0=0,last=0;
@@ -35,7 +36,7 @@ function busy(title){
     if(cancelled)throw new Error(CANCEL);
     const now=performance.now();
     bar.classList.toggle('ind',p==null);
-    $('.busy-stage').textContent=stageOf(p);
+    $('.busy-stage').textContent=stage(p);
     if(p==null){t0=0;fill.style.width='';bar.removeAttribute('aria-valuenow');$('.busy-pct').textContent='';$('.busy-eta').textContent='';return;}
     if(!t0){t0=now;p0=p;}  // the pace counts from the first real progress (not the scene set-up)
     fill.style.width=(p*100).toFixed(1)+'%';bar.setAttribute('aria-valuenow',String(Math.round(p*100)));

@@ -1,12 +1,13 @@
 /* The account (io/cloud.js holds the session). In a build with accounts the studio needs one: nobody signed in is
    sent to the sign-in page (/studio/login: tools/site/routes-plugin.mjs before the page loads, here when the session
-   ends). Signed in, the foot of the left panel shows the user's avatar, name, storage and a menu. A build without accounts (no
+   ends). Signed in, the foot of the left panel shows the user's avatar, name, storage and a menu (Projelerim, Verini
+   indir, Hesabı sil, Çıkış yap; the actions live in ui/projects.js, the home page's sidebar menu has the same). A build without accounts (no
    VITE_SUPABASE_URL: the render harness, tests, a self-hosted copy) has none of this and opens as before.
    Sign-in: Google, GitHub, Apple (VITE_AUTH_PROVIDERS picks the buttons) or a one-time e-mail link. */
 import {auth,client,cloudEnabled,onAuth} from '../io/cloud.js';
 import {icon} from './icons.js';
 import {showHome} from './home.js';
-import {isLeaving,leave} from './projects.js';
+import {deleteAccountAction,downloadDataAction,isLeaving,leave} from './projects.js';
 import {toLogin} from './router.js';
 import {signInForm} from './signin-form.js';
 import {$} from '../util.js';
@@ -52,6 +53,9 @@ function fillMenu(){
     '<div class="msep" role="separator"></div>'+
     '<button class="mi" role="menuitem" type="button" data-a="projects">'+icon('folder-with-files')+'<span>Projelerim…</span></button>'+
     '<div class="msep" role="separator"></div>'+
+    '<button class="mi" role="menuitem" type="button" data-a="download">'+icon('download-minimalistic')+'<span>Verini indir</span></button>'+
+    '<button class="mi danger" role="menuitem" type="button" data-a="delete">'+icon('trash-bin-minimalistic')+'<span>Hesabı sil…</span></button>'+
+    '<div class="msep" role="separator"></div>'+
     '<button class="mi" role="menuitem" type="button" data-a="out">'+icon('logout-2')+'<span>Çıkış yap</span></button>';
   menu.querySelector('.acct-head b').textContent=p.name||'';
   menu.querySelector('.acct-head span').textContent=auth.user.email||'';
@@ -66,6 +70,8 @@ acctBtn.addEventListener('click',e=>{e.stopPropagation();if(menu.hidden)openMenu
 menu.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;closeMenu();
   if(b.dataset.a==='projects')showHome('all');
+  else if(b.dataset.a==='download')downloadDataAction();
+  else if(b.dataset.a==='delete')deleteAccountAction();
   else if(b.dataset.a==='out')leave();
 });
 document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target)&&!acctBtn.contains(e.target))closeMenu();});
