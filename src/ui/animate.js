@@ -25,7 +25,7 @@ import {setUi,ui} from './ui-state.js';
    Text effects (it.fx, render/text.js) are not keys: they draw from the time the layout's clock gives (setItemClock).
    The camera and the lights record through the same path: their edits (fields, light map, orbit drag, angle presets)
    end in applyTransform → req, like a device's. */
-const A={t:0,playing:false,sel:[],seg:null};  // sel: the selected keys, entries {ref, prop, t}; seg: the selected transition (see "key selection" below)
+const A={t:0,playing:false,sel:[],seg:null,mute:false};  // sel: the selected keys, entries {ref, prop, t}; seg: the selected transition (see "key selection" below); mute: changes are not edits (the sequence drives the scene, ui/sequence.js)
 const subs=[];
 function onAnim(fn){subs.push(fn);}
 const emit=()=>subs.forEach(f=>f());
@@ -99,6 +99,7 @@ function put(o,k,t,v){
   key.v=v;return key;
 }
 function record(o,k,prev,cur){
+  if(A.mute)return;
   if(A.playing)stop();
   const tr=o.tracks&&o.tracks[k],dt=designT(o);
   if(ui.mode!=='animate'&&!(tr&&tr.length))return;

@@ -3,7 +3,8 @@
    language through its dictionary (lang-en.js; src/boot.js loads it only when English is chosen) and hydrate()
    does the same once for the static markup before anything is drawn (text nodes and the aria-label / title /
    placeholder / alt attributes; one pass, like hydrateIcons). A text that reads differently in two places carries
-   a context after '@' ('Geçiş@bg'; in markup data-t="Geçiş@bg"): the dictionary keys it that way, Turkish drops it.
+   a context after '@' ('Geçiş@bg'; in markup data-t="Geçiş@bg" for the element's text, data-t-aria-label="…" for an
+   attribute): the dictionary keys it that way, Turkish drops it.
    The choice: ?lang=en (remembered) > localStorage shotlight.lang > the browser's language: Turkish in a Turkish
    browser, English anywhere else (English is the default). No imports: the sign-in page (src/login.js) loads it without the editor. */
 const KEY='shotlight.lang';
@@ -45,9 +46,9 @@ function hydrate(root=document.body){
   for(let n=w.nextNode();n;n=w.nextNode()){
     if(n.nodeType===3){
       const raw=n.nodeValue,key=raw.replace(/\s+/g,' ').trim();if(!key)continue;
-      const ctx=n.parentNode&&n.parentNode.childNodes.length===1&&n.parentNode.getAttribute('data-t');
+      const ctx=n.parentNode&&n.parentNode.getAttribute('data-t');
       const v=dict[ctx||key];if(v!==undefined)n.nodeValue=raw.match(/^\s*/)[0]+v+raw.match(/\s*$/)[0];
-    }else for(const a of ATTRS){const v=n.getAttribute(a);if(v&&dict[v]!==undefined)n.setAttribute(a,dict[v]);}
+    }else for(const a of ATTRS){const v=n.getAttribute(a),k=n.getAttribute('data-t-'+a)||v;if(v&&dict[k]!==undefined)n.setAttribute(a,dict[k]);}
   }
 }
 // remembers the choice; the page reloads so every text, static and built, comes up in the new language

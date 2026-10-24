@@ -66,6 +66,13 @@ try{
   await click(p,'#tlPresetBtn');await scan(p,'timeline + preset menu');await p.keyboard.press('Escape');
   await p.evaluate(()=>{const k=document.querySelector('#tlLanes .lane[data-ref="d1"]:not([data-prop]) .kf');if(k)k.dispatchEvent(new PointerEvent('pointerdown',{button:0,bubbles:true,clientX:k.getBoundingClientRect().x+3,clientY:k.getBoundingClientRect().y+3}));});
   await p.mouse.up();await p.waitForTimeout(300);await scan(p,'key edit card');
+  // the sequence (Sıra) view: a second artboard, all boards added, a transition card, then the export dialog's note
+  await p.evaluate(()=>window.__app('addBoard')());await p.waitForTimeout(600);
+  await click(p,'#tlTabs [data-view="seq"]');await click(p,'#seqAddAll');
+  await p.evaluate(()=>{const c=document.querySelector('#seqView .seq-tr');if(c)c.click();});await p.waitForTimeout(300);
+  await scan(p,'sequence view + transition card');
+  await click(p,'#exportMenuBtn');await p.waitForTimeout(300);await scan(p,'video export dialog (sequence)');await p.keyboard.press('Escape');await p.waitForTimeout(200);
+  await click(p,'#tlTabs [data-view="board"]');
   await p.evaluate(()=>window.__app('setMode')('design'));await p.waitForTimeout(200);
   // the menus: app menu (theme + language), export menu, shortcut sheet
   await click(p,'#appMenuBtn');await scan(p,'app menu');await p.keyboard.press('Escape');

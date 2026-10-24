@@ -28,6 +28,7 @@ const isVideoKey=k=>/^v/.test(k),isModelKey=k=>/^m/.test(k);
 // an image loaded back from a file / storage keeps its key, so it is not stored twice
 const adopt=(img,k)=>{ids.set(img,k);const n=+String(k).slice(1);if(n>nextImg)nextImg=n;return img;};
 const copy=o=>JSON.parse(JSON.stringify(o));
+const DEV_DEFAULTS={video:null,videoName:'',videoT0:0,videoLoop:true,videoPoster:null,model:null,modelName:'',modelSize:DEFAULT_MODEL_CM};
 
 function snapshot(){
   const images={},st={};
@@ -75,8 +76,10 @@ function restore(s){
   if(sc.fnum===undefined)state.scene.fnum=state.dof&&typeof state.dof.f==='number'?state.dof.f:2.8;
   if(sc.focusDist===undefined)state.scene.focusDist=60;
   if(state.dof&&'f' in state.dof)delete state.dof.f;
-  state.devices=s.devices.map(o=>Object.assign({video:null,videoName:'',videoT0:0,videoLoop:true,videoPoster:null,model:null,modelName:'',modelSize:DEFAULT_MODEL_CM},copy(o),
-    {img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null,video:o.video?s.images[o.video]||null:null,model:o.model?s.images[o.model]||null:null}));
+  // fields newer than the snapshot get their defaults AFTER the stored keys: the key order, and so the signature of
+  // the next snapshot, stays as stored (defaults in front made the first return to a board an empty undo step)
+  state.devices=s.devices.map(o=>{const d=copy(o);for(const k in DEV_DEFAULTS)if(!(k in d))d[k]=DEV_DEFAULTS[k];
+    return Object.assign(d,{img:o.img?s.images[o.img]||null:null,frameImg:o.frameImg?s.images[o.frameImg]||null:null,video:o.video?s.images[o.video]||null:null,model:o.model?s.images[o.model]||null:null});});
   state.lights=copy(s.lights);
   reserveDeviceIds(Math.max(0,...state.devices.map(d=>d.id)));reserveLightIds(Math.max(0,...state.lights.map(l=>l.id)));
   state.selected=state.devices.some(d=>d.id===s.selected)?s.selected:(state.devices[0]&&state.devices[0].id);
@@ -104,7 +107,7 @@ const docImages=d=>{const m={};d.boards.forEach(b=>Object.assign(m,b.snap.images
 const SNAP_KEYS=['v','state','devices','lights','selected','selLight','frame'];
 const plainSnap=s=>{const o={};SNAP_KEYS.forEach(k=>{o[k]=s[k];});return o;};
 // thumbnails (small data URLs) travel along, so a loaded document shows every board without re-rendering it
-const plainDoc=d=>({v:2,layout:d.layout,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null})),assets:d.assets||[],fonts:d.fonts||[],langs:d.langs||[],lang:d.lang||null});
+const plainDoc=d=>({v:2,layout:d.layout,active:d.active,boards:d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:plainSnap(b.snap),thumb:b.thumb||null})),assets:d.assets||[],fonts:d.fonts||[],langs:d.langs||[],lang:d.lang||null,sequence:d.sequence||null});
 /* The asset library (left panel) belongs to the document: assets [{img: key, name}] + assetImages {key: image}. */
 function packAssets(list){const assetImages={},assets=list.map(a=>{const k=imgKey(a.img);assetImages[k]=a.img;return {img:k,name:a.name};});return {assets,assetImages};}
 // a single-scene snapshot (v1 files, old autosaves) becomes a one-board document

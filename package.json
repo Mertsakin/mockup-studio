@@ -14,6 +14,7 @@
     "accounts:test": "node tools/accounts/test-rls.mjs && node tools/accounts/test-storage.mjs",
     "timeline:test": "node tools/timeline/test-keys.mjs",
     "i18n:test": "node tools/i18n/test-ui-lang.mjs",
+    "sequence:test": "node tools/sequence/test-sequence.mjs",
     "dev:accounts": "vite --mode accounts --port 5177 --strictPort"
   },
   "devDependencies": {

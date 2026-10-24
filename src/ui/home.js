@@ -21,6 +21,7 @@ import {openTemplate,templates} from './template-gallery.js';
 import {toast} from './toast.js';
 import {closeWelcomeModal,openWelcome} from './welcome.js';
 import {openStoreDialog} from './store.js';
+import {openSheet} from './shortcuts.js';
 import {closeHooks} from './history.js';
 import {setUi} from './ui-state.js';
 import {fitAll} from './workspace.js';
@@ -195,6 +196,14 @@ function openMenu(btn,items,{right=false}={}){
   menu=document.createElement('div');menu.className='hm-menu';menu.setAttribute('role','menu');
   items.forEach(it=>{
     if(!it){const s=document.createElement('div');s.className='hm-msep';menu.appendChild(s);return;}
+    // a labelled segment of icon buttons (the theme, as in the editor's app menu): picking one keeps the menu open
+    if(it.seg){
+      const l=document.createElement('div');l.className='mlabel';l.textContent=it.label;menu.appendChild(l);
+      const g=document.createElement('div');g.className='seg seg-menu';g.setAttribute('role','group');g.setAttribute('aria-label',it.label);
+      it.seg.forEach(o=>{const x=document.createElement('button');x.type='button';x.dataset.v=o.v;x.title=tx(o.label);x.setAttribute('aria-label',tx(o.label));x.setAttribute('aria-pressed',String(o.v===it.value));
+        x.innerHTML=icon(o.icon,16);x.addEventListener('click',()=>{it.pick(o.v);g.querySelectorAll('button').forEach(y=>y.setAttribute('aria-pressed',String(y===x)));});g.appendChild(x);});
+      menu.appendChild(g);return;
+    }
     const b=document.createElement('button');b.type='button';b.className='hm-mi'+(it.danger?' danger':'')+(it.on?' on':'');b.setAttribute('role','menuitem');
     b.innerHTML='<span></span>'+(it.key?'<kbd>'+it.key+'</kbd>':'');b.firstChild.textContent=it.label;
     b.addEventListener('click',()=>{closeMenu();it.run();});menu.appendChild(b);
@@ -262,14 +271,16 @@ function onClick(e){
     case 'blank':openWelcome('land',hooks());return;  // the welcome card as a window, as the goals
     case 'sort':openMenu(a,[['edited','Son düzenlenen'],['name','Ada göre'],['created','Oluşturulma']].map(([k,l])=>({label:tx(l),on:prefs.sort===k,run:()=>{prefs.sort=k;savePrefs();draw();}})));return;
     case 'me':{const th=document.documentElement.dataset.theme||'system';
-      openMenu(a,[{label:tx('Tema: sistem'),on:th==='system',run:()=>theme('system')},{label:tx('Tema: açık'),on:th==='light',run:()=>theme('light')},{label:tx('Tema: koyu'),on:th==='dark',run:()=>theme('dark')},
+      openMenu(a,[{seg:THEME_SEG,label:tx('Tema'),value:th,pick:theme},
         null,...Object.keys(LANGS).map(k=>({label:tx('Dil')+': '+LANGS[k],on:k===LANG,run:()=>setLang(k)})),
-        null,{label:tx('Klavye kısayolları'),key:'?',run:()=>{hideHome();$('#keysBtn').click();}},
+        null,{label:tx('Klavye kısayolları'),key:'?',run:openSheet},  // a dialog over the home page: the page and its address stay
         null,{label:tx('Verini indir'),run:()=>downloadDataAction()},{label:tx('Hesabı sil…'),danger:true,run:()=>deleteAccountAction()},
         null,{label:tx('Çıkış yap'),run:async()=>{if(await leave())hideHome();}}]);return;}
   }}
   const card=t.closest('.hm-item');if(card&&view!=='trash'){const p=byId(card.dataset.id);if(p)openP(p);}
 }
+// the theme: the editor's own segment (ui/shell.js) applies and remembers it; the menu shows the same three icons
+const THEME_SEG=[{v:'system',icon:'monitor',label:'Sistem'},{v:'light',icon:'sun',label:'Açık'},{v:'dark',icon:'moon',label:'Koyu'}];
 const theme=v=>{const b=document.querySelector('#themeSeg [data-theme="'+v+'"]');if(b)b.click();};
 function onInput(e){if(e.target.id==='hmQ'){q=e.target.value.trim().toLocaleLowerCase(LOCALE);draw();}}
 // Esc goes back to the open work (on the document: the focus may be anywhere while the home page shows)

@@ -2,7 +2,7 @@ import {buildRT,disposeRT} from '../devices/runtime.js';
 import {isVideoFile,loadVideo,videoSize} from '../devices/video.js';
 import {COMPS} from '../state/constants.js';
 import {newDevice,state} from '../state/state.js';
-import {activate,addBoard,boardById,boardSize,clearAll,hasBoard,moveBoard,onBoards,removeBoard,storeActive} from './boards.js';
+import {activate,addBoard,boardById,boardSize,clearAll,doc,hasBoard,moveBoard,onBoards,removeBoard,storeActive} from './boards.js';
 import {captureAvailable,captureShots,normalizeUrl,putShot,shotImage,siteName,viewport} from './capture.js';
 import {applyComp} from './devices-panel.js';
 import {MOBILE,deviceTypes,dressScreens,openTemplate,templates} from './template-gallery.js';
@@ -21,7 +21,9 @@ import {$,$$} from '../util.js';
 /* The welcome card: an empty document (no artboard) opens on it instead of on a bare canvas
    (wireframes/onboarding.html, alternative A with B's goals). A site address or dropped screenshots / videos lead
    to ready-made scenes; "Ne hazırlıyorsun?" picks what they are for. The panels, the dock and the canvas are out of
-   the way while it shows (html.wl-on); it goes as soon as the document has an artboard, whatever made it. The
+   the way while it shows (html.wl-on); it goes as soon as the document has an artboard, whatever made it. A document
+   the user emptied by deleting its last artboard (doc.emptiedByUser) stays in the editor instead, with the
+   inspector's empty state: the card is for a start, not for a deletion. The
    address row is there only where capturing works (the dev server), otherwise the drop zone is the way in.
 
    Suggestions are real artboards: each scene is built as a board with the user's screens and rendered to its
@@ -41,7 +43,7 @@ const home0={parent:card.parentNode,next:card.nextSibling};
 
 function sync(){
   if(modal){card.hidden=false;shown=true;return;}
-  const on=!hasBoard()||!!picking;
+  const on=(!hasBoard()&&!doc.emptiedByUser)||!!picking;
   if(on===shown)return;
   shown=on;card.hidden=!on;root.classList.toggle('wl-on',on);
   // nothing to design, animate or export while the card shows (also while its scenes are being picked)

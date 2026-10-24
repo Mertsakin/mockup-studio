@@ -7,6 +7,7 @@ import {asDoc,packAssets,restore,signature,snapshot} from '../io/project.js';
 import {state,view} from '../state/state.js';
 import {bgCss,invalidateLayout,layout,paintBg,paintItems} from './layout.js';
 import {syncAll} from './sync.js';
+import {newSequence,normalizeSeq} from '../state/sequence.js';
 import {mkCanvas} from '../util.js';
 
 /* Artboards. The document is a list of boards, each a full scene snapshot (devices, lights, camera, background, size)
@@ -16,8 +17,10 @@ import {mkCanvas} from '../util.js';
    Board positions and sizes are in output pixels (1920 x 1080 board = 1920 x 1080 canvas units). */
 const GAP=160;
 // assets: the document's asset library [{img, name}] (ui/assets.js); fonts: uploaded fonts [{family, data (data URL)}];
-// langs: the document's languages (ui/i18n.js; empty: not localised, else the first is the base), lang: the one shown
-const doc={boards:[],active:null,assets:[],fonts:[],langs:[],lang:null};
+// langs: the document's languages (ui/i18n.js; empty: not localised, else the first is the base), lang: the one shown;
+// sequence: the boards joined into one video (state/sequence.js, ui/sequence.js); emptiedByUser: the last board was
+// deleted by hand (the editor stays, with its empty state, instead of the welcome card: ui/welcome.js)
+const doc={boards:[],active:null,assets:[],fonts:[],langs:[],lang:null,sequence:newSequence(),emptiedByUser:false};
 let uid=0,DEFAULT=null;
 const subs=[];
 function onBoards(fn){subs.push(fn);}
@@ -35,6 +38,10 @@ function sizeOf(st){
 }
 const activeBoard=()=>doc.boards.find(b=>b.id===doc.active);
 const boardById=id=>doc.boards.find(b=>b.id===id);
+// a board's animation length: live for the active board, its snapshot's for the others (the sequence's clip length)
+const boardDur=id=>{const b=boardById(id);if(!b)return 0;const st=b.id===doc.active?state:b.snap.state;return st.anim&&st.anim.dur||5;};
+// the sequence made consistent with the boards (after a board went, or a document was loaded)
+function pruneSequence(seq){doc.sequence=normalizeSeq(seq||doc.sequence,id=>!!boardById(id),boardDur);}
 // live size for the active board, stored snapshot for the others
 const boardSize=b=>b.id===doc.active?sizeOf(state):sizeOf(b.snap.state);
 const nextName=()=>{let n=doc.boards.length+1;const used=new Set(doc.boards.map(b=>b.name));while(used.has('Artboard '+n))n++;return 'Artboard '+n;};
@@ -56,7 +63,8 @@ function captureThumb(){
   finally{hidden.forEach(o=>{o.visible=true;});renderer.setPixelRatio(pr);invalidateLayout();layout();req();}
   return url;
 }
-function store(){const b=activeBoard();if(!b)return;b.snap=snapshot();const t=captureThumb();if(t){b.thumb=t;b.stale=false;}syncPano(b);}
+// quick: no thumbnail (the sequence switches boards while it plays, ui/sequence.js; a thumbnail render would stall it)
+function store(quick){const b=activeBoard();if(!b)return;b.snap=snapshot();if(!quick){const t=captureThumb();if(t){b.thumb=t;b.stale=false;}}syncPano(b);}
 
 /* Panorama sets (state.pano = {g, i, n}, made by ui/store.js): the boards of a set are slices of one wide frame, so
    they share the 3D scene: devices, lights, camera, framing and the scene-wide settings. Whenever the active board's
@@ -97,13 +105,15 @@ function show(b){doc.active=b.id;restore(b.snap);bgCss();layout();syncAll();emit
 // called once at start-up, after the initial scene is built
 // a board with nothing on it (the default scene's camera, lights and background, no devices or items)
 const emptySnap=()=>{const s=JSON.parse(JSON.stringify(Object.assign({},DEFAULT,{images:{}})));s.images={};s.devices=[];s.state.items=[];s.selected=null;return s;};
-// no board at all: the live scene is emptied and the stage shows nothing (layout hides the canvas)
-function clearAll(){doc.boards=[];doc.active=null;doc.langs=[];doc.lang=null;restore(emptySnap());layout();syncAll();emit();}
+// no board at all: the live scene is emptied and the stage shows nothing (layout hides the canvas). why: 'user' (the
+// last board deleted by hand), 'keep' (undo / redo into an empty document: the reason stays what it was), else a
+// closed / new / loaded document (the welcome card, or the home page)
+function clearAll(why){if(why!=='keep')doc.emptiedByUser=why==='user';doc.boards=[];doc.active=null;doc.langs=[];doc.lang=null;doc.sequence=newSequence();restore(emptySnap());layout();syncAll();emit();}
 const hasBoard=()=>!!activeBoard();
 // adding something with no board open first opens an empty one for it
 function ensureBoard(){if(!hasBoard()){addBoard(emptySnap());return true;}return false;}
-function initBoards(){DEFAULT=snapshot();doc.boards=[{id:++uid,name:'Artboard 1',x:0,y:0,snap:DEFAULT,thumb:null}];doc.active=uid;emit();}
-function activate(id){if(id===doc.active){emit();return;}const t=boardById(id);if(!t)return;store();show(t);}
+function initBoards(){DEFAULT=snapshot();doc.boards=[{id:++uid,name:'Artboard 1',x:0,y:0,snap:DEFAULT,thumb:null}];doc.active=uid;doc.sequence=newSequence();emit();}
+function activate(id,quick){if(id===doc.active){emit();return;}const t=boardById(id);if(!t)return;store(quick);show(t);}
 // new board right of the rightmost one, top-aligned with it; from a snapshot (duplicate) or the default scene
 function addBoard(snap,name){
   store();
@@ -124,8 +134,9 @@ function duplicateBoard(id,where='right'){
 }
 function removeBoard(id){
   const i=doc.boards.findIndex(b=>b.id===id);if(i<0)return false;
-  if(doc.boards.length===1){clearAll();return true;}
+  if(doc.boards.length===1){clearAll('user');return true;}
   const wasActive=id===doc.active;doc.boards.splice(i,1);
+  pruneSequence();  // its clips leave the sequence
   if(wasActive)show(doc.boards[Math.min(i,doc.boards.length-1)]);else emit();
   return true;
 }
@@ -135,9 +146,9 @@ function moveBoard(id,x,y){const b=boardById(id);if(!b)return;b.x=Math.round(x);
 /* --- whole document, for undo / redo, autosave and project files */
 function docSnapshot(){
   const a=activeBoard();if(a){a.snap=snapshot();syncPano(a);}
-  return Object.assign({v:2,layout:LAYOUT,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb})),fonts:doc.fonts.slice(),langs:doc.langs.slice(),lang:doc.lang},packAssets(doc.assets));
+  return Object.assign({v:2,layout:LAYOUT,active:doc.active,boards:doc.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:b.thumb})),fonts:doc.fonts.slice(),langs:doc.langs.slice(),lang:doc.lang,sequence:JSON.parse(JSON.stringify(doc.sequence))},packAssets(doc.assets));
 }
-const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[],(d.fonts||[]).map(f=>f.family),d.langs||[],d.lang||null]);
+const docSignature=d=>JSON.stringify([d.boards.map(b=>[b.id,b.name,b.x,b.y,signature(b.snap)]),d.assets||[],(d.fonts||[]).map(f=>f.family),d.langs||[],d.lang||null,d.sequence||null]);
 // first board whose content differs between two documents (undo jumps there)
 function changedBoard(from,to){
   const fm=new Map(from.boards.map(b=>[b.id,signature(b.snap)]));
@@ -148,7 +159,7 @@ function changedBoard(from,to){
 function applyDoc(d,prefer){
   doc.fonts=(d.fonts||[]).slice();doc.fonts.forEach(f=>addFontFace(f.family,f.data));
   doc.langs=(d.langs||[]).slice();doc.lang=doc.langs.includes(d.lang)?d.lang:doc.langs[0]||null;
-  if(!d.boards.length){const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);clearAll();return;}
+  if(!d.boards.length){const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);clearAll('keep');return;}
   if(d.layout!==LAYOUT){
     // older layout: positions were in the export size's pixels; scale them with each board's own growth
     // (custom boards keep their size; they follow the document's first preset board)
@@ -160,6 +171,7 @@ function applyDoc(d,prefer){
   doc.boards=d.boards.map(b=>({id:b.id,name:b.name,x:b.x,y:b.y,snap:b.snap,thumb:thumbs.get(b.id)||b.thumb||null}));
   uid=Math.max(uid,...doc.boards.map(b=>b.id));
   const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);
+  doc.active=null;pruneSequence(d.sequence);  // no live board yet: every clip length comes from its snapshot
   const want=[prefer,d.active].find(id=>id!=null&&boardById(id));
   show(boardById(want)||doc.boards[0]);
 }
@@ -171,4 +183,4 @@ async function fillThumbs(){
   store();show(boardById(back));
 }
 
-export {activate,activeBoard,addBoard,clearAll,ensureBoard,hasBoard,applyDoc,asDoc,boardById,boardSize,changedBoard,doc,docSignature,docSnapshot,duplicateBoard,fillThumbs,initBoards,moveBoard,onBoards,removeBoard,renameBoard,sizeOf,store as storeActive};
+export {activate,activeBoard,addBoard,clearAll,ensureBoard,hasBoard,applyDoc,asDoc,boardById,boardDur,boardSize,changedBoard,doc,docSignature,docSnapshot,duplicateBoard,fillThumbs,initBoards,moveBoard,onBoards,pruneSequence,removeBoard,renameBoard,sizeOf,store as storeActive,emit as emitBoards};

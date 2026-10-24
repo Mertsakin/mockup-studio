@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sıra · artboard'lar arası geçişler</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Prototype of the "Sıra" (sequence): several artboards in one video, joined by transitions (a camera flight, a
+   dissolve, a fade, a slide, a cut). Tokens copied from src/style.css. The strip and the player below are a working
+   model with fake data: the scenes are 2D sketches, the interactions are the proposal. */
+:root{
+  --canvas:#efeff0;--panel:#ffffff;--field:#f4f4f5;--field-hover:#ebebed;--line:#e6e6e9;--line-strong:#d2d2d7;--danger:#c4321f;
+  --ink:#18181b;--ink-2:#52525b;--muted:#8a8a93;--accent:#0b68f5;--accent-soft:#e8f0fe;--accent-ink:#0a56cc;--on-accent:#fff;
+  --key:#f5a524;--key-ink:#b26b00;--track:#f7f7f8;--ok:#1f8a4c;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);--r:6px;--h:28px;color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;--danger:#ff8a7a;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
+  --key:#f5b13d;--key-ink:#ffcf7a;--track:#2c2c2f;--ok:#4cc27a;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:#1c1c1e;--panel:#262628;--field:#323235;--field-hover:#3a3a3e;--line:#37373b;--line-strong:#4a4a50;--danger:#ff8a7a;
+  --ink:#f2f2f3;--ink-2:#b9b9bf;--muted:#85858d;--accent:#3d8bff;--accent-soft:#1d3050;--accent-ink:#8ab8ff;
+  --key:#f5b13d;--key-ink:#ffcf7a;--track:#2c2c2f;--ok:#4cc27a;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px rgba(0,0,0,.4);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font:13px/19px Inter,system-ui,sans-serif;color:var(--ink);background:var(--canvas)}
+button,input{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input{cursor:text}
+code{font:11.5px/16px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--field);padding:1px 4px;border-radius:3px}
+pre{margin:0;padding:12px 14px;border-radius:10px;background:var(--panel);box-shadow:0 0 0 1px var(--line);overflow:auto;font:11.5px/17px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink-2)}
+pre b{color:var(--ink);font-weight:600}
+kbd{display:inline-block;min-width:18px;padding:0 5px;border-radius:4px;background:var(--field);box-shadow:inset 0 -1px 0 var(--line-strong);font-size:11px;line-height:18px;text-align:center;color:var(--ink-2)}
+h1,h2,h3,p{margin:0}
+.page{max-width:1240px;margin:0 auto;padding:28px 16px 64px}
+.intro{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:20px}
+.intro h1{font-size:22px;line-height:28px;font-weight:600}
+.intro p{color:var(--ink-2);margin-top:6px;max-width:84ch}
+.theme{height:28px;padding:0 10px;border-radius:var(--r);background:var(--panel);box-shadow:0 0 0 1px var(--line);font-weight:500;flex:none}
+h2{font-size:15px;font-weight:600;margin:32px 0 10px}
+h2 small{font-weight:400;color:var(--muted);margin-left:8px}
+.lead{color:var(--ink-2);max-width:92ch;margin-bottom:12px}
+.pains{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none;counter-reset:p}
+.pains li{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:10px 12px 10px 40px;position:relative;color:var(--ink-2);font-size:12px;line-height:17px}
+.pains li::before{counter-increment:p;content:counter(p);position:absolute;left:10px;top:10px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}
+.pains b{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rule{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:12px 14px}
+.rule b{display:block;font-weight:600;margin-bottom:2px}
+.rule span{color:var(--ink-2);font-size:12px;line-height:17px}
+.rule .tag{display:inline-block;margin-left:6px;font-size:10px;line-height:16px;padding:0 6px;border-radius:8px;background:var(--accent-soft);color:var(--accent-ink);font-weight:500;vertical-align:1px}
+table{border-collapse:collapse;width:100%;background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);overflow:hidden}
+td,th{padding:7px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:12px;line-height:17px}
+th{font-weight:600;background:var(--field)}
+tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap;font-weight:500}
+td .ic{vertical-align:-3px;margin-right:4px}
+.q{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line);padding:12px 14px;margin-bottom:8px}
+.q b{font-weight:600}
+.q p{color:var(--ink-2);font-size:12px;line-height:17px;margin-top:3px}
+.q p em{font-style:normal;color:var(--ink);font-weight:500}
+.try{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 10px;padding:0;list-style:none;color:var(--ink-2);font-size:12px}
+.try li::before{content:"→ ";color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+ul.plain{margin:0;padding:0 0 0 18px;color:var(--ink-2);font-size:12px;line-height:18px}
+ul.plain b{color:var(--ink);font-weight:500}
+.ic{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ===== the prototype: a player over the strip ===== */
+.proto{background:var(--panel);border-radius:10px;box-shadow:0 0 0 1px var(--line),var(--shadow);overflow:hidden;user-select:none}
+.player{position:relative;background:#111114;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 0 10px}
+.player canvas{display:block;width:min(100%,640px);aspect-ratio:16/9;border-radius:6px;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.pl-badge{position:absolute;left:14px;top:12px;display:flex;gap:6px;align-items:center;font-size:11px;color:#c9c9d0}
+.pl-badge .seg2{display:inline-flex;gap:2px;padding:2px;border-radius:6px;background:rgba(255,255,255,.08)}
+.pl-badge .seg2 button{height:20px;padding:0 8px;border-radius:4px;color:#c9c9d0;font-size:11px;font-weight:500}
+.pl-badge .seg2 button[aria-pressed="true"]{background:rgba(255,255,255,.16);color:#fff}
+.pl-info{position:absolute;right:14px;top:12px;font-size:11px;color:#c9c9d0;text-align:right;line-height:15px}
+.pl-info b{color:#fff;font-weight:500}
+.pl-note{text-align:center;font-size:10.5px;line-height:14px;color:#8c8c95;max-width:640px;padding:0 12px}
+
+.tl{position:relative;display:grid;grid-template-rows:36px minmax(0,1fr);height:214px;background:var(--panel);border-top:1px solid var(--line);min-width:0}
+.tl-bar{display:flex;align-items:center;gap:2px;padding:0 10px;border-bottom:1px solid var(--line)}
+.ib{position:relative;width:var(--h);height:var(--h);display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r);flex:none;color:var(--ink-2)}
+.ib:hover{background:var(--field);color:var(--ink)}
+.ib[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-ink)}
+.ib svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ib.sm{width:24px;height:24px}.ib.sm svg{width:13px;height:13px}
+.ib:disabled{opacity:.35;cursor:default}
+.tl-time{min-width:120px;text-align:center;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.tl-time input{width:48px;text-align:right;font-weight:500;border-radius:4px;padding:1px 3px;background:transparent}
+.tl-time input:hover,.tl-time input:focus{background:var(--field);outline:none}
+.tl-time span{color:var(--muted);font-weight:400}
+.grow{flex:1}
+.btn{height:var(--h);padding:0 12px;border-radius:var(--r);font-weight:500;background:var(--field);display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--field-hover)}
+.btn.sm{height:24px;padding:0 8px;font-size:11px}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{background:var(--accent-ink)}
+.btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.sep{width:1px;height:16px;background:var(--line);margin:0 6px}
+/* NEW: the two views of the timeline panel */
+.tabs{display:inline-flex;gap:2px;height:24px;padding:2px;border-radius:6px;background:var(--field);margin-left:8px}
+.tabs button{height:20px;padding:0 10px;border-radius:4px;color:var(--ink-2);font-weight:500;font-size:12px;position:relative}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.tabs button i{position:absolute;right:-2px;top:-3px;min-width:14px;height:14px;padding:0 4px;border-radius:7px;background:var(--accent);color:#fff;font:600 9.5px/14px Inter,sans-serif;font-style:normal;text-align:center}
+.tl-fps{margin-left:8px;color:var(--muted)}
+.tip{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--panel);font-size:11px;line-height:14px;padding:4px 7px;border-radius:5px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .1s;z-index:9}
+.tl-bar .tip{top:auto;bottom:calc(100% + 6px)}
+.ib:hover>.tip,.kpop button:hover>.tip,.tr:hover>.tip,.clip .tools button:hover>.tip{opacity:1;transition-delay:.4s}
+
+/* the strip (the Sıra view) */
+.seq{position:relative;overflow:hidden;cursor:default}
+.ruler{position:relative;height:24px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--panel)}
+.tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--line)}
+.tick span{position:absolute;left:4px;top:5px;font-size:10px;color:var(--muted);white-space:nowrap}
+.tick.minor{top:16px}
+.lane{position:absolute;left:0;right:0;top:24px;height:118px;background:var(--track)}
+.clip{position:absolute;top:14px;height:90px;border-radius:8px;background:var(--panel);box-shadow:0 0 0 1px var(--line);overflow:hidden;cursor:grab;display:flex;flex-direction:column}
+.clip:hover{box-shadow:0 0 0 1px var(--line-strong)}
+.clip.active{box-shadow:0 0 0 1.5px var(--accent)}
+.clip.sel{box-shadow:0 0 0 1.5px var(--accent),0 0 0 4px var(--accent-soft)}
+.clip.drag{opacity:.4}
+.clip .th{position:relative;flex:1;min-height:0;background:#ddd;overflow:hidden}
+.clip .th canvas{position:absolute;left:var(--tin,0px);top:0;height:100%;width:auto}
+.clip .th::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 60%,var(--panel))}
+.clip .nm{display:flex;align-items:center;gap:6px;height:24px;padding:0 8px 0 calc(var(--tin,0px) + 8px);font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clip .nm .dur{margin-left:auto;color:var(--muted);font-weight:400;font-variant-numeric:tabular-nums}
+.clip .nm .env{color:var(--muted);font-weight:400}
+.clip .tools{position:absolute;right:4px;top:4px;display:flex;gap:2px;opacity:0;transition:opacity .12s}
+.clip:hover .tools,.clip.sel .tools{opacity:1}
+.clip .tools button{position:relative;width:20px;height:20px;border-radius:4px;background:color-mix(in srgb,var(--panel) 85%,transparent);color:var(--ink-2);display:grid;place-items:center;box-shadow:0 0 0 1px var(--line)}
+.clip .tools button:hover{color:var(--ink);background:var(--panel)}
+.clip .tools svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.clip .prog{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);width:0;pointer-events:none}
+/* the transition chip over the overlap of two clips */
+.tr{position:absolute;top:8px;height:102px;border-radius:7px;background:color-mix(in srgb,var(--key) 26%,var(--panel));box-shadow:0 0 0 1px color-mix(in srgb,var(--key) 70%,transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--key-ink);z-index:2;min-width:30px}
+.tr:hover{background:color-mix(in srgb,var(--key) 40%,var(--panel))}
+.tr.on{background:color-mix(in srgb,var(--accent) 22%,var(--panel));box-shadow:0 0 0 1.5px var(--accent);color:var(--accent-ink)}
+.tr svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tr small{font-size:9.5px;line-height:11px;font-weight:600;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.tr.cut{min-width:18px;width:18px;background:transparent;box-shadow:none;color:var(--muted)}
+.tr.cut::before{content:"";position:absolute;top:4px;bottom:4px;left:50%;border-left:2px dashed var(--line-strong)}
+.tr.cut svg{position:relative;background:var(--track);padding:2px;border-radius:4px}
+.tr.cut.on{color:var(--accent-ink)}.tr.cut.on::before{border-color:var(--accent)}
+.tr.bad{box-shadow:0 0 0 1px var(--danger);color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,var(--panel))}
+.tr .tip{top:calc(100% + 4px)}
+.add{position:absolute;top:34px;width:48px;height:48px;border-radius:10px;border:1.5px dashed var(--line-strong);display:grid;place-items:center;color:var(--muted)}
+.add:hover{color:var(--ink);border-color:var(--ink-2);background:var(--panel)}
+.add svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.ph{position:absolute;top:0;bottom:0;width:0;border-left:1.5px solid var(--accent);pointer-events:none;z-index:4}
+.ph::before{content:"";position:absolute;left:-6px;top:0;width:11px;height:12px;background:var(--accent);clip-path:polygon(0 0,100% 0,100% 60%,50% 100%,0 60%)}
+.dropg{position:absolute;top:24px;height:118px;width:0;border-left:2px solid var(--accent);pointer-events:none;z-index:5}
+.seq-empty{position:absolute;left:50%;top:60px;transform:translateX(-50%);width:max-content;max-width:90%;padding:8px 12px;border-radius:var(--r);background:var(--panel);box-shadow:0 0 0 1px var(--line);text-align:center;color:var(--muted);z-index:5;display:flex;gap:8px;align-items:center}
+.seq-empty b{color:var(--ink);font-weight:500}
+/* the edit card (shared look with the keyframe card) */
+.kpop{position:absolute;z-index:6;display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:8px;background:var(--panel);box-shadow:0 0 0 1px var(--line),var(--shadow);font-size:12px;white-space:nowrap}
+.kpop::after{content:"";position:absolute;left:var(--ax,20px);bottom:-5px;width:8px;height:8px;margin-left:-4px;background:var(--panel);transform:rotate(45deg);box-shadow:1px 1px 0 var(--line)}
+.kpop.below::after{bottom:auto;top:-5px;box-shadow:-1px -1px 0 var(--line)}
+.kpop .row{display:flex;align-items:center;gap:6px}
+.kpop b{font-weight:600}
+.kpop .tf{display:inline-flex;align-items:center;gap:3px;height:24px;padding:0 6px;border-radius:5px;background:var(--field);color:var(--muted)}
+.kpop .tf input{width:34px;text-align:right;color:var(--ink);font-weight:500}
+.kpop .tf input:focus{outline:none}
+.kpop .kinds,.kpop .eases,.kpop .dirs{display:inline-flex;gap:2px;height:26px;padding:2px;border-radius:5px;background:var(--field)}
+.kpop .kinds button,.kpop .eases button,.kpop .dirs button{position:relative;min-width:28px;padding:0 6px;border-radius:4px;color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:500}
+.kpop .kinds button:hover,.kpop .eases button:hover,.kpop .dirs button:hover{background:var(--field-hover);color:var(--ink)}
+.kpop .kinds button[aria-pressed="true"],.kpop .eases button[aria-pressed="true"],.kpop .dirs button[aria-pressed="true"]{background:var(--panel);color:var(--accent-ink);box-shadow:0 0 0 1px var(--line)}
+.kpop .kinds button:disabled{opacity:.35;cursor:default}
+.kpop .kinds button:disabled:hover{background:none;color:var(--ink-2)}
+.kpop svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.kpop .sw{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.kpop .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--accent)}
+.kpop .note{color:var(--muted);font-size:11px;line-height:14px;max-width:360px;white-space:normal}
+.kpop .note.bad{color:var(--danger)}
+.kpop .note.ok{color:var(--ok)}
+.kpop .ib.sm.del:hover{color:var(--danger)}
+.kpop .tip{top:auto;bottom:calc(100% + 6px)}
+/* the Artboard view: the existing timeline, sketched */
+.lanes-sketch{position:relative;padding:0 0 0 0;color:var(--muted)}
+.lanes-sketch .r{display:grid;grid-template-columns:236px 1fr;height:32px;border-bottom:1px solid var(--line)}
+.lanes-sketch .r>span{display:flex;align-items:center;padding:0 10px;border-right:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+.lanes-sketch .r>div{position:relative;background:var(--track)}
+.lanes-sketch .kf{position:absolute;top:11px;width:10px;height:10px;transform:rotate(45deg);background:var(--key);border-radius:2px}
+.lanes-sketch .bar{position:absolute;top:13px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--key) 35%,transparent)}
+.lanes-sketch .hint{padding:10px 12px;font-size:11.5px}
+/* menus */
+.menu{position:fixed;z-index:40;background:var(--panel);border-radius:8px;box-shadow:0 0 0 1px var(--line),var(--shadow);padding:4px;min-width:220px;font-size:12px}
+.menu button{display:flex;width:100%;align-items:center;gap:8px;height:26px;padding:0 8px;border-radius:5px;text-align:left}
+.menu button:hover{background:var(--field)}
+.menu button kbd{margin-left:auto;background:none;box-shadow:none;color:var(--muted)}
+.menu button .chk{width:14px;color:var(--accent-ink);font-weight:600}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.menu .sub{padding:4px 8px 2px;color:var(--muted);font-size:11px}
+.status{display:flex;gap:14px;padding:8px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;background:var(--panel)}
+.status b{color:var(--ink-2);font-weight:500}
+/* the export dialog mock */
+.dlg{width:420px;max-width:100%;background:var(--panel);border-radius:12px;box-shadow:0 0 0 1px var(--line),var(--shadow);overflow:hidden;font-size:12px}
+.dlg .dh{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600;font-size:13px}
+.dlg .db{padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px}
+.dlg .row{display:flex;align-items:center;gap:8px}
+.dlg .lbl{width:120px;flex:none;color:var(--ink-2)}
+.dlg .seg{flex:1;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--field);border-radius:5px;padding:2px;height:var(--h)}
+.dlg .seg button{border-radius:4px;color:var(--muted);font-weight:500;white-space:nowrap}
+.dlg .seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.dlg .seg.new{box-shadow:0 0 0 1.5px var(--accent)}
+.dlg .hint{color:var(--muted);font-size:11px;line-height:15px}
+.dlg .est{margin-top:4px;padding:10px 12px;border-radius:8px;background:var(--field);display:grid;grid-template-columns:repeat(3,1fr);gap:4px;text-align:center}
+.dlg .est b{display:block;font-size:14px;font-weight:600}
+.dlg .est span{color:var(--muted);font-size:11px}
+.dlg .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.flow div{background:var(--panel);border-radius:8px;box-shadow:0 0 0 1px var(--line);padding:8px 10px;font-size:11.5px;line-height:16px;color:var(--ink-2);position:relative}
+.flow div b{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
+.flow div:not(:last-child)::after{content:"→";position:absolute;right:-9px;top:10px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="intro">
+    <div>
+      <h1>Sıra · artboard'lar arası kamera geçişleri</h1>
+      <p>Birden fazla artboard'ı tek bir videoda, aralarında kamera hareketiyle bağlama önerisi (bir tanıtım videosunun "sahne sahne" kurgusu). Aşağıdaki şerit ve oynatıcı çalışan bir model: sahneler 2B eskiz, veriler sahte, etkileşimler ve geçiş davranışı önerinin kendisi. Önce bugünkü durum, sonra prototip, veri modeli, geçiş türleri, dışa aktarım yaklaşımı ve onay isteyen kararlar.</p>
+    </div>
+    <button class="theme" id="theme" type="button">Koyu tema</button>
+  </div>
+
+  <h2>Bugün</h2>
+  <ol class="pains">
+    <li><b>Her artboard ayrı video</b>Canlandır'daki "Video dışa aktar" yalnızca etkin artboard'u alır. Üç sahnelik bir tanıtım için üç MP4 çıkar; birleştirme ve geçişler başka bir programda.</li>
+    <li><b>Sahneler arasında kamera yok</b>Telefon sahnesinden dizüstü sahnesine kameranın süzülmesi için ikisini tek artboard'a sığdırmak gerekir: tek ışık kurulumu, tek arka plan, tek süre.</li>
+    <li><b>Sunum tek tek oynatır</b>Sunum kipi artboard'ları ok tuşuyla geçer; sıralama, geçiş ve toplam süre kavramı yok.</li>
+  </ol>
+
+  <h2>Öneri: etkileşimli prototip<small>Canlandır → zaman çizelgesi paneli → <b>Sıra</b> sekmesi</small></h2>
+  <ul class="try">
+    <li><b>Oynat</b> (Boşluk): sıra baştan sona oynar, üstteki oynatıcı geçişleri gösterir · cetvele tıkla / sürükle: ara</li>
+    <li>Klibe tıkla: o artboard etkin olur · <b>sürükle</b>: sırayı değiştir · ✕: sıradan çıkar · <kbd>⌫</kbd></li>
+    <li><b>Geçiş çipine</b> tıkla: tür (Kesme / Çapraz solma / Solma / Kaydırma / Kamera uçuşu), süre, yumuşatma, türe özel seçenek · çip genişliği = süresi</li>
+    <li><b>+</b>: sıraya artboard ekle (aynı artboard birden fazla kez girebilir) · "Uzay · telefon"u ekleyip önüne kamera uçuşu dene: ortam farkı uyarısı</li>
+    <li>Oynatıcıda <b>Dışa aktarım / Canlı</b>: aynı anın dosyadaki hâli ve editördeki canlı önizlemesi (kamera uçuşu canlıda yaklaşıktır, aşağıda)</li>
+  </ul>
+  <div class="proto">
+    <div class="player">
+      <div class="pl-badge"><span>Önizleme</span><span class="seg2" role="group" aria-label="Önizleme kipi"><button type="button" data-pv="export" aria-pressed="true">Dışa aktarım</button><button type="button" data-pv="live" aria-pressed="false">Canlı</button></span></div>
+      <div class="pl-info" id="plInfo"></div>
+      <canvas id="pv" width="960" height="540"></canvas>
+      <p class="pl-note" id="plNote">Sahneler 2B eskiz: cihaz yerleşimi, açı ve arka plan temsilî.</p>
+    </div>
+    <section class="tl" aria-label="Zaman çizelgesi">
+      <div class="tl-bar">
+        <button class="ib" type="button" id="tlStart" aria-label="Başa dön"><svg viewBox="0 0 24 24"><path d="M19 5v14L9 12zM6 5v14"/></svg><span class="tip">Başa dön <kbd>Home</kbd></span></button>
+        <button class="ib" type="button" id="tlPlay" aria-label="Oynat"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg><span class="tip">Oynat / durdur <kbd>Boşluk</kbd></span></button>
+        <button class="ib" type="button" id="tlLoop" aria-label="Döngü" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 12V9a3 3 0 0 1 3-3h13l-3-3m3 3-3 3M20 12v3a3 3 0 0 1-3 3H4l3 3m-3-3 3-3"/></svg><span class="tip">Döngü (sıranın kendi ayarı)</span></button>
+        <span class="tl-time"><input id="tlT" aria-label="Zaman (sn)" value="0,00"><span id="tlDur">/ 0,00 sn</span></span>
+        <span class="tabs" role="group" aria-label="Görünüm"><button type="button" data-tab="board" aria-pressed="false">Artboard</button><button type="button" data-tab="seq" aria-pressed="true">Sıra<i id="tabN">4</i></button></span>
+        <span class="grow"></span>
+        <button class="btn sm" type="button" id="addAll">Tüm artboard'ları ekle</button>
+        <span class="sep"></span>
+        <button class="btn sm primary" type="button" id="exportBtn"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg>Sırayı video olarak dışa aktar</button>
+        <span class="tl-fps">30 fps</span>
+      </div>
+      <div class="seq" id="seq" tabindex="0"></div>
+      <div class="lanes-sketch" id="boardView" hidden>
+        <div class="r"><span>Kamera</span><div><span class="bar" style="left:12px;width:120px"></span><span class="kf" style="left:8px"></span><span class="kf" style="left:128px"></span></div></div>
+        <div class="r"><span>Telefon</span><div><span class="bar" style="left:12px;width:96px"></span><span class="bar" style="left:108px;width:300px"></span><span class="kf" style="left:8px"></span><span class="kf" style="left:104px"></span><span class="kf" style="left:404px"></span></div></div>
+        <div class="r"><span>Softbox</span><div><span class="bar" style="left:12px;width:80px"></span><span class="kf" style="left:8px"></span><span class="kf" style="left:88px"></span></div></div>
+        <p class="hint">Artboard sekmesi bugünkü zaman çizelgesidir (anahtar kareler, geçiş çubukları, kart): hiçbir şey değişmez. Sıra sekmesi aynı panelin ikinci görünümüdür; ikisi arasında imleç ve oynatma bağımsızdır. Etkin artboard'un sıradaki klibi Sıra sekmesinde vurgulu durur.</p>
+      </div>
+    </section>
+    <div class="status"><span>Seçim: <b id="stSel">yok</b></span><span>Son işlem: <b id="stLast">–</b></span><span>Toplam: <b id="stTot"></b></span><span class="grow"></span><span>Bu bir prototip: sahneler çizilmez, değerler sahte.</span></div>
+  </div>
+
+  <h2>Veri modeli<small>(a) geçiş nerede yaşar</small></h2>
+  <div class="two">
+    <pre><b>doc.sequence</b> = {            // belge düzeyinde; artboard'ların kendi animasyonu değişmez
+  loop: true,
+  clips: [ {board: 3}, {board: 5}, {board: 2} ],   // artboard kimlikleri; aynı artboard birden fazla kez girebilir
+  transitions: [                                 // transitions[i]: clips[i] → clips[i+1]
+    {kind: 'fly',   dur: 1.0, ease: 'smooth'},
+    {kind: 'xfade', dur: 0.6, ease: 'linear'}
+  ]
+}
+// kind: cut | xfade | fade (color: '#000' | '#fff') | slide (dir: left | right | up | down) | fly
+// klibin süresi = artboard'un kendi süresi (state.anim.dur); klip başlangıcı = öncekilerin Σ (süre − geçiş)</pre>
+    <ul class="plain">
+      <li><b>Belge taşır:</b> <code>docSnapshot</code> / <code>applyDoc</code> / <code>docSignature</code> (geri al, otomatik kayıt), <code>plainDoc</code> (proje dosyası, bulut). Sıra değişikliği bir geri al adımıdır.</li>
+      <li><b>Artboard silinince</b> klipleri sıradan düşer, iki yanındaki geçişlerden ilki kalır. Yeniden adlandırma klibe yansır (klip yalnızca kimlik tutar). Çoğaltma sıraya eklemez.</li>
+      <li><b>Klip süresi artboard'dan gelir:</b> değiştirmek için Artboard sekmesindeki süre tutamacı (ya da klibin ⋯ menüsünden "Artboard'a git"). Kırpma (giriş/çıkış noktası) yok; v2.</li>
+      <li><b>Geçiş süresi sınırı:</b> bir klibin iki geçişi birbirine binemez: <code>T_önce + T_sonra ≤ klip süresi</code>; kart bunu kırpar ve söyler.</li>
+      <li><b>Panorama dilimleri</b> sıradan normal artboard'dur (ortak sahne, kendi dilimi). Sunum kipi sırayı kullanmaz (v2'de "Sırayı sun" düğmesi).</li>
+    </ul>
+  </div>
+
+  <h2>Geçiş türleri<small>(b) hangisi ne zaman mümkün</small></h2>
+  <table>
+    <tr><th>Tür</th><th>Ne olur</th><th>Şart</th><th>Canlı önizleme (editör)</th><th>Dışa aktarım</th></tr>
+    <tr><td><svg class="ic" viewBox="0 0 24 24"><path d="M5 4v16M19 4v16M9 12h6"/></svg>Kesme</td><td>A'nın son karesinden B'nin ilk karesine doğrudan. Süre 0.</td><td>her zaman</td><td>birebir (artboard anında değişir)</td><td>ek maliyet yok</td></tr>
+    <tr><td><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="2"/><rect x="9" y="6" width="12" height="12" rx="2" stroke-dasharray="2 2"/></svg>Çapraz solma</td><td>A'nın son T saniyesi ile B'nin ilk T saniyesi üst üste oynar, B belirirken A çözülür (arka plan ve 2B öğeler dahil).</td><td>her zaman</td><td>birebir: geçişe girerken A'nın karesi dondurulur ve canlı B'nin üstünde çözülür (A'nın son T saniyesi canlıda oynamaz)</td><td>geçiş kareleri iki render + harman</td></tr>
+    <tr><td><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 12h16" opacity=".4"/></svg>Solma</td><td>A renge (siyah / beyaz) söner, B o renkten belirir. Yarı yolda tek renk.</td><td>her zaman</td><td>birebir</td><td>iki render + renk katmanı</td></tr>
+    <tr><td><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="9" height="12" rx="1.5"/><rect x="14" y="6" width="9" height="12" rx="1.5"/><path d="M12 12h0"/></svg>Kaydırma</td><td>B bir yönden (sol / sağ / üst / alt) kayarak A'yı iter.</td><td>her zaman</td><td>birebir (dondurulmuş A kayar, canlı B kaydırılır)</td><td>iki render, kaydırmalı harman</td></tr>
+    <tr><td><svg class="ic" viewBox="0 0 24 24"><path d="M4 17c3-9 13-9 16 0"/><circle cx="20" cy="17" r="1.6"/><circle cx="4" cy="17" r="1.6"/><path d="M12 6V3"/></svg>Kamera uçuşu</td><td>Kamera A'nın açısından, yakınlığından ve kadrajından B'ninkine süzülür (açılar kısa yoldan, yakınlık logaritmik, objektif ve kayma doğrusal, kadraj merkezi ve yarıçapı birlikte). Sahne içeriği bu sırada çözülür: cihazlar <em>eşleşiyorsa</em> (aynı sayıda, aynı tipte, sırayla) her cihazın konumu, dönüşü, ölçeği ve kapak açısı da ara değer alır (cihaz yerinde kalır, yalnızca ekranı ve rengi çözülür); eşleşmiyorsa cihazlar olduğu yerde çapraz solar. Işıklar aynı şekilde: eşleşirse ara değer, yoksa her sahne kendi ışığıyla. Arka planlar her zaman çözülür.</td><td>iki artboard'ın <b>ortamı aynı</b> (Stüdyo → Stüdyo ya da Uzay → Uzay); farklıysa çip kırmızı uyarı verir ve çapraz solma gibi davranır</td><td><b>yaklaşık:</b> canlı B sahnesi A'nın kamera açısından uçarak gelir, dondurulmuş A karesi üstünde çözülür. A'nın da uçması ve cihaz eşleşmesi yalnızca dosyada. Oynatıcıdaki "Canlı" kipi bunu gösterir</td><td>geçiş kareleri iki render (ikisi de ara kamerayla) + harman; Fotoğraf kalitesinde iki yol izleme</td></tr>
+  </table>
+
+  <h2>Zamanlama<small>(c) geçiş iki artboard'ın üstüne biner</small></h2>
+  <p class="lead">Her artboard kendi süresi kadar oynar. T saniyelik bir geçiş A'nın <em>son</em> T saniyesi ile B'nin <em>ilk</em> T saniyesinin üstüne biner (kurgu programlarındaki gibi): toplam süre = Σ artboard süresi − Σ geçiş süresi. Örnek: 5 sn + 6 sn + 4 sn, geçişler 1 sn ve 0,6 sn → 13,4 sn. Geçiş sırasında iki artboard'ın animasyonu da akar (A'nın bitişi, B'nin girişi); kamera uçuşu her karede A(t) ve B(t) kameraları arasında ara değer alır, yani hareketli kameralar da uçar. Varsayılan geçiş süresi 0,8 sn, kesme 0.</p>
+  <p class="lead">B'nin girişi (ör. "Yaklaşarak gir") geçişin altında kalmasın istersen geçişi kısalt ya da B'nin başına yarım saniye dur ekle; "araya ekle" (A'nın son karesi dondurulup B'nin ilk karesine uçulması) ayrı bir kip olarak <em>önerilmiyor</em>, hareketli sahnelerde donuk görünüyor. (Karar 3.)</p>
+
+  <h2>Dışa aktarım ve önizleme<small>(d)</small></h2>
+  <div class="flow">
+    <div><b>1 · Zaman haritası</b>Sıra zamanı t → klip ve yerel zaman; geçiş penceresindeyse (A, tA) ve (B, tB) ile ilerleme u.</div>
+    <div><b>2 · Gövde kareleri</b>Bugünkü <code>renderVideo</code> yolu: artboard'un anlık görüntüsü kurulur (<code>restore</code>), kare kendi zamanında raster ya da yol izlemeyle çizilir, hareket bulanıklığı dahil.</div>
+    <div><b>3 · Geçiş kareleri</b>A kurulur, grubun A kareleri çizilir; B kurulur, B kareleri çizilir; 2B'de harmanlanır (alfa / renk / kaydırma). Kamera uçuşunda iki sahneye de ara kamera ve eşleşen cihazlara ara dönüşüm yazılır.</div>
+    <div><b>4 · Kodlama</b>Tek dosya: MP4 / WebM / GIF, bugünkü kodlayıcılar. Çıktı oranı ilk klibin artboard'ından; başka oranlı bir klip ortalanıp kaplayacak şekilde kırpılır.</div>
+  </div>
+  <p class="lead" style="margin-top:10px">Kurulum maliyeti: <code>restore</code> cihazları ve ışıkları yeniden kurar (telefon ≈ 0,1 sn, dizüstü ≈ 0,3 sn). Geçiş kareleri bu yüzden <em>gruplar hâlinde</em> işlenir (bellek bütçesine göre 3–8 kare: A kur → A kareleri → B kur → B kareleri → harmanla), kare başına iki kurulum yerine grup başına iki. 1 sn'lik bir geçiş 1080 px'te ≈ 3–4 sn ek sürer. Video penceresi sıradaysa kare sayısını ve süreyi buna göre tahmin eder.</p>
+  <div class="two" style="margin-top:10px">
+    <div class="dlg" aria-label="Video dışa aktar (taslak)">
+      <div class="dh">Video dışa aktar</div>
+      <div class="db">
+        <div class="row"><span class="lbl">Kaynak</span><div class="seg new" role="group"><button type="button" aria-pressed="false">Bu artboard</button><button type="button" aria-pressed="true">Sıra · 4 artboard</button></div></div>
+        <p class="hint">Sıra: Telefon → Telefon · arkadan → Dizüstü → Masaüstü seti, 3 geçiş, 15,4 sn. Çıktı oranı ilk klibinki (16:9).</p>
+        <div class="row"><span class="lbl">Biçim</span><div class="seg" role="group"><button type="button" aria-pressed="true">MP4</button><button type="button" aria-pressed="false">WebM</button><button type="button" aria-pressed="false">GIF</button></div></div>
+        <div class="row"><span class="lbl">Çözünürlük</span><div class="seg" role="group"><button type="button" aria-pressed="false">1080 px</button><button type="button" aria-pressed="true">1920 px</button><button type="button" aria-pressed="false">3840 px</button></div></div>
+        <div class="row"><span class="lbl">Kalite</span><div class="seg" role="group"><button type="button" aria-pressed="true">Hızlı</button><button type="button" aria-pressed="false">Fotoğraf</button></div></div>
+        <div class="est"><div><b>462</b><span>kare</span></div><div><b>1920 × 1080</b><span>boyut (px)</span></div><div><b>~1,5 dk</b><span>tahmini süre</span></div></div>
+        <div class="foot"><button class="btn" type="button">Vazgeç</button><button class="btn primary" type="button">Render et</button></div>
+      </div>
+    </div>
+    <ul class="plain">
+      <li><b>Pencere</b> bugünkü video penceresi; sıra varken (2 ve daha fazla klip) üstte <em>Kaynak</em> satırı gelir. Şeritteki "Sırayı video olarak dışa aktar" düğmesi pencereyi Sıra seçili açar.</li>
+      <li><b>Canlı oynatma (Sıra sekmesinde Boşluk):</b> klip sınırında artboard değişir (<code>activate</code>, 0,1–0,3 sn takılma kabul), geçişlerde A'nın son karesi dondurulup canlı B'nin üstüne 2B katman olarak çizilir (çözülme, renk, kaydırma); kamera uçuşunda B'nin kamerası A'nınkinden uçurulur. Bu yazımlar anahtar kare <em>üretmez</em> (kayıt yolu geçiş boyunca susturulur; kırılgan nokta 9).</li>
+      <li><b>Geçişte dondurulan A karesi</b> ekran çözünürlüğünde alınır (küçük resim değil: küçük resim tasarım karesidir, animasyonun sonu değil).</li>
+      <li><b>Ekran videoları, metin efektleri, 2B öğeler</b> her sahnede kendi zamanıyla çizilir; geçişte sahneleriyle birlikte çözülür.</li>
+      <li><b>Hareket bulanıklığı</b> gövdede bugünkü gibi; geçiş karelerinde de her render kendi alt örneklerini alır (ara kamera alt örnek zamanında hesaplanır).</li>
+    </ul>
+  </div>
+
+  <h2>Ne değişiyor</h2>
+  <div class="rules">
+    <div class="rule"><b>Sıra sekmesi<span class="tag">yeni</span></b><span>Zaman çizelgesi panelinde <em>Artboard | Sıra</em> anahtarı. Sıra: üstte sıra zamanı cetveli, altında klip kartları (küçük resim, ad, süre; genişlik = süre) ve aralarında geçiş çipleri (genişlik = geçiş süresi; kesme ince kesikli çizgi). Oynat / döngü / zaman alanı ve kısayollar aynı çubukta. <code>ui/sequence.js</code>.</span></div>
+    <div class="rule"><b>Klip = artboard</b><span>Tıklamak o artboard'u etkin yapar (editörde ona geçilir), sürüklemek sırayı değiştirir, ✕ / ⌫ sıradan çıkarır (artboard silinmez), + menüsü artboard ekler, "Tüm artboard'ları ekle" tuvaldeki soldan sağa sırayla ve varsayılan geçişlerle (çapraz solma 0,8 sn) kurar.</span></div>
+    <div class="rule"><b>Geçiş kartı</b><span>Çipe tıklayınca üstünde kart (anahtar kare kartıyla aynı dil): tür (5 ikon), süre (sn, yazılır), yumuşatma (Yumuşak / Doğrusal), türe göre renk (solma) ya da yön (kaydırma), ve durum satırı: "2 cihaz eşleşti: konumları da süzülür" / "Cihazlar eşleşmiyor: çapraz solmayla" / "Ortamlar farklı (Stüdyo → Uzay): kamera uçuşu yok".</span></div>
+    <div class="rule"><b>Oynatma</b><span>Sıra sekmesinde Boşluk tüm sırayı oynatır: imleç sıra zamanında, klip sınırında artboard değişir, geçişler canlı katmanla. ← / → kare, ⇧ saniye, Home. Artboard sekmesine geçince eski davranış (tek artboard, kendi imleci).</span></div>
+    <div class="rule"><b>Dışa aktarım</b><span>Video penceresinde Kaynak: Bu artboard / Sıra. Sıra tek dosya çıkar; kare sayısı ve süre tahmini geçişlerin iki kat maliyetini sayar. <code>export/video.js</code> kare üreticisi "zaman → (artboard, yerel zaman)" haritasını alır; geçiş karelerini grup hâlinde iki kez çizip harmanlar.</span></div>
+    <div class="rule"><b>Belge</b><span><code>doc.sequence</code> anlık görüntü, geri al, otomatik kayıt, proje dosyası ve bulutta taşınır; eski belgelerde yok sayılır (boş sıra). Artboard silme / yeniden adlandırma sırayla tutarlı kalır.</span></div>
+  </div>
+
+  <h2>Kısayollar<small>Sıra sekmesinde</small></h2>
+  <table>
+    <tr><th>Tuş</th><th>İşlev</th></tr>
+    <tr><td><kbd>Boşluk</kbd> · <kbd>Home</kbd></td><td>Sırayı oynat / durdur · başa dön</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd> · <kbd>⇧</kbd></td><td>Bir kare · bir saniye (sıra zamanında; klip sınırını geçince artboard değişir)</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Önceki / sonraki klibin başına</td></tr>
+    <tr><td><kbd>⌫</kbd> · <kbd>Esc</kbd></td><td>Seçili klibi sıradan çıkar (geçişi kesmeye çevir) · seçimi bırak</td></tr>
+    <tr><td>Sürükle</td><td>Klibi başka yere taşı (kırmızı bırakma kılavuzu)</td></tr>
+  </table>
+
+  <h2>Onay istenen kararlar</h2>
+  <div class="q"><b>1. Veri modeli: belge düzeyinde <code>doc.sequence</code>, artboard animasyonları dokunulmadan.</b><p>Önerim: evet. Alternatif (her artboard'a "sonraki artboard ve geçiş" alanı) tek bir doğrusal sıraya izin verir ama aynı artboard'ın iki kez kullanımını ve sıradan bağımsız artboard'ları zorlaştırır.</p></div>
+  <div class="q"><b>2. Yer: zaman çizelgesi panelinde Artboard | Sıra sekmesi (üstte her zaman görünen ayrı bir şerit değil).</b><p>Önerim: sekme. Panel yüksekliği sınırlı; anahtar kare düzenlerken şerit yer kaplar, sırayı kurarken lanlar gereksiz. Etkin artboard'un klibi Sıra'da vurgulu, Sıra sekmesinin rozeti klip sayısını gösterir. Alternatif: lanların üstünde 48 px'lik sabit şerit.</p></div>
+  <div class="q"><b>3. Zamanlama: geçiş bindirmeli (toplam = Σ süre − Σ geçiş), varsayılan 0,8 sn.</b><p>Önerim: bindirme (kurgu programlarının kuralı; iki sahnenin animasyonu da akar). "Araya ekle" kipi (son kare dondurulup uçuş) yok; isteyen B'nin girişini geciktirir.</p></div>
+  <div class="q"><b>4. Kamera uçuşu: iki sahne de ara kamerayla render edilip çözülür; cihazlar eşleşiyorsa ara dönüşümle.</b><p>Önerim: bu. Alternatif (iki artboard'ın cihazlarını tek sahneye geçici olarak ekleyip ara değerlerle kurmak) tek render ister ama ekran içerikleri, renkler, ışıklar ve arka planlar yine ayrı ayrı çözülmek zorunda; kimlik çakışmaları (<code>RT</code> id'leri) ve yol izleyici kurulumu karmaşıklaşır. İki render + harman aynı sonucu bugünkü render yoluyla verir; geçiş kareleri 2× pahalı, gövde kareleri değişmez.</p></div>
+  <div class="q"><b>5. Canlı önizlemede kamera uçuşu yaklaşık (gelen sahne uçar, giden dondurulmuş hâliyle çözülür).</b><p>Önerim: kabul. Birebir için editörde iki sahneyi aynı anda canlı tutmak gerekir (iki <code>RT</code> haritası, iki ışık kurulumu); kazanç kuruluma değmez. Kesme, çapraz solma, solma ve kaydırma canlıda birebir.</p></div>
+  <div class="q"><b>6. Farklı oranlı artboard'lar: çıktı oranı ilk klibinki, diğerleri ortalanıp kaplayacak şekilde kırpılır (uyarıyla).</b><p>Önerim: bu; sıradaki artboard'ların aynı oranda olması beklenir, kural yalnızca kazara karışımı kurtarır. Alternatif: farklı oranlı artboard sıraya alınmaz.</p></div>
+  <div class="q"><b>7. Kapsam dışı (v1):</b><p>ses / müzik; klip kırpma ve hız; başka geçişler (silme, yakınlaşmalı bulanıklık, 3B küp); klip başına yeniden kadraj; Stüdyo ↔ Uzay arasında kamera uçuşu; gömme oynatıcısında (<code>mockup-view</code>) sıra; Sunum kipinin sırayı oynatması; sıra oynarken canlı fotoğraf önizlemesi. Uygulama sırası: (a) model + dosya + geri al, (b) Sıra sekmesi ve canlı oynatma, (c) dışa aktarım (kesme / çözülme / solma / kaydırma), (d) kamera uçuşu; her adımdan sonra örnek video.</p></div>
+</div>
+
+<!-- ======================= the model ======================= -->
+<script>
+/* ---------- fake document: five boards. Each is a 2D sketch of a scene: background, environment, camera (angles,
+   zoom, framing height in cm), devices (type, position cm, rotation) and a tiny animation. The sketch renderer draws
+   them with a pseudo-perspective: good enough to show what the transitions do. */
+const fps=30;
+const BOARDS=[
+  {id:1,name:'Telefon',ratio:[16,9],dur:5,env:'studio',bg:['#dfe6ff','#f4dcea'],cam:{ry:26,rx:-6,zoom:1,fit:30},designT:1.2,
+    devs:[{type:'phone',x:0,y:0,z:0,ry:0,color:'#2b2f36',screen:['#5b8def','#9ad0ff']}],
+    anim:(t,B)=>({cam:{zoom:B.cam.zoom*(.8+.2*ease(Math.min(1,t/1.5)))},devs:[{y:-6*(1-back(Math.min(1,t/1.2)))+.8*Math.sin(t/B.dur*Math.PI*2)*(t>1.2?1:0)*.5}]})},
+  {id:2,name:'Telefon · arkadan',ratio:[16,9],dur:4,env:'studio',bg:['#eef1f4','#dfe3ea'],cam:{ry:160,rx:-4,zoom:1.15,fit:30},designT:0,
+    devs:[{type:'phone',x:1,y:0,z:0,ry:0,color:'#c8cbd0',screen:['#5b8def','#9ad0ff']}],
+    anim:(t,B)=>({cam:{ry:B.cam.ry+6*t/B.dur},devs:[{}]})},
+  {id:3,name:'Dizüstü',ratio:[16,9],dur:6,env:'studio',bg:['#f7e9d7','#f1d3c8'],cam:{ry:-26,rx:16,zoom:1,fit:46},designT:1.5,
+    devs:[{type:'laptop',x:0,y:0,z:0,ry:0,color:'#c8cbd0',screen:['#1f2937','#4b5563']}],
+    anim:(t,B)=>({cam:{zoom:B.cam.zoom*(1+.06*t/B.dur)},devs:[{lid:72+40*ease(Math.min(1,t/1.5))}]})},
+  {id:4,name:'Masaüstü seti',ratio:[16,9],dur:4,env:'studio',bg:['#1b1d24','#2a2d38'],cam:{ry:0,rx:8,zoom:1,fit:70},designT:0,
+    devs:[{type:'monitor',x:0,y:0,z:0,color:'#2b2f36',screen:['#0b1220','#1e3a8a']},{type:'laptop',x:-31,y:0,z:8,ry:22,color:'#2b2f36',screen:['#111827','#374151']},{type:'phone',x:27,y:0,z:10,ry:-22,color:'#2b2f36',screen:['#0b1220','#2563eb']}],
+    anim:(t,B)=>({cam:{ry:-8+16*t/B.dur},devs:[{},{},{}]})},
+  {id:5,name:'Uzay · telefon',ratio:[16,9],dur:4,env:'space',bg:['#0b0d18','#1a1f3a'],cam:{ry:40,rx:20,zoom:1,fit:32},designT:0,
+    devs:[{type:'phone',x:0,y:0,z:0,ry:0,color:'#24304a',screen:['#7c3aed','#ec4899']}],
+    anim:(t,B)=>({cam:{rx:B.cam.rx+30*t/B.dur,ry:B.cam.ry+50*t/B.dur},devs:[{}]})}
+];
+const KINDS={
+  cut:{n:'Kesme',svg:'<svg viewBox="0 0 24 24"><path d="M5 4v16M19 4v16M9 12h6"/></svg>',def:0},
+  xfade:{n:'Çapraz solma',svg:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="2"/><rect x="9" y="6" width="12" height="12" rx="2" stroke-dasharray="2 2"/></svg>',def:.8},
+  fade:{n:'Solma',svg:'<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 12h16" opacity=".4"/></svg>',def:.8},
+  slide:{n:'Kaydırma',svg:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="9" height="12" rx="1.5"/><rect x="14" y="6" width="9" height="12" rx="1.5"/></svg>',def:.8},
+  fly:{n:'Kamera uçuşu',svg:'<svg viewBox="0 0 24 24"><path d="M4 17c3-9 13-9 16 0"/><circle cx="20" cy="17" r="1.6"/><circle cx="4" cy="17" r="1.6"/><path d="M12 6V3"/></svg>',def:1}
+};
+const EASES=[['smooth','Yumuşak','M2 11 C 7 11, 11 1, 16 1'],['linear','Doğrusal','M2 11 L 16 1']];
+const DIRS=[['left','Sola','M18 12H6m0 0 5-5m-5 5 5 5'],['right','Sağa','M6 12h12m0 0-5-5m5 5-5 5'],['up','Yukarı','M12 18V6m0 0-5 5m5-5 5 5'],['down','Aşağı','M12 6v12m0 0-5-5m5 5 5-5']];
+const COLORS=[['#000000','Siyah'],['#ffffff','Beyaz']];
+const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const back=x=>{const c=1.70158,c3=c+1;return 1+c3*Math.pow(x-1,3)+c*Math.pow(x-1,2);};
+const EASE={smooth:ease,linear:x=>x};
+const fmtT=t=>t.toFixed(2).replace('.',',');
+const fmt1=t=>(Math.round(t*10)/10).toFixed(1).replace('.',',');
+const boardOf=id=>BOARDS.find(b=>b.id===id);
+
+/* the sequence (doc.sequence) */
+const SEQ={loop:true,clips:[{board:1},{board:2},{board:3},{board:4}],transitions:[{kind:'fly',dur:1,ease:'smooth'},{kind:'fly',dur:1,ease:'smooth'},{kind:'xfade',dur:.6,ease:'linear'}]};
+const lerp=(a,b,u)=>a+(b-a)*u;
+// angles the short way round
+const lerpA=(a,b,u)=>{let d=((b-a)%360+540)%360-180;return a+d*u;};
+const matched=(A,B)=>A.devs.length===B.devs.length&&A.devs.every((d,i)=>d.type===B.devs[i].type);
+const flyOk=(A,B)=>A.env===B.env;
+// clip starts in sequence time: each next clip starts T earlier than the previous one ends
+function layoutSeq(){
+  const out=[];let t=0;
+  SEQ.clips.forEach((c,i)=>{const B=boardOf(c.board),T=i?Math.min(SEQ.transitions[i-1].dur,B.dur,boardOf(SEQ.clips[i-1].board).dur):0;if(i)t-=T;out.push({i,B,start:t,end:t+B.dur,tin:T});t+=B.dur;});
+  return out;
+}
+const total=()=>{const L=layoutSeq();return L.length?L[L.length-1].end:0;};
+/* sequence time -> what is on screen: {a:{B,t}, b:{B,t}|null, u, tr} */
+function at(t){
+  const L=layoutSeq();if(!L.length)return null;
+  t=Math.max(0,Math.min(total(),t));
+  let i=L.findIndex(c=>t<c.end-1e-9);if(i<0)i=L.length-1;
+  // inside the next clip's overlap window?
+  const c=L[i],next=L[i+1];
+  if(next&&t>=next.start){const tr=SEQ.transitions[i],T=next.start<c.end?c.end-next.start:0;const u=T>0?(t-next.start)/T:1;
+    return {a:{B:c.B,t:t-c.start},b:{B:next.B,t:t-next.start},u:Math.min(1,u),tr,clip:i};}
+  return {a:{B:c.B,t:t-c.start},b:null,u:0,tr:null,clip:i};
+}
+
+/* ---------- the sketch renderer (2D pseudo-perspective) */
+const SIZES={phone:{w:7.15,h:14.7,d:.8},laptop:{w:30,h:20,d:21},monitor:{w:60,h:35,d:2},tablet:{w:18,h:25,d:.7}};
+function sceneAt(B,t){const a=B.anim(t,B);const cam=Object.assign({},B.cam,a.cam||{});const devs=B.devs.map((d,i)=>Object.assign({lid:112},d,a.devs[i]||{}));return {B,cam,devs};}
+function mixScenes(SA,SB,u,morph){
+  const cam={ry:lerpA(SA.cam.ry,SB.cam.ry,u),rx:lerp(SA.cam.rx,SB.cam.rx,u),zoom:Math.exp(lerp(Math.log(SA.cam.zoom),Math.log(SB.cam.zoom),u)),fit:lerp(SA.cam.fit,SB.cam.fit,u)};
+  const mix=(da,db)=>Object.assign({},da,{x:lerp(da.x,db.x,u),y:lerp(da.y,db.y,u),z:lerp(da.z,db.z,u),ry:lerpA(da.ry||0,db.ry||0,u),lid:lerp(da.lid,db.lid,u)});
+  const A=Object.assign({},SA,{cam,devs:morph?SA.devs.map((d,i)=>mix(d,SB.devs[i])):SA.devs});
+  const Bs=Object.assign({},SB,{cam,devs:morph?SB.devs.map((d,i)=>mix(SA.devs[i],d)):SB.devs});
+  return [A,Bs];
+}
+function drawScene(g,S,W,H,alpha){
+  const {B,cam,devs}=S;g.save();g.globalAlpha=alpha;
+  // background
+  const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,B.bg[0]);gr.addColorStop(1,B.bg[1]);g.fillStyle=gr;g.fillRect(0,0,W,H);
+  if(B.env==='space'){g.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<60;i++){const x=(i*7919%W),y=(i*104729%H);g.fillRect(x,y,1.2,1.2);}}
+  const k=H*cam.zoom/cam.fit;  // px per cm
+  const cx=W/2,cy=H*.56,ry=cam.ry*Math.PI/180,rx=cam.rx*Math.PI/180;
+  // the floor shadow
+  const sorted=devs.slice().sort((a,b)=>(a.z*Math.cos(ry)-a.x*Math.sin(ry))-(b.z*Math.cos(ry)-b.x*Math.sin(ry)));
+  sorted.forEach(d=>{
+    const s=SIZES[d.type],a=ry+(d.ry||0)*Math.PI/180;
+    // scene position: x along the turntable, z depth; project
+    const px=cx+(d.x*Math.cos(ry)+d.z*Math.sin(ry))*k,depth=(-d.x*Math.sin(ry)+d.z*Math.cos(ry)),py=cy-d.y*k+depth*Math.sin(rx)*k*.9;
+    const sc=1+depth*.004;
+    g.save();g.translate(px,py);g.scale(sc,sc);
+    if(B.env==='studio'){g.fillStyle='rgba(0,0,0,.22)';g.beginPath();g.ellipse(0,2,s.w*k*.55*Math.max(.3,Math.abs(Math.cos(a)))+(d.type==='laptop'?s.d*k*.3:0),4+Math.abs(Math.sin(rx))*8,0,0,Math.PI*2);g.fill();}
+    const face=Math.cos(a),side=Math.sin(a);
+    g.transform(1,side*.28,0,1,0,0);  // pseudo perspective: the face leans with the turn
+    g.scale(Math.max(.08,Math.abs(face)),1-Math.abs(Math.sin(rx))*.25);
+    const w=s.w*k,h=s.h*k,back=face<0;
+    const rr=(x,y,w,h,r)=>{g.beginPath();g.roundRect(x,y,w,h,r);};
+    if(d.type==='laptop'){
+      const lid=(d.lid||112)*Math.PI/180,lh=h*Math.sin(lid-Math.PI/2+Math.PI/2)*Math.max(.25,Math.sin(lid));
+      // base
+      g.fillStyle=shade(d.color,-.1);rr(-w/2,-6,w,8+s.d*k*.22*Math.abs(Math.sin(rx)+.4),3);g.fill();
+      // lid
+      g.fillStyle=d.color;rr(-w/2,-lh-6,w,lh,4);g.fill();
+      if(!back){const sg=g.createLinearGradient(0,-lh,0,0);sg.addColorStop(0,d.screen[0]);sg.addColorStop(1,d.screen[1]);g.fillStyle=sg;rr(-w/2+5,-lh-2,w-10,Math.max(0,lh-8),2);g.fill();}
+    }else{
+      const ph=d.type==='monitor'?h:h;
+      if(d.type==='monitor'){g.fillStyle=shade(d.color,-.15);rr(-w*.12,-2,w*.24,8,2);g.fill();g.fillStyle=shade(d.color,-.05);rr(-5,-16,10,16,2);g.fill();}
+      const y0=d.type==='monitor'?-ph-14:-ph;
+      g.fillStyle=back?shade(d.color,.08):d.color;rr(-w/2,y0,w,ph,d.type==='phone'?w*.16:6);g.fill();
+      if(!back){const sg=g.createLinearGradient(0,y0,0,y0+ph);sg.addColorStop(0,d.screen[0]);sg.addColorStop(1,d.screen[1]);g.fillStyle=sg;const m=d.type==='phone'?w*.05:Math.max(4,w*.03);rr(-w/2+m,y0+m,w-2*m,ph-2*m,d.type==='phone'?w*.12:3);g.fill();
+        // glare
+        g.fillStyle='rgba(255,255,255,.08)';g.beginPath();g.moveTo(-w/2+m,y0+m);g.lineTo(w/2-m,y0+m);g.lineTo(-w/2+m,y0+ph*.6);g.closePath();g.fill();}
+      else if(d.type==='phone'){g.fillStyle='rgba(0,0,0,.35)';rr(-w*.3,y0+w*.12,w*.6,w*.6,w*.12);g.fill();}
+    }
+    g.restore();
+  });
+  g.restore();
+}
+function shade(hex,d){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;const f=v=>Math.max(0,Math.min(255,Math.round(v+(d>0?(255-v)*d:v*d))));return 'rgb('+f(r)+','+f(g)+','+f(b)+')';}
+// one frame of the sequence at time t into a W x H context; live: the editor's approximation
+function drawFrame(g,W,H,t,live){
+  const f=at(t);g.clearRect(0,0,W,H);
+  if(!f){g.fillStyle='#222';g.fillRect(0,0,W,H);return null;}
+  const SA=sceneAt(f.a.B,f.a.t);
+  if(!f.b||!f.tr||f.tr.kind==='cut'){if(f.b&&f.u>=1){drawScene(g,sceneAt(f.b.B,f.b.t),W,H,1);}else drawScene(g,SA,W,H,1);return f;}
+  const tr=f.tr,u=(EASE[tr.ease]||ease)(f.u);
+  const SB=sceneAt(f.b.B,f.b.t);
+  // the live preview freezes A at the moment the transition starts (the editor shows only one live scene)
+  const frozenA=live?sceneAt(f.a.B,f.a.B.dur-(tr.dur||0)):SA;
+  if(tr.kind==='xfade'){drawScene(g,frozenA,W,H,1);drawScene(g,SB,W,H,u);}
+  else if(tr.kind==='fade'){const col=tr.color||'#000000';if(u<.5)drawScene(g,frozenA,W,H,1);else drawScene(g,SB,W,H,1);g.fillStyle=col;g.globalAlpha=1-Math.abs(2*u-1);g.fillRect(0,0,W,H);g.globalAlpha=1;}
+  else if(tr.kind==='slide'){const d=tr.dir||'left',dx=d==='left'?-1:d==='right'?1:0,dy=d==='up'?-1:d==='down'?1:0;
+    g.save();g.translate(dx*u*W,dy*u*H);drawScene(g,frozenA,W,H,1);g.restore();g.save();g.translate(dx*(u-1)*W,dy*(u-1)*H);drawScene(g,SB,W,H,1);g.restore();}
+  else if(tr.kind==='fly'){
+    const ok=flyOk(f.a.B,f.b.B),morph=ok&&matched(f.a.B,f.b.B);
+    if(!ok){drawScene(g,frozenA,W,H,1);drawScene(g,SB,W,H,u);}
+    else if(live){const [,Bm]=mixScenes(frozenA,SB,u,false);drawScene(g,frozenA,W,H,1);drawScene(g,Bm,W,H,u);}
+    else{const [Am,Bm]=mixScenes(SA,SB,u,morph);drawScene(g,Am,W,H,1);drawScene(g,Bm,W,H,u);}
+  }
+  return f;
+}
+
+/* ---------- editor state */
+const S={t:0,playing:false,sel:null,tab:'seq',active:1,pv:'export',drag:null};
+const $=s=>document.querySelector(s),seq=$('#seq'),pv=$('#pv'),pg=pv.getContext('2d');
+const PAD=14,W=()=>Math.max(60,seq.clientWidth-PAD*2-64);
+const pps=()=>W()/Math.max(1,total());
+const xOf=t=>PAD+t*pps(),tOf=x=>Math.max(0,Math.min(total(),(x-PAD)/pps()));
+const status=s=>{$('#stLast').textContent=s;};
+const selInfo=()=>{if(!S.sel)return 'yok';if(S.sel.clip!==undefined){const c=SEQ.clips[S.sel.clip];return 'klip · '+boardOf(c.board).name;}const i=S.sel.tr;return 'geçiş · '+boardOf(SEQ.clips[i].board).name+' → '+boardOf(SEQ.clips[i+1].board).name;};
+const thumbs=new Map();
+function thumb(B){
+  const key=B.id;if(thumbs.has(key))return thumbs.get(key);
+  const c=document.createElement('canvas');const h=140,w=Math.round(h*B.ratio[0]/B.ratio[1]);c.width=w;c.height=h;
+  drawScene(c.getContext('2d'),sceneAt(B,B.designT||0),w,h,1);thumbs.set(key,c);return c;
+}
+function tickStep(){const p=pps();for(const s of [.5,1,2,5,10])if(s*p>=70)return s;return 10;}
+
+/* ---------- drawing the strip */
+function build(){
+  seq.innerHTML='';const L=layoutSeq(),T=total();
+  const ruler=document.createElement('div');ruler.className='ruler';let h='';const step=tickStep();
+  for(let s=0;s<=T+1e-6;s+=step)h+='<div class="tick" style="left:'+xOf(s)+'px"><span>'+String(+s.toFixed(2)).replace('.',',')+' sn</span></div>';
+  for(let s=step/2;s<T;s+=step)h+='<div class="tick minor" style="left:'+xOf(s)+'px"></div>';
+  ruler.innerHTML=h;ruler.addEventListener('pointerdown',scrub);seq.appendChild(ruler);
+  const lane=document.createElement('div');lane.className='lane';seq.appendChild(lane);
+  lane.addEventListener('pointerdown',e=>{if(e.target!==lane)return;S.sel=null;draw();});
+  if(!L.length){const em=document.createElement('div');em.className='seq-empty';em.innerHTML='<span>Sıra boş. Artboard eklemek için <b>+</b> ya da</span><button class="btn sm" type="button">Tüm artboard\'ları ekle</button>';em.querySelector('button').addEventListener('click',addAll);lane.appendChild(em);}
+  L.forEach(c=>{
+    const el=document.createElement('div');el.className='clip'+(c.B.id===S.active?' active':'')+(S.sel&&S.sel.clip===c.i?' sel':'');
+    el.style.left=xOf(c.start)+'px';el.style.width=Math.max(44,xOf(c.end)-xOf(c.start))+'px';el.dataset.i=c.i;el.style.setProperty('--tin',(c.tin*pps())+'px');
+    el.innerHTML='<div class="th"></div><div class="nm"><span class="t"></span>'+(c.B.env==='space'?'<span class="env">· Uzay</span>':'')+'<span class="dur">'+fmt1(c.B.dur)+' sn</span></div>'+
+      '<div class="tools"><button type="button" data-a="go" aria-label="Artboard\'a git"><svg viewBox="0 0 24 24"><path d="M5 12h14m0 0-5-5m5 5-5 5"/></svg><span class="tip">Artboard\'a git (süresi orada değişir)</span></button><button type="button" data-a="rm" aria-label="Sıradan çıkar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="tip">Sıradan çıkar <kbd>⌫</kbd></span></button></div><span class="prog"></span>';
+    el.querySelector('.t').textContent=c.B.name;el.querySelector('.th').appendChild(thumb(c.B).cloneNode(true));
+    const th=el.querySelector('.th canvas');th.getContext('2d').drawImage(thumb(c.B),0,0);
+    el.title=c.B.name+' · '+fmt1(c.B.dur)+' sn · '+fmtT(c.start)+' → '+fmtT(c.end)+' sn (tıkla: etkin artboard; sürükle: taşı)';
+    el.querySelector('[data-a="rm"]').addEventListener('pointerdown',e=>e.stopPropagation());
+    el.querySelector('[data-a="rm"]').addEventListener('click',e=>{e.stopPropagation();removeClip(c.i);});
+    el.querySelector('[data-a="go"]').addEventListener('pointerdown',e=>e.stopPropagation());
+    el.querySelector('[data-a="go"]').addEventListener('click',e=>{e.stopPropagation();S.active=c.B.id;S.tab='board';status('Artboard sekmesine geçildi: '+c.B.name);draw();});
+    el.addEventListener('pointerdown',e=>dragClip(e,c));
+    lane.appendChild(el);
+  });
+  // transition chips over the overlaps
+  L.forEach((c,i)=>{if(!i)return;const tr=SEQ.transitions[i-1],prev=L[i-1];
+    const el=document.createElement('button');el.type='button';const bad=tr.kind==='fly'&&!flyOk(prev.B,c.B);
+    el.className='tr '+tr.kind+(S.sel&&S.sel.tr===i-1?' on':'')+(bad?' bad':'');
+    const w=tr.kind==='cut'?18:Math.max(30,tr.dur*pps()),x=tr.kind==='cut'?xOf(c.start)-9:xOf(c.start)+(tr.dur*pps()-w)/2;
+    el.style.left=x+'px';el.style.width=w+'px';
+    el.innerHTML=KINDS[tr.kind].svg+(tr.kind==='cut'?'':'<small>'+fmt1(tr.dur)+'</small>')+'<span class="tip">'+KINDS[tr.kind].n+(tr.kind==='cut'?'':' · '+fmt1(tr.dur)+' sn')+(bad?' · ortamlar farklı: çapraz solma gibi davranır':'')+' (tıkla: düzenle)</span>';
+    el.setAttribute('aria-label','Geçiş: '+KINDS[tr.kind].n);
+    el.addEventListener('pointerdown',e=>e.stopPropagation());
+    el.addEventListener('click',e=>{e.stopPropagation();S.sel={tr:i-1};status('geçiş seçildi');draw();});
+    lane.appendChild(el);
+  });
+  const add=document.createElement('button');add.type='button';add.className='add';add.style.left=(L.length?xOf(T)+12:PAD)+'px';add.setAttribute('aria-label','Artboard ekle');
+  add.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';add.addEventListener('click',e=>{e.stopPropagation();addMenu(e.clientX,e.clientY);});lane.appendChild(add);
+  const ph=document.createElement('div');ph.className='ph';ph.id='ph';seq.appendChild(ph);
+  drawCard();
+}
+function drawCard(){
+  const old=seq.querySelector('.kpop');if(old)old.remove();
+  if(!S.sel||S.sel.tr===undefined)return;
+  const i=S.sel.tr,tr=SEQ.transitions[i],A=boardOf(SEQ.clips[i].board),B=boardOf(SEQ.clips[i+1].board),L=layoutSeq();
+  const ok=flyOk(A,B),mt=matched(A,B);
+  const maxT=Math.max(.1,Math.min(A.dur-(i?SEQ.transitions[i-1].dur:0),B.dur-(SEQ.transitions[i+1]?SEQ.transitions[i+1].dur:0)));
+  const p=document.createElement('div');p.className='kpop';p.setAttribute('role','group');
+  let extra='';
+  if(tr.kind==='fade')extra='<span class="row"><span style="color:var(--muted)">Renk</span>'+COLORS.map(([c,n])=>'<button type="button" class="sw" data-color="'+c+'" style="background:'+c+'" aria-pressed="'+((tr.color||'#000000')===c)+'" aria-label="'+n+'"></button>').join('')+'</span>';
+  if(tr.kind==='slide')extra='<span class="row"><span style="color:var(--muted)">Yön</span><span class="dirs">'+DIRS.map(([d,n,path])=>'<button type="button" data-dir="'+d+'" aria-pressed="'+((tr.dir||'left')===d)+'"><svg viewBox="0 0 24 24"><path d="'+path+'"/></svg><span class="tip">'+n+'</span></button>').join('')+'</span></span>';
+  let note='';
+  if(tr.kind==='fly')note=!ok?'<span class="note bad">Ortamlar farklı ('+(A.env==='space'?'Uzay':'Stüdyo')+' → '+(B.env==='space'?'Uzay':'Stüdyo')+'): kamera uçuşu yok, çapraz solma gibi davranır. Birini aynı ortama al.</span>'
+    :mt?'<span class="note ok">'+A.devs.length+' cihaz eşleşti ('+A.devs.map(d=>({phone:'telefon',laptop:'dizüstü',monitor:'monitör',tablet:'tablet'})[d.type]).join(', ')+'): kamerayla birlikte konumları da süzülür; ekran ve renk çözülür.</span>'
+    :'<span class="note">Cihazlar eşleşmiyor ('+A.devs.length+' ↔ '+B.devs.length+'): kamera uçar, cihazlar olduğu yerde çapraz solar. Arka planlar çözülür.</span>';
+  if(tr.kind==='xfade')note='<span class="note">A\'nın son '+fmt1(tr.dur)+' sn\'si ile B\'nin ilk '+fmt1(tr.dur)+' sn\'si üst üste oynar.</span>';
+  if(tr.kind==='cut')note='<span class="note">Süre yok: A\'nın son karesinden B\'nin ilk karesine.</span>';
+  if(tr.kind==='fade')note='<span class="note">Yarı yolda tek renk; '+fmt1(tr.dur/2)+' sn söner, '+fmt1(tr.dur/2)+' sn belirir.</span>';
+  if(tr.kind==='slide')note='<span class="note">B dondurulmaz: kayarken kendi animasyonu akar.</span>';
+  p.innerHTML='<span class="row"><b>Geçiş · '+A.name+' → '+B.name+'</b><span class="grow"></span><button type="button" class="ib sm del" id="kpCut" aria-label="Kesmeye çevir"><svg viewBox="0 0 24 24"><path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13"/></svg><span class="tip">Geçişi kaldır (kesme)</span></button></span>'+
+    '<span class="row"><span class="kinds" role="group" aria-label="Tür">'+Object.keys(KINDS).map(k=>'<button type="button" data-kind="'+k+'" aria-pressed="'+(tr.kind===k)+'">'+KINDS[k].svg+'<span class="tip">'+KINDS[k].n+(k==='fly'&&!ok?' · ortamlar farklı':'')+'</span></button>').join('')+'</span>'+
+    '<label class="tf"'+(tr.kind==='cut'?' hidden':'')+'><input id="kpDur" value="'+fmt1(tr.dur)+'" aria-label="Süre (sn)"><span>sn</span></label>'+
+    '<span class="eases" role="group" aria-label="Yumuşatma"'+(tr.kind==='cut'?' hidden':'')+'>'+EASES.map(([k,n,path])=>'<button type="button" data-ease="'+k+'" aria-pressed="'+(tr.ease===k)+'"><svg viewBox="0 0 18 12"><path d="'+path+'"/></svg><span class="tip">'+n+'</span></button>').join('')+'</span></span>'+extra+note;
+  seq.appendChild(p);
+  const c=L[i+1],cx=xOf(c.start)+Math.max(15,tr.dur*pps()/2);
+  let left=Math.max(4,Math.min(seq.clientWidth-p.offsetWidth-4,cx-p.offsetWidth/2));
+  // under the ruler, over the lane (the strip is not tall enough for a card above the chip)
+  p.style.left=left+'px';p.classList.add('below');p.style.top='30px';
+  p.style.setProperty('--ax',Math.max(10,Math.min(p.offsetWidth-10,cx-left))+'px');
+  p.querySelectorAll('[data-kind]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.kind;tr.kind=k;if(k==='cut')tr.dur=0;else if(!tr.dur)tr.dur=KINDS[k].def;tr.ease=k==='fly'?'smooth':tr.ease==='smooth'&&k!=='fly'?'linear':tr.ease;clampDur(i);status('geçiş: '+KINDS[k].n);draw(true);}));
+  p.querySelectorAll('[data-ease]').forEach(b=>b.addEventListener('click',()=>{tr.ease=b.dataset.ease;status('yumuşatma: '+b.dataset.ease);draw(true);}));
+  p.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>{tr.dir=b.dataset.dir;draw(true);}));
+  p.querySelectorAll('[data-color]').forEach(b=>b.addEventListener('click',()=>{tr.color=b.dataset.color;draw(true);}));
+  p.querySelector('#kpCut').addEventListener('click',()=>{tr.kind='cut';tr.dur=0;status('geçiş kaldırıldı (kesme)');draw(true);});
+  const tf=p.querySelector('#kpDur');
+  tf.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();tf.blur();}if(e.key==='Escape'){e.preventDefault();draw(true);}});
+  tf.addEventListener('change',()=>{const v=parseFloat(tf.value.replace(',','.'));if(Number.isFinite(v)){tr.dur=Math.max(.1,Math.min(maxT,Math.round(v*10)/10));if(v>maxT)status('geçiş süresi kısaltıldı: iki geçiş aynı klipte binemez (en çok '+fmt1(maxT)+' sn)');}draw(true);});
+  p.addEventListener('pointerdown',e=>e.stopPropagation());
+}
+// keeps a clip's two transitions from overlapping each other
+function clampDur(i){const tr=SEQ.transitions[i],A=boardOf(SEQ.clips[i].board),B=boardOf(SEQ.clips[i+1].board);
+  const maxT=Math.max(.1,Math.min(A.dur-(i?SEQ.transitions[i-1].dur:0),B.dur-(SEQ.transitions[i+1]?SEQ.transitions[i+1].dur:0)));if(tr.dur>maxT)tr.dur=Math.round(maxT*10)/10;}
+function moveHead(){
+  const ph=$('#ph');if(ph)ph.style.left=xOf(S.t)+'px';
+  const tf=$('#tlT');if(document.activeElement!==tf)tf.value=fmtT(S.t);$('#tlDur').textContent='/ '+fmtT(total())+' sn';
+  const f=at(S.t);
+  seq.querySelectorAll('.clip').forEach(el=>{const c=layoutSeq()[+el.dataset.i];const p=el.querySelector('.prog');const u=f&&(f.clip===c.i||(f.b&&f.clip+1===c.i))?Math.max(0,Math.min(1,(S.t-c.start)/c.B.dur)):S.t>=c.end?1:0;p.style.width=(u*100)+'%';});
+  // the player
+  const live=S.pv==='live';drawFrame(pg,pv.width,pv.height,S.t,live);
+  const info=$('#plInfo');
+  if(f){let s='<b>'+f.a.B.name+'</b> · '+fmtT(f.a.t)+' sn';if(f.b&&f.tr&&f.tr.kind!=='cut')s='<b>'+f.a.B.name+' → '+f.b.B.name+'</b><br>'+KINDS[f.tr.kind].n+' · %'+Math.round(f.u*100)+(f.tr.kind==='fly'&&!flyOk(f.a.B,f.b.B)?' · ortam farklı → çözülme':f.tr.kind==='fly'&&matched(f.a.B,f.b.B)?' · cihazlar süzülüyor':'');info.innerHTML=s;}
+  $('#plNote').textContent=live?'Canlı: editörde tek sahne canlıdır; giden sahne geçiş başındaki karesiyle dondurulur, kamera uçuşunda yalnızca gelen sahne uçar.':'Dışa aktarım: her kare iki sahneyle çizilir; kamera uçuşunda ikisi de ara kamerayla, eşleşen cihazlar ara konumda.';
+  $('#stTot').textContent=fmtT(total())+' sn · '+SEQ.clips.length+' klip · '+SEQ.transitions.filter(t=>t.kind!=='cut').length+' geçiş';
+  $('#tabN').textContent=SEQ.clips.length;
+}
+function draw(force){
+  const isSeq=S.tab==='seq';seq.hidden=!isSeq;$('#boardView').hidden=isSeq;
+  document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===S.tab)));
+  document.querySelectorAll('[data-pv]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.pv===S.pv)));
+  $('#addAll').hidden=!isSeq;$('#exportBtn').disabled=SEQ.clips.length<2;
+  if(isSeq)build();moveHead();
+  $('#stSel').textContent=selInfo();
+  $('#tlPlay').innerHTML=(S.playing?'<svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>':'<svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>')+'<span class="tip">'+(S.playing?'Durdur':'Oynat')+' <kbd>Boşluk</kbd></span>';
+  $('#tlLoop').setAttribute('aria-pressed',String(SEQ.loop));
+}
+
+/* ---------- interaction */
+function loop(e,move,up){const mv=ev=>move(ev),u=ev=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',u);if(up)up(ev);};addEventListener('pointermove',mv);addEventListener('pointerup',u);move(e);}
+function seek(t){S.t=Math.max(0,Math.min(total(),t));const f=at(S.t);if(f){S.active=(f.b&&f.u>=.5?f.b:f.a).B.id;}moveHead();seq.querySelectorAll('.clip').forEach(el=>el.classList.toggle('active',layoutSeq()[+el.dataset.i].B.id===S.active));}
+function scrub(e){if(e.button!==0)return;e.preventDefault();stop();const r=seq.getBoundingClientRect();loop(e,ev=>seek(Math.round(tOf(ev.clientX-r.left)*fps)/fps));}
+let raf=0,last=0;
+function play(){
+  if(S.playing){stop();return;}
+  if(!SEQ.clips.length)return;
+  S.playing=true;if(S.t>=total()-1e-6)S.t=0;last=performance.now();
+  const tick=now=>{if(!S.playing)return;let t=S.t+(now-last)/1000;last=now;
+    if(t>=total()){if(SEQ.loop)t%=total();else{t=total();S.playing=false;}}
+    seek(t);if(S.playing)raf=requestAnimationFrame(tick);else draw();};
+  raf=requestAnimationFrame(tick);draw();
+}
+function stop(){if(!S.playing)return;S.playing=false;cancelAnimationFrame(raf);draw();}
+function dragClip(e,c){
+  if(e.button!==0)return;e.preventDefault();stop();
+  const x0=e.clientX,el=e.currentTarget,r=seq.getBoundingClientRect();let moved=false,guide=null,target=null;
+  loop(e,ev=>{if(!moved&&Math.abs(ev.clientX-x0)<5)return;moved=true;el.classList.add('drag');
+    const L=layoutSeq(),x=ev.clientX-r.left;
+    // drop index: before the clip whose middle is right of the pointer
+    let idx=L.findIndex(k=>x<xOf((k.start+k.end)/2));if(idx<0)idx=L.length;target=idx;
+    if(!guide){guide=document.createElement('div');guide.className='dropg';seq.appendChild(guide);}
+    guide.style.left=(idx<L.length?xOf(L[idx].start):xOf(total()))+'px';},
+    ()=>{if(guide)guide.remove();el.classList.remove('drag');
+      if(!moved){S.sel={clip:c.i};S.active=c.B.id;status('etkin artboard: '+c.B.name);draw();return;}
+      if(target===null||target===c.i||target===c.i+1){draw();return;}
+      moveClip(c.i,target);});
+}
+// moves clip i so it lands before index `to`; a clip keeps the transition on its left
+function moveClip(i,to){
+  const clip=SEQ.clips[i];const trs=SEQ.transitions.slice();
+  // transitions as "left of clip k" (k ≥ 1); detach i's left transition and give it to its new place
+  const left=i?trs[i-1]:(trs[0]||{kind:'xfade',dur:.8,ease:'linear'});
+  SEQ.clips.splice(i,1);if(i)trs.splice(i-1,1);else trs.splice(0,1);
+  const j=to>i?to-1:to;SEQ.clips.splice(j,0,clip);
+  if(j===0){trs.splice(0,0,Object.assign({},left));}else trs.splice(j-1,0,Object.assign({},left));
+  SEQ.transitions=trs.slice(0,SEQ.clips.length-1);
+  for(let k=0;k<SEQ.transitions.length;k++)clampDur(k);
+  S.sel={clip:j};status('klip taşındı: '+boardOf(clip.board).name);draw(true);
+}
+function removeClip(i){
+  const B=boardOf(SEQ.clips[i].board);SEQ.clips.splice(i,1);
+  if(SEQ.transitions.length){if(i===0)SEQ.transitions.splice(0,1);else SEQ.transitions.splice(i-1,1);}  // its left transition goes; the right one joins the neighbours
+  SEQ.transitions=SEQ.transitions.slice(0,Math.max(0,SEQ.clips.length-1));
+  S.sel=null;status(B.name+' sıradan çıkarıldı (artboard duruyor)');if(S.t>total())S.t=total();draw(true);
+}
+function addClip(id,afterIdx){
+  const at_=afterIdx===undefined?SEQ.clips.length:afterIdx+1;SEQ.clips.splice(at_,0,{board:id});
+  if(SEQ.clips.length>1){const tr={kind:'xfade',dur:.8,ease:'linear'};if(at_===0)SEQ.transitions.splice(0,0,tr);else SEQ.transitions.splice(at_-1,0,tr);}
+  for(let k=0;k<SEQ.transitions.length;k++)clampDur(k);
+  S.sel={clip:at_};status(boardOf(id).name+' sıraya eklendi (çapraz solma 0,8 sn)');draw(true);
+}
+function addAll(){SEQ.clips=BOARDS.filter(b=>b.env!=='space').map(b=>({board:b.id}));SEQ.transitions=SEQ.clips.slice(1).map(()=>({kind:'xfade',dur:.8,ease:'linear'}));S.sel=null;S.t=0;status('tüm artboard\'lar tuval sırasıyla eklendi');draw(true);}
+let menuEl=null;
+function closeMenu(){if(menuEl){menuEl.remove();menuEl=null;}}
+function addMenu(x,y){
+  closeMenu();const m=document.createElement('div');m.className='menu';m.setAttribute('role','menu');
+  m.innerHTML='<div class="sub">Sıraya artboard ekle</div>'+BOARDS.map(b=>'<button type="button" data-id="'+b.id+'"><span class="chk">'+(SEQ.clips.some(c=>c.board===b.id)?'✓':'')+'</span>'+b.name+'<kbd>'+fmt1(b.dur)+' sn</kbd></button>').join('')+'<hr><button type="button" data-all="1">Tüm artboard\'ları ekle</button>';
+  document.body.appendChild(m);menuEl=m;m.style.left=Math.min(x,innerWidth-m.offsetWidth-8)+'px';m.style.top=(y-m.offsetHeight-6)+'px';
+  m.querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click',()=>{closeMenu();addClip(+b.dataset.id);}));
+  m.querySelector('[data-all]').addEventListener('click',()=>{closeMenu();addAll();});
+}
+document.addEventListener('pointerdown',e=>{if(menuEl&&!menuEl.contains(e.target))closeMenu();if(S.playing&&!e.target.closest('#tlPlay,#tlLoop'))stop();});
+$('#tlPlay').addEventListener('click',play);
+$('#tlStart').addEventListener('click',()=>{stop();seek(0);});
+$('#tlLoop').addEventListener('click',()=>{SEQ.loop=!SEQ.loop;draw();});
+$('#addAll').addEventListener('click',addAll);
+$('#exportBtn').addEventListener('click',()=>{status('video penceresi açılır: Kaynak = Sıra ('+SEQ.clips.length+' artboard, '+fmtT(total())+' sn)');document.querySelector('.dlg').scrollIntoView({behavior:'smooth',block:'center'});});
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{S.tab=b.dataset.tab;stop();draw(true);}));
+document.querySelectorAll('[data-pv]').forEach(b=>b.addEventListener('click',()=>{S.pv=b.dataset.pv;draw();}));
+{const tf=$('#tlT');const go=()=>{const v=parseFloat(tf.value.replace(',','.'));if(Number.isFinite(v)){stop();seek(v);}tf.value=fmtT(S.t);};
+  tf.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();go();tf.blur();}else if(e.key==='Escape'){tf.value=fmtT(S.t);tf.blur();}});tf.addEventListener('change',go);}
+addEventListener('keydown',e=>{
+  const t=e.target;if(t&&/^(INPUT|TEXTAREA)$/.test(t.tagName))return;if(S.tab!=='seq')return;
+  if(e.code==='Space'){e.preventDefault();if(!e.repeat)play();}
+  else if(e.key==='Home'){e.preventDefault();stop();seek(0);}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();stop();seek(S.t+(e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:1/fps));}
+  else if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();stop();const L=layoutSeq(),f=at(S.t);if(!f)return;const i=Math.max(0,Math.min(L.length-1,f.clip+(e.key==='ArrowDown'?1:-1)));seek(L[i].start);}
+  else if((e.key==='Delete'||e.key==='Backspace')&&S.sel){e.preventDefault();if(S.sel.clip!==undefined)removeClip(S.sel.clip);else{SEQ.transitions[S.sel.tr].kind='cut';SEQ.transitions[S.sel.tr].dur=0;status('geçiş kesmeye çevrildi');draw(true);}}
+  else if(e.key==='Escape'){S.sel=null;draw();}
+});
+new ResizeObserver(()=>draw(true)).observe(seq);
+$('#theme').addEventListener('click',()=>{const r=document.documentElement,dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches);r.dataset.theme=dark?'light':'dark';$('#theme').textContent=dark?'Koyu tema':'Açık tema';});
+draw(true);seek(2.2);
+</script>
+</body>
+</html>

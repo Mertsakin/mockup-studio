@@ -22,6 +22,8 @@ const layoutSubs=[];
 // called after every layout with the board's on-screen rectangle (stage pixels): overlays that follow the board
 function onLayout(fn){layoutSubs.push(fn);}
 const boardScreen=()=>screen;
+// the whole board's rectangle relative to the frame (w, h: on-screen size; x, y ≤ 0: where the board's corner lies)
+const boardRect=()=>board;
 // 2D items: one layer under the WebGL canvas (behind the devices), one over it; both sized to the whole board
 const itemLayers={back:document.createElement('div'),front:document.createElement('div')};
 itemLayers.back.className='items';itemLayers.front.className='items';
@@ -151,4 +153,4 @@ function renderItems(){
 // a web font finished loading: text items are measured again and redrawn
 onFont(()=>{renderItems();layoutSubs.forEach(f=>f(screen));});
 
-export {bgCss,gradCss,boardScreen,frame,hideItem,imgSize,invalidateLayout,itemRect,layout,onItems,onLayout,paintBg,paintItems,ratioNums,renderItems,setItemClock,setStageGeometry};
+export {bgCss,gradCss,boardRect,boardScreen,frame,hideItem,imgSize,invalidateLayout,itemRect,layout,onItems,onLayout,paintBg,paintItems,ratioNums,renderItems,setItemClock,setStageGeometry};

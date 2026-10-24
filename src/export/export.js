@@ -23,9 +23,9 @@ const PHOTO_SAMPLES=64,PHOTO_BUDGET_MS=30000;  // OIDN cleans the rest
 // output size: width Wd at the artboard's ratio, the long edge at most cap (portrait boards: 3840 px wide would be
 // 6827 px tall at 9:16), or the custom artboard's exact size
 const MAX_EDGE=3840;
-function exportSize(Wd,cap=MAX_EDGE){
-  const [rw,rh]=ratioNums();
-  if(state.ratio==='custom')return [state.customW,state.customH];
+function exportSize(Wd,cap=MAX_EDGE,st=state){
+  const [rw,rh]=st===state?ratioNums():st.ratio==='custom'?[st.customW,st.customH]:st.ratio.split(':').map(Number);
+  if(st.ratio==='custom')return [st.customW,st.customH];
   const k=Math.min(1,cap/Math.max(Wd,Wd*rh/rw));
   return [Math.round(Wd*k),Math.round(Wd*rh/rw*k)];
 }
