@@ -64,7 +64,9 @@ try{
   card=await ev(()=>{const c=document.querySelector('#seqView .kpop');return c&&c.querySelector('.note').textContent;});
   ok(/eşleşmiyor/.test(card),'phone → laptop set: "Cihazlar eşleşmiyor" (the camera flies, the scenes dissolve)');
   await ev(()=>{document.querySelector('#seqView .kpop [data-kind="xfade"]').click();});await wait(300);
-  await wait(500);const p0=await past();
+  // the history records a change one or two polls later: settle it now, so the count below is the playback's alone
+  const settle=async()=>{await ev(()=>window.__app('takeDoc')());await wait(400);};
+  await settle();const p0=await past();
 
   console.log('playback through the first window (2,0 → 3,0 s)');
   const tracks0=await camTracks();
@@ -82,7 +84,7 @@ try{
   const after=await ev(()=>{const app=window.__app,doc=app('doc'),b=doc.boards.find(x=>x.id===doc.active);return {ry:+app('state').scene.ry.toFixed(1),board:doc.boards.indexOf(b),t:+app('SEQ').time().toFixed(2),snapRy:b.snap.state.scene.ry,At:+app('A').t.toFixed(2)};});
   ok(after.ry===-34,'the live board has its own camera back (ry −34): '+JSON.stringify(after)+' log end '+JSON.stringify(log[log.length-1]));
   ok(await camTracks()===tracks0,'no camera keys were recorded ('+tracks0+')');
-  await wait(500);ok(await past()===p0,'playback made no history step ('+p0+' → '+await past()+')');
+  await settle();ok(await past()===p0,'playback made no history step ('+p0+' → '+await past()+')');
 
   console.log('editing');
   await ev(()=>{document.querySelectorAll('#seqView .seq-tr')[0].click();});await wait(200);
