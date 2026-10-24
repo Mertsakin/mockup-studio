@@ -12,6 +12,7 @@ import {removeItem,selectItem} from './items.js';
 import {isMulti,selection,toggle} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {boardScreen} from './layout.js';
+import {present} from './present.js';
 import {saveAsTemplate} from './template-gallery.js';
 import {toast} from './toast.js';
 import {onUi,setUi,ui} from './ui-state.js';
@@ -84,7 +85,7 @@ function renderTree(){
     tree.appendChild(node({name:b.name,icon:'frame',open,sel:live&&ui.kind==='board',anim:hasAnim(cam),
       toggle:()=>{if(live)return;expanded.has(b.id)?expanded.delete(b.id):expanded.add(b.id);renderTree();},
       pick:()=>{activate(b.id);setUi({kind:'board'});},rename:el=>startRename(el,b),
-      actions:[['pen-2','Yeniden adlandır (F2)',el=>startRename(el,b)],['copy','Kopyasını oluştur',()=>{duplicateBoard(b.id);fitAll();}],['copy','Kopyasını alta oluştur',()=>{duplicateBoard(b.id,'below');fitAll();}],['gallery-add','Şablon olarak kaydet',()=>{activate(b.id);saveAsTemplate();}],['trash-bin-minimalistic','Sil',()=>removeBoard(b.id)]]}));
+      actions:[['pen-2','Yeniden adlandır (F2)',el=>startRename(el,b)],['copy','Kopyasını oluştur',()=>{duplicateBoard(b.id);fitAll();}],['copy','Kopyasını alta oluştur',()=>{duplicateBoard(b.id,'below');fitAll();}],['gallery-add','Şablon olarak kaydet',()=>{activate(b.id);saveAsTemplate();}],['play','Sunumda göster',()=>present(b.id)],['trash-bin-minimalistic','Sil',()=>removeBoard(b.id)]]}));
     if(!open)return;
     const devs=live?state.devices:b.snap.devices,lights=live?state.lights:b.snap.lights;
     const go=(fn)=>{if(!live)activate(b.id);fn();};
@@ -170,6 +171,7 @@ $('#boardMore').addEventListener('click',e=>{e.stopPropagation();openMenu($('#in
   ['copy','Kopyasını oluştur',()=>{duplicateBoard();fitAll();}],
   ['copy','Kopyasını alta oluştur',()=>{duplicateBoard(null,'below');fitAll();}],
   ['gallery-add','Şablon olarak kaydet',saveAsTemplate],
+  ['play','Sunumda göster',()=>present()],
   ['trash-bin-minimalistic','Artboardı sil',()=>removeBoard(doc.active)]],{under:true});});
 
 // dock: add device / light

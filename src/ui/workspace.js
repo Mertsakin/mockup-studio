@@ -90,16 +90,21 @@ function bounds(list){
 }
 // room kept free when fitting: the board's name (top), its size label and the dock (bottom)
 const FIT_TOP=36,FIT_BOTTOM=90;
-// fits boards into the stage, leaving room for labels (top) and the dock (bottom)
-function fitBoards(list){
+// fits boards into the stage, leaving room for labels (top) and the dock (bottom); tight (the presentation,
+// ui/present.js): edge to edge, and a small board may grow past 100%
+function fitBoards(list,tight){
   if(!list||!list.length)return;
-  const r=stage.getBoundingClientRect(),{x0,y0,x1,y1}=bounds(list||doc.boards),pad=40,top=FIT_TOP,bottom=FIT_BOTTOM;
-  const z=clamp(Math.min((r.width-2*pad)/(x1-x0),(r.height-top-bottom)/(y1-y0)),.02,1);
+  const r=stage.getBoundingClientRect(),{x0,y0,x1,y1}=bounds(list||doc.boards),pad=tight?0:40,top=tight?0:FIT_TOP,bottom=tight?0:FIT_BOTTOM;
+  const z=clamp(Math.min((r.width-2*pad)/(x1-x0),(r.height-top-bottom)/(y1-y0)),.02,tight?4:1);
   setView((r.width-(x1-x0)*z)/2-x0*z,top+(r.height-top-bottom-(y1-y0)*z)/2-y0*z,z);
-  fitted=list.map(b=>b.id);
+  fitted={ids:list.map(b=>b.id),tight:!!tight};
 }
 const fitAll=()=>fitBoards(doc.boards);
 const fitActive=()=>fitBoards(doc.boards.filter(b=>b.id===doc.active));
+const fitPresent=()=>fitBoards(doc.boards.filter(b=>b.id===doc.active),true);
+// the view as a value, and back (the presentation restores the editor's view on leaving)
+const viewState=()=>({x:V.x,y:V.y,z:V.z});
+const restoreView=v=>{if(v)setView(v.x,v.y,v.z);};
 $('#zoomIn').addEventListener('click',()=>{const r=stage.getBoundingClientRect();zoomAt(1.25,r.width/2,r.height/2);});
 $('#zoomOut').addEventListener('click',()=>{const r=stage.getBoundingClientRect();zoomAt(.8,r.width/2,r.height/2);});
 zoomVal.addEventListener('click',fitAll);
@@ -110,7 +115,7 @@ new ResizeObserver(()=>{
   const r=stage.getBoundingClientRect(),sz=Math.round(r.width)+'x'+Math.round(r.height);
   if(sz===stageSize){relayout();return;}
   stageSize=sz;
-  if(fitted){const ids=fitted,list=doc.boards.filter(b=>ids.includes(b.id));if(list.length){fitBoards(list);return;}}
+  if(fitted){const {ids,tight}=fitted,list=doc.boards.filter(b=>ids.includes(b.id));if(list.length){fitBoards(list,tight);return;}}
   const b=doc.boards.find(b=>b.id===doc.active);
   if(b){const [w,h]=boardSize(b),x=V.x+b.x*V.z,y=V.y+b.y*V.z;
     if(x<0||y<FIT_TOP||x+w*V.z>r.width||y+h*V.z>r.height-FIT_BOTTOM){fitActive();return;}}
@@ -225,4 +230,4 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>{if(e.code==='Space')setUi({space:false});});
 addEventListener('blur',()=>setUi({space:false}));
 
-export {fitActive,fitAll,renderBoards};
+export {fitActive,fitAll,fitPresent,renderBoards,restoreView,viewState};

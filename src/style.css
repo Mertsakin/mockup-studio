@@ -3,6 +3,7 @@
 :root{
   --canvas:#efeff0;--panel:#ffffff;--field:#f4f4f5;--field-hover:#ebebed;--danger:#c4321f;
   --line:#e6e6e9;--line-strong:#d2d2d7;
+  --present-bg:#111113;--present-bar:#232326;--present-field:#333338;--present-line:#3a3a40;--present-ink:#f2f2f3;--present-muted:#9a9aa3;
   --ink:#18181b;--ink-2:#52525b;--muted:#8a8a93;
   --accent:#0b68f5;--accent-hover:#0a5bd8;--accent-soft:#e8f0fe;--accent-ink:#0a56cc;--on-accent:#ffffff;
   --guide:#f2465a;--chk1:#e7e7ea;--chk2:#f6f6f7;--key:#f5a524;--key-ink:#b26b00;--track:#f7f7f8;
@@ -396,6 +397,27 @@ html:not([data-mode="animate"]) .anim-only{display:none!important}
 html[data-mode="animate"] .design-only{display:none!important}
 html[data-mode="animate"] #inspDevice>.sec:not(.anim-keep){display:none}
 html[data-mode="animate"] .ab.active{box-shadow:0 0 0 2px var(--accent)}
+
+/* ---------- presentation (ui/present.js): the active artboard alone, edge to edge, on a dark stage ---------- */
+html.present .topbar,html.present .main>.panel,html.present #timeline,html.present .dock,html.present .zoombox,html.present #navSvg,
+html.present .ab-label,html.present .ab-size,html.present .ab:not(.live),html.present .tbox,html.present .ibox,html.present .guide,
+html.present #focusCross,html.present #focusInfo,html.present .hint,html.present #coach,html.present .dome{display:none!important}
+html.present .app{grid-template-rows:minmax(0,1fr)}
+html.present .main{grid-template-columns:minmax(0,1fr)}
+html.present .center{grid-template-rows:minmax(0,1fr)}
+html.present .stage{background:var(--present-bg)}
+html.present .ab,html.present[data-mode="animate"] .ab.active{box-shadow:none}
+html.present #gl{cursor:default!important}
+.present-bar{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:4px;
+  background:var(--present-bar);color:var(--present-ink);border-radius:10px;box-shadow:0 0 0 1px var(--present-line),0 8px 24px rgba(0,0,0,.4);z-index:7;
+  transition:opacity .25s;--field:var(--present-field);--line:var(--present-line)}
+.present-bar.idle{opacity:0;pointer-events:none}
+.present-bar .ib{color:var(--present-ink)}
+.present-bar .ib:disabled{opacity:.35}
+.present-bar .tip{background:var(--present-ink);color:var(--present-bar);top:auto;bottom:calc(100% + 8px)}
+.pb-name{display:inline-flex;align-items:baseline;gap:8px;padding:0 10px;font-size:12px;line-height:16px;white-space:nowrap;max-width:36ch;overflow:hidden;text-overflow:ellipsis}
+.pb-name b{font-weight:600}
+.pb-name span{color:var(--present-muted)}
 .center{display:grid;grid-template-rows:minmax(0,1fr) auto;min-width:0;min-height:0}
 .sh-acts{display:flex;align-items:center;gap:4px}
 .keybtn{position:relative;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:5px;background:var(--field);font-weight:500;font-size:11px;white-space:nowrap}

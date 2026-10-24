@@ -47,6 +47,7 @@ import './ui/account.js';
 import './ui/projects.js';
 import './ui/home.js';
 import './ui/timeline.js';
+import './ui/present.js';
 import './export/video.js';
 import './export/embed.js';
 
