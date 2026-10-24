@@ -561,24 +561,29 @@
 <div class="scrim rec" id="recScrim" hidden>
   <div class="rec-box" id="recBox" role="dialog" aria-modal="true" aria-label="Web sitesi: ekran görüntüsü ve kayıt">
     <div class="rec-bar">
-      <button class="ib sm" type="button" id="recBack" aria-label="Geri" title="Geri"><span data-icon="arrow-left" data-size="16"></span></button>
-      <button class="ib sm" type="button" id="recReload" aria-label="Yenile" title="Yenile"><span data-icon="refresh" data-size="16"></span></button>
-      <label class="fld rec-url"><span data-icon="global" data-size="14"></span><input type="url" id="recUrl" placeholder="https://siteadi.com" aria-label="Adres (Enter: git)" spellcheck="false" autocomplete="url"></label>
-      <div class="seg rec-target" id="recTarget" role="group" aria-label="Hangi cihazlara"><button type="button" data-v="one" title="Yalnızca seçili cihaz">Bu cihaz</button><button type="button" data-v="all" title="Belgedeki her cihaz (ekran görüntüsü her cihaza kendi genişliğinde; kayıtta aynı ölçüdekiler aynı kaydı paylaşır)">Tümü</button></div>
-      <span class="rec-vp" id="recVp"></span>
-      <span class="rec-status" id="recStatus" role="status" aria-live="polite"></span>
-      <span class="vr"></span>
-      <label class="rec-auto" title="Kayıtta fare imleci ve tıklamalar görünür"><input type="checkbox" id="recCursor" checked><span>İmleç</span></label>
-      <label class="rec-auto" title="Başlat’tan sonra sayfa bu sürede yumuşakça sona kayar"><input type="checkbox" id="recAuto"><span>Otomatik kaydır</span></label>
-      <label class="rec-auto"><input type="number" id="recAutoDur" min="1" max="30" step="1" value="8" aria-label="Kaydırma süresi (saniye)"><span>sn</span></label>
-      <span class="vr"></span>
-      <div class="seg rec-shot-mode" id="recShotMode" role="group" aria-label="Ekran görüntüsünün kapsamı"><button type="button" data-v="view" title="Yalnızca şu an görünen alan">Görünen</button><button type="button" data-v="full" title="Sayfanın tamamı, en üstten (Yakalama seçeneklerindeki Başlangıç seçicisi uygulanır); cihaz ekranında kaydırılabilir">Tam sayfa</button></div>
-      <button class="btn rec-shot" type="button" id="recShot" title="Sayfanın şu anki hâlinin ekran görüntüsünü al ve cihaz ekranına koy"><span data-icon="camera" data-size="14"></span>Ekran görüntüsü al</button>
-      <span class="vr"></span>
-      <span class="rec-time" id="recTime"></span>
-      <button class="btn rec-start" type="button" id="recStart"><span class="rec-dot"></span><span>Başlat</span></button>
-      <button class="btn" type="button" id="recWindow" title="Siteyi aynı profille ayrı bir Chrome penceresinde aç (bir doğrulama burada geçmezse); kayıt sürer"><span data-icon="square-top-down" data-size="14"></span>Ayrı pencerede aç</button>
-      <button class="ib sm" type="button" id="recClose" aria-label="Kapat (Esc)" title="Kapat (Esc)"><span data-icon="close-circle"></span></button>
+      <div class="rec-grp rec-nav">
+        <button class="ib sm" type="button" id="recBack" aria-label="Geri" title="Geri"><span data-icon="arrow-left" data-size="16"></span></button>
+        <button class="ib sm" type="button" id="recReload" aria-label="Yenile" title="Yenile"><span data-icon="refresh" data-size="16"></span></button>
+        <label class="fld rec-url"><span data-icon="global" data-size="14"></span><input type="url" id="recUrl" placeholder="https://siteadi.com" aria-label="Adres (Enter: git)" spellcheck="false" autocomplete="url"></label>
+        <div class="seg rec-target" id="recTarget" role="group" aria-label="Hangi cihazlara"><button type="button" data-v="one" title="Yalnızca seçili cihaz">Bu cihaz</button><button type="button" data-v="all" title="Belgedeki her cihaz (ekran görüntüsü her cihaza kendi genişliğinde; kayıtta aynı ölçüdekiler aynı kaydı paylaşır)">Tümü</button></div>
+        <span class="rec-vp" id="recVp"></span>
+        <span class="rec-status" id="recStatus" role="status" aria-live="polite"></span>
+      </div>
+      <div class="rec-grp" role="group" aria-label="Ekran görüntüsü">
+        <div class="seg rec-shot-mode" id="recShotMode" role="group" aria-label="Ekran görüntüsünün kapsamı"><button type="button" data-v="view" title="Yalnızca şu an görünen alan">Görünen</button><button type="button" data-v="full" title="Sayfanın tamamı, en üstten (Yakalama seçeneklerindeki Başlangıç seçicisi uygulanır); cihaz ekranında kaydırılabilir">Tam sayfa</button></div>
+        <button class="btn rec-shot" type="button" id="recShot" title="Sayfanın şu anki hâlinin ekran görüntüsünü al ve cihaz ekranına koy"><span data-icon="camera" data-size="14"></span><span class="txt">Ekran görüntüsü al</span></button>
+      </div>
+      <div class="rec-grp" role="group" aria-label="Ekran kaydı">
+        <label class="rec-auto" title="Kayıtta fare imleci ve tıklamalar görünür"><input type="checkbox" id="recCursor" checked><span>İmleç</span></label>
+        <label class="rec-auto" title="Başlat’tan sonra sayfa bu sürede yumuşakça sona kayar"><input type="checkbox" id="recAuto"><span>Otomatik kaydır</span></label>
+        <label class="rec-auto"><input type="number" id="recAutoDur" min="1" max="30" step="1" value="8" aria-label="Kaydırma süresi (saniye)"><span>sn</span></label>
+        <span class="rec-time" id="recTime"></span>
+        <button class="btn rec-start" type="button" id="recStart"><span class="rec-dot"></span><span>Başlat</span></button>
+      </div>
+      <div class="rec-grp rec-end">
+        <button class="ib sm" type="button" id="recWindow" aria-label="Ayrı pencerede aç" title="Siteyi aynı profille ayrı bir Chrome penceresinde aç (bir doğrulama burada geçmezse); kayıt sürer"><span data-icon="square-top-down" data-size="16"></span></button>
+        <button class="ib sm" type="button" id="recClose" aria-label="Kapat (Esc)" title="Kapat (Esc)"><span data-icon="close-circle"></span></button>
+      </div>
     </div>
     <div class="rec-stage" id="recStage">
       <canvas id="recCanvas" tabindex="0" aria-label="Site görüntüsü: fare ve klavye siteye gider"></canvas>

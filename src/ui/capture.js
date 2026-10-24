@@ -70,7 +70,8 @@ const input=$('#captureUrl'),one=$('#captureBtn'),all=$('#captureAllBtn'),liveBt
    left the page (logged in, banners closed). record.js registers it; without it (a build with the capture service)
    the direct Yakala / Tüm cihazlara buttons show instead. */
 let live=null;
-function setLiveCapture(fn){live=fn;$('#captureDirect').hidden=!!fn;liveBtn.hidden=$('#liveHint').hidden=!fn;}
+// Bekle (seconds after load) only applies to the direct capture: in the window the user waits for the page themselves
+function setLiveCapture(fn){live=fn;$('#captureDirect').hidden=!!fn;liveBtn.hidden=$('#liveHint').hidden=!fn;$('#capWait').closest('.row').hidden=!!fn;}
 liveBtn.addEventListener('click',()=>{const raw=input.value.trim();if(!raw){input.focus();return;}if(live)live(raw);});
 // the viewport groups of the devices to shoot: [{target: {id, width, height, mobile, dpr}, devices}] (equal viewports share one shot)
 function shotGroups(devices){

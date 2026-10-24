@@ -832,7 +832,12 @@ html[data-pick=focus] #stagearea canvas{cursor:crosshair!important}
 /* ---------- screen recording lightbox (ui/record.js): the whole screen, 20 px in, dialog look */
 .scrim.rec{display:block;padding:20px;background:rgba(0,0,0,.55)}
 .rec-box{height:100%;display:flex;flex-direction:column;background:var(--panel);border-radius:12px;box-shadow:var(--shadow),0 0 0 1px var(--line);overflow:hidden}
-.rec-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);flex:none;min-width:0}
+/* the toolbar: groups (navigation and target · screenshot · recording · window) that wrap to a second row when the
+   window is narrow, the address field taking the room that is left */
+.rec-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:8px 10px;border-bottom:1px solid var(--line);flex:none;min-width:0}
+.rec-grp{display:flex;align-items:center;gap:6px;min-width:0}
+.rec-grp.rec-nav{flex:1 1 360px}
+.rec-grp.rec-end{margin-left:auto}
 .rec-bar .fld.rec-url{flex:1 1 160px;min-width:120px;height:26px}
 .rec-bar .seg.rec-target{flex:none;height:26px;width:150px}
 .rec-bar .seg.rec-shot-mode{flex:none;height:26px;width:160px}
@@ -853,7 +858,7 @@ html[data-pick=focus] #stagearea canvas{cursor:crosshair!important}
 .rec-wait{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--canvas) 60%,transparent);backdrop-filter:blur(2px);cursor:progress}
 .rec-wait>div{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;background:var(--panel);color:var(--ink);font-size:13px;box-shadow:var(--shadow),0 0 0 1px var(--line);animation:busy-in .15s ease-out}
 .rec-note{position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:calc(100% - 40px);padding:6px 12px;border-radius:8px;background:var(--panel);color:var(--ink);font-size:12px;box-shadow:var(--shadow),0 0 0 1px var(--line);pointer-events:none}
-@media (max-width:1180px){.rec-vp,.rec-status{display:none}}
+@media (max-width:1180px){.rec-vp{display:none}}
 
 /* ---------- welcome (ui/welcome.js): an empty document, panels out of the way */
 html.wl-on .main{grid-template-columns:minmax(0,1fr)}
