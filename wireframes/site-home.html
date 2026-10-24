@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shotlight · photo-real device mockups in your browser</title>
+<meta name="description" content="Place phones, tablets and laptops in one scene, set the lights, animate with keyframes. Photo-real images and video, right in your browser. Free beta.">
+<link rel="icon" href="/brand/shotlight-icon-small.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Prototype of the website's home page in direction A (Gallery: warm paper, centered hero, the brand's sunset only in
+   small touches). Structure and copy: wireframes/site-map.html; the hero: wireframes/site-hero.html?d=a. Images are
+   what exists today: template thumbnails (public/templates), the interim landing's video, and renders made with the
+   render harness (wireframes/assets/home/). Open from the dev server: /wireframes/site-home.html */
+:root{
+  --bg:#f3f2ef;--ink:#141416;--sub:#5f6068;--line:#e3e1dc;--card:#ffffff;--soft:#eae8e2;--accent:#141416;--on-accent:#fff;
+  --sun:linear-gradient(90deg,#ff5f7e,#8a2be2);--sun-a:#ff5f7e;--sun-b:#8a2be2;
+  --ui:#ffffff;--ui-2:#f6f6f7;--ui-line:#e7e7ea;--ui-ink:#18181b;--ui-sub:#8a8a93;--ui-acc:#0b68f5;--board:#e9e8e4;--key:#18181b;
+  --dark:#0d0d0f;--dark-2:#17171a;--dark-ink:#f4f4f5;--dark-sub:#9a9aa3;--dark-line:#2a2a2f;
+  --max:1240px;color-scheme:light
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0}
+body{font:15px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:var(--bg);color:var(--ink)}
+h1,h2,h3,h4,p,ul,ol,figure{margin:0}
+ul{padding:0;list-style:none}
+a{color:inherit}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+img,video{display:block;max-width:100%}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+.display{font-family:"Inter Tight",Inter,sans-serif;font-weight:600;letter-spacing:-.035em;line-height:1.02}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.02em}
+.sun{background:var(--sun);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:500;text-decoration:none;white-space:nowrap;transition:transform .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:focus-visible{outline:2px solid var(--sun-b);outline-offset:3px}
+.btn.sm{height:36px;padding:0 16px;font-size:13px}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 20%,transparent)}
+.btn.light{background:var(--dark-ink);color:var(--dark)}
+section{scroll-margin-top:24px}
+.sec{padding:96px 0 0}
+.sec-h{max-width:640px}
+.sec-h h2{font-size:clamp(30px,3.6vw,44px)}
+.sec-h p{color:var(--sub);font-size:17px;margin-top:14px}
+.sec-h.center{margin:0 auto;text-align:center}
+.more{display:inline-block;margin-top:14px;font-weight:500;text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--ink) 25%,transparent)}
+
+/* ---------- nav */
+.nav{display:flex;align-items:center;justify-content:space-between;max-width:var(--max);margin:0 auto;padding:22px 24px}
+.brand{display:flex;align-items:center;text-decoration:none}
+.brand img{height:30px;width:auto}
+.brand em{font-style:normal;font-size:11px;font-weight:500;color:var(--sub);border:1px solid color-mix(in srgb,var(--ink) 18%,transparent);border-radius:999px;padding:1px 7px;margin-left:10px;line-height:16px}
+.links{display:flex;gap:28px;color:var(--sub);font-size:14px}
+.links a{text-decoration:none}.links a:hover{color:var(--ink)}
+.acts{display:flex;align-items:center;gap:18px;font-size:14px}
+.acts .in{color:var(--sub);text-decoration:none;font-weight:500}
+
+/* ---------- hero */
+.hero{text-align:center;padding:64px 24px 0;max-width:var(--max);margin:0 auto}
+.eyebrow{display:inline-block;font-weight:500;font-size:13px;letter-spacing:.02em;margin-bottom:22px}
+.hero h1{font-size:clamp(44px,6.6vw,88px)}
+.hero .lead{max-width:560px;margin:24px auto 0;color:var(--sub);font-size:17px}
+.ctas{display:flex;gap:10px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+.stage{display:flex;justify-content:center;padding:56px 24px 0}
+.stage-note{text-align:center;color:var(--sub);font-size:13px;margin-top:14px}
+.stage-note i{font-style:normal;display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sun);margin-right:7px;vertical-align:1px}
+
+/* ---------- the editor window (shared with site-hero.html) */
+.ed{--w:1180px;width:100%;max-width:var(--w);border-radius:14px;overflow:hidden;background:var(--ui);color:var(--ui-ink);font-size:12px;
+  box-shadow:0 0 0 1px var(--ui-line),0 30px 80px -20px rgba(0,0,0,.25),0 12px 30px -12px rgba(0,0,0,.15);display:grid;grid-template-rows:42px 1fr 132px}
+.ed-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 12px;border-bottom:1px solid var(--ui-line)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:var(--ui-line)}
+.file{margin-left:14px;font-weight:500}.file span{color:var(--ui-sub);font-weight:400}
+.seg{display:flex;background:var(--ui-2);border-radius:7px;padding:2px}
+.seg b{font-weight:500;padding:4px 12px;border-radius:5px;color:var(--ui-sub)}
+.seg b.on{background:var(--ui);color:var(--ui-ink);box-shadow:0 0 0 1px var(--ui-line)}
+.ed-top .act{justify-self:end;background:var(--ui-acc);color:#fff;border-radius:6px;padding:5px 12px;font-weight:500}
+.ed-mid{display:grid;grid-template-columns:184px 1fr 212px;min-height:0;height:470px}
+.pane{border-right:1px solid var(--ui-line);padding:12px 10px;overflow:hidden}
+.pane.r{border-right:0;border-left:1px solid var(--ui-line)}
+.pane h4{margin:0 0 8px;font-size:11px;font-weight:600;color:var(--ui-sub)}
+.layer{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:5px}
+.layer.on{background:color-mix(in srgb,var(--ui-acc) 14%,transparent);color:var(--ui-ink)}
+.layer i{width:14px;height:14px;border-radius:3px;border:1.5px solid currentColor;opacity:.6}
+.layer.sub{padding-left:22px;color:var(--ui-sub)}
+.canvas{position:relative;background:var(--ui-2);display:grid;place-items:center;padding:22px;overflow:hidden}
+.board{position:relative;width:100%;aspect-ratio:16/9;background:var(--board);border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.board-name{position:absolute;left:0;top:-17px;font-size:11px;color:var(--ui-sub)}
+.board mockup-view{position:absolute;inset:0}
+.prop{display:grid;grid-template-columns:1fr auto 12px;align-items:center;gap:6px;height:28px;padding:0 8px;margin-bottom:4px;border-radius:5px;background:var(--ui-2)}
+.prop span{color:var(--ui-sub)}.prop b{font-weight:500;font-variant-numeric:tabular-nums}
+.prop .kd{width:8px;height:8px;transform:rotate(45deg);background:var(--ui-acc);border-radius:1px}
+.prop.live b{color:var(--ui-acc)}
+.sep{height:1px;background:var(--ui-line);margin:12px 0}
+.ed-tl{border-top:1px solid var(--ui-line);display:grid;grid-template-columns:184px 1fr;font-size:11px;position:relative}
+.tl-names{border-right:1px solid var(--ui-line);padding-top:24px}
+.tl-names div{height:24px;display:flex;align-items:center;padding:0 12px;color:var(--ui-sub)}
+.tl-names div b{font-weight:500;color:var(--ui-ink);margin-right:6px}
+.tl-track{position:relative;padding-top:24px;margin:0 14px}
+.ruler{position:absolute;left:0;right:0;top:0;height:24px;border-bottom:1px solid var(--ui-line);color:var(--ui-sub)}
+.ruler span{position:absolute;top:5px;transform:translateX(-50%)}
+.row{position:relative;height:24px;border-bottom:1px solid color-mix(in srgb,var(--ui-line) 60%,transparent)}
+.row .bar{position:absolute;top:11px;height:2px;background:color-mix(in srgb,var(--ui-acc) 35%,transparent)}
+.row .k{position:absolute;top:8px;width:8px;height:8px;margin-left:-4px;transform:rotate(45deg);background:var(--key);border-radius:1px}
+.row .k.hit{background:var(--ui-acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-acc) 25%,transparent)}
+.head{position:absolute;top:0;bottom:0;width:0;pointer-events:none}
+.head::before{content:"";position:absolute;top:0;left:-6px;width:12px;height:14px;background:var(--ui-acc);clip-path:polygon(0 0,100% 0,100% 60%,50% 100%,0 60%)}
+.head::after{content:"";position:absolute;top:12px;bottom:0;left:-.5px;width:1px;background:var(--ui-acc)}
+.time{position:absolute;left:12px;top:5px;color:var(--ui-sub);font-variant-numeric:tabular-nums}
+
+/* ---------- proof strip */
+.proof{display:flex;justify-content:center;gap:10px 36px;flex-wrap:wrap;padding:40px 24px 0;color:var(--sub);font-size:14px}
+.proof li{display:flex;align-items:center;gap:9px}
+.proof li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--sun)}
+
+/* ---------- how it works */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.step{background:var(--card);border-radius:20px;padding:18px 18px 24px;box-shadow:0 0 0 1px var(--line)}
+.step .vis{height:200px;border-radius:12px;background:var(--soft);display:grid;place-items:center;overflow:hidden;position:relative}
+.step .vis img{width:100%;height:100%;object-fit:cover}
+.step .n{display:inline-block;margin-top:18px;font-weight:500;font-size:12px;color:var(--sub)}
+.step h3{font-size:19px;margin-top:4px;letter-spacing:-.01em}
+.step p{color:var(--sub);margin-top:6px}
+.drop{width:86%;border:1.5px dashed color-mix(in srgb,var(--ink) 25%,transparent);border-radius:12px;padding:14px;background:color-mix(in srgb,var(--card) 70%,transparent);font-size:12px;color:var(--sub);text-align:center}
+.drop .url{display:flex;gap:6px;margin-top:10px}
+.drop .url span{flex:1;height:30px;border-radius:7px;background:var(--card);box-shadow:0 0 0 1px var(--line);display:flex;align-items:center;padding:0 10px;color:var(--ink);text-align:left;font-family:"JetBrains Mono",monospace;font-size:11px}
+.drop .url b{height:30px;padding:0 10px;border-radius:7px;background:var(--ink);color:var(--card);display:flex;align-items:center;font-weight:500}
+.drop .chips{display:flex;gap:6px;justify-content:center;margin-top:10px}
+.drop .chips i{font-style:normal;border-radius:999px;padding:2px 8px;background:var(--soft);font-size:11px}
+.chip{position:absolute;left:12px;bottom:12px;background:var(--card);border-radius:8px;padding:5px 9px;font-size:11.5px;box-shadow:0 1px 3px rgba(0,0,0,.12);display:flex;align-items:center;gap:7px}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--ui-acc)}
+.exp{width:78%;background:var(--card);border-radius:12px;box-shadow:0 0 0 1px var(--line),0 10px 30px -12px rgba(0,0,0,.2);padding:14px;font-size:12px}
+.exp h5{margin:0 0 10px;font-size:12.5px;font-weight:600}
+.exp .fmt{display:flex;gap:6px;flex-wrap:wrap}
+.exp .fmt span{border-radius:999px;padding:3px 9px;background:var(--soft);color:var(--sub)}
+.exp .fmt span.on{background:var(--ink);color:var(--card)}
+.exp .bar{height:6px;border-radius:3px;background:var(--soft);margin-top:14px;overflow:hidden}
+.exp .bar i{display:block;width:72%;height:100%;background:var(--sun)}
+.exp small{display:block;color:var(--sub);margin-top:8px}
+
+/* ---------- what you can make */
+.make{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:40px}
+.mk{grid-column:span 2;background:var(--card);border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px var(--line);text-decoration:none;display:flex;flex-direction:column}
+.mk.wide{grid-column:span 3}
+.mk .img{aspect-ratio:16/10;background:var(--soft);overflow:hidden;position:relative}
+.mk .img img,.mk .img video{width:100%;height:100%;object-fit:cover}
+.mk .img .live{position:absolute;right:10px;top:10px;background:rgba(20,20,22,.8);color:#fff;border-radius:999px;padding:3px 9px;font-size:11px;display:flex;align-items:center;gap:6px}
+.mk .img .live i{width:6px;height:6px;border-radius:50%;background:var(--sun)}
+.mk .t{padding:14px 16px 16px}
+.mk h3{font-size:16px;letter-spacing:-.01em}
+.mk p{color:var(--sub);font-size:13.5px;margin-top:3px}
+
+/* ---------- why it looks real (dark band) */
+.dark{background:
+  radial-gradient(48% 36% at 78% 22%,color-mix(in srgb,var(--sun-a) 14%,transparent) 0%,transparent 70%),
+  radial-gradient(44% 34% at 18% 80%,color-mix(in srgb,var(--sun-b) 12%,transparent) 0%,transparent 70%),
+  var(--dark);color:var(--dark-ink);margin-top:96px;padding:96px 0}
+.dark .sec-h p{color:var(--dark-sub)}
+.real{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:56px;margin-top:48px;align-items:start}
+.real ul{display:grid;gap:22px}
+.real li h3{font-size:17px;letter-spacing:-.01em}
+.real li p{color:var(--dark-sub);margin-top:4px;font-size:14.5px}
+.real li h3::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sun);margin-right:10px;vertical-align:2px}
+.cmp{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:var(--dark-2);box-shadow:0 0 0 1px var(--dark-line),0 40px 100px -30px rgba(0,0,0,.8);user-select:none}
+.cmp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cmp .after{clip-path:inset(0 0 0 var(--x,50%))}
+.cmp .bar{position:absolute;top:0;bottom:0;left:var(--x,50%);width:2px;background:#fff;transform:translateX(-1px);box-shadow:0 0 0 1px rgba(0,0,0,.2)}
+.cmp .knob{position:absolute;top:50%;left:var(--x,50%);width:36px;height:36px;border-radius:50%;background:#fff;color:#111;transform:translate(-50%,-50%);display:grid;place-items:center;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.cmp input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+.cmp .lab{position:absolute;bottom:12px;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:4px 10px;font-size:11.5px;pointer-events:none}
+.cmp .lab.l{left:12px}.cmp .lab.r{right:12px}
+.cmp-note{color:var(--dark-sub);font-size:13px;margin-top:12px}
+.lens{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;margin-top:28px;padding:16px;border-radius:14px;background:var(--dark-2);box-shadow:0 0 0 1px var(--dark-line)}
+.lens img{border-radius:8px;aspect-ratio:4/5;object-fit:cover;width:100%}
+.lens b{display:block;font-weight:600}
+.lens p{color:var(--dark-sub);font-size:14px;margin-top:4px}
+.lens .mono{color:var(--dark-sub);margin-top:8px;display:block}
+
+/* ---------- animate */
+.anim{margin-top:40px;background:var(--ui);border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px var(--ui-line),0 30px 80px -20px rgba(0,0,0,.2);color:var(--ui-ink)}
+.anim .reel{aspect-ratio:16/8;overflow:hidden;position:relative;background:var(--board)}
+.anim .reel video{position:absolute;left:50%;top:52%;width:112%;height:auto;transform:translate(-50%,-50%)}
+.anim .ed-tl{grid-template-rows:auto}
+.anim .ruler span:nth-child(n+8){display:none}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:36px}
+.feats h3{font-size:16px;letter-spacing:-.01em}.feats p{color:var(--sub);font-size:14px;margin-top:4px}
+
+/* ---------- templates */
+.tpl-top{display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.toggle{display:flex;background:var(--soft);border-radius:999px;padding:3px}
+.toggle button{height:32px;padding:0 14px;border-radius:999px;font-weight:500;font-size:13px;color:var(--sub)}
+.toggle button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tpls{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+.tpl{display:block;text-decoration:none;background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.tpl .img{aspect-ratio:16/10;background:var(--soft);position:relative;overflow:hidden}
+.tpl .img img,.tpl .img video{width:100%;height:100%;object-fit:cover}
+.tpl .img video{position:absolute;inset:0;opacity:0;transition:opacity .2s}
+.tpl:hover .img video{opacity:1}
+.tpl .img .mv{position:absolute;left:10px;top:10px;background:rgba(20,20,22,.8);color:#fff;border-radius:999px;padding:2px 8px;font-size:11px}
+.tpl .t{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px}
+.tpl h3{font-size:14.5px}.tpl span{color:var(--sub);font-size:12.5px}
+.tpl-foot{text-align:center;margin-top:28px}
+
+/* ---------- embed */
+.embed{display:grid;grid-template-columns:minmax(300px,440px) 1fr;gap:56px;align-items:center;margin-top:40px}
+.code{margin-top:22px;padding:14px 16px;border-radius:12px;background:#17171a;color:#e4e4e7;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;line-height:1.6;overflow:auto;white-space:pre}
+.code i{font-style:normal;color:#8ab8ff}.code b{font-weight:400;color:#f5a524}
+.embed-box{border-radius:18px;background:var(--card);box-shadow:0 0 0 1px var(--line);padding:18px;position:relative}
+.embed-box mockup-view{display:block;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:var(--soft)}
+.embed-box .hint{position:absolute;right:28px;top:28px;background:rgba(20,20,22,.8);color:#fff;border-radius:999px;padding:3px 9px;font-size:11px}
+
+/* ---------- pricing + faq */
+.price{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;margin-top:40px;background:var(--card);border-radius:24px;padding:40px;box-shadow:0 0 0 1px var(--line)}
+.price h3{font-size:34px;font-family:"Inter Tight",Inter,sans-serif;letter-spacing:-.03em;line-height:1.05}
+.price h3 small{display:block;font-size:15px;color:var(--sub);font-weight:400;letter-spacing:0;margin-top:10px;line-height:1.5}
+.price ul{display:grid;gap:10px;font-size:15px}
+.price li{display:flex;gap:10px;align-items:baseline}
+.price li::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--sun);transform:translateY(-2px)}
+.faq{max-width:760px;margin:40px auto 0}
+.faq details{border-top:1px solid var(--line);padding:18px 0}
+.faq details:last-child{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;font-weight:500;font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq summary::after{content:"+";color:var(--sub);font-size:20px;font-weight:300}
+.faq details[open] summary::after{content:"−"}
+.faq p{color:var(--sub);margin-top:10px;max-width:60ch}
+
+/* ---------- final cta + footer */
+.end{margin-top:96px;background:var(--card);border-radius:24px;box-shadow:0 0 0 1px var(--line);overflow:hidden;display:grid;grid-template-columns:1fr 1fr;align-items:center}
+.end .t{padding:56px 48px}
+.end h2{font-size:clamp(30px,3.6vw,44px)}
+.end p{color:var(--sub);margin-top:14px;max-width:38ch}
+.end .img{height:100%;min-height:320px;background:var(--soft)}
+.end .img img{width:100%;height:100%;object-fit:cover}
+.foot{max-width:var(--max);margin:0 auto;padding:72px 24px 40px}
+.foot .cols{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:24px;font-size:14px}
+.foot h4{font-size:13px;font-weight:600;margin-bottom:12px}
+.foot li{margin:6px 0;color:var(--sub)}
+.foot li a{text-decoration:none}.foot li a:hover{color:var(--ink)}
+.foot .brand{display:block}
+.foot .brand p{color:var(--sub);font-size:13px;margin-top:14px;max-width:26ch}
+.foot .base{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--sub);font-size:13px}
+
+@media (max-width:1000px){
+  .links,.acts .in{display:none}
+  .steps,.feats,.tpls{grid-template-columns:1fr 1fr}
+  .make{grid-template-columns:1fr 1fr}.mk,.mk.wide{grid-column:auto}
+  .real,.embed,.price,.end{grid-template-columns:1fr}
+  .foot .cols{grid-template-columns:1fr 1fr}
+  .ed-mid{grid-template-columns:1fr;height:auto}.pane{display:none}.canvas{padding:14px}
+  .ed-tl{grid-template-columns:1fr}.tl-names{display:none}.time{display:none}.file{display:none}
+}
+@media (max-width:640px){
+  .wrap,.hero{padding-left:16px;padding-right:16px}.nav{padding:16px}.stage{padding:40px 16px 0}
+  .sec{padding-top:72px}.dark{padding:72px 0;margin-top:72px}
+  .steps,.feats,.tpls,.make{grid-template-columns:1fr}
+  .lens{grid-template-columns:110px 1fr}.price,.end .t{padding:28px}
+  .foot .cols{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="#"><img src="/brand/shotlight-wordmark-on-light.svg" alt="Shotlight"><em>beta</em></a>
+  <nav class="links" aria-label="Main"><a href="#">Features</a><a href="#templates">Templates</a><a href="#pricing">Pricing</a><a href="#">Docs</a></nav>
+  <div class="acts"><a class="in" href="#">Sign in</a><a class="btn sm" href="#">Open studio</a></div>
+</header>
+
+<main>
+<section class="hero" id="hero">
+  <p class="eyebrow sun">Free beta · nothing to install</p>
+  <h1 class="display">Your screenshot,<br>in studio light.</h1>
+  <p class="lead">Place phones, tablets and laptops in one scene, set the lights, animate with keyframes. Photo-real images and video, right in your browser.</p>
+  <div class="ctas"><a class="btn" href="#">Open the studio</a><a class="btn ghost" href="#templates">Browse templates</a></div>
+</section>
+<div class="stage" id="stage"></div>
+<p class="stage-note"><i></i>Live. Move your mouse over the canvas.</p>
+
+<ul class="proof" aria-label="At a glance">
+  <li>Path-traced rendering</li><li>Export up to 4K</li><li>MP4, WebM, GIF</li><li>Interactive embeds</li><li>Nothing to install</li>
+</ul>
+
+<section class="sec wrap" id="how">
+  <div class="sec-h"><h2 class="display">Three steps, one tab.</h2><p>No scene to build from scratch, no software to learn first. Start from a template, change what you need, export.</p></div>
+  <div class="steps">
+    <article class="step">
+      <div class="vis"><div class="drop">Drop screenshots here, or paste a URL<div class="url"><span>https://yourapp.com</span><b>Capture</b></div><div class="chips"><i>Phone 390</i><i>Tablet 820</i><i>Laptop 1440</i></div></div></div>
+      <span class="n">01</span><h3>Drop a screenshot or paste a URL</h3><p>Shotlight captures your site at every device size, pixel-sharp, with the right viewport for each.</p>
+    </article>
+    <article class="step">
+      <div class="vis"><img src="/templates/browser-light.jpg" alt="A browser window in a studio scene"><div class="chip"><i></i>Softbox · 45° · soft shadow</div></div>
+      <span class="n">02</span><h3>Place and light</h3><p>Pick a template, arrange the devices, choose a lens, set softboxes or sun. Everything updates as you drag.</p>
+    </article>
+    <article class="step">
+      <div class="vis"><div class="exp"><h5>Export</h5><div class="fmt"><span class="on">PNG · 3840 px</span><span>JPG</span><span>MP4</span><span>Store set (ZIP)</span><span>Embed</span></div><div class="bar"><i></i></div><small>Photo quality · 64 samples · 18 s left</small></div></div>
+      <span class="n">03</span><h3>Export</h3><p>PNG up to 4K, video, a whole store set, or an interactive embed for your own site.</p>
+    </article>
+  </div>
+</section>
+
+<section class="sec wrap" id="make">
+  <div class="sec-h"><h2 class="display">One scene, every channel.</h2><p>The same project gives you the landing visual, the store screenshots, the social post and the video. Change the screen once, export all of them again.</p></div>
+  <div class="make">
+    <a class="mk" href="#"><div class="img"><img src="/templates/studio-light.jpg" alt=""></div><div class="t"><h3>Landing page visuals</h3><p>Hero images that match your light and dark themes.</p></div></a>
+    <a class="mk" href="#"><div class="img"><img src="/templates/store-classic-light.jpg" alt=""></div><div class="t"><h3>App Store &amp; Google Play sets</h3><p>Every required size, titles per screen, every language.</p></div></a>
+    <a class="mk" href="#"><div class="img"><img src="/templates/trio-light.jpg" alt=""></div><div class="t"><h3>Social posts &amp; stories</h3><p>Square, portrait and 9:16, from the same scene.</p></div></a>
+    <a class="mk wide" href="#"><div class="img"><video src="/templates/push-in-light.webm" poster="/templates/push-in-light.jpg" muted loop playsinline autoplay></video></div><div class="t"><h3>Product videos</h3><p>Camera moves, text effects, MP4 or WebM. Every frame rendered.</p></div></a>
+    <a class="mk wide" href="#embed"><div class="img"><img src="/wireframes/assets/home/embed-poster.jpg" alt=""><span class="live"><i></i>Live on your page</span></div><div class="t"><h3>Interactive 3D embeds</h3><p>A mockup that turns with the cursor and plays on scroll.</p></div></a>
+  </div>
+</section>
+
+<section class="dark" id="real">
+  <div class="wrap">
+    <div class="sec-h"><h2 class="display">Lit like a product shoot, not a filter.</h2><p>Most mockup tools paste a screenshot into a flat frame. Shotlight builds a scene with real lights and renders it like a photograph.</p></div>
+    <div class="real">
+      <ul>
+        <li><h3>Real lights</h3><p>Softbox, octabox, window or sun. Shadows soften with distance and sharpen at the contact point, like on set.</p></li>
+        <li><h3>Path-traced photo quality</h3><p>Reflections, contact shadows and glass, denoised in the browser. Fast preview while you work, photo quality when you export.</p></li>
+        <li><h3>A real lens</h3><p>Focal length, aperture and focus; bokeh where you want it, sharp where it matters.</p></li>
+        <li><h3>Generic devices</h3><p>No brand logos, no licensing worries. Bring your own frame when you need a specific one.</p></li>
+      </ul>
+      <div>
+        <div class="cmp" id="cmp" style="--x:50%">
+          <img src="/wireframes/assets/home/laptop-fast.jpg" alt="Fast preview of a laptop on a dark backdrop">
+          <img class="after" src="/wireframes/assets/home/laptop-photo.jpg" alt="The same laptop in photo quality">
+          <div class="bar"></div><div class="knob" aria-hidden="true">⇔</div>
+          <span class="lab l">Fast preview</span><span class="lab r">Photo quality</span>
+          <input type="range" min="0" max="100" value="50" aria-label="Compare fast preview and photo quality">
+        </div>
+        <p class="cmp-note">Drag to compare. Both frames come straight out of Shotlight: the fast raster preview and the path-traced export, 64 samples.</p>
+        <div class="lens">
+          <img src="/wireframes/assets/home/bokeh.jpg" alt="A phone in focus with a laptop blurred behind it">
+          <div><b>85 mm, f/1.8</b><p>Depth of field from a thin-lens model: pick the focal length and aperture, focus on a device, a point or a distance.</p><span class="mono">LENS 85 MM · F/1.8 · FOCUS: PHONE</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec wrap" id="animate">
+  <div class="sec-h"><h2 class="display">Keyframe the camera, the devices, the light.</h2><p>Presets for push-ins, orbits and turntables; text effects for titles. Every frame is rendered, nothing is screen-recorded.</p></div>
+  <div class="anim">
+    <div class="reel"><video src="/landing/video/hero.mp4" poster="/landing/video/hero.jpg" muted loop playsinline autoplay aria-label="Three phones floating side by side, a 6 s loop rendered with Shotlight"></video></div>
+    <div class="ed-tl" id="animTl">
+      <div class="tl-names"><div><b>Camera</b>orbit</div><div><b>Phone 1</b>position</div><div><b>Phone 2</b>position</div><div><b>Title</b>fade in</div></div>
+      <div class="tl-track"><div class="ruler"></div><div class="row" data-k="0,3,6"></div><div class="row" data-k="0,2.2,6"></div><div class="row" data-k="0,2.8,6"></div><div class="row" data-k="0.6,1.4"></div><div class="head" style="left:38%"></div></div>
+      <div class="time mono">2.3 / 6.0 s</div>
+    </div>
+  </div>
+  <div class="feats">
+    <div><h3>Presets that look right</h3><p>Push in, slow orbit, turntable, float. Drop one on a device or the camera and adjust the keys.</p></div>
+    <div><h3>Text that moves</h3><p>Fade, rise, typewriter, scramble, counters. Per letter, word or line, with easing.</p></div>
+    <div><h3>MP4, WebM, GIF</h3><p>Up to 3840 px, motion blur, photo quality per frame if you have the time.</p></div>
+  </div>
+</section>
+
+<section class="sec wrap" id="templates">
+  <div class="tpl-top">
+    <div class="sec-h"><h2 class="display">Start from a template.</h2><p>Landing, store, social and video sets, light or dark. Yours in one click; change anything after.</p></div>
+    <div class="toggle" role="group" aria-label="Theme"><button type="button" data-v="light" aria-pressed="true">Light</button><button type="button" data-v="dark" aria-pressed="false">Dark</button></div>
+  </div>
+  <div class="tpls" id="tpls"></div>
+  <div class="tpl-foot"><a class="btn ghost" href="#">All 14 templates</a></div>
+</section>
+
+<section class="sec wrap" id="embed">
+  <div class="sec-h"><h2 class="display">Put the 3D mockup on your page.</h2></div>
+  <div class="embed">
+    <div>
+      <p style="color:var(--sub);font-size:17px">Export an interactive embed instead of a picture: it turns with the cursor, plays on scroll, loads lazily behind a poster and respects reduced motion. One script, one tag.</p>
+      <div class="code">&lt;<i>script</i> src="mockup-view.js"&gt;&lt;/<i>script</i>&gt;
+&lt;<i>mockup-view</i> src="<b>launch.html</b>"
+             mode="<b>mouse+loop</b>" poster="<b>poster.webp</b>"&gt;
+&lt;/<i>mockup-view</i>&gt;</div>
+      <a class="more" href="#">Read the embed guide</a>
+    </div>
+    <div class="embed-box">
+      <mockup-view src="/embed.html?src=/wireframes/assets/hero-demo.mockup.json&bg=transparent" mode="drag" ratio="16/9" poster="/wireframes/assets/home/embed-poster.jpg" alt="A laptop and a phone you can turn by dragging"></mockup-view>
+      <span class="hint">Drag to turn</span>
+    </div>
+  </div>
+</section>
+
+<section class="sec wrap" id="pricing">
+  <div class="price">
+    <div><h3>Free while in beta.<small>Every device, template and export. Prices are announced before the beta ends; nothing you made goes away.</small></h3><a class="btn" href="#" style="margin-top:24px">Open the studio</a></div>
+    <ul><li>Images up to 4K, video in MP4, WebM and GIF</li><li>Store sets with localization</li><li>Interactive embeds</li><li>2 GB cloud storage, 100 projects</li><li>Sign in with Google, GitHub, Apple or email</li></ul>
+  </div>
+</section>
+
+<section class="sec wrap" id="faq">
+  <div class="sec-h center"><h2 class="display">Questions.</h2></div>
+  <div class="faq">
+    <details><summary>Is it really free?</summary><p>Yes, for the whole beta. Everything you make stays yours, and we announce prices before anything changes.</p></details>
+    <details><summary>Do I need to install anything?</summary><p>No. Shotlight runs in Chrome, Edge, Safari and Firefox on any computer with WebGL 2.</p></details>
+    <details><summary>What happens to my screenshots?</summary><p>They are stored in your account, in the EU, and nowhere else. Download everything or delete the account from the menu at any time.</p></details>
+    <details><summary>Can I use the output commercially?</summary><p>Yes, for anything: your website, store listings, ads, pitch decks. The devices are generic, so there is no brand licensing to worry about.</p></details>
+    <details><summary>Will it run on my laptop?</summary><p>The fast preview runs on integrated GPUs; it lowers its resolution while you drag if it has to. Photo quality takes longer on slower machines, but it finishes.</p></details>
+  </div>
+</section>
+
+<section class="wrap"><div class="end">
+  <div class="t"><h2 class="display">Set the light.<br>Let the browser render.</h2><p>Free beta. Sign in with Google, GitHub, Apple or email; your projects wait in your account.</p><a class="btn" href="#" style="margin-top:28px">Open the studio</a></div>
+  <div class="img"><img src="/templates/desk-light.jpg" alt=""></div>
+</div></section>
+</main>
+
+<footer class="foot">
+  <div class="cols">
+    <div class="brand"><img src="/brand/shotlight-wordmark-on-light.svg" alt="Shotlight" style="height:26px"><p>The product photo studio in your browser.</p></div>
+    <div><h4>Product</h4><ul><li><a href="#">Features</a></li><li><a href="#templates">Templates</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#">Changelog</a></li></ul></div>
+    <div><h4>Use cases</h4><ul><li><a href="#">App store screenshots</a></li><li><a href="#">Landing page mockups</a></li><li><a href="#">Product videos</a></li></ul></div>
+    <div><h4>Resources</h4><ul><li><a href="#">Docs</a></li><li><a href="#">Embed guide</a></li><li><a href="#">Keyboard shortcuts</a></li><li><a href="#faq">FAQ</a></li></ul></div>
+    <div><h4>Company</h4><ul><li><a href="#">Contact</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div>
+  </div>
+  <div class="base"><span>© 2026 Shotlight · beta</span><span>Hosted in the EU. No trackers.</span></div>
+</footer>
+
+<template id="editor">
+<div class="ed" role="img" aria-label="The Shotlight editor: a laptop and a phone turning on the canvas, a keyframed timeline below">
+  <div class="ed-top">
+    <div style="display:flex;align-items:center"><div class="dots"><i></i><i></i><i></i></div><div class="file">Launch <span>· 16:9</span></div></div>
+    <div class="seg"><b>Design</b><b class="on">Animate</b></div>
+    <div class="act">Export</div>
+  </div>
+  <div class="ed-mid">
+    <div class="pane">
+      <h4>Layers</h4>
+      <div class="layer">Artboard 1</div>
+      <div class="layer sub on"><i></i>Camera</div>
+      <div class="layer sub"><i></i>Laptop</div>
+      <div class="layer sub"><i></i>Phone</div>
+      <div class="layer sub"><i></i>Light · Studio</div>
+    </div>
+    <div class="canvas"><div class="board"><span class="board-name">Artboard 1</span>
+      <mockup-view src="/embed.html?src=/wireframes/assets/hero-demo.mockup.json&bg=transparent" mode="mouse+loop" ratio="16/9" alt="A laptop and a phone mockup turning in studio light"></mockup-view></div></div>
+    <div class="pane r">
+      <h4>Camera</h4>
+      <div class="prop live"><span>Y rotation</span><b data-v="camRy">0°</b><i class="kd"></i></div>
+      <div class="prop live"><span>Zoom</span><b data-v="camZoom">1.00×</b><i class="kd"></i></div>
+      <div class="prop"><span>Lens</span><b>50 mm</b><i></i></div>
+      <div class="sep"></div>
+      <h4>Laptop</h4>
+      <div class="prop live"><span>Lid angle</span><b data-v="lid">0°</b><i class="kd"></i></div>
+      <div class="prop"><span>Color</span><b>Silver</b><i></i></div>
+      <div class="sep"></div>
+      <h4>Phone</h4>
+      <div class="prop live"><span>Y rotation</span><b data-v="phRy">0°</b><i class="kd"></i></div>
+    </div>
+  </div>
+  <div class="ed-tl">
+    <div class="tl-names"><div><b>Camera</b>rotation</div><div><b>Camera</b>zoom</div><div><b>Laptop</b>lid</div><div><b>Phone</b>rotation</div></div>
+    <div class="tl-track">
+      <div class="ruler"></div>
+      <div class="row" data-tr="camRy"></div><div class="row" data-tr="camZoom"></div><div class="row" data-tr="lid"></div><div class="row" data-tr="phRy"></div>
+      <div class="head"></div>
+    </div>
+    <div class="time mono">0.0 / 8.0 s</div>
+  </div>
+</div>
+</template>
+
+<script src="/embed/mockup-view.js"></script>
+<script>
+// ---- hero: the editor window's timeline and values follow the demo's 8 s loop (tools/site/hero-demo.mjs)
+const DUR=8,TR={camRy:[[0,-16],[4,10],[8,-16]],camZoom:[[0,1.12],[4,1.34],[8,1.12]],lid:[[0,78],[1.6,108],[6.4,108],[8,78]],phRy:[[0,-18],[2.5,-52],[5.5,-10],[8,-18]]};
+const smooth=x=>x*x*(3-2*x);
+const at=(k,t)=>{for(let i=0;i<k.length-1;i++){const [t0,v0]=k[i],[t1,v1]=k[i+1];if(t<=t1)return v0+(v1-v0)*smooth((t-t0)/(t1-t0));}return k[k.length-1][1];};
+const fmt={camRy:v=>Math.round(v)+'°',camZoom:v=>v.toFixed(2)+'×',lid:v=>Math.round(v)+'°',phRy:v=>Math.round(v)+'°'};
+let t0=performance.now();
+const stage=document.getElementById('stage');
+stage.appendChild(document.getElementById('editor').content.cloneNode(true));
+function keys(track,dur,times){
+  const ruler=track.querySelector('.ruler');for(let s=0;s<=dur;s++){const e=document.createElement('span');e.style.left=s/dur*100+'%';e.textContent=s;ruler.appendChild(e);}
+  track.querySelectorAll('.row').forEach(r=>{const k=times(r);
+    const bar=document.createElement('i');bar.className='bar';bar.style.left=k[0]/dur*100+'%';bar.style.right=(100-k[k.length-1]/dur*100)+'%';r.appendChild(bar);
+    k.forEach(t=>{const e=document.createElement('i');e.className='k';e.style.left=t/dur*100+'%';e.dataset.t=t;r.appendChild(e);});});
+}
+keys(stage.querySelector('.tl-track'),DUR,r=>TR[r.dataset.tr].map(([t])=>t));
+addEventListener('message',e=>{if(e.data&&e.data.mockup==='ready')t0=performance.now();});
+(function tick(){
+  requestAnimationFrame(tick);
+  const t=((performance.now()-t0)/1000)%DUR;
+  stage.querySelector('.head').style.left=t/DUR*100+'%';
+  stage.querySelector('.time').textContent=t.toFixed(1)+' / 8.0 s';
+  for(const n in TR){const el=stage.querySelector('[data-v="'+n+'"]');if(el)el.textContent=fmt[n](at(TR[n],t));}
+  stage.querySelectorAll('.k').forEach(k=>k.classList.toggle('hit',Math.abs(+k.dataset.t-t)<.18||(+k.dataset.t===DUR&&t<.18)));
+})();
+
+// ---- animate section: a static timeline that matches the landing video's loop (6 s)
+const atl=document.getElementById('animTl');
+keys(atl.querySelector('.tl-track'),6,r=>r.dataset.k.split(',').map(Number));
+atl.querySelectorAll('.k').forEach(k=>k.classList.toggle('hit',Math.abs(+k.dataset.t-2.3)<.3));
+
+// ---- before/after
+const cmp=document.getElementById('cmp');
+cmp.querySelector('input').addEventListener('input',e=>cmp.style.setProperty('--x',e.target.value+'%'));
+
+// ---- templates: six cards from the studio's template set (public/templates/index.json), light / dark
+const PICK=['studio','hero','store-tilt','bokeh','story','turntable'];
+const EN={studio:'Studio',hero:'Titled hero',browser:'Browser window',desk:'Desk','store-classic':'App Store · classic','store-tilt':'App Store · tilted','play-classic':'Google Play · classic','play-tilt':'Google Play · tilted',trio:'Square trio',bokeh:'Portrait · bokeh',story:'Story','push-in':'Push-in','float-title':'Floating title',turntable:'Turntable'};
+const PURPOSE={land:'Landing',store:'Store',social:'Social',video:'Video'};
+let variant='light',tpls=[];
+fetch('/templates/index.json').then(r=>r.json()).then(list=>{tpls=(Array.isArray(list)?list:list.templates||[]).filter(t=>PICK.includes(t.id)).sort((a,b)=>PICK.indexOf(a.id)-PICK.indexOf(b.id));drawTpls();});
+function drawTpls(){
+  const g=document.getElementById('tpls');g.innerHTML='';
+  for(const t of tpls){
+    const a=document.createElement('a');a.className='tpl';a.href='/studio/?template='+t.id+'&v='+variant;
+    const f='/templates/'+t.id+'-'+variant;
+    a.innerHTML='<div class="img"><img src="'+f+'.jpg" alt="">'+(t.anim||t.purpose==='video'?'<video src="'+f+'.webm" muted loop playsinline preload="none"></video><span class="mv">Animated</span>':'')+'</div>'+
+      '<div class="t"><h3>'+(EN[t.id]||t.name)+'</h3><span>'+(PURPOSE[t.purpose]||'')+' · '+t.ratio+'</span></div>';
+    const v=a.querySelector('video');if(v){a.addEventListener('mouseenter',()=>v.play());a.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});}
+    g.appendChild(a);
+  }
+}
+document.querySelectorAll('.toggle button').forEach(b=>b.addEventListener('click',()=>{variant=b.dataset.v;document.querySelectorAll('.toggle button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));drawTpls();}));
+
+// reduced motion: the videos stay on their posters
+if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.querySelectorAll('video[autoplay]').forEach(v=>{v.removeAttribute('autoplay');v.pause();});
+</script>
+</body>
+</html>

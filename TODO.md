@@ -13,7 +13,7 @@ Stüdyo uçtan uca kullanılabilir durumda: boş belgeyle açılır (ya da son �
 - **İçerik:** 7 cihaz tipi, 20 şablon, 2B öğeler ve varlık kütüphanesi, arka plan (şeffaf / düz / gradyan / görsel), web sitesi yakalama ve etkileşimli ekran kaydı (yalnızca dev sunucusunda).
 - **Animasyon:** Tasarla / Canlandır modları, zaman çizelgesi, anahtar kareler, hazır hareketler, MP4 dışa aktarım; **Sıra:** artboard'lar geçişlerle (kesme, çapraz solma, solma, kaydırma, kamera uçuşu) tek videoda.
 - **Hesaplar (hesaplı yapı):** giriş sayfası, Figma benzeri ana sayfa (projeler, şablonlar, çöp kutusu), bulut projeleri (Supabase + Cloudflare R2, Worker), sayfa adresleri; yerel Supabase ile testli (`npm run accounts:test`, `tools/accounts/test-*.mjs`). Üretim hesapları henüz açılmadı (`docs/uyelik.md`, `docs/lansman.md`).
-- **Pazarlama:** `landing/` geçici açılış sayfası (gizlilik notu taslağı, og görseli, telefon ölçüm sayfası); görselleri stüdyonun kendisiyle üretiliyor.
+- **Pazarlama:** `landing/` geçici açılış sayfası (gizlilik notu taslağı, og görseli, telefon ölçüm sayfası); görselleri stüdyonun kendisiyle üretiliyor. Asıl web sitesi: içerik ve yerleşim wireframe'leri hazır (24 Ekim, `wireframes/site-map.html`, `site-wireframes.html`; İngilizce, çok sayfalı), tasarım kullanıcıda.
 - Açık dal / bekleyen iş yok; `main` temiz ve GitHub'a gönderilmiş.
 
 ## Sıradaki yol (14 Ekim 2026 kararı)
@@ -158,6 +158,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 ## Yayın ve tanıtım
 
 - [x] Örnek açılış sayfası (`landing/`), görsel üretim betikleri (`tools/landing/`). [x] Hero videosu ürünün video dışa aktarımıyla (`tools/landing/video.mjs`), fiyat bölümü ücretsiz beta (18 Ekim). [x] Yayın derlemesi `npm run build:site` (açılış kökte, stüdyo `/studio/`, Cloudflare Pages başlıkları). [x] Lansman kontrol listesinin bizdeki yarısı (24 Ekim): og görseli ve paylaşım etiketleri (`SITE_URL`), gizlilik notu taslağı (`landing/gizlilik.html`), geri bildirim bağlantısı, telefon ölçüm sayfası (`landing/olcum.html`). [ ] Sende: hukuki inceleme, adresin kesinleşmesi, telefonda ölçüm (`docs/lansman.md` §4).
+- [x] Asıl web sitesinin içeriği ve yerleşimi (24 Ekim): site haritası ve sayfa iskeletleri (`wireframes/site-map.html`), düşük ayrıntılı wireframe'ler ve sayfa başına kararlar (`wireframes/site-wireframes.html`), hero yön prototipleri (`site-hero.html`, A Galeri seçildi) ve A yönünde biçimlenmiş ana sayfa referansı (`site-home.html`). Site İngilizce ve çok sayfalı; tasarım kullanıcıda. [ ] Sende: wireframe kararları, tasarım, İngilizce örnek ekranlar ve şablon metinleri.
 - [ ] Yayınlama: barındırma, alan adı, yakalama servisiyle birlikte dağıtım.
 - [ ] Açılış sayfasına kısa ürün videosu (stüdyonun kendi MP4 çıktısıyla).
 

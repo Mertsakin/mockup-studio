@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shotlight web sitesi · wireframe'ler</title>
+<style>
+/* Low-fidelity wireframes of every page of the English website: boxes, order and the real copy; no colours, no type
+   choices (the visual design is done elsewhere). Annotations in Turkish, the site copy in English. The hero concept
+   and a styled reference live in site-hero.html and site-home.html. Open: /wireframes/site-wireframes.html */
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font:13px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:#222;background:#f4f4f4}
+h1,h2,h3,h4,p,ul,ol{margin:0}
+ul{padding-left:18px}
+code{font:11.5px ui-monospace,Menlo,monospace;background:#eee;padding:1px 4px;border-radius:3px}
+.page{max-width:1240px;margin:0 auto;padding:28px 20px 80px}
+.intro h1{font-size:22px}
+.intro p{color:#555;margin-top:6px;max-width:92ch}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:#555}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:22px;height:14px;border:1px solid #999}
+.legend i.ph{display:inline-block;min-height:0;height:14px;padding:0;background:repeating-linear-gradient(45deg,#f2f2f2 0 6px,#e2e2e2 6px 12px)}
+.legend i.dk{background:#555}
+.toc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.toc a{font-size:12px;color:#222;text-decoration:none;border:1px solid #ccc;border-radius:999px;padding:3px 10px;background:#fff}
+
+/* a site page */
+.site{margin-top:56px;scroll-margin-top:16px}
+.site>h2{font-size:18px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.site>h2 code{font-size:12px}
+.site>h2 small{font-weight:400;color:#666;font-size:13px}
+.site>.why{color:#555;margin:6px 0 14px;max-width:96ch}
+.frames{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start}
+.frames.one{grid-template-columns:1fr}
+.frame{background:#fff;border:1px solid #888;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.frame.mobile{width:300px}
+.frame>.cap{font-size:11px;color:#666;padding:6px 10px;border-bottom:1px solid #ddd;background:#fafafa}
+
+/* blocks */
+.blk{position:relative;border:1px dashed #9a9a9a;margin:14px 12px 0;padding:14px 12px 12px}
+.blk:last-child{margin-bottom:12px}
+.blk>.lbl{position:absolute;top:-8px;left:10px;background:#fff;padding:0 5px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#666;font-weight:600}
+.blk>.lbl b{display:inline-block;min-width:16px;height:16px;border-radius:50%;background:#222;color:#fff;font-size:10px;line-height:16px;text-align:center;margin-right:5px;letter-spacing:0}
+.blk.dark{background:#5a5a5a;color:#fff;border-color:#333}
+.blk.dark>.lbl{background:#5a5a5a;color:#eee}
+.blk.dark .ph{background:repeating-linear-gradient(45deg,#777 0 6px,#6a6a6a 6px 12px);color:#fff;border-color:#999}
+.blk.dark .sub,.blk.dark .n{color:#ddd}
+.ph{background:repeating-linear-gradient(45deg,#f2f2f2 0 6px,#e2e2e2 6px 12px);border:1px solid #bbb;display:grid;place-items:center;text-align:center;color:#555;font-size:11.5px;padding:8px;min-height:var(--h,110px);line-height:1.35}
+.cols{display:grid;gap:12px;grid-template-columns:repeat(var(--n,3),1fr);align-items:start}
+.cols.c2{--n:2}.cols.c4{--n:4}.cols.c5{--n:5}
+.cols.lr{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.cols.rl{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+.cols.side{grid-template-columns:200px 1fr 150px}
+.card{border:1px solid #ccc;padding:10px;background:#fff}
+.card .ph{margin:-10px -10px 8px;border-width:0 0 1px}
+.center{text-align:center}
+.h1{font-size:24px;font-weight:700;line-height:1.1;letter-spacing:-.01em}
+.h2{font-size:19px;font-weight:700;line-height:1.15}
+.h3{font-size:14px;font-weight:700}
+.lead{color:#444;margin-top:6px;max-width:58ch}
+.center .lead{margin-left:auto;margin-right:auto}
+.sub{color:#555;font-size:12.5px;margin-top:3px}
+.eyebrow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#666;margin-bottom:6px}
+.btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.center .btns{justify-content:center}
+.btn{display:inline-block;border:1px solid #333;border-radius:999px;padding:4px 12px;font-size:12px;white-space:nowrap;background:#fff;color:#222}
+.btn.pri{background:#333;color:#fff}
+.dark .btn{border-color:#fff;background:transparent;color:#fff}.dark .btn.pri{background:#fff;color:#222}
+.navbar{display:flex;align-items:center;gap:16px;font-size:12.5px}
+.navbar .logo{font-weight:700}
+.navbar .links{display:flex;gap:14px;flex:1;justify-content:center;color:#444}
+.navbar .acts{display:flex;gap:10px;align-items:center}
+.strip{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;color:#444;font-size:12px}
+.strip span::before{content:"• "}
+.n{font-size:11px;color:#666}
+.list{display:grid;gap:10px}
+.list li{list-style:none}
+.faq .row{border-top:1px solid #ccc;padding:7px 0;display:flex;justify-content:space-between}
+.faq .row:last-child{border-bottom:1px solid #ccc}
+.code{font:11px ui-monospace,Menlo,monospace;background:#eee;padding:8px;white-space:pre-wrap;word-break:break-all;margin-top:8px}
+.foot{display:grid;grid-template-columns:1.3fr repeat(4,1fr);gap:12px;font-size:12px}
+.foot b{display:block;margin-bottom:4px}
+.foot span{display:block;color:#555}
+.base{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid #ddd;color:#666;font-size:11.5px}
+.note{font-size:11.5px;color:#777;margin-top:6px}
+.mobile .blk{margin:12px 8px 0;padding:12px 8px 10px}
+.mobile .cols,.mobile .cols.lr,.mobile .cols.rl,.mobile .foot{grid-template-columns:1fr}
+.mobile .h1{font-size:18px}.mobile .ph{--h:70px}
+.mobile .navbar .links{display:none}
+.mobile .order{font-size:11.5px;color:#444}
+.mobile .order li{margin:3px 0}
+
+/* decisions */
+.dec{margin-top:16px;background:#fff;border:1px solid #ddd;padding:12px 16px}
+.dec h3{font-size:13px;margin-bottom:6px}
+.dec ol{padding-left:18px;color:#444}
+.dec li{margin:4px 0}
+.dec li b{color:#222}
+.variants{margin-top:12px;background:#fff;border:1px solid #ddd;padding:12px 16px;font-size:12.5px}
+.variants table{border-collapse:collapse;width:100%}
+.variants th,.variants td{text-align:left;vertical-align:top;padding:5px 8px;border-top:1px solid #eee}
+.variants th{color:#666;font-weight:600;font-size:11.5px}
+@media (max-width:900px){.frames{grid-template-columns:1fr}.cols,.cols.lr,.cols.rl,.cols.side{grid-template-columns:1fr}.foot{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="intro">
+  <h1>Shotlight web sitesi · wireframe'ler</h1>
+  <p>Yalnızca içerik ve yerleşim: her sayfa kutulardan oluşur, kutuların içinde gerçek İngilizce metin, görsellerin yerinde taranmış kutu ve ne gösterileceği. Renk, yazı tipi, boşluk ve görsel dil burada yok; tasarım ayrı yapılacak. Sıra numaraları sayfadaki sırayı verir; "Kararlar" bölümü o sayfada senden beklenen seçimler. Yapı ve metinlerin kaynağı <code>site-map.html</code>; hero fikri (editör penceresi + canlı 3B) ve biçimlenmiş bir referans <code>site-hero.html</code> ve <code>site-home.html</code>'de duruyor.</p>
+  <div class="legend"><span><i></i>kutu = bölüm</span><span><i class="ph"></i>taralı = görsel / render / canlı oynatıcı</span><span><i class="dk"></i>koyu = koyu bant önerisi</span><span>sağdaki dar çerçeve = telefonda sıra</span></div>
+  <div class="toc"><a href="#home">Home</a><a href="#features">Features</a><a href="#usecase">Use case (×3)</a><a href="#templates">Templates</a><a href="#pricing">Pricing</a><a href="#docs">Docs</a><a href="#misc">Changelog · Privacy · Terms · 404</a><a href="#global">Ortak kararlar</a></div>
+</div>
+
+<!-- ================================================================ HOME -->
+<section class="site" id="home">
+  <h2>Home <code>/</code> <small>tüm hikâye tek sayfada; stüdyoya iki çağrı: hero ve kapanış</small></h2>
+  <p class="why">Sıra: ne olduğu (hero) → inandırıcılık (kanıt şeridi) → nasıl (3 adım) → bana ne var (çıktılar) → neden gerçek (koyu bant) → hareket → başlangıç noktaları (şablonlar) → benzersiz özellik (göm) → fiyat → itirazlar → kapanış.</p>
+  <div class="frames">
+    <div class="frame">
+      <div class="cap">Masaüstü · 1240 px içerik genişliği</div>
+      <div class="blk"><span class="lbl"><b>1</b>Nav</span><div class="navbar"><span class="logo">Shotlight <span class="n">beta</span></span><span class="links"><span>Features</span><span>Templates</span><span>Pricing</span><span>Docs</span></span><span class="acts"><span>Sign in</span><span class="btn pri">Open studio</span></span></div></div>
+      <div class="blk center"><span class="lbl"><b>2</b>Hero · metin</span><div class="eyebrow">Free beta · nothing to install</div><div class="h1">Your screenshot,<br>in studio light.</div><p class="lead">Place phones, tablets and laptops in one scene, set the lights, animate with keyframes. Photo-real images and video, right in your browser.</p><div class="btns"><span class="btn pri">Open the studio</span><span class="btn">Browse templates</span></div></div>
+      <div class="blk"><span class="lbl"><b>3</b>Hero · görsel</span><div class="ph" style="--h:220px">Editör penceresi (HTML çizim): solda katmanlar, ortada tuvalde <b>canlı gömme oynatıcısı</b> (dizüstü + telefon, 8 sn döngü, imleçle döner), sağda değer alanları, altta anahtar kareli zaman çizelgesi. 1180 px genişlik.<br>Altında küçük not: "Live. Move your mouse over the canvas."</div></div>
+      <div class="blk"><span class="lbl"><b>4</b>Kanıt şeridi</span><div class="strip"><span>Path-traced rendering</span><span>Export up to 4K</span><span>MP4, WebM, GIF</span><span>Interactive embeds</span><span>Nothing to install</span></div></div>
+      <div class="blk"><span class="lbl"><b>5</b>How it works</span><div class="h2">Three steps, one tab.</div><p class="lead">No scene to build from scratch, no software to learn first. Start from a template, change what you need, export.</p>
+        <div class="cols" style="margin-top:12px">
+          <div class="card"><div class="ph">UI çizimi: bırakma alanı + URL alanı + "Capture"; cihaz çipleri Phone 390 · Tablet 820 · Laptop 1440</div><div class="n">01</div><div class="h3">Drop a screenshot or paste a URL</div><p class="sub">Shotlight captures your site at every device size, pixel-sharp, with the right viewport for each.</p></div>
+          <div class="card"><div class="ph">render: bir sahne + küçük rozet "Softbox · 45° · soft shadow"</div><div class="n">02</div><div class="h3">Place and light</div><p class="sub">Pick a template, arrange the devices, choose a lens, set softboxes or sun. Everything updates as you drag.</p></div>
+          <div class="card"><div class="ph">UI çizimi: dışa aktarma kartı; biçim çipleri PNG 3840 · JPG · MP4 · Store set (ZIP) · Embed; ilerleme çubuğu</div><div class="n">03</div><div class="h3">Export</div><p class="sub">PNG up to 4K, video, a whole store set, or an interactive embed for your own site.</p></div>
+        </div></div>
+      <div class="blk"><span class="lbl"><b>6</b>What you can make · 5 kart, kullanım senaryosu sayfalarına gider</span><div class="h2">One scene, every channel.</div><p class="lead">The same project gives you the landing visual, the store screenshots, the social post and the video. Change the screen once, export all of them again.</p>
+        <div class="cols" style="margin-top:12px">
+          <div class="card"><div class="ph">render 16:10: dizüstü + telefon</div><div class="h3">Landing page visuals</div><p class="sub">Hero images that match your light and dark themes.</p></div>
+          <div class="card"><div class="ph">render: 3 mağaza ekranı yan yana, başlıklı</div><div class="h3">App Store &amp; Google Play sets</div><p class="sub">Every required size, titles per screen, every language.</p></div>
+          <div class="card"><div class="ph">render 1:1: üç telefon</div><div class="h3">Social posts &amp; stories</div><p class="sub">Square, portrait and 9:16, from the same scene.</p></div>
+        </div>
+        <div class="cols c2" style="margin-top:12px">
+          <div class="card"><div class="ph">kısa döngü videosu (sessiz, otomatik), poster ile</div><div class="h3">Product videos</div><p class="sub">Camera moves, text effects, MP4 or WebM. Every frame rendered.</p></div>
+          <div class="card"><div class="ph">poster görseli + rozet "Live on your page"</div><div class="h3">Interactive 3D embeds</div><p class="sub">A mockup that turns with the cursor and plays on scroll.</p></div>
+        </div></div>
+      <div class="blk dark"><span class="lbl"><b>7</b>Why it looks real · koyu bant</span><div class="h2">Lit like a product shoot, not a filter.</div><p class="lead" style="color:#eee">Most mockup tools paste a screenshot into a flat frame. Shotlight builds a scene with real lights and renders it like a photograph.</p>
+        <div class="cols lr" style="margin-top:12px">
+          <ul class="list">
+            <li><div class="h3">Real lights</div><p class="sub">Softbox, octabox, window or sun. Shadows soften with distance and sharpen at the contact point, like on set.</p></li>
+            <li><div class="h3">Path-traced photo quality</div><p class="sub">Reflections, contact shadows and glass, denoised in the browser. Fast preview while you work, photo quality when you export.</p></li>
+            <li><div class="h3">A real lens</div><p class="sub">Focal length, aperture and focus; bokeh where you want it, sharp where it matters.</p></li>
+            <li><div class="h3">Generic devices</div><p class="sub">No brand logos, no licensing worries. Bring your own frame when you need a specific one.</p></li>
+          </ul>
+          <div><div class="ph" style="--h:200px">sürgülü önce/sonra: aynı sahne "Fast preview" ↔ "Photo quality" (iki render, kullanıcı sürükler)<br>altında not: "Drag to compare. Both frames come straight out of Shotlight…"</div><div class="ph" style="--h:70px;margin-top:10px">küçük 4:5 bokeh render'ı + "85 mm, f/1.8" + bir cümle</div></div>
+        </div></div>
+      <div class="blk"><span class="lbl"><b>8</b>Animate</span><div class="h2">Keyframe the camera, the devices, the light.</div><p class="lead">Presets for push-ins, orbits and turntables; text effects for titles. Every frame is rendered, nothing is screen-recorded.</p>
+        <div class="ph" style="--h:150px;margin-top:12px">geniş kart: üstte 6 sn döngü videosu (üç telefon), altında zaman çizelgesi şeridi (4 satır, elmaslar, imleç)</div>
+        <div class="cols" style="margin-top:12px"><div><div class="h3">Presets that look right</div><p class="sub">Push in, slow orbit, turntable, float. Drop one on a device or the camera and adjust the keys.</p></div><div><div class="h3">Text that moves</div><p class="sub">Fade, rise, typewriter, scramble, counters. Per letter, word or line, with easing.</p></div><div><div class="h3">MP4, WebM, GIF</div><p class="sub">Up to 3840 px, motion blur, photo quality per frame if you have the time.</p></div></div></div>
+      <div class="blk"><span class="lbl"><b>9</b>Templates · 6 kart + Light/Dark</span><div class="cols rl"><div><div class="h2">Start from a template.</div><p class="lead">Landing, store, social and video sets, light or dark. Yours in one click; change anything after.</p></div><div style="text-align:right"><span class="btn">Light</span> <span class="btn">Dark</span></div></div>
+        <div class="cols" style="margin-top:12px"><div class="card"><div class="ph" style="--h:70px">küçük resim</div><div class="h3">Studio</div><div class="n">Landing · 16:9</div></div><div class="card"><div class="ph" style="--h:70px">küçük resim</div><div class="h3">Titled hero</div><div class="n">Landing · 16:9</div></div><div class="card"><div class="ph" style="--h:70px">küçük resim</div><div class="h3">App Store · tilted</div><div class="n">Store · 9:19.5</div></div></div>
+        <div class="cols" style="margin-top:12px"><div class="card"><div class="ph" style="--h:70px">küçük resim</div><div class="h3">Portrait · bokeh</div><div class="n">Social · 4:5</div></div><div class="card"><div class="ph" style="--h:70px">küçük resim</div><div class="h3">Story</div><div class="n">Social · 9:16</div></div><div class="card"><div class="ph" style="--h:70px">küçük resim · üstüne gelince WebM</div><div class="h3">Turntable</div><div class="n">Video · 1:1 · Animated</div></div></div>
+        <div class="center" style="margin-top:12px"><span class="btn">All 14 templates</span></div></div>
+      <div class="blk"><span class="lbl"><b>10</b>Embed</span><div class="h2">Put the 3D mockup on your page.</div><div class="cols lr" style="margin-top:12px"><div><p class="lead">Export an interactive embed instead of a picture: it turns with the cursor, plays on scroll, loads lazily behind a poster and respects reduced motion. One script, one tag.</p><div class="code">&lt;script src="mockup-view.js"&gt;&lt;/script&gt;
+&lt;mockup-view src="launch.html" mode="mouse+loop"
+             poster="poster.webp"&gt;&lt;/mockup-view&gt;</div><p class="sub" style="margin-top:8px"><u>Read the embed guide</u></p></div><div class="ph" style="--h:170px">ikinci canlı oynatıcı (sürükleyince döner), köşede "Drag to turn"</div></div></div>
+      <div class="blk"><span class="lbl"><b>11</b>Pricing teaser</span><div class="cols c2"><div><div class="h2">Free while in beta.</div><p class="sub">Every device, template and export. Prices are announced before the beta ends; nothing you made goes away.</p><div class="btns"><span class="btn pri">Open the studio</span></div></div><ul class="sub" style="margin:0 0 0 16px"><li>Images up to 4K, video in MP4, WebM and GIF</li><li>Store sets with localization</li><li>Interactive embeds</li><li>2 GB cloud storage, 100 projects</li><li>Sign in with Google, GitHub, Apple or email</li></ul></div></div>
+      <div class="blk"><span class="lbl"><b>12</b>FAQ · akordeon</span><div class="h2 center">Questions.</div><div class="faq" style="max-width:640px;margin:10px auto 0"><div class="row"><span>Is it really free?</span><span>+</span></div><div class="row"><span>Do I need to install anything?</span><span>+</span></div><div class="row"><span>What happens to my screenshots?</span><span>+</span></div><div class="row"><span>Can I use the output commercially?</span><span>+</span></div><div class="row"><span>Will it run on my laptop?</span><span>+</span></div></div></div>
+      <div class="blk"><span class="lbl"><b>13</b>Kapanış</span><div class="cols c2"><div><div class="h2">Set the light.<br>Let the browser render.</div><p class="sub">Free beta. Sign in with Google, GitHub, Apple or email; your projects wait in your account.</p><div class="btns"><span class="btn pri">Open the studio</span></div></div><div class="ph" style="--h:120px">geniş render: masa başı (dizüstü, monitör, tablet, telefon)</div></div></div>
+      <div class="blk"><span class="lbl"><b>14</b>Footer</span><div class="foot"><div><b>Shotlight</b><span>The product photo studio in your browser.</span></div><div><b>Product</b><span>Features</span><span>Templates</span><span>Pricing</span><span>Changelog</span></div><div><b>Use cases</b><span>App store screenshots</span><span>Landing page mockups</span><span>Product videos</span></div><div><b>Resources</b><span>Docs</span><span>Embed guide</span><span>Keyboard shortcuts</span><span>FAQ</span></div><div><b>Company</b><span>Contact</span><span>Privacy</span><span>Terms</span></div></div><div class="base"><span>© 2026 Shotlight · beta</span><span>Hosted in the EU. No trackers.</span></div></div>
+    </div>
+    <div class="frame mobile">
+      <div class="cap">Telefon · 390 px · sıra ve ne değişiyor</div>
+      <div class="blk"><span class="lbl">1 Nav</span><div class="navbar"><span class="logo">Shotlight</span><span style="flex:1"></span><span class="btn pri">Open studio</span></div><p class="note">bağlantılar ve Sign in gizli (menü düğmesi: karar 6)</p></div>
+      <div class="blk center"><span class="lbl">2 Hero</span><div class="h1">Your screenshot, in studio light.</div><p class="note">metin ve iki düğme alt alta</p></div>
+      <div class="blk"><span class="lbl">3 Hero görseli</span><div class="ph">yalnızca tuval + zaman çizelgesi; yan paneller gizli</div></div>
+      <div class="blk"><span class="lbl">4–14 sıra aynı</span><ol class="order"><li>kanıt şeridi iki satıra sarar</li><li>3 adım: alt alta</li><li>5 çıktı kartı: alt alta (video kartı otomatik oynar)</li><li>koyu bant: liste üstte, sürgü altta, bokeh kartı en altta</li><li>Animate: video + zaman çizelgesi (satır adları gizli), 3 madde alt alta</li><li>şablonlar: 6 kart alt alta ya da yatay kaydırma (karar 7)</li><li>göm: metin, kod, oynatıcı</li><li>fiyat: başlık, düğme, liste</li><li>SSS, kapanış (görsel altta), footer tek sütun</li></ol></div>
+    </div>
+  </div>
+  <div class="dec"><h3>Kararlar · Home</h3><ol>
+    <li><b>Hero hizası:</b> ortalı metin + altında tam genişlikte editör penceresi (burada) mı, sol metin + sağda pencere mi? Ortalı pencereye daha çok yer verir; sol düzen ilk ekranda görseli gösterir.</li>
+    <li><b>Hero görseli:</b> editör penceresi kabuğu gerçekten HTML çizim mi olsun (canlı değerler, zaman çizelgesi), yoksa yalnızca canlı oynatıcı mı? Kabuk "bu bir araç" mesajını taşıyor ama kurması ve bakımı iş.</li>
+    <li><b>Koyu bant:</b> "Why it looks real" koyu bant olarak kalsın mı (render'lar koyuda daha etkili), yoksa sayfa baştan sona açık mı?</li>
+    <li><b>Çıktı kartları:</b> 5 kart (3 + 2) mı, 4 kart mı (göm'ü kendi bölümüne bırakıp)? Kartlar kullanım senaryosu sayfalarına mı, Features çapalarına mı gitsin?</li>
+    <li><b>Şablon tanıtımı:</b> 6 kart mı, tek sıra 3 kart + bağlantı mı?</li>
+    <li><b>Telefonda nav:</b> hamburger menü mü, yalnızca "Open studio" mu?</li>
+    <li><b>Telefonda şablon kartları:</b> alt alta mı, yatay kaydırma mı?</li>
+    <li><b>Kapanış:</b> görselli iki sütun mu, yalnızca metin ve düğme mi?</li>
+  </ol></div>
+</section>
+
+<!-- ================================================================ FEATURES -->
+<section class="site" id="features">
+  <h2>Features <code>/features</code> <small>tek uzun sayfa, bölüm başına çapa; sırayla sağ/sol değişen görselli satırlar</small></h2>
+  <p class="why">Ana sayfanın "nasıl" ve "neden" bölümlerinin uzun hâli. Her satır: başlık, iki cümle, bir görsel. Ayrıntı Docs'ta. Sıra ürünün iş akışını izler: kurulum → ışık → objektif → kalite → hareket → metin → yakalama → mağaza → göm → bulut.</p>
+  <div class="frames one">
+    <div class="frame">
+      <div class="cap">Masaüstü</div>
+      <div class="blk"><span class="lbl"><b>1</b>Nav</span><div class="navbar"><span class="logo">Shotlight</span><span class="links"><span><u>Features</u></span><span>Templates</span><span>Pricing</span><span>Docs</span></span><span class="acts"><span>Sign in</span><span class="btn pri">Open studio</span></span></div></div>
+      <div class="blk"><span class="lbl"><b>2</b>Hero · sol hizalı, görselsiz</span><div class="h1">Everything a product shoot needs. In a tab.</div><p class="lead">Devices, lights, lenses, animation and export, built for people who ship.</p><div class="btns"><span class="btn">Devices</span><span class="btn">Lights</span><span class="btn">Lens</span><span class="btn">Photo quality</span><span class="btn">Animate</span><span class="btn">Text</span><span class="btn">Capture</span><span class="btn">Store sets</span><span class="btn">Embed</span><span class="btn">Cloud</span></div><p class="note">çipler sayfa içi çapalar; yapışkan alt menü olarak da düşünülebilir (karar 2)</p></div>
+      <div class="blk"><span class="lbl"><b>3</b>#devices · metin sol, görsel sağ</span><div class="cols lr"><div><div class="h3">Devices &amp; materials</div><p class="sub">Phone, tablet, laptop, monitor, browser window and a plain page. Anodized, glass, brushed and matte finishes; your own frame PNG; GLB models for anything else.</p></div><div class="ph">render: yedi cihaz tek sahnede</div></div></div>
+      <div class="blk"><span class="lbl"><b>4</b>#lights · görsel sol, metin sağ</span><div class="cols rl"><div class="ph">render: aynı cihaz üç ışık kurulumuyla yan yana (softbox / window / sun)</div><div><div class="h3">Lights</div><p class="sub">Softbox, octabox, window and sun. Drag a light on the dome, set its size and distance; shadows go soft or hard the way they do on set.</p></div></div></div>
+      <div class="blk"><span class="lbl"><b>5</b>#lens</span><div class="cols lr"><div><div class="h3">Camera &amp; lens</div><p class="sub">Focal length in millimetres, aperture in f-stops, focus on a device, a point or a distance. Depth of field that behaves like glass.</p></div><div class="ph">render çifti: 24 mm / 85 mm</div></div></div>
+      <div class="blk"><span class="lbl"><b>6</b>#photo</span><div class="cols rl"><div class="ph">sürgülü önce/sonra (ana sayfadakiyle aynı bileşen, başka sahne)</div><div><div class="h3">Photo quality</div><p class="sub">Fast preview while you work; path-traced photo quality when you export. 64 samples, denoised, up to 3840 px, in the browser.</p></div></div></div>
+      <div class="blk"><span class="lbl"><b>7</b>#animate</span><div class="cols lr"><div><div class="h3">Animate</div><p class="sub">Keyframes for camera, devices, lights and text. Presets, easing, motion blur, text effects. MP4, WebM and GIF; photo quality per frame if you want it.</p></div><div class="ph">zaman çizelgesi ekran görüntüsü + kısa video</div></div></div>
+      <div class="blk"><span class="lbl"><b>8</b>#text</span><div class="cols rl"><div class="ph">render: başlıklı mağaza görseli (auto layout çerçevesi)</div><div><div class="h3">Text &amp; layout</div><p class="sub">Titles with Google Fonts or your own files, frames with auto layout, alignment and distribution. Figma habits work here.</p></div></div></div>
+      <div class="blk"><span class="lbl"><b>9</b>#capture · yalnızca yakalama servisi lansmanda açıksa</span><div class="cols lr"><div><div class="h3">Capture your site</div><p class="sub">Paste a URL and every device gets its own pixel-sharp, full-page capture at the right viewport. Change the site, capture again.</p></div><div class="ph">UI çizimi: URL alanı → üç cihaz, her biri kendi görüntü alanında</div></div></div>
+      <div class="blk"><span class="lbl"><b>10</b>#store</span><div class="cols rl"><div class="ph">render: 5 ekranlı set, iki dilde (EN / DE)</div><div><div class="h3">Store sets &amp; localization</div><p class="sub">App Store and Google Play sizes, 3–8 screens in one set, titles per screen. Add languages, export every one as a ZIP, or round-trip the copy as CSV.</p></div></div></div>
+      <div class="blk"><span class="lbl"><b>11</b>#embed</span><div class="cols lr"><div><div class="h3">Embed</div><p class="sub">A lightweight web component that renders your scene live on your page: cursor, scroll or loop driven, poster first, reduced motion respected.</p></div><div class="ph">canlı oynatıcı</div></div></div>
+      <div class="blk"><span class="lbl"><b>12</b>#cloud</span><div class="cols rl"><div class="ph">ekran görüntüsü: Projelerim ana sayfası</div><div><div class="h3">Projects &amp; cloud</div><p class="sub">Projects live in your account, open on any computer, keep their media deduplicated. Download everything or delete the account from the menu, no email needed.</p></div></div></div>
+      <div class="blk center"><span class="lbl"><b>13</b>CTA bandı</span><div class="h2">Set the light. Let the browser render.</div><div class="btns"><span class="btn pri">Open the studio</span><span class="btn">Browse templates</span></div></div>
+      <div class="blk"><span class="lbl"><b>14</b>Footer</span><p class="note">Home ile aynı</p></div>
+    </div>
+  </div>
+  <div class="dec"><h3>Kararlar · Features</h3><ol>
+    <li><b>Tek sayfa mı, alt sayfalar mı?</b> Burada tek uzun sayfa (10 satır). Arama motoru için ileride özellik başına sayfa açılabilir; kullanım senaryosu sayfaları o işi şimdilik görüyor.</li>
+    <li><b>Çapa gezintisi:</b> hero'daki çipler yeterli mi, yoksa kaydırırken üstte yapışan bir bölüm menüsü mü?</li>
+    <li><b>Sıra:</b> iş akışı sırası (burada) mı, "en etkileyici önce" (Photo quality, Lights, Animate…) mi?</li>
+    <li><b>Capture satırı:</b> yakalama servisi lansmanda yoksa satır tamamen çıkar; "coming soon" yazılmaz.</li>
+    <li><b>Görsel türü:</b> her satırda render mı, bazı satırlarda stüdyo ekran görüntüsü mü (ışık kubbesi, zaman çizelgesi gibi arayüz gösteren yerlerde)?</li>
+  </ol></div>
+</section>
+
+<!-- ================================================================ USE CASES -->
+<section class="site" id="usecase">
+  <h2>Use case pages <code>/for/app-store-screenshots</code> <code>/for/landing-page-mockups</code> <code>/for/product-videos</code> <small>aynı kalıp üç kez; arama motorundan gelenler için giriş noktası</small></h2>
+  <p class="why">Ürünü o işi yapan kişinin diliyle anlatır; sayfa başlığı işin adını taşır. Aşağıda App Store örneği; diğer ikisinin farkları tabloda.</p>
+  <div class="frames one">
+    <div class="frame">
+      <div class="cap">Masaüstü · App Store screenshots örneği</div>
+      <div class="blk"><span class="lbl"><b>1</b>Nav</span><p class="note">ortak</p></div>
+      <div class="blk"><span class="lbl"><b>2</b>Hero · metin sol, görsel sağ</span><div class="cols lr"><div><div class="eyebrow">For app developers</div><div class="h1">App Store screenshots that look shot, not pasted.</div><p class="lead">Every required size, titles in every language, real devices under real light. Exported as a set in one click.</p><div class="btns"><span class="btn pri">Open the studio</span><span class="btn">See the templates</span></div></div><div class="ph" style="--h:170px">render: 5 ekranlı set yan yana (dönüşümlü düzen), başlıklı</div></div></div>
+      <div class="blk"><span class="lbl"><b>3</b>Bugün → Shotlight · 3 satır</span><div class="cols"><div class="card"><div class="h3">Twelve sizes by hand</div><p class="sub">→ one set, every size. Pick App Store 6.9", 6.5", iPad 13" or Google Play; the set resizes itself.</p></div><div class="card"><div class="h3">Flat 2D frames</div><p class="sub">→ real 3D devices and light. Tilt them, light them, keep the screen sharp.</p></div><div class="card"><div class="h3">Copy pasted per language</div><p class="sub">→ a CSV round-trip. Add languages, export every one as a ZIP.</p></div></div></div>
+      <div class="blk"><span class="lbl"><b>4</b>Templates for this · 4 kart</span><div class="h2">Start from a store set.</div><div class="cols c4" style="margin-top:10px"><div class="card"><div class="ph" style="--h:60px"></div><div class="h3">App Store · classic</div></div><div class="card"><div class="ph" style="--h:60px"></div><div class="h3">App Store · tilted</div></div><div class="card"><div class="ph" style="--h:60px"></div><div class="h3">Google Play · classic</div></div><div class="card"><div class="ph" style="--h:60px"></div><div class="h3">Google Play · tilted</div></div></div></div>
+      <div class="blk"><span class="lbl"><b>5</b>How to · 3 adım</span><div class="h2">Your set in three steps.</div><ol class="sub" style="margin:8px 0 0 18px"><li>Drop your screenshots (or paste the app's web URL).</li><li>Pick a store set, write the titles, add languages.</li><li>Export: opaque PNGs at every size, zipped per language.</li></ol><p class="sub" style="margin-top:8px"><u>Read the guide →</u></p></div>
+      <div class="blk"><span class="lbl"><b>6</b>FAQ · bu işe özel</span><div class="faq"><div class="row"><span>Which sizes do the stores require?</span><span>+</span></div><div class="row"><span>Are the PNGs opaque, as the stores want?</span><span>+</span></div><div class="row"><span>Can I make the Google Play feature graphic too?</span><span>+</span></div><div class="row"><span>How do translations work?</span><span>+</span></div></div></div>
+      <div class="blk center"><span class="lbl"><b>7</b>CTA + Footer</span><div class="btns"><span class="btn pri">Open the studio</span></div></div>
+    </div>
+  </div>
+  <div class="variants"><table><tr><th></th><th>App store screenshots</th><th>Landing page mockups</th><th>Product videos</th></tr>
+    <tr><td><b>Eyebrow</b></td><td>For app developers</td><td>For SaaS and web teams</td><td>For launches and social</td></tr>
+    <tr><td><b>H1</b></td><td>App Store screenshots that look shot, not pasted.</td><td>A hero image that stays current with your product.</td><td>A product video without a camera crew.</td></tr>
+    <tr><td><b>Lead</b></td><td>Every required size, titles in every language, real devices under real light.</td><td>Paste your URL, pick a scene, export at 4K; capture again when the product changes. Or embed it live.</td><td>Keyframe the camera and the devices, add a title, export MP4. Every frame rendered.</td></tr>
+    <tr><td><b>3 satır</b></td><td>sizes · 2D frames · languages</td><td>stale screenshots · stock mockups · static images (→ embed)</td><td>screen recordings · After Effects · stock templates</td></tr>
+    <tr><td><b>Şablonlar</b></td><td>4 mağaza seti</td><td>Studio, Titled hero, Browser window, Desk</td><td>Push-in, Floating title, Turntable, Story</td></tr>
+    <tr><td><b>Görsel</b></td><td>5 ekranlı set</td><td>dizüstü + telefon render'ı ve bir canlı gömme</td><td>döngü videosu</td></tr>
+  </table></div>
+  <div class="dec"><h3>Kararlar · Use cases</h3><ol>
+    <li><b>Üç senaryo doğru mu?</b> Alternatifler: "social posts", "pitch decks", "Product Hunt launch".</li>
+    <li><b>Hero görseli:</b> render mi (burada), canlı gömme mi (landing senaryosunda)?</li>
+    <li><b>"Bugün → Shotlight" biçimi:</b> üç kart mı, iki sütunlu karşılaştırma tablosu mu?</li>
+  </ol></div>
+</section>
+
+<!-- ================================================================ TEMPLATES -->
+<section class="site" id="templates">
+  <h2>Templates <code>/templates</code> <small>stüdyodaki Şablonlar sekmesinin herkese açık hâli; kart stüdyoyu o şablonla açar</small></h2>
+  <div class="frames one">
+    <div class="frame">
+      <div class="cap">Masaüstü</div>
+      <div class="blk"><span class="lbl"><b>1</b>Nav</span><p class="note">ortak</p></div>
+      <div class="blk"><span class="lbl"><b>2</b>Başlık + filtreler</span><div class="cols rl"><div><div class="h1">Templates.</div><p class="lead">Fourteen starting points, light or dark. Open one, drop your screens in, change anything.</p></div><div style="text-align:right"><span class="btn">Light</span> <span class="btn">Dark</span></div></div><div class="btns"><span class="btn pri">All</span><span class="btn">Landing</span><span class="btn">Store</span><span class="btn">Social</span><span class="btn">Video</span></div></div>
+      <div class="blk"><span class="lbl"><b>3</b>Izgara · 14 kart, 3 sütun</span>
+        <div class="cols"><div class="card"><div class="ph" style="--h:80px">küçük resim; hareketlide üstüne gelince WebM</div><div class="h3">Studio</div><div class="n">Landing · 16:9</div></div><div class="card"><div class="ph" style="--h:80px"></div><div class="h3">Titled hero</div><div class="n">Landing · 16:9</div></div><div class="card"><div class="ph" style="--h:80px"></div><div class="h3">Browser window</div><div class="n">Landing · 16:9</div></div></div>
+        <p class="note" style="margin-top:8px">… Desk · App Store classic / tilted · Google Play classic / tilted · Square trio · Portrait bokeh · Story · Push-in · Floating title · Turntable. Kart anatomisi: küçük resim, ad, amaç · oran, ekran sayısı, "Animated" rozeti. Tıklama: <code>/studio/?template=&lt;id&gt;&amp;v=&lt;light|dark&gt;</code> (giriş yoksa önce giriş, sonra şablon).</p></div>
+      <div class="blk"><span class="lbl"><b>4</b>Kendi şablonun</span><div class="cols lr"><div><div class="h2">Make your own.</div><p class="sub">Save any artboard as a template; import and export them as files. They live in your browser, next to the built-in set.</p></div><div class="ph" style="--h:80px">ekran görüntüsü: Şablonlar sekmesi, "Save as template"</div></div></div>
+      <div class="blk center"><span class="lbl"><b>5</b>CTA + Footer</span><div class="btns"><span class="btn pri">Open the studio</span></div></div>
+    </div>
+  </div>
+  <div class="dec"><h3>Kararlar · Templates</h3><ol>
+    <li><b>Filtre:</b> amaç çipleri (burada) mi, sol kenar çubuğu mu? 14 kartla çipler yeter; set büyürse kenar çubuğu.</li>
+    <li><b>Light/Dark:</b> tek anahtar tüm kartları çevirir (stüdyodaki gibi) mi, her kartta iki küçük resim mi?</li>
+    <li><b>Kart tıklaması:</b> doğrudan stüdyo mu, önce büyük önizleme (lightbox) mı?</li>
+  </ol></div>
+</section>
+
+<!-- ================================================================ PRICING -->
+<section class="site" id="pricing">
+  <h2>Pricing <code>/pricing</code> <small>beta boyunca tek kart; sonrası fiyatsız çerçeve</small></h2>
+  <div class="frames one">
+    <div class="frame">
+      <div class="cap">Masaüstü</div>
+      <div class="blk"><span class="lbl"><b>1</b>Nav</span><p class="note">ortak</p></div>
+      <div class="blk center"><span class="lbl"><b>2</b>Başlık</span><div class="h1">Free while in beta.</div><p class="lead">Every device, template and export. No card, no limits on what you make.</p></div>
+      <div class="blk"><span class="lbl"><b>3</b>Beta kartı · ortada, dar</span><div class="card" style="max-width:520px;margin:0 auto"><div class="h2">Beta</div><div class="h1" style="margin-top:4px">€0</div><ul class="sub" style="margin:10px 0 0 16px"><li>Every device, material, light and template</li><li>Images up to 4K, video in MP4, WebM and GIF</li><li>Store sets with localization</li><li>Interactive embeds</li><li>2 GB cloud storage, 100 projects</li><li>Sign in with Google, GitHub, Apple or email</li></ul><div class="btns"><span class="btn pri">Open the studio</span></div></div></div>
+      <div class="blk"><span class="lbl"><b>4</b>Sonra ne olacak · 3 sütun, fiyatsız</span><div class="h2 center">What comes after the beta.</div><p class="lead center" style="margin:6px auto 0">Prices are announced before the beta ends; nothing you made goes away.</p><div class="cols" style="margin-top:12px"><div class="card"><div class="h3">Free</div><p class="sub">For trying things out: a few projects, watermark-free images, standard export sizes.</p></div><div class="card"><div class="h3">Pro</div><p class="sub">For people who ship: unlimited projects, 4K and video, store sets, embeds, more storage.</p></div><div class="card"><div class="h3">Team</div><p class="sub">Shared libraries, brand kits and templates, seats. Later.</p></div></div><p class="note">plan adları, kapsamları ve "beta users get …" vaadi senin kararın (karar 1–2)</p></div>
+      <div class="blk"><span class="lbl"><b>5</b>FAQ</span><div class="faq"><div class="row"><span>Do I need a card?</span><span>+</span></div><div class="row"><span>What are the limits?</span><span>+</span></div><div class="row"><span>Can I export my data?</span><span>+</span></div><div class="row"><span>Where is it stored?</span><span>+</span></div><div class="row"><span>What happens to my projects when the beta ends?</span><span>+</span></div></div></div>
+      <div class="blk"><span class="lbl"><b>6</b>Footer</span><p class="note">ortak</p></div>
+    </div>
+  </div>
+  <div class="dec"><h3>Kararlar · Pricing</h3><ol>
+    <li><b>Gelecek planlar gösterilsin mi?</b> Gösterilirse adlar (Free / Pro / Team) ve kapsam cümleleri yukarıdaki gibi, fiyatsız. Gösterilmezse 4. blok çıkar, SSS'deki "What happens when the beta ends?" cevabı taşır.</li>
+    <li><b>Beta vaadi:</b> "beta users keep Pro for a year" gibi bir söz verilecek mi? Yoksa yalnızca "prices announced before the beta ends".</li>
+    <li><b>Beta kartında "€0" mı, "Free" mi?</b> Para birimi ileride fiyatla belirlenir; şimdilik "Free" daha güvenli.</li>
+  </ol></div>
+</section>
+
+<!-- ================================================================ DOCS -->
+<section class="site" id="docs">
+  <h2>Docs <code>/docs</code> <small>lansmanda dört yazı; kenar çubuğu + makale + sayfa içi başlıklar</small></h2>
+  <div class="frames one">
+    <div class="frame">
+      <div class="cap">Masaüstü · /docs/getting-started örneği</div>
+      <div class="blk"><span class="lbl"><b>1</b>Nav</span><p class="note">ortak; Docs seçili. İçinde arama alanı (karar 2)</p></div>
+      <div class="blk"><span class="lbl"><b>2</b>Üç sütun</span><div class="cols side"><div><div class="h3">Docs</div><ul class="sub" style="margin:6px 0 0 16px"><li><u>Getting started</u></li><li>Capturing your site</li><li>Lighting a scene</li><li>Animating</li><li>Exporting (images, video, store sets)</li><li>Embedding on your site</li><li>Keyboard shortcuts</li><li>FAQ</li></ul><p class="note">lansmanda ilk, altıncı, yedinci ve sekizinci yazılır; diğerleri geldikçe</p></div>
+        <div><div class="h1">Getting started</div><p class="lead">Sign in, drop a screenshot or paste a URL, pick a template, export. Ten minutes, start to finish.</p><div class="h3" style="margin-top:12px">1. Sign in</div><p class="sub">Google, GitHub, Apple or an email link. Your projects live in the account.</p><div class="ph" style="--h:70px;margin-top:8px">ekran görüntüsü</div><div class="h3" style="margin-top:12px">2. Your first scene</div><p class="sub">The welcome card: drop screens or paste a URL, pick a goal (landing, social, video, store set), choose two of the suggested scenes.</p><div class="h3" style="margin-top:12px">3. The three tools</div><p class="sub">Select (V), Move (W), Rotate (E); orbit the scene by dragging empty space; the view cube for exact angles.</p><div class="h3" style="margin-top:12px">4. Export</div><p class="sub">PNG or JPG up to 3840 px; "Photo" quality for the final image; every artboard as a ZIP.</p><p class="note" style="margin-top:10px">sayfa sonu: önceki / sonraki yazı, "Was this helpful?" (karar 3)</p></div>
+        <div><div class="n">On this page</div><ul class="sub" style="margin:6px 0 0 16px"><li>Sign in</li><li>Your first scene</li><li>The three tools</li><li>Export</li></ul></div></div></div>
+      <div class="blk"><span class="lbl"><b>3</b>Footer</span><p class="note">kısa: logo, Privacy, Terms, Contact</p></div>
+    </div>
+  </div>
+  <div class="dec"><h3>Kararlar · Docs</h3><ol>
+    <li><b>Kapsam:</b> lansmanda dört yazı (Getting started, Embedding, Keyboard shortcuts, FAQ) yeterli mi?</li>
+    <li><b>Arama:</b> lansmanda arama var mı (dört yazı için gerekmez; Ctrl+F yeter)?</li>
+    <li><b>Geri bildirim:</b> yazı sonunda "Was this helpful?" mi, yalnızca e-posta bağlantısı mı?</li>
+    <li><b>Üçüncü sütun:</b> "On this page" lansmanda olsun mu? Kısa yazılarda gereksiz.</li>
+  </ol></div>
+</section>
+
+<!-- ================================================================ MISC -->
+<section class="site" id="misc">
+  <h2>Changelog · Privacy · Terms · 404 <small>tek sütun makale düzeni</small></h2>
+  <div class="frames one">
+    <div class="frame">
+      <div class="cap">Masaüstü · dar sütun (~720 px)</div>
+      <div class="blk"><span class="lbl"><b>Changelog</b> /changelog</span><div class="h1">What's new</div><div style="margin-top:10px;max-width:720px"><div class="n">24 October 2026</div><div class="h3">Screen videos decode with WebCodecs</div><ul class="sub" style="margin:4px 0 0 16px"><li>Video export is faster and frame-exact</li><li>Account menu: download your data, delete the account</li><li>Live window: toolbar in four groups</li></ul><div class="ph" style="--h:60px;margin-top:8px">isteğe bağlı görsel</div><div class="n" style="margin-top:12px">18 October 2026</div><div class="h3">Templates, accounts, store sets in every language</div><p class="sub">…</p></div><p class="note">her giriş: tarih, başlık, 2–4 madde, varsa görsel; kaynak TODO'daki tarihli kayıtlar. RSS isteğe bağlı.</p></div>
+      <div class="blk"><span class="lbl"><b>Privacy</b> /privacy · <b>Terms</b> /terms</span><div class="h1">Privacy</div><p class="sub">Last updated · 24 October 2026</p><div class="cols" style="margin-top:8px"><div><div class="h3">What we store</div><p class="sub">Account (name, email, avatar), projects and their media, capture logs (IP + URL, 30 days).</p></div><div><div class="h3">Where</div><p class="sub">Supabase (Frankfurt), Cloudflare R2 (EU), Cloud Run (Belgium). No trackers, no cookies beyond the session.</p></div><div><div class="h3">Your rights</div><p class="sub">Download everything or delete the account from the menu; GDPR / KVKK rights, contact address.</p></div></div><p class="note">gizlilik notu (<code>landing/gizlilik.html</code>) İngilizceye çevrilir; Terms yeni yazılır; ikisi hukuki incelemeye gider. Düzen: başlıklar + kısa paragraflar, sol kenarda bölüm listesi isteğe bağlı.</p></div>
+      <div class="blk center"><span class="lbl"><b>404</b></span><div class="h1">This page is not in the scene.</div><p class="lead">The link may be old, or the page moved.</p><div class="btns"><span class="btn pri">Open the studio</span><span class="btn">Home</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ GLOBAL -->
+<section class="site" id="global">
+  <h2>Ortak kararlar</h2>
+  <div class="dec"><ol>
+    <li><b>Nav:</b> Features · Templates · Pricing · Docs + Sign in + Open studio. "Sign in" stüdyonun giriş sayfasına (<code>/studio/login</code>), "Open studio" doğrudan stüdyoya (<code>/studio/</code>; oturum yoksa giriş sayfası araya girer, hedef hatırlanır). Use case sayfaları menüde değil, footer'da ve ana sayfa kartlarında.</li>
+    <li><b>Footer:</b> dört sütun + alt satır ("© 2026 Shotlight · beta", "Hosted in the EU. No trackers."). Sosyal bağlantı (X, GitHub) var mı?</li>
+    <li><b>CTA metinleri:</b> "Open the studio" (birincil) ve "Browse templates" (ikincil) her yerde aynı; "Sign up / Get started" yok, çünkü stüdyo kendisi giriş istiyor.</li>
+    <li><b>Beta rozeti:</b> logonun yanında "beta" her sayfada; lansman sonrası kalkar.</li>
+    <li><b>Dil:</b> site yalnızca İngilizce; stüdyonun İngilizce arayüzü ayrı oturumda yapılıyor. Türkçe site şimdilik yok.</li>
+    <li><b>Yakalama vaadi:</b> "Paste a URL" cümleleri (Home 5, Features 9, use case'ler) yalnızca yakalama servisi lansmanda açıksa kalır; yoksa "drop a screenshot" ile sınırlanır.</li>
+    <li><b>Paylaşım:</b> sayfa başına og:title / description; tek og görseli (İngilizce yeniden üretilir).</li>
+    <li><b>Analitik:</b> yok ya da çerezsiz (Cloudflare Web Analytics); gizlilik notu "no trackers" diyor.</li>
+  </ol></div>
+</section>
+
+</div>
+<script>
+// a placeholder box centres one child: wrap its text and inline tags in a span
+document.querySelectorAll(".ph").forEach(p=>{const s=document.createElement("span");while(p.firstChild)s.appendChild(p.firstChild);p.appendChild(s);});
+</script>
+</body>
+</html>
