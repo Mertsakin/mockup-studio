@@ -81,8 +81,9 @@ try{
   ok(inWin.some(x=>x.ry>-30&&x.ry<24),'…and its camera is in between the two views (ry '+inWin.map(x=>x.ry).join(' ')+')');
   ok(log.every(x=>x.mute),'the recorder is muted while it plays');
   ok(!(await ev(()=>window.__app('A').mute)),'…and unmuted after');
-  const after=await ev(()=>{const app=window.__app,doc=app('doc'),b=doc.boards.find(x=>x.id===doc.active);return {ry:+app('state').scene.ry.toFixed(1),board:doc.boards.indexOf(b),t:+app('SEQ').time().toFixed(2),snapRy:b.snap.state.scene.ry,At:+app('A').t.toFixed(2)};});
-  ok(after.ry===-34,'the live board has its own camera back (ry −34): '+JSON.stringify(after)+' log end '+JSON.stringify(log[log.length-1]));
+  // whichever board is live when it stops (the second, or the third when the run was slow): its own camera at its playhead
+  const after=await ev(()=>{const app=window.__app,doc=app('doc'),b=doc.boards.find(x=>x.id===doc.active);return {ry:+app('state').scene.ry.toFixed(1),board:doc.boards.indexOf(b),t:+app('SEQ').time().toFixed(2),own:+app('camOf')(b.snap,app('A').t).ry.toFixed(1),At:+app('A').t.toFixed(2)};});
+  ok(after.ry===after.own,'the live board has its own camera back: '+JSON.stringify(after));
   ok(await camTracks()===tracks0,'no camera keys were recorded ('+tracks0+')');
   await settle();ok(await past()===p0,'playback made no history step ('+p0+' → '+await past()+')');
 
