@@ -59,6 +59,17 @@
         "8787"
       ],
       "port": 8787
+    },
+    {
+      "name": "dev-seq",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5181",
+        "--strictPort"
+      ],
+      "port": 5181
     }
   ]
 }
