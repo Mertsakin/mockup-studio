@@ -8,9 +8,19 @@
 <link rel="icon" href="../brand/favicon.ico" sizes="any">
 <link rel="icon" href="../brand/shotlight-icon-small.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../brand/shotlight-icon-180.png">
-<meta property="og:title" content="Shotlight">
+<!-- sharing: absolute addresses, the site build swaps https://shotlight.studio for SITE_URL (tools/site/build.mjs); the image: node tools/landing/og.mjs -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Shotlight">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:url" content="https://shotlight.studio/">
+<meta property="og:title" content="Shotlight · tarayıcıda 3B cihaz mockup stüdyosu">
 <meta property="og:description" content="Fotoğraf kalitesinde 3B cihaz mockup'ları ve video, tarayıcında. Ücretsiz beta.">
-<meta property="og:image" content="video/hero.jpg">
+<meta property="og:image" content="https://shotlight.studio/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Üç telefon mockup'ı stüdyo ışığında">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://shotlight.studio/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Inter+Tight:wght@600&display=swap" rel="stylesheet">
@@ -47,7 +57,7 @@
 
   <section class="end wrap">
     <h2>Beta boyunca ücretsiz.</h2>
-    <p>Kurulum yok. Google, GitHub, Apple ya da e-postanla giriş yap; projelerin hesabında saklanır, her cihazdan açılır.</p>
+    <p>Kurulum yok. Google, GitHub, Apple ya da e-postanla giriş yap; projelerin hesabında saklanır, her cihazdan açılır. Takıldığın ya da beğenmediğin bir şey olursa <a href="mailto:merhaba@shotlight.studio">yaz</a>, beta bunun için.</p>
     <a class="btn" href="../index.html">Stüdyoyu aç</a>
   </section>
 </main>
@@ -55,6 +65,7 @@
 <footer class="foot wrap">
   <img src="../brand/shotlight-icon-small.svg" alt="" width="20" height="20">
   <span>© 2026 Shotlight · beta</span>
+  <nav class="foot-links" aria-label="Alt bağlantılar"><a href="gizlilik.html">Gizlilik</a><a href="mailto:merhaba@shotlight.studio">Geri bildirim</a></nav>
 </footer>
 <script>
 // reduced motion: the reel stays on its poster

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gömme ölçümü · Shotlight</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="../brand/favicon.ico" sizes="any">
+<link rel="stylesheet" href="style.css">
+<style>
+.olc{max-width:720px;padding-bottom:64px}
+.olc h1{font:600 28px/1.2 "Inter Tight",Inter,system-ui,sans-serif;margin:24px 0 8px}
+.olc h2{font:600 18px/1.3 "Inter Tight",Inter,system-ui,sans-serif;margin:40px 0 8px}
+.olc p{color:var(--sub);margin:0 0 12px}
+mockup-view{display:block;border-radius:16px;overflow:hidden;background:#f1f1f3}
+.sp{height:50vh}
+.info{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);background:#f4f4f5;border-radius:8px;padding:10px 12px;white-space:pre-wrap}
+</style>
+<!-- the player's loader; in development the player is at /embed.html, in the site at /studio/player/ (tools/site/build.mjs rewrites) -->
+<script src="../embed/mockup-view.js" defer></script>
+</head>
+<body>
+<header class="top wrap">
+  <a class="logo" href="./" aria-label="Shotlight ana sayfa"><img src="../brand/shotlight-wordmark-on-light.svg" alt="Shotlight" width="140" height="35"></a>
+</header>
+<main class="olc wrap">
+  <h1>Gömme ölçümü</h1>
+  <p>Bu sayfa gömülebilir 3B mockup'ı telefonda denemek için. Üç gömme var: ilki döngüde oynar ve imleci (dokunmada parmağı) izler, ikincisi sayfa kaydıkça ilerler, üçüncüsü sürükleyince döner. Bakılacaklar: ilk kare kaç saniyede geliyor, hareket akıcı mı, bir iki dakika sonra telefon ısınıyor mu, tarayıcı sekmeyi düşürüyor mu.</p>
+  <div class="info" id="info">cihaz bilgisi okunuyor…</div>
+
+  <h2>1 · Döngü, imleci izler</h2>
+  <mockup-view src="../embed.html?src=../wireframes/assets/hero-demo.mockup.json" mode="mouse+loop" ratio="16/10" alt="Dizüstü ve telefon mockup'ı"></mockup-view>
+  <div class="sp"></div>
+
+  <h2>2 · Kaydırmayla oynar</h2>
+  <p>Aşağı kaydırdıkça animasyon ilerler.</p>
+  <mockup-view src="../embed.html?src=../wireframes/assets/hero-demo.mockup.json" mode="scroll" ratio="16/10" alt="Dizüstü ve telefon mockup'ı"></mockup-view>
+  <div class="sp"></div>
+
+  <h2>3 · Sürükleyince döner</h2>
+  <mockup-view src="../embed.html?src=../wireframes/assets/hero-demo.mockup.json" mode="drag" ratio="16/10" alt="Dizüstü ve telefon mockup'ı"></mockup-view>
+  <div class="sp"></div>
+</main>
+<script>
+// what the phone reports: enough to tell a result apart from another device's
+(()=>{
+  const el=document.getElementById('info'),c=document.createElement('canvas'),gl=c.getContext('webgl2')||c.getContext('webgl');
+  let gpu='';try{const d=gl&&gl.getExtension('WEBGL_debug_renderer_info');gpu=d?gl.getParameter(d.UNMASKED_RENDERER_WEBGL):(gl?'WebGL var':'WebGL yok');}catch(e){gpu='?';}
+  const t0=performance.now();let frames=0;const tick=()=>{frames++;if(performance.now()-t0<2000)requestAnimationFrame(tick);else el.textContent+='\nsayfa kare hızı: '+Math.round(frames/2)+' fps (ilk 2 sn)';};requestAnimationFrame(tick);
+  el.textContent=[navigator.userAgent,'ekran: '+screen.width+'×'+screen.height+' @'+devicePixelRatio+'x · görünüm: '+innerWidth+'×'+innerHeight,'GPU: '+gpu,'çekirdek: '+(navigator.hardwareConcurrency||'?')+(navigator.deviceMemory?' · bellek: '+navigator.deviceMemory+' GB':'')].join('\n');
+  // when each player draws its first frame
+  addEventListener('message',e=>{if(e.data&&e.data.mockup==='ready'){const i=[...document.querySelectorAll('mockup-view')].findIndex(v=>v.firstElementChild&&v.querySelector('iframe')&&v.querySelector('iframe').contentWindow===e.source);el.textContent+='\ngömme '+(i+1)+' ilk kare: '+((performance.now()-t0)/1000).toFixed(1)+' sn';}});
+})();
+</script>
+</body>
+</html>

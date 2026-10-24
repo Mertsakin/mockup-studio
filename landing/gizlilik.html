@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gizlilik · Shotlight</title>
+<meta name="description" content="Shotlight hangi verileri, neden ve nerede tutar; haklarını nasıl kullanırsın.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../brand/favicon.ico" sizes="any">
+<link rel="icon" href="../brand/shotlight-icon-small.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Inter+Tight:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- TASLAK (24 Ekim 2026): KVKK aydınlatma metni. Yayınlamadan önce hukuki inceleme ve köşeli parantezli yerlerin
+     doldurulması gerekir (docs/lansman.md §4). Anlatılan işleyiş docs/uyelik.md ve docs/yakalama-servisi.md ile aynı. -->
+<header class="top wrap">
+  <a class="logo" href="./" aria-label="Shotlight ana sayfa"><img src="../brand/shotlight-wordmark-on-light.svg" alt="Shotlight" width="140" height="35"></a>
+  <a class="btn sm" href="../index.html">Stüdyoyu aç</a>
+</header>
+
+<main class="doc wrap">
+  <h1>Gizlilik</h1>
+  <p class="lead">Shotlight'ı kullanırken hangi verilerin, neden ve nerede tutulduğunu anlatır. Kısa tuttuk; sorun olursa yaz.</p>
+  <p class="meta">Veri sorumlusu: [ad / unvan, adres] · İletişim: <a href="mailto:merhaba@shotlight.studio">merhaba@shotlight.studio</a> · Son güncelleme: 24 Ekim 2026</p>
+
+  <h2>Hesabın</h2>
+  <p>Giriş yaptığında e-posta adresin, adın ve varsa sağlayıcının verdiği profil resmi tutulur. Google, GitHub ya da Apple ile girersen bu bilgiler o sağlayıcıdan gelir; e-postayla girişte yalnızca adresin. Şifre tutmuyoruz: e-postayla giriş tek kullanımlık bağlantıyla olur. Bu veriler hesabını tanımak ve projelerini sana bağlamak için kullanılır, başka amaçla işlenmez.</p>
+
+  <h2>Projelerin ve dosyaların</h2>
+  <p>Stüdyodaki çalışman önce tarayıcında, kendi cihazında saklanır (otomatik kayıt). "Buluta kaydet" dediğinde proje dosyası, yüklediğin ekran görüntüleri, videolar, 3B modeller ve küçük resimler hesabına yazılır. Bunlara yalnızca sen erişirsin; paylaşım bağlantısı özelliği gelene kadar başkasına açılmaz. Dosyalar içeriğe göre adlandırılır: aynı dosyayı iki projede kullanırsan bir kez saklanır.</p>
+  <p>Hesabı sildiğinde projelerin, dosyaların ve hesap kaydın silinir; geri alınamaz. Çöp kutusuna taşıdığın projeler kalıcı olarak silinene kadar hesabında kalır.</p>
+
+  <h2>Web sitesi yakalama</h2>
+  <p>Bir adres verip sitenin ekran görüntüsünü aldığında istek, yakalama servisimizde açılır ve görüntü doğrudan sana döner; görüntü sunucuda saklanmaz. Kötüye kullanımı önlemek ve günlük kotayı uygulamak için istek başına IP adresin, verdiğin adres, sonuç ve süre günlüğe yazılır; günlükler 30 gün sonra silinir.</p>
+
+  <h2>Çerezler ve izleme</h2>
+  <p>Reklam ya da analitik izleyici kullanmıyoruz. Tarayıcında yalnızca oturum anahtarı ve arayüz tercihlerin (tema, panel düzeni gibi) tutulur; bunlar çerez değil, yerel depolama kayıtlarıdır ve sayfayı terk ettiğinde başka siteye gitmez. Yazı tipleri Google Fonts'tan yüklenir; bu sırada tarayıcın Google'a bir istek yapar.</p>
+
+  <h2>Veriler nerede</h2>
+  <ul>
+    <li>Hesap ve proje kayıtları: Supabase, Avrupa Birliği (Frankfurt).</li>
+    <li>Dosyalar: Cloudflare R2, Avrupa Birliği yetki alanı.</li>
+    <li>Web sitesi yakalama ve günlükleri: Google Cloud Run, Avrupa (Belçika).</li>
+    <li>Site ve stüdyo: Cloudflare Pages üzerinden sunulur.</li>
+  </ul>
+  <p>Bu hizmet sağlayıcıları verileri yalnızca bizim adımıza, bu amaçlarla işler.</p>
+
+  <h2>Hakların</h2>
+  <p>6698 sayılı Kişisel Verilerin Korunması Kanunu'nun 11. maddesi uyarınca verilerinin işlenip işlenmediğini öğrenme, bilgi isteme, düzeltilmesini ya da silinmesini isteme ve işlemeye itiraz etme hakkın var. Hesap ayarlarından tüm verini indirebilir ve hesabını silebilirsin; diğer talepler için yukarıdaki adrese yaz. En geç 30 gün içinde yanıt veririz.</p>
+
+  <h2>Değişiklikler</h2>
+  <p>Bu metin değiştiğinde tarih güncellenir; önemli bir değişiklikte girişte haber veririz.</p>
+</main>
+
+<footer class="foot wrap">
+  <img src="../brand/shotlight-icon-small.svg" alt="" width="20" height="20">
+  <span>© 2026 Shotlight · beta</span>
+  <nav class="foot-links" aria-label="Alt bağlantılar"><a href="./">Ana sayfa</a><a href="mailto:merhaba@shotlight.studio">Geri bildirim</a></nav>
+</footer>
+</body>
+</html>

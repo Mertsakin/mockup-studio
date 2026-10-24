@@ -2,7 +2,7 @@
 
 Öncelik sırası, gerçekçilik ve iş akışı hızı birlikte düşünülerek verildi. Her maddeden sonra render düzeneğiyle görsel doğrulama yap.
 
-_Son güncelleme: 18 Ekim 2026._
+_Son güncelleme: 24 Ekim 2026._
 
 ## Mevcut durum
 
@@ -12,7 +12,8 @@ Stüdyo uçtan uca kullanılabilir durumda: boş belgeyle açılır (ya da son �
 - **Editör:** Figma benzeri kabuk, sonsuz tuval, çoklu artboard, katman ağacı, gizmo, serbest dönüştürme kutusu, görünüm küpü, geri al/yinele, proje dosyası (sistem kaydet/aç pencereleri) + IndexedDB otomatik kayıt.
 - **İçerik:** 7 cihaz tipi, 20 şablon, 2B öğeler ve varlık kütüphanesi, arka plan (şeffaf / düz / gradyan / görsel), web sitesi yakalama ve etkileşimli ekran kaydı (yalnızca dev sunucusunda).
 - **Animasyon:** Tasarla / Canlandır modları, zaman çizelgesi, anahtar kareler, hazır hareketler, MP4 dışa aktarım.
-- **Pazarlama:** `landing/` örnek SaaS açılış sayfası; görselleri stüdyonun kendisiyle üretiliyor.
+- **Hesaplar (hesaplı yapı):** giriş sayfası, Figma benzeri ana sayfa (projeler, şablonlar, çöp kutusu), bulut projeleri (Supabase + Cloudflare R2, Worker), sayfa adresleri; yerel Supabase ile testli (`npm run accounts:test`, `tools/accounts/test-*.mjs`). Üretim hesapları henüz açılmadı (`docs/uyelik.md`, `docs/lansman.md`).
+- **Pazarlama:** `landing/` geçici açılış sayfası (gizlilik notu taslağı, og görseli, telefon ölçüm sayfası); görselleri stüdyonun kendisiyle üretiliyor.
 - Açık dal / bekleyen iş yok; `main` temiz ve GitHub'a gönderilmiş.
 
 ## Sıradaki yol (14 Ekim 2026 kararı)
@@ -52,7 +53,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 4. [ ] **Yapay zekâ ile sahne:** 3B cihazı yapay zekâyla üretilmiş ortama ışığı ve gölgesi tutarlı oturtma (ortamdan HDRI / ışık yönü tahmini → yol izleyici); referans fotoğrafın ışığını taklit; istemden kompozisyon önerisi.
 5. [ ] **Ekranda video:** [x] v1 (17 Ekim): cihaz ekranında MP4/WebM, sessiz; Canlandır'da imleçle senkron, Tasarla'da poster karesi; video dışa aktarımında kare kare; otomatik kayıt ve `.mockup.zip`. [x] **Etkileşimli ekran kaydı** (17 Ekim): site stüdyonun içindeki lightbox'ta canlı (dev sunucusunun Chrome'u, kalıcı profil, CDP screencast), kullanıcı gezer / giriş yapar / doğrulamayı geçer, Başlat–Durdur ile en çok 30 sn kayıt MP4 olarak cihaz ekranlarına gömülür; otomatik kaydırma; "Ayrı pencerede aç" yedeği. [x] İmleç görünümü ve 2 dk'ya kadar kayıt (18 Ekim; kayıt sırasında canlı kodlama). [ ] Sonra: kaydı yayınlanmış sürümde de sunmak (yakalama servisiyle birlikte), kayıtta ses (v2). [x] 9:16 ve 1:1 sosyal formatlar (artboard oranı; şablonlarda Story, Süzülen başlık, Döner tabla). [x] WebM (VP9) ve GIF çıktı (18 Ekim; GIF en çok 720 px / 15 fps, şeffaf artboard'da saydam; WebM saydamlığı tarayıcı `alpha:'keep'` kodlayınca, Chrome'da henüz yok). [x] Fotoğraf kalitesinde video (18 Ekim; kare başına yol izleme 12 örnek + OIDN, 1080 px'te ≈ 5,5 sn). [ ] Sonra: kareler arasında kurulumu paylaşan yol izleme oturumu (hazırlık 0,7 sn/kare), hareket bulanıklığı, ses, WebCodecs ile kare çözme (seek yerine), artboard'lar arası kamera geçişleri.
 6. [ ] **Gerçekçilikte son mil:** ~~alan derinliği~~ (bitti), yansıtıcı/dokulu zemin, jenerik 3B eller (telefonu tutan el), dekor nesneleri, ~~GLB içe aktarma~~ (bitti, 17 Ekim).
-7. [ ] **Ekip ve bulut:** bulut proje, paylaşım linki, yorumlar, ekip kütüphanesi (marka kiti, ortak şablonlar); ücretli ekip planının dayanağı.
+7. [ ] **Ekip ve bulut:** [x] bulut proje (18–19 Ekim: hesaplar, giriş sayfası, ana sayfa, Projelerim, çakışma penceresi, adresler). [ ] Sonra: otomatik eşitleme ve çevrimdışı kuyruk (`docs/uyelik.md` 4. adım), verini indir / hesabı sil ve gecelik temizlik (5. adım), paylaşım linki, yorumlar, ekip kütüphanesi (marka kiti, ortak şablonlar); ücretli ekip planının dayanağı.
 
 İlk sırada 1, 2 ve 5 gelir (gelir getiren iş akışı); 3 ve 4 vitrin özellikleri.
 
@@ -136,6 +137,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] Video: WebM/GIF seçeneği ve fotoğraf kalitesi (18 Ekim). Ses yok.
 - [x] Mobil düzen: 820 px altında paneller çekmece, tuval tam genişlik (18 Ekim).
 - [x] Web sitesinden ekran görüntüsü canlı pencereden (24 Ekim): Ekran bölümünde tek düğme "Siteyi aç…" siteyi ekran kaydı penceresinde açar; gez, giriş yap, bannerları kapat, sonra Görünen / Tam sayfa görüntüyü al (her cihaz kendi genişliğinde, yakalama keskinliğinde).
+- [x] Dışa aktar menüsü ve Ekran bölümü yerleşim düzeltmeleri (24 Ekim): taşan seçim kutuları ve düğmeler, kaydırma düğmesi.
 - [x] Sunum kipi (24 Ekim): ▶ ile etkin artboard tam ekranda (Figma'nın Present'i), ok tuşlarıyla artboard'lar arasında, animasyonlu artboard döngüde oynar, Esc çıkar.
 
 ## Şablonlar
@@ -155,7 +157,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 
 ## Yayın ve tanıtım
 
-- [x] Örnek açılış sayfası (`landing/`), görsel üretim betikleri (`tools/landing/`). [x] Hero videosu ürünün video dışa aktarımıyla (`tools/landing/video.mjs`), fiyat bölümü ücretsiz beta (18 Ekim). [x] Yayın derlemesi `npm run build:site` (açılış kökte, stüdyo `/studio/`, Cloudflare Pages başlıkları). [ ] Lansman kontrol listesi: `docs/lansman.md` §4 (boş bağlantılar, gizlilik notu, og:image, telefonda gömme ölçümü).
+- [x] Örnek açılış sayfası (`landing/`), görsel üretim betikleri (`tools/landing/`). [x] Hero videosu ürünün video dışa aktarımıyla (`tools/landing/video.mjs`), fiyat bölümü ücretsiz beta (18 Ekim). [x] Yayın derlemesi `npm run build:site` (açılış kökte, stüdyo `/studio/`, Cloudflare Pages başlıkları). [x] Lansman kontrol listesinin bizdeki yarısı (24 Ekim): og görseli ve paylaşım etiketleri (`SITE_URL`), gizlilik notu taslağı (`landing/gizlilik.html`), geri bildirim bağlantısı, telefon ölçüm sayfası (`landing/olcum.html`). [ ] Sende: hukuki inceleme, adresin kesinleşmesi, telefonda ölçüm (`docs/lansman.md` §4).
 - [ ] Yayınlama: barındırma, alan adı, yakalama servisiyle birlikte dağıtım.
 - [ ] Açılış sayfasına kısa ürün videosu (stüdyonun kendi MP4 çıktısıyla).
 

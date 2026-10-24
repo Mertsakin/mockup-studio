@@ -163,13 +163,13 @@ Google Cloud konsolu → Billing → Budgets & alerts → aylık 10 $'lık büt�
 
 **Benim yapabileceklerim** (söylemen yeterli):
 - [x] Açılış sayfası yerine geçici, sade bir landing (18 Ekim; asıl siteyi kullanıcı tasarlıyor): boş bağlantı yok, logo ve favicon Shotlight.
-- [ ] "Beta geri bildirimi" kutusuna e-posta bağlantısı (adres sende).
-- [ ] **Gizlilik notu** (KVKK aydınlatma metni). Yakalama servisi, kötüye kullanıma karşı istek başına IP adresini ve yakalanan adresi kaydeder (Cloud Run günlükleri, varsayılan 30 gün). Bunun kısa bir sayfada söylenmesi gerekir. Metni ben taslak olarak yazarım; hukuki onayı sende.
-- [x] Favicon (Shotlight). [ ] Sosyal paylaşım görseli (`og:image`): şimdilik hero videosunun posteri.
+- [x] Geri bildirim bağlantısı (24 Ekim): açılış sayfasının kapanış bölümünde ve alt bilgisinde `mailto:merhaba@shotlight.studio`. [ ] Adres kesinleşince değiştir (`landing/index.html`, `landing/gizlilik.html`; Cloudflare Email Routing ile yönlendirme).
+- [x] **Gizlilik notu** taslağı (24 Ekim): `landing/gizlilik.html` (yayında `/gizlilik.html`, alt bilgiden bağlı, `noindex`): hesap verileri, bulut projeleri ve dosyalar, yakalama günlükleri (IP + adres, 30 gün), çerez yok, veri yerleri (Supabase Frankfurt, R2 AB, Cloud Run Belçika), KVKK m.11 hakları. [ ] Hukuki inceleme ve köşeli parantezli yerler (veri sorumlusunun adı ve adresi) sende; "verini indir / hesabı sil" metinde söyleniyor, stüdyoda henüz yok (`docs/uyelik.md` 5. adım), yayından önce ya eklenmeli ya da cümle çıkarılmalı.
+- [x] Favicon (Shotlight). [x] Sosyal paylaşım görseli (24 Ekim): `node tools/landing/og.mjs` → `landing/img/og.jpg` (1200×630, hero posterinin ortası; site derlemesi `/img/og.jpg`'ye kopyalar), `og:*` ve `twitter:card` etiketleri. Adresler mutlak olmalı: derleme `https://shotlight.studio`'yu `SITE_URL` ile değiştirir, ör. `SITE_URL=https://alanadi.com npm run build:site`.
 
 **Sende olanlar:**
 - [ ] Alan adı (`shotlight.studio` boş) ve marka tescili/çakışma kontrolü (ad Shotlight olarak kesinleşti).
-- [ ] **Gömme oynatıcısının telefonda ölçümü:** kendi telefonunda `alanadi.com/studio/player/…` gömmesini aç. Akıcı mı, ısınıyor mu? Bunu bir sayfa hazırlayıp sana bağlantısını veririm.
+- [ ] **Gömme oynatıcısının telefonda ölçümü:** sayfa hazır (24 Ekim): `landing/olcum.html`, yayında `alanadi.com/olcum.html` (`noindex`): üç gömme (döngü + imleç, kaydırma, sürükleme; dizüstü + telefon sahnesi `wireframes/assets/hero-demo.mockup.json`, derlemede `/demo/hero.mockup.json`), sayfanın üstünde cihaz bilgisi, GPU adı, sayfa kare hızı ve her gömmenin ilk kare süresi. Yayından önce denemek için bilgisayarda `npx vite --host` ve aynı ağdaki telefondan `http://<bilgisayarın-ip'si>:5173/landing/olcum.html`. Bakılacaklar: ilk kare süresi, akıcılık, bir iki dakikada ısınma, sekmenin düşmesi.
 - [ ] Zayıf bir bilgisayarda (entegre GPU'lu eski bir dizüstü) stüdyoyu bir kez dene. Canlı görünüm hareket sırasında artık kendi çözünürlüğünü düşürüyor; asıl donanımda bir göz atmak iyi olur.
 
 ## 5. Güvenlik: bu sürüm neyi kapsıyor, neyi kapsamıyor
