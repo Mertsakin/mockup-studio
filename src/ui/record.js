@@ -29,12 +29,15 @@ const REC_DPR_MAX=3,REC_PX=3.2e6;
 const recordDpr=(w,h,want)=>Math.max(1,Math.floor(Math.min(REC_DPR_MAX,Math.sqrt(REC_PX/(w*h)),Math.max(1,want||1))*4)/4);
 const scrim=$('#recScrim'),canvas=$('#recCanvas'),g=canvas.getContext('2d'),stage=$('#recStage'),urlIn=$('#recUrl'),vpEl=$('#recVp'),
   timeEl=$('#recTime'),startBtn=$('#recStart'),windowBtn=$('#recWindow'),statusEl=$('#recStatus'),noteEl=$('#recNote'),autoEl=$('#recAuto'),autoDur=$('#recAutoDur'),
-  backBtn=$('#recBack'),reloadBtn=$('#recReload'),shotBtn=$('#recShot');
+  backBtn=$('#recBack'),reloadBtn=$('#recReload'),shotBtn=$('#recShot'),waitEl=$('#recWait'),waitTxt=$('#recWaitText');
 const R={ws:null,open:false,ready:false,dev:null,vp:null,target:'one',shotMode:'full',last:null,rec:null,recT0:0,recEnd:0,timer:0,encoding:false,headed:false,url:'',prevFocus:null,
   cur:{x:0,y:0,in:false},presses:[],shooting:false};
 const fmtX=x=>(Math.round(x*4)/4).toString().replace('.',',')+'×';
 const status=t=>{statusEl.textContent=t||'';statusEl.title=t||'';};
 const note=t=>{noteEl.textContent=t||'';noteEl.hidden=!t;};
+// the spinner over the page (a screenshot being taken, the recording being encoded); empty: hidden
+const wait=t=>{waitTxt.textContent=t||'';waitEl.hidden=!t;};
+const waiting=()=>!waitEl.hidden;
 const send=m=>{if(R.ws&&R.ws.readyState===1)R.ws.send(JSON.stringify(m));};
 const recording=()=>!!R.rec;
 
@@ -49,7 +52,7 @@ function openRecord(url,target){
   if(target)R.target=target;
   vpEl.textContent=TYPES[d.type]+' · '+vp.width+' × '+vp.height+' · '+fmtX(vp.dpr);
   canvas.width=Math.round(vp.width*vp.dpr);canvas.height=Math.round(vp.height*vp.dpr);g.clearRect(0,0,canvas.width,canvas.height);
-  urlIn.value=url||'';timeEl.textContent='';note('');status('Bağlanılıyor…');
+  urlIn.value=url||'';timeEl.textContent='';note('');wait('');status('Bağlanılıyor…');
   startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=true;windowBtn.hidden=false;
   setTarget(R.target);setShotMode(R.shotMode);syncStart();
   scrim.hidden=false;fit();canvas.focus({preventScroll:true});
@@ -59,7 +62,7 @@ function closeRecord(){
   if(!R.open)return;
   send({type:'close'});if(R.ws){const ws=R.ws;R.ws=null;try{ws.close();}catch(e){/* gone */}}
   clearInterval(R.timer);if(R.rec){if(R.rec.enc)R.rec.enc.close();if(R.rec.bmp)R.rec.bmp.close();}R.rec=null;R.open=false;R.last=null;pending=null;
-  scrim.hidden=true;
+  scrim.hidden=true;wait('');
   const f=R.prevFocus;R.prevFocus=null;if(f&&f.focus&&document.contains(f))f.focus({preventScroll:true});
 }
 // Esc / ×: a running recording would be lost
@@ -91,7 +94,7 @@ function connect(url){
 }
 function handle(m){
   switch(m.type){
-    case 'status':status(m.text);break;
+    case 'status':status(m.text);if(R.shooting&&m.text)wait(m.text);break;
     case 'ready':R.ready=true;status('');startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=false;if(R.vp&&m.dpr)R.vp.dpr=m.dpr;break;
     case 'shot':placeShots(m);break;
     case 'nav':R.url=m.url||'';if(document.activeElement!==urlIn&&m.url&&m.url!=='about:blank')urlIn.value=m.url;status(m.loading?'Yükleniyor…':'');break;
@@ -150,6 +153,7 @@ function onKey(e){
   const t=e.target,inField=t!==canvas&&t.closest&&t.closest('#recBox')&&/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(t.tagName);
   if(e.key==='Escape'){if(e.type==='keydown'){e.preventDefault();if(inField&&t.tagName!=='BUTTON'){t.blur();canvas.focus();}else requestClose();}return;}
   if(inField)return;
+  if(waiting()){e.preventDefault();return;}
   if(t!==canvas)canvas.focus({preventScroll:true});
   if((e.metaKey||e.ctrlKey)&&!e.altKey&&e.key.toLowerCase()==='v')return;
   e.preventDefault();
@@ -186,12 +190,13 @@ function takeShot(){
   const devs=(R.target==='all'?state.devices.slice():[R.dev]).filter(d=>state.devices.includes(d));
   shotGroupsNow=shotGroups(devs);
   if(!shotGroupsNow.length){toast('Görüntünün konacağı ekran kalmadı.');return;}
-  R.shooting=true;shotBtn.disabled=startBtn.disabled=windowBtn.disabled=true;status('Ekran görüntüsü alınıyor…');
+  R.shooting=true;shotBtn.disabled=startBtn.disabled=windowBtn.disabled=true;status('Ekran görüntüsü alınıyor…');wait('Ekran görüntüsü alınıyor…');
   send({type:'shot',full:R.shotMode==='full',selector:R.shotMode==='full'?captureOpts().selector:'',targets:shotGroupsNow.map(g=>g.target)});
 }
-function endShot(){R.shooting=false;shotBtn.disabled=!R.ready;startBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;}
+function endShot(){R.shooting=false;wait('');shotBtn.disabled=!R.ready;startBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;}
 async function placeShots(m){
   const groups=shotGroupsNow,url=m.url||R.url;shotGroupsNow=[];
+  wait('Görüntü ekrana yerleştiriliyor…');
   try{
     let n=0;
     for(const g of groups){const src=m.shots&&m.shots[g.target.id];if(!src)continue;const img=await shotImage(src);
@@ -247,7 +252,7 @@ async function stopRecording(){
   await pump();  // the frames up to Durdur
   R.rec=null;syncStart();
   if(!r.enc||!r.n){if(r.bmp)r.bmp.close();if(r.enc)r.enc.close();status('');toast(r.failed&&r.failed.message==='codec'?'Bu boyutta video kodlanamıyor: daha küçük bir cihaz dene.':'Kayıtta kare yok: sayfa hiç çizilmedi.');return;}
-  R.encoding=true;startBtn.disabled=windowBtn.disabled=true;status('Video hazırlanıyor…');
+  R.encoding=true;startBtn.disabled=windowBtn.disabled=shotBtn.disabled=true;status('Video hazırlanıyor…');wait('Video hazırlanıyor…');
   const span=r.n/FPS;
   try{
     if(r.failed)throw r.failed;
@@ -256,7 +261,7 @@ async function stopRecording(){
   }catch(e){
     console.warn('Kayıt kodlanamadı:',e);
     status('');toast(e&&e.message==='codec'?'Bu boyutta video kodlanamıyor: daha küçük bir cihaz dene.':'Kayıt videoya çevrilemedi.');
-  }finally{r.enc.close();if(r.bmp)r.bmp.close();R.encoding=false;startBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;timeEl.textContent='';}
+  }finally{r.enc.close();if(r.bmp)r.bmp.close();R.encoding=false;wait('');startBtn.disabled=!R.ready;shotBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;timeEl.textContent='';}
 }
 // the MP4 goes on the target devices through the screen-video loader (artboard duration from the video, poster null,
 // loop on), the lightbox closes and the studio switches to Canlandır
@@ -276,8 +281,8 @@ async function embed(blob,span){
   toast('Kayıt '+devs.length+' cihaza gömüldü · '+fmtDur(span));
 }
 
-/* ---------- entry: the capture box's Yakala / Tüm cihazlara and "Ekran kaydı…" open the lightbox with the device's address */
-$('#recordBtn').addEventListener('click',()=>openRecord($('#captureUrl').value.trim()));
-if(import.meta.env.DEV)setLiveCapture((url,target)=>openRecord(url,target));
+/* ---------- entry: the capture box's "Siteyi aç…" (dev server only) opens the lightbox with the device's address; the
+   target (Bu cihaz / Tümü) is chosen inside, and the last choice stays */
+if(import.meta.env.DEV)setLiveCapture(url=>openRecord(url));
 
 export {openRecord};

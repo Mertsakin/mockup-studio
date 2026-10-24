@@ -135,7 +135,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] **Toplu ekran görüntüsü:** aynı sahneye N görsel ver, N çıktı al (ZIP) (18 Ekim).
 - [x] Video: WebM/GIF seçeneği ve fotoğraf kalitesi (18 Ekim). Ses yok.
 - [x] Mobil düzen: 820 px altında paneller çekmece, tuval tam genişlik (18 Ekim).
-- [x] Web sitesinden ekran görüntüsü canlı pencereden (24 Ekim): Yakala siteyi ekran kaydı penceresinde açar; gez, giriş yap, bannerları kapat, sonra Görünen / Tam sayfa görüntüyü al (her cihaz kendi genişliğinde, yakalama keskinliğinde).
+- [x] Web sitesinden ekran görüntüsü canlı pencereden (24 Ekim): Ekran bölümünde tek düğme "Siteyi aç…" siteyi ekran kaydı penceresinde açar; gez, giriş yap, bannerları kapat, sonra Görünen / Tam sayfa görüntüyü al (her cihaz kendi genişliğinde, yakalama keskinliğinde).
 - [x] Sunum kipi (24 Ekim): ▶ ile etkin artboard tam ekranda (Figma'nın Present'i), ok tuşlarıyla artboard'lar arasında, animasyonlu artboard döngüde oynar, Esc çıkar.
 
 ## Şablonlar

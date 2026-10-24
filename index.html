@@ -345,10 +345,13 @@
           </label>
           <div class="capture" role="group" aria-label="Web sitesinden yakala">
             <label class="fld"><span data-icon="global" data-size="14"></span><input type="url" id="captureUrl" placeholder="https://siteadi.com" aria-label="Bu cihazın web sitesi adresi" spellcheck="false" autocomplete="url"></label>
-            <div class="capture-actions">
-              <button class="btn" id="captureBtn" type="button" title="Siteyi stüdyonun içinde canlı açar: gez, giriş yap, bannerları kapat, sonra ekran görüntüsünü seçili cihazın ekran genişliğinde al">Yakala…</button>
-              <button class="btn" id="captureAllBtn" type="button" title="Aynı siteyi canlı açar; ekran görüntüsü her cihaza kendi ekran genişliğinde alınır">Tüm cihazlara…</button>
-              <button class="btn rec-btn" id="recordBtn" type="button" title="Siteyi stüdyonun içinde canlı aç, gez (giriş yap, bannerları kapat) ve ekranını kaydet; kayıt cihaz ekranına video olarak gömülür"><span data-icon="record-circle" data-size="14"></span>Ekran kaydı…</button>
+            <!-- the dev server: one button opens the site live in the studio (screenshot or recording from there, ui/record.js);
+                 a build with the capture service captures directly -->
+            <button class="btn full live-btn" id="liveBtn" type="button" hidden title="Site stüdyonun içinde canlı açılır: gez, giriş yap, bannerları kapat; sonra ekran görüntüsünü al (bu cihaza ya da tümüne) ya da ekranı kaydet"><span data-icon="window-frame" data-size="14"></span>Siteyi aç…</button>
+            <p class="hint-sm" id="liveHint" hidden>Açılan pencerede gez, giriş yap; sonra ekran görüntüsü al ya da ekranı kaydet.</p>
+            <div class="capture-actions" id="captureDirect">
+              <button class="btn" id="captureBtn" type="button" title="Adresi yalnızca seçili cihazın ekran genişliğinde yakalar">Yakala</button>
+              <button class="btn" id="captureAllBtn" type="button" title="Aynı adresi her cihaza, kendi ekran genişliğinde yakalar">Tüm cihazlara</button>
             </div>
             <details class="more cap-opts"><summary>Yakalama seçenekleri</summary>
               <div class="row"><label class="lbl" for="capWait">Bekle</label><input type="number" id="capWait" min="0" max="10" step="0.5" value="0" aria-describedby="capWaitHint"><span class="lbl" id="capWaitHint">sn, yüklendikten sonra</span></div>
@@ -580,6 +583,8 @@
     <div class="rec-stage" id="recStage">
       <canvas id="recCanvas" tabindex="0" aria-label="Site görüntüsü: fare ve klavye siteye gider"></canvas>
       <div class="rec-note" id="recNote" hidden></div>
+      <!-- while a screenshot is taken or the recording is encoded: a spinner over the page, input blocked -->
+      <div class="rec-wait" id="recWait" role="status" aria-live="polite" hidden><div><span class="busy-spin" aria-hidden="true"></span><span id="recWaitText"></span></div></div>
     </div>
   </div>
 </div>

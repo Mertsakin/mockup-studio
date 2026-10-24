@@ -64,12 +64,14 @@ function putShot(d,img,url,siteUrl){
   if(d.type==='browser'){d.url=name+(final.pathname!=='/'?final.pathname:'');updateChrome(d);}
   setScreenTexture(d);
 }
-const input=$('#captureUrl'),one=$('#captureBtn'),all=$('#captureAllBtn');
-/* The live window (record.js, dev server only): Yakala opens the site inside the studio and the shot is taken from
-   there, as the user left the page (logged in, banners closed). record.js registers it; without it (a build with the
-   capture service) Yakala captures directly as before. */
+const input=$('#captureUrl'),one=$('#captureBtn'),all=$('#captureAllBtn'),liveBtn=$('#liveBtn');
+/* The live window (record.js, dev server only): "Siteyi aç…" (and Enter in the field) opens the site inside the studio;
+   the screenshot (this device or all, visible area or full page) or the recording is taken from there, as the user
+   left the page (logged in, banners closed). record.js registers it; without it (a build with the capture service)
+   the direct Yakala / Tüm cihazlara buttons show instead. */
 let live=null;
-function setLiveCapture(fn){live=fn;one.textContent=fn?'Yakala…':'Yakala';all.textContent=fn?'Tüm cihazlara…':'Tüm cihazlara';}
+function setLiveCapture(fn){live=fn;$('#captureDirect').hidden=!!fn;liveBtn.hidden=$('#liveHint').hidden=!fn;}
+liveBtn.addEventListener('click',()=>{const raw=input.value.trim();if(!raw){input.focus();return;}if(live)live(raw);});
 // the viewport groups of the devices to shoot: [{target: {id, width, height, mobile, dpr}, devices}] (equal viewports share one shot)
 function shotGroups(devices){
   const groups=new Map();
@@ -83,7 +85,7 @@ onSyncUI(d=>{if(d&&document.activeElement!==input)input.value=d.siteUrl||'';});
 // everyDevice=false: only the selected device; true: the same address on every device
 async function capture(everyDevice){
   let raw=input.value.trim();if(!raw){input.focus();return;}
-  if(live){live(raw,everyDevice?'all':'one');return;}
+  if(live){live(raw);return;}
   raw=normalizeUrl(raw);
   const devices=everyDevice?state.devices:state.devices.filter(d=>d.id===state.selected);
   const groups=shotGroups(devices);
@@ -101,8 +103,7 @@ async function capture(everyDevice){
 one.addEventListener('click',()=>capture(false));
 all.addEventListener('click',()=>capture(true));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();capture(false);}});
-// a build without a capture service shows no address field; the screen recording needs the dev server (record.mjs)
-if(!import.meta.env.DEV)$('#recordBtn').style.display='none';
+// a build without a capture service shows no address field
 captureAvailable().then(ok=>{if(!ok)input.closest('.capture').style.display='none';});
 
 // the screen recording (record.js) opens the site at the same viewport
