@@ -5,7 +5,7 @@ import {TYPES} from '../state/constants.js';
 import {sel,state} from '../state/state.js';
 import {$,$$,mkCanvas} from '../util.js';
 import {seek,setMode} from './animate.js';
-import {normalizeUrl,viewport} from './capture.js';
+import {captureOpts,normalizeUrl,putShot,setLiveCapture,shotGroups,shotImage,siteName,viewport} from './capture.js';
 import {loadShotVideo} from './image-input.js';
 import {syncAll} from './sync.js';
 import {toast} from './toast.js';
@@ -19,16 +19,19 @@ import {toast} from './toast.js';
    then it stops by itself). With İmleç on, the pointer (an arrow, a ring on each press) is drawn over the frames:
    it is the page's own cursor position, which the screencast does not show. Durdur finishes the file and puts it
    on the target device screens through the screen-video loader (image-input.js), then switches to Canlandır.
-   Keys never reach the studio while the lightbox is open (a capture-phase listener on window); Esc closes it. */
+   Keys never reach the studio while the lightbox is open (a capture-phase listener on window); Esc closes it.
+   "Ekran görüntüsü al" (the Ekran section's Yakala opens the lightbox for this) asks the server for screenshots of the
+   page as it is, one per target viewport (Bu cihaz / Tümü, as the capture endpoint groups them: equal viewports share
+   one), the visible area or the whole page, at the capture's own sharpness, and puts them on the screens (putShot). */
 const FPS=30,MAX_MS=120000,REC_BPP=.05;  // a screen recording is mostly still: a third of the export's bits per pixel
 // the stream's sharpness: the server's cap (record.mjs recordDpr), mirrored here for the label and the canvas
 const REC_DPR_MAX=3,REC_PX=3.2e6;
 const recordDpr=(w,h,want)=>Math.max(1,Math.floor(Math.min(REC_DPR_MAX,Math.sqrt(REC_PX/(w*h)),Math.max(1,want||1))*4)/4);
 const scrim=$('#recScrim'),canvas=$('#recCanvas'),g=canvas.getContext('2d'),stage=$('#recStage'),urlIn=$('#recUrl'),vpEl=$('#recVp'),
   timeEl=$('#recTime'),startBtn=$('#recStart'),windowBtn=$('#recWindow'),statusEl=$('#recStatus'),noteEl=$('#recNote'),autoEl=$('#recAuto'),autoDur=$('#recAutoDur'),
-  backBtn=$('#recBack'),reloadBtn=$('#recReload');
-const R={ws:null,open:false,ready:false,dev:null,vp:null,target:'one',last:null,rec:null,recT0:0,recEnd:0,timer:0,encoding:false,headed:false,url:'',prevFocus:null,
-  cur:{x:0,y:0,in:false},presses:[]};
+  backBtn=$('#recBack'),reloadBtn=$('#recReload'),shotBtn=$('#recShot');
+const R={ws:null,open:false,ready:false,dev:null,vp:null,target:'one',shotMode:'full',last:null,rec:null,recT0:0,recEnd:0,timer:0,encoding:false,headed:false,url:'',prevFocus:null,
+  cur:{x:0,y:0,in:false},presses:[],shooting:false};
 const fmtX=x=>(Math.round(x*4)/4).toString().replace('.',',')+'×';
 const status=t=>{statusEl.textContent=t||'';statusEl.title=t||'';};
 const note=t=>{noteEl.textContent=t||'';noteEl.hidden=!t;};
@@ -36,17 +39,19 @@ const send=m=>{if(R.ws&&R.ws.readyState===1)R.ws.send(JSON.stringify(m));};
 const recording=()=>!!R.rec;
 
 /* ---------- open / close */
-function openRecord(url){
+// target: 'one' / 'all' (which devices the shot or the recording goes to)
+function openRecord(url,target){
   if(R.open)return;
-  const d=sel();if(!d){toast('Ekran kaydı için önce bir cihaz ekle.');return;}
+  const d=sel();if(!d){toast('Önce bir cihaz ekle.');return;}
   const vp=viewport(d);if(!vp){toast('Bu cihazın ekranı yok. Kendi çerçeven için önce bir çerçeve PNG’si yükle.');return;}
   vp.dpr=recordDpr(vp.width,vp.height,vp.dpr);
-  R.dev=d;R.vp=vp;R.open=true;R.ready=false;R.headed=false;R.last=null;R.rec=null;R.url='';R.prevFocus=document.activeElement;
+  R.dev=d;R.vp=vp;R.open=true;R.ready=false;R.headed=false;R.last=null;R.rec=null;R.url='';R.shooting=false;R.prevFocus=document.activeElement;
+  if(target)R.target=target;
   vpEl.textContent=TYPES[d.type]+' · '+vp.width+' × '+vp.height+' · '+fmtX(vp.dpr);
   canvas.width=Math.round(vp.width*vp.dpr);canvas.height=Math.round(vp.height*vp.dpr);g.clearRect(0,0,canvas.width,canvas.height);
   urlIn.value=url||'';timeEl.textContent='';note('');status('Bağlanılıyor…');
-  startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=true;windowBtn.hidden=false;
-  setTarget(R.target);syncStart();
+  startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=true;windowBtn.hidden=false;
+  setTarget(R.target);setShotMode(R.shotMode);syncStart();
   scrim.hidden=false;fit();canvas.focus({preventScroll:true});
   connect(url?normalizeUrl(url):'');
 }
@@ -75,21 +80,22 @@ addEventListener('resize',fit);
 function connect(url){
   const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/api/record/ws');
   ws.binaryType='arraybuffer';R.ws=ws;
-  ws.onopen=()=>{ws.send(JSON.stringify({type:'open',url,viewport:{width:R.vp.width,height:R.vp.height},dpr:R.vp.dpr,mobile:R.vp.mobile}));status('Chrome başlatılıyor…');};
+  ws.onopen=()=>{ws.send(JSON.stringify({type:'open',url,viewport:{width:R.vp.width,height:R.vp.height},dpr:R.vp.dpr,mobile:R.vp.mobile,dark:captureOpts().dark}));status('Chrome başlatılıyor…');};
   ws.onmessage=e=>{if(typeof e.data==='string'){let m;try{m=JSON.parse(e.data);}catch(err){return;}handle(m);}else onFrame(e.data);};
   ws.onclose=()=>{
     if(R.ws!==ws)return;R.ws=null;
     if(!R.ready){toast(import.meta.env.DEV?'Kayıt sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.':'Ekran kaydı yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).');closeRecord();return;}
     if(recording()){status('Bağlantı koptu; alınan kareler kaydediliyor');stopRecording();return;}
-    if(R.open&&!R.encoding){status('Bağlantı koptu. Kapatıp yeniden aç.');startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=true;}
+    if(R.open&&!R.encoding){status('Bağlantı koptu. Kapatıp yeniden aç.');startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=true;}
   };
 }
 function handle(m){
   switch(m.type){
     case 'status':status(m.text);break;
-    case 'ready':R.ready=true;status('');startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=false;if(R.vp&&m.dpr)R.vp.dpr=m.dpr;break;
+    case 'ready':R.ready=true;status('');startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=false;if(R.vp&&m.dpr)R.vp.dpr=m.dpr;break;
+    case 'shot':placeShots(m);break;
     case 'nav':R.url=m.url||'';if(document.activeElement!==urlIn&&m.url&&m.url!=='about:blank')urlIn.value=m.url;status(m.loading?'Yükleniyor…':'');break;
-    case 'error':status(m.message);toast(m.message);break;
+    case 'error':status(m.message);toast(m.message);if(R.shooting)endShot();break;
     case 'window':R.headed=true;windowBtn.disabled=true;note('Site ayrı bir Chrome penceresinde açık: orada gez, Başlat / Durdur burada.');break;
     case 'closed':break;
   }
@@ -170,6 +176,33 @@ function syncStart(){
   timeEl.classList.toggle('on',on);
 }
 startBtn.addEventListener('click',()=>{if(recording())stopRecording();else startRecording();canvas.focus({preventScroll:true});});
+function setShotMode(v){R.shotMode=v;$$('#recShotMode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));}
+$$('#recShotMode button').forEach(b=>b.addEventListener('click',()=>{setShotMode(b.dataset.v);canvas.focus({preventScroll:true});}));
+
+/* ---------- screenshots: the server shoots the page as it is, one per target viewport; the shots go on the screens */
+let shotGroupsNow=[];
+function takeShot(){
+  if(!R.ready||R.shooting||recording()||R.encoding)return;
+  const devs=(R.target==='all'?state.devices.slice():[R.dev]).filter(d=>state.devices.includes(d));
+  shotGroupsNow=shotGroups(devs);
+  if(!shotGroupsNow.length){toast('Görüntünün konacağı ekran kalmadı.');return;}
+  R.shooting=true;shotBtn.disabled=startBtn.disabled=windowBtn.disabled=true;status('Ekran görüntüsü alınıyor…');
+  send({type:'shot',full:R.shotMode==='full',selector:R.shotMode==='full'?captureOpts().selector:'',targets:shotGroupsNow.map(g=>g.target)});
+}
+function endShot(){R.shooting=false;shotBtn.disabled=!R.ready;startBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;}
+async function placeShots(m){
+  const groups=shotGroupsNow,url=m.url||R.url;shotGroupsNow=[];
+  try{
+    let n=0;
+    for(const g of groups){const src=m.shots&&m.shots[g.target.id];if(!src)continue;const img=await shotImage(src);
+      g.devices.forEach(d=>{if(!state.devices.includes(d))return;putShot(d,img,url,url);n++;});}
+    if(!n){toast('Ekran görüntüsü alınamadı.');return;}
+    closeRecord();syncAll();
+    toast(siteName(url)+(n>1?' '+n+' cihaza':' cihaza')+' yerleştirildi.'+(m.missing?' Başlangıç seçicisi sayfada bulunamadı: en üstten alındı.':R.shotMode==='full'?' Ekranın üzerinde tekerlekle kaydırabilirsin.':''));
+  }catch(e){toast(e&&e.user?e.message:'Ekran görüntüsü yerleştirilemedi.');}
+  finally{endShot();}
+}
+shotBtn.addEventListener('click',takeShot);
 
 /* ---------- recording: encoded live. R.rec = {enc, cv, cg, W, H, n (frames written), bmp (newest frame), busy} */
 const CUR=[[0,0],[0,17],[4.5,13],[7.5,20],[10,19],[7,12.5],[12.5,12.5]];  // an arrow pointer, CSS px, tip at 0,0
@@ -243,7 +276,8 @@ async function embed(blob,span){
   toast('Kayıt '+devs.length+' cihaza gömüldü · '+fmtDur(span));
 }
 
-/* ---------- entry: the capture box's "Ekran kaydı…" opens the lightbox with the device's address */
+/* ---------- entry: the capture box's Yakala / Tüm cihazlara and "Ekran kaydı…" open the lightbox with the device's address */
 $('#recordBtn').addEventListener('click',()=>openRecord($('#captureUrl').value.trim()));
+if(import.meta.env.DEV)setLiveCapture((url,target)=>openRecord(url,target));
 
 export {openRecord};

@@ -834,6 +834,8 @@ html[data-pick=focus] #stagearea canvas{cursor:crosshair!important}
 .rec-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);flex:none;min-width:0}
 .rec-bar .fld.rec-url{flex:1 1 160px;min-width:120px;height:26px}
 .rec-bar .seg.rec-target{flex:none;height:26px;width:150px}
+.rec-bar .seg.rec-shot-mode{flex:none;height:26px;width:160px}
+.rec-shot .ic{color:var(--accent)}
 .rec-bar .btn{height:26px;padding:0 10px}
 .rec-vp,.rec-status{color:var(--muted);font-size:11px;white-space:nowrap}
 .rec-status{flex:0 1 240px;min-width:0;overflow:hidden;text-overflow:ellipsis}

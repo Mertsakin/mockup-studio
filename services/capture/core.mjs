@@ -1,9 +1,9 @@
 // The website capture itself, shared by the dev server's endpoint (tools/capture/vite-plugin.mjs) and the capture
 // service for the published studio (server.mjs): one full-page screenshot per target at its own viewport and device
 // scale factor, lazy content scrolled into view, cookie / consent overlays removed.
-import {DPR_MAX,MAX_PX_W,mobileUA} from './shared.mjs';
+import {DPR_MAX,MAX_H,MAX_PX_H,MAX_PX_W,mobileUA} from './shared.mjs';
 
-const MAX_H=8000,MAX_PX_H=16384,NAV_TIMEOUT=30000;
+const NAV_TIMEOUT=30000;
 
 /* A request body -> {url, targets, o} or {error} (user-facing). body: {url, targets: [{id, width, height, mobile, dpr}],
    wait, dark, selector}. */

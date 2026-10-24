@@ -65,24 +65,35 @@ function putShot(d,img,url,siteUrl){
   setScreenTexture(d);
 }
 const input=$('#captureUrl'),one=$('#captureBtn'),all=$('#captureAllBtn');
+/* The live window (record.js, dev server only): Yakala opens the site inside the studio and the shot is taken from
+   there, as the user left the page (logged in, banners closed). record.js registers it; without it (a build with the
+   capture service) Yakala captures directly as before. */
+let live=null;
+function setLiveCapture(fn){live=fn;one.textContent=fn?'Yakala…':'Yakala';all.textContent=fn?'Tüm cihazlara…':'Tüm cihazlara';}
+// the viewport groups of the devices to shoot: [{target: {id, width, height, mobile, dpr}, devices}] (equal viewports share one shot)
+function shotGroups(devices){
+  const groups=new Map();
+  devices.forEach(d=>{const v=viewport(d);if(!v)return;const id=[v.width,v.height,v.mobile?'m':'d',v.dpr].join('-');
+    if(!groups.has(id))groups.set(id,{target:Object.assign({id},v),devices:[]});groups.get(id).devices.push(d);});
+  return [...groups.values()];
+}
 // The field shows the selected device's own address; typing stores it on that device.
 input.addEventListener('input',()=>{const d=state.devices.find(x=>x.id===state.selected);if(d)d.siteUrl=input.value.trim();});
 onSyncUI(d=>{if(d&&document.activeElement!==input)input.value=d.siteUrl||'';});
 // everyDevice=false: only the selected device; true: the same address on every device
 async function capture(everyDevice){
   let raw=input.value.trim();if(!raw){input.focus();return;}
+  if(live){live(raw,everyDevice?'all':'one');return;}
   raw=normalizeUrl(raw);
   const devices=everyDevice?state.devices:state.devices.filter(d=>d.id===state.selected);
-  const groups=new Map();
-  devices.forEach(d=>{const v=viewport(d);if(!v)return;const id=[v.width,v.height,v.mobile?'m':'d',v.dpr].join('-');
-    if(!groups.has(id))groups.set(id,{target:Object.assign({id},v),devices:[]});groups.get(id).devices.push(d);});
-  if(!groups.size){toast('Yakalanacak ekran yok. Kendi çerçeven için önce bir çerçeve PNG\u2019si yükle.');return;}
+  const groups=shotGroups(devices);
+  if(!groups.length){toast('Yakalanacak ekran yok. Kendi çerçeven için önce bir çerçeve PNG\u2019si yükle.');return;}
   const btn=everyDevice?all:one,label=btn.textContent;
-  one.disabled=all.disabled=true;btn.textContent='Yakalanıyor…'+(groups.size>1?' ('+groups.size+' görünüm)':'');
+  one.disabled=all.disabled=true;btn.textContent='Yakalanıyor…'+(groups.length>1?' ('+groups.length+' görünüm)':'');
   try{
-    const res=await captureShots(raw,[...groups.values()].map(g=>g.target),captureOpts());
+    const res=await captureShots(raw,groups.map(g=>g.target),captureOpts());
     const name=siteName(res.finalUrl||raw);
-    for(const g of groups.values()){const img=await shotImage(res.shots[g.target.id]);g.devices.forEach(d=>putShot(d,img,res.finalUrl||raw,input.value.trim()));}
+    for(const g of groups){const img=await shotImage(res.shots[g.target.id]);g.devices.forEach(d=>putShot(d,img,res.finalUrl||raw,input.value.trim()));}
     syncAll();toast(res.missing?'Seçici sayfada bulunamadı: sayfa en üstten yakalandı.':name+(everyDevice?' tüm cihazlara':' bu cihaza')+' yerleştirildi. Ekranın üzerinde tekerlekle kaydırabilirsin.');
   }catch(e){toast(e.user?e.message:'Yakalanamadı: '+(e.message||e));}
   finally{one.disabled=all.disabled=false;btn.textContent=label;}
@@ -95,4 +106,4 @@ if(!import.meta.env.DEV)$('#recordBtn').style.display='none';
 captureAvailable().then(ok=>{if(!ok)input.closest('.capture').style.display='none';});
 
 // the screen recording (record.js) opens the site at the same viewport
-export {captureAvailable,captureShots,shotImage,normalizeUrl,putShot,siteName,viewport};
+export {captureAvailable,captureOpts,captureShots,setLiveCapture,shotGroups,shotImage,normalizeUrl,putShot,siteName,viewport};

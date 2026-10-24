@@ -6,15 +6,22 @@
 // keyboard goes back through Playwright's input API, so the site is used from inside the studio like a local remote
 // desktop. The recording itself happens on the client (it keeps the frames it receives); the server only streams.
 //
-// Client -> server (JSON text): open {url, viewport:{width,height}, dpr, mobile} · navigate {url} · back · reload ·
-//   input {type: move|down|up|wheel|key, …} · text {text} · scroll {dur} · openWindow · close
+// Client -> server (JSON text): open {url, viewport:{width,height}, dpr, mobile, dark} · navigate {url} · back · reload ·
+//   input {type: move|down|up|wheel|key, …} · text {text} · scroll {dur} · shot {full, selector, targets:[{id, width,
+//   height, mobile, dpr}]} · openWindow · close
 // Server -> client (JSON text): ready {headed} · nav {url, title, loading, canBack} · status {text} · error {message} ·
-//   window {open} · closed
+//   shot {shots: {id: data URL}, url, missing} · window {open} · closed
+//
+// shot: screenshots of the page as it is (logged in, banners closed, scrolled where the user left it) for the device
+// screens, one per target viewport: the page is re-laid out at each target's width through CDP's device metrics
+// override (the context's own viewport and scale come back afterwards), at the capture's own device scale factor
+// (up to DPR_MAX, sharper than the stream), either the visible area or the whole page from the top (or from the
+// selector's element) like the capture endpoint.
 import {chromium} from 'playwright';
 import {mkdirSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
-import {DPR_MAX,MAX_PX_W,mobileUA,reason} from '../../services/capture/shared.mjs';
+import {DPR_MAX,MAX_H,MAX_PX_H,MAX_PX_W,mobileUA,reason} from '../../services/capture/shared.mjs';
 
 const PROFILE=join(homedir(),'.mockup-studio','record-profile');
 const NAV_TIMEOUT=30000,SEND_LIMIT=12e6;  // bytes of frames allowed to queue on the socket before frames are dropped
@@ -25,10 +32,12 @@ const REC_DPR_MAX=3,REC_PX=3.2e6;
 export const recordDpr=(w,h,want)=>Math.max(1,Math.floor(Math.min(DPR_MAX,REC_DPR_MAX,MAX_PX_W/w,Math.sqrt(REC_PX/(w*h)),Math.max(1,+want||1))*4)/4);
 const MODS={Meta:'meta',Control:'ctrl',Alt:'alt',Shift:'shift'};  // key name -> flag in the client's key messages
 let current=null;  // the one active session
+let closing=Promise.resolve();  // the previous session's teardown: a new launch waits for it (one Chrome per profile folder)
+const LOCKED=/SingletonLock|profile.*in use|ProcessSingleton/i;
 
 class RecordSession{
   constructor(ws){
-    this.ws=ws;this.ctx=null;this.page=null;this.cdp=null;this.headed=false;this.opts=null;this.closed=false;this.url='';this.mods=new Set();
+    this.ws=ws;this.ctx=null;this.page=null;this.cdp=null;this.headed=false;this.opts=null;this.closed=false;this.url='';this.mods=new Set();this.shooting=false;
     ws.on('message',(data,isBinary)=>{if(isBinary)return;let m;try{m=JSON.parse(String(data));}catch(e){return;}this.handle(m).catch(e=>this.fail(e));});
     ws.on('close',()=>this.close());ws.on('error',()=>this.close());
   }
@@ -43,6 +52,7 @@ class RecordSession{
       case 'input':return this.input(m);
       case 'text':if(this.page&&typeof m.text==='string'&&m.text)await this.page.keyboard.insertText(m.text);return;
       case 'scroll':return this.autoScroll(+m.dur||8);
+      case 'shot':return this.shot(m);
       case 'openWindow':return this.openWindow();
       case 'close':return this.close();
     }
@@ -51,14 +61,22 @@ class RecordSession{
   async launch(headed){
     mkdirSync(PROFILE,{recursive:true});
     const o=this.opts,base={headless:!headed,viewport:{width:o.width,height:o.height},deviceScaleFactor:o.dpr,isMobile:o.mobile,hasTouch:o.mobile,
-      userAgent:mobileUA(o.mobile,o.width),locale:'tr-TR',ignoreDefaultArgs:['--enable-automation'],
+      userAgent:mobileUA(o.mobile,o.width),locale:'tr-TR',colorScheme:o.dark?'dark':'light',ignoreDefaultArgs:['--enable-automation'],
       args:['--disable-blink-features=AutomationControlled','--force-device-scale-factor='+o.dpr,'--hide-scrollbars']};
-    // the user's Chrome keeps logins less suspicious than a bare Chromium; Playwright's Chromium is the fallback
+    // the user's Chrome keeps logins less suspicious than a bare Chromium; Playwright's Chromium is the fallback.
+    // The profile's lock may outlive the previous session's close by a moment (a shot, then the window opened again):
+    // wait for that teardown, and try again a few times while the lock is still there.
+    await closing.catch(()=>{});
     let ctx;
-    try{ctx=await chromium.launchPersistentContext(PROFILE,{...base,channel:'chrome'});}
-    catch(e){
-      if(/SingletonLock|profile.*in use|ProcessSingleton/i.test(String(e&&e.message)))throw new Error('Kayıt profili başka bir Chrome tarafından kullanılıyor; onu kapat ve yeniden dene',{cause:e});
-      ctx=await chromium.launchPersistentContext(PROFILE,{...base,channel:'chromium'});
+    for(let i=0;;i++){
+      try{ctx=await chromium.launchPersistentContext(PROFILE,{...base,channel:'chrome'});break;}
+      catch(e){
+        if(LOCKED.test(String(e&&e.message))){
+          if(i<8){await new Promise(r=>setTimeout(r,500));continue;}
+          throw new Error('Kayıt profili başka bir Chrome tarafından kullanılıyor; onu kapat ve yeniden dene',{cause:e});
+        }
+        ctx=await chromium.launchPersistentContext(PROFILE,{...base,channel:'chromium'});break;
+      }
     }
     this.ctx=ctx;this.headed=headed;this.mods.clear();
     const page=ctx.pages()[0]||await ctx.newPage();this.page=page;
@@ -94,7 +112,7 @@ class RecordSession{
     if(this.ctx)return;
     const vp=m.viewport||{},width=Math.round(Math.min(4000,Math.max(200,+vp.width||390))),height=Math.round(Math.min(4000,Math.max(200,+vp.height||844)));
     const dpr=recordDpr(width,height,+m.dpr||2);
-    this.opts={width,height,dpr,mobile:!!m.mobile};
+    this.opts={width,height,dpr,mobile:!!m.mobile,dark:!!m.dark};
     this.send({type:'status',text:'Chrome başlatılıyor…'});
     await this.launch(false);
     this.send({type:'ready',headed:false,dpr});
@@ -152,6 +170,53 @@ class RecordSession{
       requestAnimationFrame(step);
     }),Math.max(.5,Math.min(60,dur))).catch(()=>{});
   }
+  /* ---------- screenshots of the live page for the device screens (see the top of the file) */
+  async shot(m){
+    const p=this.page,cdp=this.cdp;if(!p||!cdp||this.shooting)return;
+    const o=this.opts,full=!!m.full,selector=String(m.selector||'').trim().slice(0,200);
+    const targets=(Array.isArray(m.targets)?m.targets:[]).slice(0,12).filter(t=>t&&t.id&&t.width>=200&&t.width<=4000&&t.height>=200&&t.height<=4000);
+    if(!targets.length){this.send({type:'error',message:'Hedef yok'});return;}
+    this.shooting=true;
+    const y0=await p.evaluate(()=>Math.round(scrollY)).catch(()=>0);
+    const shots={};let missing=false;
+    try{
+      await cdp.send('Page.stopScreencast').catch(()=>{});  // the frames would come at the override's size meanwhile
+      for(const t of targets){
+        const dpr=Math.min(DPR_MAX,MAX_PX_W/t.width,Math.max(1,+t.dpr||o.dpr)),maxH=Math.min(MAX_H,Math.floor(MAX_PX_H/dpr)),mobile=!!t.mobile;
+        this.send({type:'status',text:'Ekran görüntüsü alınıyor…'+(targets.length>1?' ('+t.width+' px)':'')});
+        await cdp.send('Emulation.setDeviceMetricsOverride',{width:t.width,height:t.height,deviceScaleFactor:dpr,mobile});
+        let top=0,height=t.height;
+        if(full){
+          // walk down so lazy content loads, like the capture endpoint; the shot starts at the top (or the selector)
+          await p.evaluate(async max=>{const step=innerHeight*.8,end=Math.min(document.documentElement.scrollHeight,max);
+            for(let y=0;y<end;y+=step){scrollTo(0,y);await new Promise(r=>setTimeout(r,120));}scrollTo(0,0);},maxH).catch(()=>{});
+          await p.waitForLoadState('networkidle',{timeout:3000}).catch(()=>{});
+          const h=await p.evaluate(()=>Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0)).catch(()=>t.height);
+          if(selector){const y=await p.evaluate(s=>{try{const e=document.querySelector(s);return e?Math.max(0,Math.round(e.getBoundingClientRect().top+scrollY)):null;}catch(err){return null;}},selector).catch(()=>null);
+            if(y==null)missing=true;else top=Math.min(y,Math.max(0,h-t.height));}
+          height=Math.max(t.height,Math.min(h-top,maxH));
+          // the page laid out at its full height (fixed bars stay at the top once; 100vh sections grow, as in the capture)
+          await cdp.send('Emulation.setDeviceMetricsOverride',{width:t.width,height,deviceScaleFactor:dpr,mobile});
+          await p.waitForTimeout(150);
+        }else{
+          top=await p.evaluate(()=>Math.round(scrollY)).catch(()=>0);
+          await p.waitForTimeout(100);
+        }
+        const r=await cdp.send('Page.captureScreenshot',{format:'jpeg',quality:85,captureBeyondViewport:true,clip:{x:0,y:top,width:t.width,height,scale:1}});
+        shots[t.id]='data:image/jpeg;base64,'+r.data;
+      }
+    }catch(e){this.send({type:'error',message:'Ekran görüntüsü alınamadı ('+reason(e)+')'});}
+    finally{
+      // the context's own emulation comes back (Playwright re-sends it), then the user's scroll position and the stream
+      await cdp.send('Emulation.clearDeviceMetricsOverride').catch(()=>{});
+      await p.setViewportSize({width:o.width,height:o.height}).catch(()=>{});
+      await p.evaluate(y=>scrollTo(0,y),y0).catch(()=>{});
+      await cdp.send('Page.startScreencast',{format:'jpeg',quality:80,maxWidth:Math.round(o.width*o.dpr),maxHeight:Math.round(o.height*o.dpr),everyNthFrame:1}).catch(()=>{});
+      this.shooting=false;
+    }
+    if(Object.keys(shots).length)this.send({type:'shot',shots,url:p.url(),missing});
+    this.send({type:'status',text:''});
+  }
   /* ---------- a titled window with the same profile (one Chrome per profile folder: the headless one closes first) */
   async openWindow(){
     if(!this.ctx||this.headed)return;
@@ -164,7 +229,7 @@ class RecordSession{
   }
   async teardown(){
     const ctx=this.ctx;this.ctx=null;this.page=null;this.cdp=null;
-    if(ctx)await ctx.close().catch(()=>{});
+    if(ctx){const p=ctx.close().catch(()=>{});closing=p;await p;}
   }
   async close(){
     if(this.closed)return;this.closed=true;

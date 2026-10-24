@@ -1,5 +1,7 @@
 // Shared by the capture endpoint (vite-plugin.mjs) and the interactive recording session (record.mjs).
 export const DPR_MAX=8,MAX_PX_W=16384;
+// a full-page shot reaches down to MAX_H CSS px or MAX_PX_H device px, whichever comes first
+export const MAX_H=8000,MAX_PX_H=16384;
 export const UA_PHONE='Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 export const UA_TABLET='Mozilla/5.0 (Linux; Android 14; Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 // short, user-facing reasons for common navigation failures
