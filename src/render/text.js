@@ -25,6 +25,7 @@ const FONTS=[
   ['Nunito','sans',[400,600,700,800,900]],
   ['Archivo','sans',[400,600,700,800,900]],
   ['Oswald','sans',[400,500,600,700]],
+  ['Kanit','sans',[300,400,500,600,700,800,900]],
   ['Bebas Neue','sans',[400]],
   ['Anton','sans',[400]],
   ['Playfair Display','serif',[400,600,700,800,900]],
