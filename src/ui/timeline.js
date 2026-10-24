@@ -12,6 +12,7 @@ import {duration,fmtDur,hasVideo} from '../devices/video.js';
 import {icon} from './icons.js';
 import {renderItems} from './layout.js';
 import {selectItem} from './items.js';
+import {SEQ} from './sequence.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
 import {toast} from './toast.js';
 import {setUi,ui} from './ui-state.js';
@@ -42,7 +43,9 @@ import {$,$$} from '../util.js';
    the playhead (onto the current target when it is another of the same kind), ⌘D duplicates there; a right-click on
    a diamond opens a menu with these, the ease, the design frame and Sil; on a lane: paste and key here. Two or more
    selected keys apart in time get a dashed range with handles at both ends: dragging one stretches the selection
-   (stretchSelected), the motion slows down or speeds up. */
+   (stretchSelected), the motion slows down or speeds up.
+   The bar's Artboard | Sıra tabs switch the body to the sequence view (ui/sequence.js): the bar's transport, time
+   field, loop and the keys then act on the sequence; everything below is the Artboard view. */
 const tl=$('#timeline'),names=$('#tlNames'),lanes=$('#tlLanes');
 const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Yatış',scale:'Ölçek',lidAngle:'Kapak açısı',scroll:'Kaydırma',
   x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık',
@@ -289,13 +292,17 @@ function syncNav(n){
 }
 function draw(force){
   if(tl.hidden)return;
-  const s=structure();if(force||s!==sig){sig=s;build();}
-  moveHead();
-  $('#tlPlay').innerHTML=icon(A.playing?'pause':'play')+'<span class="tip">'+(A.playing?'Durdur':'Oynat')+' <kbd>Boşluk</kbd></span>';
-  $('#tlPlay').setAttribute('aria-label',A.playing?'Durdur':'Oynat');
-  $('#tlLoop').setAttribute('aria-pressed',String(!!state.anim.loop));
+  const seqOn=SEQ.active(),playing=seqOn?SEQ.playing():A.playing,loop=seqOn?SEQ.loop():!!state.anim.loop;
+  $$('#tlTabs button').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='seq')===seqOn)));
+  const n=$('#tlSeqN');n.textContent=String(SEQ.count());n.hidden=!SEQ.count();
+  if(seqOn)SEQ.draw();
+  else{const s=structure();if(force||s!==sig){sig=s;build();}moveHead();}
+  $('#tlPlay').innerHTML=icon(playing?'pause':'play')+'<span class="tip">'+(playing?'Durdur':'Oynat')+' <kbd>Boşluk</kbd></span>';
+  $('#tlPlay').setAttribute('aria-label',playing?'Durdur':'Oynat');
+  $('#tlLoop').setAttribute('aria-pressed',String(loop));
   $('#tlFps').textContent=fps()+' fps';
 }
+$$('#tlTabs button').forEach(b=>b.addEventListener('click',()=>{stop();SEQ.setView(b.dataset.view==='seq');draw(true);}));
 new ResizeObserver(()=>draw(true)).observe(lanes);
 
 /* ---------- interaction */
@@ -398,13 +405,13 @@ $('#tlBody').addEventListener('wheel',e=>{
   if(e.metaKey||e.ctrlKey){e.preventDefault();const r=lanes.getBoundingClientRect();setZoom(view.zoom*Math.exp(-e.deltaY*.01),e.clientX-r.left);}
   else if(view.zoom>1&&Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setScroll(view.scroll+e.deltaX);}
 },{passive:false});
-$('#tlStart').addEventListener('click',()=>{stop();seek(0);});
+$('#tlStart').addEventListener('click',()=>{if(SEQ.active()){SEQ.seek(0);return;}stop();seek(0);});
 // the bar's time: typed in seconds ("1,2") or frames ("36k"); Enter seeks there, Esc gives the playhead's time back
-{const tf=$('#tlT');const go=()=>{const t=parseT(tf.value);if(Number.isFinite(t)){stop();seek(t);}tf.value=fmtT(A.t);};
+{const tf=$('#tlT');const go=()=>{const t=parseT(tf.value);if(SEQ.active()){SEQ.parseSeek(t);tf.value=fmtT(SEQ.time());return;}if(Number.isFinite(t)){stop();seek(t);}tf.value=fmtT(A.t);};
   tf.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();go();tf.blur();}else if(e.key==='Escape'){e.preventDefault();tf.value=fmtT(A.t);tf.blur();}});
   tf.addEventListener('change',go);tf.addEventListener('focus',()=>tf.select());}
-$('#tlPlay').addEventListener('click',play);
-$('#tlLoop').addEventListener('click',()=>{state.anim.loop=!state.anim.loop;draw();});
+$('#tlPlay').addEventListener('click',()=>{if(SEQ.active())SEQ.play();else play();});
+$('#tlLoop').addEventListener('click',()=>{if(SEQ.active()){SEQ.toggleLoop();return;}state.anim.loop=!state.anim.loop;draw();});
 // timeline height (kept per browser)
 const TL_KEY='mockup-studio-timeline';
 try{const h=+localStorage.getItem(TL_KEY);if(h)tl.style.height=h+'px';}catch(e){/* private mode */}
@@ -482,6 +489,7 @@ function syncMode(){
   const animate=ui.mode==='animate';
   $$('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===ui.mode)));
   if(tl.hidden===animate){tl.hidden=!animate;placeSlots(animate);sig='';}
+  if(!animate&&SEQ.playing())SEQ.stop();
   $('#exportMenuBtn').textContent=animate?'Video dışa aktar':'Dışa aktar';
 }
 $$('#modeSeg button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
@@ -498,6 +506,7 @@ syncMode();
 addEventListener('keydown',e=>{
   if(ui.mode!=='animate'||!$('#videoScrim').hidden)return;
   const t=e.target;if(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)&&t.type!=='range'||t.isContentEditable))return;
+  if(SEQ.active()&&SEQ.key(e))return;  // the sequence view: Space, Home, arrows, Delete, Esc act on the sequence
   const stopIt=()=>{e.preventDefault();e.stopImmediatePropagation();},mod=e.metaKey||e.ctrlKey,arrow=e.key==='ArrowLeft'||e.key==='ArrowRight';
   // the selection's keys: ⌘A (while the last press was in the timeline), ⌥ ← / → nudge, Esc
   if(mod&&!e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='a'&&ui.tlFocus){stopIt();selectAllKeys(cur());return;}

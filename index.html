@@ -219,7 +219,10 @@
         <button class="ib" type="button" id="tlPlay" aria-label="Oynat"><span data-icon="play"></span><span class="tip">Oynat / durdur <kbd>Boşluk</kbd></span></button>
         <button class="ib" type="button" id="tlLoop" aria-label="Döngü" aria-pressed="true"><span data-icon="repeat"></span><span class="tip">Döngü</span></button>
         <span class="tl-time" id="tlTime"><input id="tlT" aria-label="Zaman (sn, ya da kare: 36k)" spellcheck="false" value="0,00"><span id="tlDur">/ 0,00 sn</span></span>
+        <span class="tl-tabs" id="tlTabs" role="group" aria-label="Görünüm"><button type="button" data-view="board" aria-pressed="true">Artboard</button><button type="button" data-view="seq" aria-pressed="false" title="Sıra: artboard'ları geçişlerle tek videoda art arda oynat">Sıra<i id="tlSeqN" hidden></i></button></span>
         <span class="grow"></span>
+        <button class="btn sm" type="button" id="seqAddAll" hidden>Tüm artboard'ları ekle</button>
+        <button class="btn sm primary" type="button" id="seqExport" hidden title="Sırayı tek bir video olarak dışa aktar">Sırayı dışa aktar</button>
         <span class="tl-zoom" role="group" aria-label="Zaman ekseni yakınlığı">
           <button class="ib sm" type="button" id="tlZoomOut" aria-label="Uzaklaş"><span data-icon="minus-circle" data-size="14"></span><span class="tip">Uzaklaş <kbd>⌘</kbd> tekerlek</span></button>
           <span id="tlZoom">1×</span>
@@ -235,6 +238,7 @@
         <div class="tl-lanes" id="tlLanes"></div>
         <p class="tl-empty" id="tlEmpty">Bir cihaz, ışık ya da artboard'u (kamera) seç ve satırındaki <b>◆</b> ile (ya da satıra çift tıklayarak) ilk kareyi ekle ya da <b>Hazır hareket ekle</b> ile başla. İmleç neredeyse yaptığın değişiklik o ana kaydedilir.</p>
       </div>
+      <div class="seq" id="seqView" hidden aria-label="Sıra"></div>
     </section>
     </div>
 
@@ -597,6 +601,8 @@
   <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="videoTitle">
     <div class="dh"><span id="videoTitle">Video dışa aktar</span><button class="ib sm" type="button" id="videoX" aria-label="Kapat"><span data-icon="close-circle"></span></button></div>
     <div class="db" id="videoSetup">
+      <div class="row" id="vSrcRow" hidden><span class="lbl">Kaynak</span><div class="seg" id="vSrc" role="group" aria-label="Kaynak"><button type="button" data-v="board">Bu artboard</button><button type="button" data-v="seq">Sıra</button></div></div>
+      <p class="hint-sm" id="vSrcNote" hidden></p>
       <div class="row"><span class="lbl">Biçim</span><div class="seg" id="vFmt" role="group" aria-label="Biçim"><button type="button" data-v="mp4">MP4</button><button type="button" data-v="webm">WebM</button><button type="button" data-v="gif">GIF</button></div></div>
       <p class="hint-sm" id="vFmtNote"></p>
       <div class="row"><span class="lbl">Çözünürlük</span><div class="seg" id="vRes" role="group" aria-label="Genişlik"><button type="button" data-v="1080">1080 px</button><button type="button" data-v="1920">1920 px</button><button type="button" data-v="3840">3840 px</button></div></div>

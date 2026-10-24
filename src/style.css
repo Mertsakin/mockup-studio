@@ -453,7 +453,7 @@ html.present #gl{cursor:default!important}
 .tl-bar .ib[aria-pressed="true"]{background:var(--accent-soft)}
 .tl-bar .ib[aria-pressed="true"] .ic{color:var(--accent-ink)}
 .tl-bar .ib .tip{top:auto;bottom:calc(100% + 6px)}
-.tl-time{min-width:100px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font-weight:500}
+.tl-time{min-width:100px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font-weight:500;white-space:nowrap}
 .tl-time span{color:var(--muted);font-weight:400}
 /* the time is typed too: seconds, or frames as 36k (timeline.js) */
 .tl-time input{width:48px;height:22px;padding:0 4px;border:0;border-radius:4px;background:transparent;text-align:right;font:inherit;font-weight:500;color:var(--ink);min-width:0}
@@ -1162,3 +1162,64 @@ html.home-boot::after{content:"";position:fixed;inset:0;z-index:69;background:li
 /* the app menu's theme switch: icons (Sistem / Açık / Koyu in their labels) */
 #themeSeg{width:max-content}
 #themeSeg button{width:36px;display:grid;place-items:center}
+
+/* ===== the Sıra (sequence) view of the timeline panel (ui/sequence.js; design wireframes/sequence.html) ===== */
+.tl-tabs{display:inline-flex;gap:2px;height:24px;padding:2px;border-radius:6px;background:var(--field);margin-left:8px;flex:none}
+.tl-tabs button{position:relative;height:20px;padding:0 10px;border-radius:4px;color:var(--ink-2);font-weight:500;font-size:12px}
+.tl-tabs button:hover{color:var(--ink)}
+.tl-tabs button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.tl-tabs button i{position:absolute;right:-3px;top:-4px;min-width:14px;height:14px;padding:0 4px;border-radius:7px;background:var(--accent);color:var(--on-accent);font:600 9.5px/14px Inter,sans-serif;font-style:normal;text-align:center}
+.tl.seq-on .tl-zoom,.tl.seq-on .tl-sep,.tl.seq-on #tlPresetBtn{display:none}
+.seq{position:relative;overflow:hidden;min-height:0;cursor:default;user-select:none}
+.seq .ruler{position:relative}
+.seq-lane{position:absolute;left:0;right:0;top:24px;height:118px;background:var(--track)}
+.seq-clip{position:absolute;top:14px;height:90px;border-radius:8px;background:var(--panel);box-shadow:0 0 0 1px var(--line);overflow:hidden;cursor:grab;display:flex;flex-direction:column}
+.seq-clip:hover{box-shadow:0 0 0 1px var(--line-strong)}
+.seq-clip.active{box-shadow:0 0 0 1.5px var(--accent)}
+.seq-clip.sel{box-shadow:0 0 0 1.5px var(--accent),0 0 0 4px var(--accent-soft)}
+.seq-clip.drag{opacity:.4}
+.seq-clip .seq-th{position:relative;flex:1;min-height:0;background:var(--field);overflow:hidden}
+.seq-clip .seq-th img{position:absolute;left:var(--tin,0px);top:0;height:100%;width:auto;display:block}
+.seq-clip .seq-th::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 60%,var(--panel))}
+.seq-clip .seq-nm{display:flex;align-items:center;gap:6px;height:24px;padding:0 8px 0 calc(var(--tin,0px) + 8px);font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seq-clip .seq-nm .dur{margin-left:auto;color:var(--muted);font-weight:400;font-variant-numeric:tabular-nums}
+.seq-clip .seq-nm .env{color:var(--muted);font-weight:400}
+.seq-clip .seq-tools{position:absolute;right:4px;top:4px;display:flex;gap:2px;opacity:0;transition:opacity .12s}
+.seq-clip:hover .seq-tools,.seq-clip.sel .seq-tools{opacity:1}
+.seq-clip .seq-tools button{position:relative;width:20px;height:20px;border-radius:4px;background:color-mix(in srgb,var(--panel) 85%,transparent);color:var(--ink-2);display:grid;place-items:center;box-shadow:0 0 0 1px var(--line)}
+.seq-clip .seq-tools button:hover{color:var(--ink);background:var(--panel)}
+.seq-clip .seq-prog{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);width:0;pointer-events:none}
+.seq-tr{position:absolute;top:8px;height:102px;border-radius:7px;background:color-mix(in srgb,var(--key) 26%,var(--panel));box-shadow:0 0 0 1px color-mix(in srgb,var(--key) 70%,transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--key-ink);z-index:2;min-width:30px;padding:0}
+.seq-tr:hover{background:color-mix(in srgb,var(--key) 40%,var(--panel))}
+.seq-tr.on{background:color-mix(in srgb,var(--accent) 22%,var(--panel));box-shadow:0 0 0 1.5px var(--accent);color:var(--accent-ink)}
+.seq-tr svg,.kpop.seqc .kinds svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.seq-tr small{font-size:9.5px;line-height:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.seq-tr.cut{min-width:18px;width:18px;background:transparent;box-shadow:none;color:var(--muted)}
+.seq-tr.cut::before{content:"";position:absolute;top:4px;bottom:4px;left:50%;border-left:2px dashed var(--line-strong)}
+.seq-tr.cut svg{position:relative;background:var(--track);padding:2px;border-radius:4px}
+.seq-tr.cut.on{color:var(--accent-ink)}.seq-tr.cut.on::before{border-color:var(--accent)}
+.seq-tr.bad{box-shadow:0 0 0 1px var(--danger);color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,var(--panel))}
+.seq-tr .tip{top:calc(100% + 4px)}
+.seq-add{position:absolute;top:34px;width:48px;height:48px;border-radius:10px;border:1.5px dashed var(--line-strong);display:grid;place-items:center;color:var(--muted)}
+.seq-add:hover{color:var(--ink);border-color:var(--ink-2);background:var(--panel)}
+.seq-add .tip{top:calc(100% + 4px)}
+.seq-drop{position:absolute;top:24px;height:118px;width:0;border-left:2px solid var(--accent);pointer-events:none;z-index:5}
+.seq-empty{position:absolute;left:50%;top:40px;transform:translateX(-50%);width:max-content;max-width:90%;padding:8px 12px;border-radius:var(--r);background:var(--panel);box-shadow:0 0 0 1px var(--line);text-align:center;color:var(--muted);z-index:5;display:flex;gap:8px;align-items:center;font-size:12px}
+.seq-empty b{color:var(--ink);font-weight:500}
+/* the transition card: the keyframe card's look, in rows */
+.kpop.seqc{flex-direction:column;align-items:stretch;height:auto;gap:6px;padding:8px 10px;z-index:7}
+.kpop.seqc .row{display:flex;align-items:center;gap:6px;margin:0;min-height:0}
+.kpop.seqc .row .lbl{color:var(--muted);width:auto;font-size:11px}
+.kpop.seqc .grow{flex:1}
+.kpop.seqc .eases{height:26px}
+.kpop.seqc .eases button{min-width:28px;padding:0 6px;width:auto}
+.kpop.seqc .tf input{width:36px}
+.kpop.seqc .sw{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.kpop.seqc .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--accent)}
+.kpop.seqc .note{color:var(--muted);font-size:11px;line-height:14px;max-width:380px;white-space:normal}
+.kpop.seqc .note.bad{color:var(--danger)}
+.kpop.seqc .note.ok{color:var(--ok,#1f8a4c)}
+/* the live transition over the board (sequence playback): the outgoing board's frozen frame; while a slide runs both
+   frames are drawn here and the live layers are covered */
+.frame>.seq-over{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.frame.seq-cover>:not(.seq-over){visibility:hidden}
