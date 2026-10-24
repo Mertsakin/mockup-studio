@@ -13,6 +13,8 @@ function evaluate(text){
   if(!EXPR.test(t))return t;  // words, %: the caller decides
   try{const v=Function('"use strict";return ('+t+')')();return Number.isFinite(v)?v:null;}catch(e){return null;}
 }
+import {fmt as numFmt} from '../lang.js';
+
 function numField(def){
   const el=document.createElement('div');el.className='nf';if(def.wide)el.classList.add('wide');
   el.innerHTML='<label class="nfk"></label><input type="text" inputmode="decimal" spellcheck="false" autocomplete="off">';
@@ -20,7 +22,7 @@ function numField(def){
   if(def.title){lab.title=def.title;inp.setAttribute('aria-label',def.title);}
   const step=def.step||1,dig=def.digits||0,suf=def.suffix||'';
   const clampV=v=>Math.min(def.max??Infinity,Math.max(def.min??-Infinity,v));
-  const fmt=v=>v==null?'':def.fmt?def.fmt(v):(+v.toFixed(dig)).toString().replace('.',',')+suf;
+  const fmt=v=>v==null?'':def.fmt?def.fmt(v):numFmt(+v.toFixed(dig))+suf;
   function sync(){
     const off=!!(def.disabled&&def.disabled());inp.disabled=off;el.classList.toggle('off',off);
     if(document.activeElement===inp&&!off)return;

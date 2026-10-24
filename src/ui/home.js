@@ -25,6 +25,7 @@ import {closeHooks} from './history.js';
 import {setUi} from './ui-state.js';
 import {fitAll} from './workspace.js';
 import {go as goTo,onRoute,parse,takeNext} from './router.js';
+import {LANG,LANGS,LOCALE,fmt,setLang,t as tx} from '../lang.js';
 import {$} from '../util.js';
 
 const GOALS=[['land','Açılış görseli','gallery-wide','g1'],['social','Sosyal','heart','g2'],['store','Mağaza seti','smartphone','g3'],['video','Video','play','g4']];
@@ -39,10 +40,10 @@ let el=null,view='recent',projects=null,trash=null,tpls=[],mixed=[],recShift=0,q
 const interleave=l=>{const by={};l.forEach(t=>(by[t.goal]=by[t.goal]||[]).push(t));const out=[],qs=Object.values(by);for(let i=0;out.length<l.length;i++)qs.forEach(q=>{if(q[i])out.push(q[i]);});return out;};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 const ago=t=>{const s=(Date.now()-new Date(t).getTime())/1000;
-  if(s<60)return 'az önce';if(s<3600)return Math.floor(s/60)+' dakika önce';if(s<86400)return Math.floor(s/3600)+' saat önce';if(s<172800)return 'dün';
-  if(s<604800)return Math.floor(s/86400)+' gün önce';
-  return new Date(t).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:new Date(t).getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
-const mb=n=>n<2**30?(n/2**20).toFixed(n<10*2**20?1:0).replace('.',',')+' MB':(n/2**30).toFixed(1).replace('.',',')+' GB';
+  if(s<60)return tx('az önce');if(s<3600)return tx('{n} dakika önce',{n:Math.floor(s/60)});if(s<86400)return tx('{n} saat önce',{n:Math.floor(s/3600)});if(s<172800)return tx('dün');
+  if(s<604800)return tx('{n} gün önce',{n:Math.floor(s/86400)});
+  return new Date(t).toLocaleDateString(LOCALE,{day:'numeric',month:'long',year:new Date(t).getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
+const mb=n=>n<2**30?fmt(n/2**20,n<10*2**20?1:0)+' MB':fmt(n/2**30,1)+' GB';
 const shown=()=>!!el;
 // the editor's address: the cloud project open in it, or the work that is not one (ui/router.js)
 const editorRoute=()=>openId()?{name:'project',id:openId()}:{name:'edit'};
@@ -54,7 +55,7 @@ function shut(on){for(const c of document.body.children)if(c!==el&&c.id!=='toast
 async function showHome(v,{fromURL=false,replace=false}={}){
   if(!auth.user)return;
   if(!el){
-    el=document.createElement('div');el.id='home';el.className='hm';el.setAttribute('role','region');el.setAttribute('aria-label','Ana sayfa');
+    el=document.createElement('div');el.id='home';el.className='hm';el.setAttribute('role','region');el.setAttribute('aria-label',tx('Ana sayfa'));
     document.body.appendChild(el);document.documentElement.classList.add('home-on');shut(true);
     el.addEventListener('click',onClick);el.addEventListener('input',onInput);el.addEventListener('keydown',onKey);
   }
@@ -65,7 +66,7 @@ async function showHome(v,{fromURL=false,replace=false}={}){
 function hideHome({fromURL=false}={}){if(!el)return;closeMenu();el.remove();el=null;document.documentElement.classList.remove('home-on');shut(false);if(!fromURL)goTo(editorRoute());}
 async function load(){
   projects=null;draw();
-  try{[projects,tpls]=await Promise.all([listProjects(),templates()]);mixed=interleave(tpls);}catch(e){projects=[];toast('Projeler alınamadı: '+e.message);}
+  try{[projects,tpls]=await Promise.all([listProjects(),templates()]);mixed=interleave(tpls);}catch(e){projects=[];toast(tx('Projeler alınamadı: {m}',{m:e.message}));}
   if(view==='trash')await loadTrash();
   draw();
 }
@@ -77,21 +78,21 @@ function go(v,{fromURL=false}={}){if(v===view)return;view=v;if(!fromURL)goTo({na
 function frame(){
   const p=auth.profile||{},name=p.name||(auth.user.email||'').split('@')[0],ini=name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const used=p.storage_bytes||0,cap=2*2**30;
-  el.innerHTML='<aside class="hm-side" aria-label="Gezinme">'+
+  el.innerHTML='<aside class="hm-side" aria-label="'+tx('Gezinme')+'">'+
       '<div class="hm-logo"><img src="favicon.svg" alt="" width="30" height="30"><b>Shotlight</b><span>studio</span></div>'+
-      '<label class="hm-search">'+icon('magnifer',14)+'<input type="search" id="hmQ" placeholder="Ara" aria-label="Projelerde ve şablonlarda ara"></label>'+
+      '<label class="hm-search">'+icon('magnifer',14)+'<input type="search" id="hmQ" placeholder="'+tx('Ara')+'" aria-label="'+tx('Projelerde ve şablonlarda ara')+'"></label>'+
       ['recent:clock-circle','all:folder','templates:widget','trash:trash-bin-minimalistic'].map(x=>{const [v,ic]=x.split(':');
-        return '<button class="hm-nav" type="button" data-view="'+v+'">'+icon(ic,16)+'<span>'+TITLES[v]+'</span><span class="hm-n" data-count="'+v+'"></span></button>';}).join('')+
+        return '<button class="hm-nav" type="button" data-view="'+v+'">'+icon(ic,16)+'<span>'+tx(TITLES[v])+'</span><span class="hm-n" data-count="'+v+'"></span></button>';}).join('')+
       '<span class="hm-grow"></span>'+
-      '<div class="hm-foot"><div class="hm-store"><div class="hm-bar"><i style="width:'+Math.min(100,used/cap*100).toFixed(1)+'%"></i></div><span>'+mb(used)+' / 2 GB kullanılıyor</span></div>'+
+      '<div class="hm-foot"><div class="hm-store"><div class="hm-bar"><i style="width:'+Math.min(100,used/cap*100).toFixed(1)+'%"></i></div><span>'+tx('{n} / 2 GB kullanılıyor',{n:mb(used)})+'</span></div>'+
       '<button class="hm-me" type="button" data-a="me" aria-haspopup="menu"><span class="hm-av">'+(p.avatar_url?'<img alt="" referrerpolicy="no-referrer">':esc(ini))+'</span>'+
-        '<span class="hm-mt"><b>'+esc(name)+'</b><span>Beta · ücretsiz</span></span>'+icon('alt-arrow-up',14)+'</button></div>'+
+        '<span class="hm-mt"><b>'+esc(name)+'</b><span>'+tx('Beta · ücretsiz')+'</span></span>'+icon('alt-arrow-up',14)+'</button></div>'+
     '</aside>'+
     '<main class="hm-main"><header class="hm-top">'+
-      '<button class="hm-ib" type="button" data-a="back" aria-label="Geri">'+icon('alt-arrow-left',16)+'</button>'+
-      '<button class="hm-ib" type="button" data-a="fwd" aria-label="İleri">'+icon('alt-arrow-right',16)+'</button>'+
+      '<button class="hm-ib" type="button" data-a="back" aria-label="'+tx('Geri')+'">'+icon('alt-arrow-left',16)+'</button>'+
+      '<button class="hm-ib" type="button" data-a="fwd" aria-label="'+tx('İleri')+'">'+icon('alt-arrow-right',16)+'</button>'+
       '<h1 id="hmTitle"></h1><span class="hm-sp"></span>'+
-      '<div class="hm-goals" role="group" aria-label="Yeni proje başlat">'+GOALS.map(([g,n,ic,c])=>'<button class="hm-goal" type="button" data-goal="'+g+'"><span class="hm-gi '+c+'">'+icon(ic,12)+'</span>'+n+'</button>').join('')+
+      '<div class="hm-goals" role="group" aria-label="'+tx('Yeni proje başlat')+'">'+GOALS.map(([g,n,ic,c])=>'<button class="hm-goal" type="button" data-goal="'+g+'"><span class="hm-gi '+c+'">'+icon(ic,12)+'</span>'+tx(n)+'</button>').join('')+
         '</div>'+
     '</header><div class="hm-scroll" id="hmBody"></div></main>';
   if(p.avatar_url)el.querySelector('.hm-av img').src=p.avatar_url;
@@ -101,86 +102,86 @@ function frame(){
 const thumbBox=(p,cls)=>'<span class="'+cls+'" data-thumb="'+p.id+'">'+icon('gallery-wide',28)+'</span>';
 function fillThumbs2(list){for(const p of list)thumbURL(p).then(u=>{if(!u||!el)return;el.querySelectorAll('[data-thumb="'+p.id+'"]').forEach(t=>{t.innerHTML='<img alt="">';t.firstChild.src=u;});}).catch(()=>{});}
 function sorted(l){const c=l.slice();
-  if(prefs.sort==='name')c.sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  if(prefs.sort==='name')c.sort((a,b)=>a.name.localeCompare(b.name,LOCALE));
   else if(prefs.sort==='created')c.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   else c.sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
   return c;}
-const match=n=>!q||n.toLocaleLowerCase('tr').includes(q);
+const match=n=>!q||n.toLocaleLowerCase(LOCALE).includes(q);
 function rec(big){
   if(!mixed.length)return '';
   // one row of four, with and without projects
   const n=4,items=[];for(let i=0;i<Math.min(n,mixed.length);i++)items.push(mixed[(i+recShift)%mixed.length]);
-  return '<section class="hm-rec'+(big?' big':'')+'" aria-label="Önerilen şablonlar"><div class="hm-rec-h"><h2>'+(big?'Bir şablonla başla':'Önerilen şablonlar')+'</h2>'+
-    (big?'<p>ekran görüntülerin şablona sonra eklenir</p>':'')+'<span class="hm-sp"></span>'+
-    '<button class="hm-ib" type="button" data-a="recShift" aria-label="Başka öneriler">'+icon('refresh',16)+'</button>'+
-    (big?'':'<button class="hm-ib" type="button" data-a="recClose" aria-label="Önerileri kapat">'+icon('close-circle',16)+'</button>')+'</div>'+
+  return '<section class="hm-rec'+(big?' big':'')+'" aria-label="'+tx('Önerilen şablonlar')+'"><div class="hm-rec-h"><h2>'+tx(big?'Bir şablonla başla':'Önerilen şablonlar')+'</h2>'+
+    (big?'<p>'+tx('ekran görüntülerin şablona sonra eklenir')+'</p>':'')+'<span class="hm-sp"></span>'+
+    '<button class="hm-ib" type="button" data-a="recShift" aria-label="'+tx('Başka öneriler')+'">'+icon('refresh',16)+'</button>'+
+    (big?'':'<button class="hm-ib" type="button" data-a="recClose" aria-label="'+tx('Önerileri kapat')+'">'+icon('close-circle',16)+'</button>')+'</div>'+
     '<div class="hm-rec-grid">'+items.map(t=>tplCard(t)).join('')+'</div>'+
-    '<button class="hm-link" type="button" data-view="templates">Tüm şablonlar →</button></section>';
+    '<button class="hm-link" type="button" data-view="templates">'+tx('Tüm şablonlar →')+'</button></section>';
 }
 const tplCard=t=>'<button class="hm-tp" type="button" data-tpl="'+t.id+'"><span class="hm-tth"><img alt="" loading="lazy" src="templates/'+esc(t.variants.light.thumb)+'"></span>'+
-  '<span class="hm-tn"><b>'+esc(t.name)+'</b><span>'+esc(t.goalName)+(t.boards>1?' · '+t.boards+' ekran':'')+(t.motion?' · hareketli':'')+'</span></span></button>';
+  '<span class="hm-tn"><b>'+esc(tx(t.name))+'</b><span>'+esc(tx(t.goalName))+(t.boards>1?' · '+tx('{n} ekran',{n:t.boards}):'')+(t.motion?' · '+tx('hareketli'):'')+'</span></span></button>';
 function cards(list,{trash:isTrash=false}={}){
   const open=openId();
-  if(prefs.layout==='list')return '<div class="hm-list" role="list"><div class="hm-row hm-hd"><span></span><span>Ad</span><span>'+(isTrash?'Silinme':'Son düzenleme')+'</span><span>Artboard</span><span>Boyut</span><span></span></div>'+
-    list.map(p=>'<div class="hm-row hm-item" role="listitem" tabindex="0" data-id="'+p.id+'">'+thumbBox(p,'hm-lth')+'<span class="hm-nm">'+esc(p.name)+(p.id===open?' <span class="hm-c">· açık</span>':'')+'</span>'+
+  if(prefs.layout==='list')return '<div class="hm-list" role="list"><div class="hm-row hm-hd"><span></span><span>'+tx('Ad')+'</span><span>'+tx(isTrash?'Silinme':'Son düzenleme')+'</span><span>'+tx('Artboard')+'</span><span>'+tx('Boyut')+'</span><span></span></div>'+
+    list.map(p=>'<div class="hm-row hm-item" role="listitem" tabindex="0" data-id="'+p.id+'">'+thumbBox(p,'hm-lth')+'<span class="hm-nm">'+esc(p.name)+(p.id===open?' <span class="hm-c">· '+tx('açık')+'</span>':'')+'</span>'+
       '<span class="hm-c">'+ago(isTrash?p.deleted_at:p.updated_at)+'</span><span class="hm-c">'+(p.boards||0)+'</span><span class="hm-c">'+mb(p.bytes||0)+'</span>'+
-      '<button class="hm-ib" type="button" data-menu="'+p.id+'" aria-label="'+esc(p.name)+' seçenekleri" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div>').join('')+'</div>';
+      '<button class="hm-ib" type="button" data-menu="'+p.id+'" aria-label="'+esc(tx('{p} seçenekleri',{p:p.name}))+'" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div>').join('')+'</div>';
   return '<div class="hm-grid" role="list">'+list.map(p=>'<div class="hm-card hm-item" role="listitem" tabindex="0" data-id="'+p.id+'" aria-label="'+esc(p.name)+'">'+
-      '<div class="hm-th">'+thumbBox(p,'hm-thi')+(p.id===open?'<span class="hm-badge">Açık</span>':'')+
-      '<button class="hm-dots" type="button" data-menu="'+p.id+'" aria-label="'+esc(p.name)+' seçenekleri" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div>'+
+      '<div class="hm-th">'+thumbBox(p,'hm-thi')+(p.id===open?'<span class="hm-badge">'+tx('Açık@open')+'</span>':'')+
+      '<button class="hm-dots" type="button" data-menu="'+p.id+'" aria-label="'+esc(tx('{p} seçenekleri',{p:p.name}))+'" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div>'+
       '<div class="hm-meta"><span class="hm-ico">'+icon('gallery-wide',13)+'</span><span class="hm-mtx"><span class="hm-nm">'+esc(p.name)+'</span><span class="hm-tm">'+
-      (isTrash?'Silindi '+ago(p.deleted_at):'Düzenlendi '+ago(p.updated_at))+' · '+(p.boards||0)+' artboard</span></span></div></div>').join('')+'</div>';
+      (isTrash?tx('Silindi {ago}',{ago:ago(p.deleted_at)}):tx('Düzenlendi {ago}',{ago:ago(p.updated_at)}))+' · '+tx('{n} artboard',{n:p.boards||0})+'</span></span></div></div>').join('')+'</div>';
 }
 // the work open in the editor when it is not one of the listed cloud projects (new, never saved, or saved elsewhere)
 function openWork(){
   if(!doc.boards.length)return null;
   const id=openId();if(id&&projects&&projects.some(p=>p.id===id))return null;
   const b=doc.boards.find(x=>x.id===doc.active)||doc.boards[0],name=($('#projName').textContent||'').trim();
-  return {name:name&&!/^(Mockup stüdyosu|Shotlight|Adsız proje)$/.test(name)?name:'Adsız çalışma',thumb:b&&b.thumb,boards:doc.boards.length};
+  return {name:name&&!/^(Mockup stüdyosu|Shotlight|Adsız proje|Untitled project)$/.test(name)?name:tx('Adsız çalışma'),thumb:b&&b.thumb,boards:doc.boards.length};
 }
 function openCard(w){
   if(prefs.layout==='list')return '<div class="hm-row hm-open" role="listitem" tabindex="0" data-a="return"><span class="hm-lth">'+(w.thumb?'<img alt="" src="'+w.thumb+'">':icon('gallery-wide',20))+'</span>'+
-    '<span class="hm-nm">'+esc(w.name)+' <span class="hm-c">· açık, buluta kaydedilmedi</span></span><span class="hm-c">şimdi</span><span class="hm-c">'+w.boards+'</span><span class="hm-c">—</span>'+
-    '<button class="hm-ib" type="button" data-menu="open" aria-label="'+esc(w.name)+' seçenekleri" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div>';
-  return '<div class="hm-card hm-open" role="listitem" tabindex="0" data-a="return" aria-label="Açık çalışmaya dön: '+esc(w.name)+'"><div class="hm-th"><span class="hm-thi">'+(w.thumb?'<img alt="" src="'+w.thumb+'">':icon('gallery-wide',28))+'</span>'+
-    '<span class="hm-badge">Açık</span><button class="hm-dots" type="button" data-menu="open" aria-label="'+esc(w.name)+' seçenekleri" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div><div class="hm-meta"><span class="hm-ico">'+icon('gallery-wide',13)+'</span><span class="hm-mtx"><span class="hm-nm">'+esc(w.name)+'</span>'+
-    '<span class="hm-tm">Buluta kaydedilmedi · '+w.boards+' artboard</span></span></div></div>';
+    '<span class="hm-nm">'+esc(w.name)+' <span class="hm-c">· '+tx('açık, buluta kaydedilmedi')+'</span></span><span class="hm-c">'+tx('şimdi')+'</span><span class="hm-c">'+w.boards+'</span><span class="hm-c">—</span>'+
+    '<button class="hm-ib" type="button" data-menu="open" aria-label="'+esc(tx('{p} seçenekleri',{p:w.name}))+'" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div>';
+  return '<div class="hm-card hm-open" role="listitem" tabindex="0" data-a="return" aria-label="'+esc(tx('Açık çalışmaya dön: {p}',{p:w.name}))+'"><div class="hm-th"><span class="hm-thi">'+(w.thumb?'<img alt="" src="'+w.thumb+'">':icon('gallery-wide',28))+'</span>'+
+    '<span class="hm-badge">'+tx('Açık@open')+'</span><button class="hm-dots" type="button" data-menu="open" aria-label="'+esc(tx('{p} seçenekleri',{p:w.name}))+'" aria-haspopup="menu">'+icon('menu-dots',16)+'</button></div><div class="hm-meta"><span class="hm-ico">'+icon('gallery-wide',13)+'</span><span class="hm-mtx"><span class="hm-nm">'+esc(w.name)+'</span>'+
+    '<span class="hm-tm">'+tx('Buluta kaydedilmedi')+' · '+tx('{n} artboard',{n:w.boards})+'</span></span></div></div>';
 }
 const withOpen=(html,w)=>w?html.replace(/^(<div class="hm-(?:grid|list)" role="list">(?:<div class="hm-row hm-hd">.*?<\/div>)?)/,'$1'+openCard(w)):html;
 function bar(h){
   return '<div class="hm-bar2"><h2>'+h+'</h2><span class="hm-sp"></span>'+
-    '<button class="hm-pill" type="button" data-a="sort" aria-haspopup="menu">'+({edited:'Son düzenlenen',name:'Ada göre',created:'Oluşturulma'})[prefs.sort]+icon('alt-arrow-down',14)+'</button>'+
-    '<div class="hm-seg" role="group" aria-label="Görünüm"><button type="button" data-layout="grid" aria-pressed="'+(prefs.layout==='grid')+'" aria-label="Izgara">'+icon('widget',16)+'</button>'+
-    '<button type="button" data-layout="list" aria-pressed="'+(prefs.layout==='list')+'" aria-label="Liste">'+icon('layout-list',16)+'</button></div></div>';
+    '<button class="hm-pill" type="button" data-a="sort" aria-haspopup="menu">'+tx(({edited:'Son düzenlenen',name:'Ada göre',created:'Oluşturulma'})[prefs.sort])+icon('alt-arrow-down',14)+'</button>'+
+    '<div class="hm-seg" role="group" aria-label="'+tx('Görünüm')+'"><button type="button" data-layout="grid" aria-pressed="'+(prefs.layout==='grid')+'" aria-label="'+tx('Izgara')+'">'+icon('widget',16)+'</button>'+
+    '<button type="button" data-layout="list" aria-pressed="'+(prefs.layout==='list')+'" aria-label="'+tx('Liste')+'">'+icon('layout-list',16)+'</button></div></div>';
 }
 function draw(){
   if(!el)return;
   el.querySelectorAll('.hm-nav').forEach(n=>n.setAttribute('aria-current',n.dataset.view===view?'page':'false'));
-  el.querySelector('#hmTitle').textContent=TITLES[view];
+  el.querySelector('#hmTitle').textContent=tx(TITLES[view]);
   // the browser's history (the Navigation API knows whether there is a way; without it both stay enabled)
   const nav=window.navigation;el.querySelector('[data-a="back"]').disabled=!!nav&&!nav.canGoBack;el.querySelector('[data-a="fwd"]').disabled=!!nav&&!nav.canGoForward;
   const n=el.querySelector('[data-count="all"]');n.textContent=projects&&projects.length?projects.length:'';
   const body=el.querySelector('#hmBody');
-  if(!projects){body.innerHTML='<p class="hm-empty">Yükleniyor…</p>';return;}
+  if(!projects){body.innerHTML='<p class="hm-empty">'+tx('Yükleniyor…')+'</p>';return;}
   let h='',thumbs=[];
   if(view==='recent'||view==='all'){
     const w=q?null:openWork();
     if(!projects.length&&!q&&!w){
-      h+=rec(true)+'<div class="hm-empty"><h2>Henüz projen yok</h2><p>Bir şablon seç, sağ üstten bir amaçla başla ya da boş tuvalle aç.</p>'+
-        '<button class="hm-btn" type="button" data-a="blank">'+icon('add-circle',16)+'Boş tuval</button></div>';
+      h+=rec(true)+'<div class="hm-empty"><h2>'+tx('Henüz projen yok')+'</h2><p>'+tx('Bir şablon seç, sağ üstten bir amaçla başla ya da boş tuvalle aç.')+'</p>'+
+        '<button class="hm-btn" type="button" data-a="blank">'+icon('add-circle',16)+tx('Boş tuval')+'</button></div>';
     }else{
       if(view==='recent'&&!prefs.recClosed&&!q)h+=rec(false);
       const all=sorted(projects).filter(p=>match(p.name)),l=view==='recent'&&!q?all.slice(0,8):all;thumbs=l;
-      h+=bar(view==='recent'?'Son kullanılanlar':'Tüm projeler ('+projects.length+')')+(l.length||w?withOpen(cards(l),w):'<p class="hm-empty">Bu aramayla eşleşen proje yok.</p>');
-      if(view==='recent'&&!q&&projects.length>8)h+='<button class="hm-link" type="button" data-view="all">Tüm projeler ('+projects.length+') →</button>';
+      h+=bar(view==='recent'?tx('Son kullanılanlar'):tx('Tüm projeler ({n})',{n:projects.length}))+(l.length||w?withOpen(cards(l),w):'<p class="hm-empty">'+tx('Bu aramayla eşleşen proje yok.')+'</p>');
+      if(view==='recent'&&!q&&projects.length>8)h+='<button class="hm-link" type="button" data-view="all">'+tx('Tüm projeler ({n}) →',{n:projects.length})+'</button>';
     }
   }else if(view==='templates'){
-    const l=tpls.filter(t=>match(t.name)||match(t.goalName));
-    h+='<div class="hm-bar2"><h2>Şablondan yeni proje</h2></div>'+(l.length?'<div class="hm-tgrid">'+l.map(tplCard).join('')+'</div>':'<p class="hm-empty">Bu aramayla eşleşen şablon yok.</p>');
+    const l=tpls.filter(t=>match(tx(t.name))||match(tx(t.goalName)));
+    h+='<div class="hm-bar2"><h2>'+tx('Şablondan yeni proje')+'</h2></div>'+(l.length?'<div class="hm-tgrid">'+l.map(tplCard).join('')+'</div>':'<p class="hm-empty">'+tx('Bu aramayla eşleşen şablon yok.')+'</p>');
   }else{
-    h+='<p class="hm-notice">Çöp kutusundaki projeler 30 gün sonra kalıcı olarak silinir. Geri getirmek için projenin menüsünü aç.</p>';
-    if(!trash)h+='<p class="hm-empty">Yükleniyor…</p>';
-    else{const l=sorted(trash).filter(p=>match(p.name));thumbs=l;h+=l.length?cards(l,{trash:true}):'<div class="hm-empty"><h2>Çöp kutusu boş</h2></div>';}
+    h+='<p class="hm-notice">'+tx('Çöp kutusundaki projeler 30 gün sonra kalıcı olarak silinir. Geri getirmek için projenin menüsünü aç.')+'</p>';
+    if(!trash)h+='<p class="hm-empty">'+tx('Yükleniyor…')+'</p>';
+    else{const l=sorted(trash).filter(p=>match(p.name));thumbs=l;h+=l.length?cards(l,{trash:true}):'<div class="hm-empty"><h2>'+tx('Çöp kutusu boş')+'</h2></div>';}
   }
   body.innerHTML=h;fillThumbs2(thumbs);
   const t=el.querySelector('[data-count="trash"]');if(t)t.textContent=trash&&trash.length?trash.length:'';
@@ -220,8 +221,8 @@ async function startTemplate(t){
   if(!(await newProject()))return;
   holdHistory(true);
   try{clearAll();const ids=await openTemplate(t,'light');activate(ids[0]);setUi({kind:'board'});fitAll();hideHome();
-    toast(t.name+' şablonuyla yeni proje'+(t.motion?'. Hareketi Canlandır’da önizle.':''));}
-  catch(e){toast('Şablon açılamadı: '+(e.message||e));}
+    toast(tx('{t} şablonuyla yeni proje',{t:tx(t.name)})+(t.motion?'. '+tx('Hareketi Canlandır’da önizle.'):''));}
+  catch(e){toast(tx('Şablon açılamadı: {m}',{m:e.message||e}));}
   finally{holdHistory(false);}
   fillThumbs();
 }
@@ -235,14 +236,14 @@ function startGoal(g){
 }
 // the open work's card: back to it, make it a cloud project, or throw it away
 function openWorkMenu(btn){
-  openMenu(btn,[{label:'Aç',key:'↵',run:()=>hideHome()},null,{label:'Buluta kaydet',run:async()=>{if(await saveToCloud())await load();}},
-    null,{label:'Sil',key:'⌫',danger:true,run:async()=>{if(await discardAction())draw();}}],{right:true});
+  openMenu(btn,[{label:tx('Aç'),key:'↵',run:()=>hideHome()},null,{label:tx('Buluta kaydet'),run:async()=>{if(await saveToCloud())await load();}},
+    null,{label:tx('Sil'),key:'⌫',danger:true,run:async()=>{if(await discardAction())draw();}}],{right:true});
 }
 function projectMenu(btn,p){
   const run=f=>async()=>{try{if(await f(p)){await load();}}catch(e){toast(e.message);}};
-  if(view==='trash')openMenu(btn,[{label:'Geri getir',run:run(restoreAction)},null,{label:'Kalıcı olarak sil',danger:true,run:run(destroyAction)}],{right:true});
-  else openMenu(btn,[{label:'Aç',key:'↵',run:()=>openP(p)},null,{label:'Yeniden adlandır',key:'F2',run:run(renameAction)},{label:'Çoğalt',run:run(duplicateAction)},
-    null,{label:'Çöp kutusuna taşı',key:'⌫',danger:true,run:run(trashAction)}],{right:true});
+  if(view==='trash')openMenu(btn,[{label:tx('Geri getir'),run:run(restoreAction)},null,{label:tx('Kalıcı olarak sil'),danger:true,run:run(destroyAction)}],{right:true});
+  else openMenu(btn,[{label:tx('Aç'),key:'↵',run:()=>openP(p)},null,{label:tx('Yeniden adlandır'),key:'F2',run:run(renameAction)},{label:tx('Çoğalt'),run:run(duplicateAction)},
+    null,{label:tx('Çöp kutusuna taşı'),key:'⌫',danger:true,run:run(trashAction)}],{right:true});
 }
 function onClick(e){
   const t=e.target;
@@ -259,17 +260,18 @@ function onClick(e){
     case 'recShift':recShift+=4;draw();return;
     case 'recClose':prefs.recClosed=true;savePrefs();draw();return;
     case 'blank':openWelcome('land',hooks());return;  // the welcome card as a window, as the goals
-    case 'sort':openMenu(a,[['edited','Son düzenlenen'],['name','Ada göre'],['created','Oluşturulma']].map(([k,l])=>({label:l,on:prefs.sort===k,run:()=>{prefs.sort=k;savePrefs();draw();}})));return;
+    case 'sort':openMenu(a,[['edited','Son düzenlenen'],['name','Ada göre'],['created','Oluşturulma']].map(([k,l])=>({label:tx(l),on:prefs.sort===k,run:()=>{prefs.sort=k;savePrefs();draw();}})));return;
     case 'me':{const th=document.documentElement.dataset.theme||'system';
-      openMenu(a,[{label:'Tema: sistem',on:th==='system',run:()=>theme('system')},{label:'Tema: açık',on:th==='light',run:()=>theme('light')},{label:'Tema: koyu',on:th==='dark',run:()=>theme('dark')},
-        null,{label:'Klavye kısayolları',key:'?',run:()=>{hideHome();$('#keysBtn').click();}},
-        null,{label:'Verini indir',run:()=>downloadDataAction()},{label:'Hesabı sil…',danger:true,run:()=>deleteAccountAction()},
-        null,{label:'Çıkış yap',run:async()=>{if(await leave())hideHome();}}]);return;}
+      openMenu(a,[{label:tx('Tema: sistem'),on:th==='system',run:()=>theme('system')},{label:tx('Tema: açık'),on:th==='light',run:()=>theme('light')},{label:tx('Tema: koyu'),on:th==='dark',run:()=>theme('dark')},
+        null,...Object.keys(LANGS).map(k=>({label:tx('Dil')+': '+LANGS[k],on:k===LANG,run:()=>setLang(k)})),
+        null,{label:tx('Klavye kısayolları'),key:'?',run:()=>{hideHome();$('#keysBtn').click();}},
+        null,{label:tx('Verini indir'),run:()=>downloadDataAction()},{label:tx('Hesabı sil…'),danger:true,run:()=>deleteAccountAction()},
+        null,{label:tx('Çıkış yap'),run:async()=>{if(await leave())hideHome();}}]);return;}
   }}
   const card=t.closest('.hm-item');if(card&&view!=='trash'){const p=byId(card.dataset.id);if(p)openP(p);}
 }
 const theme=v=>{const b=document.querySelector('#themeSeg [data-theme="'+v+'"]');if(b)b.click();};
-function onInput(e){if(e.target.id==='hmQ'){q=e.target.value.trim().toLocaleLowerCase('tr');draw();}}
+function onInput(e){if(e.target.id==='hmQ'){q=e.target.value.trim().toLocaleLowerCase(LOCALE);draw();}}
 // Esc goes back to the open work (on the document: the focus may be anywhere while the home page shows)
 document.addEventListener('keydown',e=>{
   if(el&&e.key==='Escape'&&doc.boards.length&&!menu&&!document.querySelector('.scrim:not([hidden]),.wl-modal:not([hidden])')){e.preventDefault();e.stopPropagation();hideHome();}

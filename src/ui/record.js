@@ -8,6 +8,7 @@ import {seek,setMode} from './animate.js';
 import {captureOpts,normalizeUrl,putShot,setLiveCapture,shotGroups,shotImage,siteName,viewport} from './capture.js';
 import {loadShotVideo} from './image-input.js';
 import {syncAll} from './sync.js';
+import {fmt,t as tx} from '../lang.js';
 import {toast} from './toast.js';
 
 /* "Ekran kaydı": the site opens live inside the studio, in a lightbox, at the selected device's viewport. The page runs
@@ -32,7 +33,7 @@ const scrim=$('#recScrim'),canvas=$('#recCanvas'),g=canvas.getContext('2d'),stag
   backBtn=$('#recBack'),reloadBtn=$('#recReload'),shotBtn=$('#recShot'),waitEl=$('#recWait'),waitTxt=$('#recWaitText');
 const R={ws:null,open:false,ready:false,dev:null,vp:null,target:'one',shotMode:'full',last:null,rec:null,recT0:0,recEnd:0,timer:0,encoding:false,headed:false,url:'',prevFocus:null,
   cur:{x:0,y:0,in:false},presses:[],shooting:false};
-const fmtX=x=>(Math.round(x*4)/4).toString().replace('.',',')+'×';
+const fmtX=x=>fmt(Math.round(x*4)/4)+'×';
 const status=t=>{statusEl.textContent=t||'';statusEl.title=t||'';};
 const note=t=>{noteEl.textContent=t||'';noteEl.hidden=!t;};
 // the spinner over the page (a screenshot being taken, the recording being encoded); empty: hidden
@@ -45,14 +46,14 @@ const recording=()=>!!R.rec;
 // target: 'one' / 'all' (which devices the shot or the recording goes to)
 function openRecord(url,target){
   if(R.open)return;
-  const d=sel();if(!d){toast('Önce bir cihaz ekle.');return;}
-  const vp=viewport(d);if(!vp){toast('Bu cihazın ekranı yok. Kendi çerçeven için önce bir çerçeve PNG’si yükle.');return;}
+  const d=sel();if(!d){toast(tx('Önce bir cihaz ekle.'));return;}
+  const vp=viewport(d);if(!vp){toast(tx('Bu cihazın ekranı yok. Kendi çerçeven için önce bir çerçeve PNG’si yükle.'));return;}
   vp.dpr=recordDpr(vp.width,vp.height,vp.dpr);
   R.dev=d;R.vp=vp;R.open=true;R.ready=false;R.headed=false;R.last=null;R.rec=null;R.url='';R.shooting=false;R.prevFocus=document.activeElement;
   if(target)R.target=target;
-  vpEl.textContent=TYPES[d.type]+' · '+vp.width+' × '+vp.height+' · '+fmtX(vp.dpr);
+  vpEl.textContent=tx(TYPES[d.type])+' · '+vp.width+' × '+vp.height+' · '+fmtX(vp.dpr);
   canvas.width=Math.round(vp.width*vp.dpr);canvas.height=Math.round(vp.height*vp.dpr);g.clearRect(0,0,canvas.width,canvas.height);
-  urlIn.value=url||'';timeEl.textContent='';note('');wait('');status('Bağlanılıyor…');
+  urlIn.value=url||'';timeEl.textContent='';note('');wait('');status(tx('Bağlanılıyor…'));
   startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=true;windowBtn.hidden=false;
   setTarget(R.target);setShotMode(R.shotMode);syncStart();
   scrim.hidden=false;fit();canvas.focus({preventScroll:true});
@@ -68,7 +69,7 @@ function closeRecord(){
 // Esc / ×: a running recording would be lost
 function requestClose(){
   if(R.encoding)return;
-  if(recording()&&!confirm('Kayıt sürüyor. Kapatırsan kayıt atılır. Kapatılsın mı?'))return;
+  if(recording()&&!confirm(tx('Kayıt sürüyor. Kapatırsan kayıt atılır. Kapatılsın mı?')))return;
   closeRecord();
 }
 // the canvas fits the stage at the viewport's CSS size at most (no upscaling: 1 CSS px of the site = 1 px here)
@@ -83,13 +84,13 @@ addEventListener('resize',fit);
 function connect(url){
   const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/api/record/ws');
   ws.binaryType='arraybuffer';R.ws=ws;
-  ws.onopen=()=>{ws.send(JSON.stringify({type:'open',url,viewport:{width:R.vp.width,height:R.vp.height},dpr:R.vp.dpr,mobile:R.vp.mobile,dark:captureOpts().dark}));status('Chrome başlatılıyor…');};
+  ws.onopen=()=>{ws.send(JSON.stringify({type:'open',url,viewport:{width:R.vp.width,height:R.vp.height},dpr:R.vp.dpr,mobile:R.vp.mobile,dark:captureOpts().dark}));status(tx('Chrome başlatılıyor…'));};
   ws.onmessage=e=>{if(typeof e.data==='string'){let m;try{m=JSON.parse(e.data);}catch(err){return;}handle(m);}else onFrame(e.data);};
   ws.onclose=()=>{
     if(R.ws!==ws)return;R.ws=null;
-    if(!R.ready){toast(import.meta.env.DEV?'Kayıt sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.':'Ekran kaydı yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).');closeRecord();return;}
-    if(recording()){status('Bağlantı koptu; alınan kareler kaydediliyor');stopRecording();return;}
-    if(R.open&&!R.encoding){status('Bağlantı koptu. Kapatıp yeniden aç.');startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=true;}
+    if(!R.ready){toast(tx(import.meta.env.DEV?'Kayıt sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.':'Ekran kaydı yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).'));closeRecord();return;}
+    if(recording()){status(tx('Bağlantı koptu; alınan kareler kaydediliyor'));stopRecording();return;}
+    if(R.open&&!R.encoding){status(tx('Bağlantı koptu. Kapatıp yeniden aç.'));startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=true;}
   };
 }
 function handle(m){
@@ -97,9 +98,9 @@ function handle(m){
     case 'status':status(m.text);if(R.shooting&&m.text)wait(m.text);break;
     case 'ready':R.ready=true;status('');startBtn.disabled=windowBtn.disabled=backBtn.disabled=reloadBtn.disabled=shotBtn.disabled=false;if(R.vp&&m.dpr)R.vp.dpr=m.dpr;break;
     case 'shot':placeShots(m);break;
-    case 'nav':R.url=m.url||'';if(document.activeElement!==urlIn&&m.url&&m.url!=='about:blank')urlIn.value=m.url;status(m.loading?'Yükleniyor…':'');break;
+    case 'nav':R.url=m.url||'';if(document.activeElement!==urlIn&&m.url&&m.url!=='about:blank')urlIn.value=m.url;status(m.loading?tx('Yükleniyor…'):'');break;
     case 'error':status(m.message);toast(m.message);if(R.shooting)endShot();break;
-    case 'window':R.headed=true;windowBtn.disabled=true;note('Site ayrı bir Chrome penceresinde açık: orada gez, Başlat / Durdur burada.');break;
+    case 'window':R.headed=true;windowBtn.disabled=true;note(tx('Site ayrı bir Chrome penceresinde açık: orada gez, Başlat / Durdur burada.'));break;
     case 'closed':break;
   }
 }
@@ -176,7 +177,7 @@ $$('#recTarget button').forEach(b=>b.addEventListener('click',()=>{setTarget(b.d
 function syncStart(){
   const on=recording();
   startBtn.classList.toggle('on',on);startBtn.innerHTML=(on?'<span class="rec-stop"></span>':'<span class="rec-dot"></span>')+'<span></span>';
-  startBtn.lastChild.textContent=on?'Durdur':'Başlat';startBtn.title=on?'Kaydı bitir ve cihaza göm':'Ekranı kaydetmeye başla (en çok '+MAX_MS/60000+' dk)';
+  startBtn.lastChild.textContent=tx(on?'Durdur@rec':'Başlat');startBtn.title=on?tx('Kaydı bitir ve cihaza göm'):tx('Ekranı kaydetmeye başla (en çok {n} dk)',{n:MAX_MS/60000});
   timeEl.classList.toggle('on',on);
 }
 startBtn.addEventListener('click',()=>{if(recording())stopRecording();else startRecording();canvas.focus({preventScroll:true});});
@@ -189,22 +190,22 @@ function takeShot(){
   if(!R.ready||R.shooting||recording()||R.encoding)return;
   const devs=(R.target==='all'?state.devices.slice():[R.dev]).filter(d=>state.devices.includes(d));
   shotGroupsNow=shotGroups(devs);
-  if(!shotGroupsNow.length){toast('Görüntünün konacağı ekran kalmadı.');return;}
-  R.shooting=true;shotBtn.disabled=startBtn.disabled=windowBtn.disabled=true;status('Ekran görüntüsü alınıyor…');wait('Ekran görüntüsü alınıyor…');
+  if(!shotGroupsNow.length){toast(tx('Görüntünün konacağı ekran kalmadı.'));return;}
+  R.shooting=true;shotBtn.disabled=startBtn.disabled=windowBtn.disabled=true;status(tx('Ekran görüntüsü alınıyor…'));wait(tx('Ekran görüntüsü alınıyor…'));
   send({type:'shot',full:R.shotMode==='full',selector:R.shotMode==='full'?captureOpts().selector:'',targets:shotGroupsNow.map(g=>g.target)});
 }
 function endShot(){R.shooting=false;wait('');shotBtn.disabled=!R.ready;startBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;}
 async function placeShots(m){
   const groups=shotGroupsNow,url=m.url||R.url;shotGroupsNow=[];
-  wait('Görüntü ekrana yerleştiriliyor…');
+  wait(tx('Görüntü ekrana yerleştiriliyor…'));
   try{
     let n=0;
     for(const g of groups){const src=m.shots&&m.shots[g.target.id];if(!src)continue;const img=await shotImage(src);
       g.devices.forEach(d=>{if(!state.devices.includes(d))return;putShot(d,img,url,url);n++;});}
-    if(!n){toast('Ekran görüntüsü alınamadı.');return;}
+    if(!n){toast(tx('Ekran görüntüsü alınamadı.'));return;}
     closeRecord();syncAll();
-    toast(siteName(url)+(n>1?' '+n+' cihaza':' cihaza')+' yerleştirildi.'+(m.missing?' Başlangıç seçicisi sayfada bulunamadı: en üstten alındı.':R.shotMode==='full'?' Ekranın üzerinde tekerlekle kaydırabilirsin.':''));
-  }catch(e){toast(e&&e.user?e.message:'Ekran görüntüsü yerleştirilemedi.');}
+    toast(tx('{s} {n} cihaza yerleştirildi.',{s:siteName(url),n})+(m.missing?' '+tx('Başlangıç seçicisi sayfada bulunamadı: en üstten alındı.'):R.shotMode==='full'?' '+tx('Ekranın üzerinde tekerlekle kaydırabilirsin.'):''));
+  }catch(e){toast(e&&e.user?e.message:tx('Ekran görüntüsü yerleştirilemedi.'));}
   finally{endShot();}
 }
 shotBtn.addEventListener('click',takeShot);
@@ -241,7 +242,7 @@ function startRecording(){
   // the picture on screen at Başlat is the first frame, even if the page never draws again
   if(R.last)createImageBitmap(new Blob([R.last],{type:'image/jpeg'})).then(b=>{if(R.rec&&!R.rec.bmp){R.rec.bmp=b;pump();}else b.close();}).catch(()=>{});
   clearInterval(R.timer);R.timer=setInterval(()=>{timeEl.textContent=fmtDur((performance.now()-R.recT0)/1000);pump();},1000/FPS);
-  timeEl.textContent=fmtDur(0);syncStart();status('Kaydediliyor');
+  timeEl.textContent=fmtDur(0);syncStart();status(tx('Kaydediliyor'));
   if(autoEl.checked)send({type:'scroll',dur:Math.max(1,Math.min(30,+autoDur.value||8))});
 }
 async function stopRecording(){
@@ -251,8 +252,8 @@ async function stopRecording(){
   while(r.busy)await new Promise(res=>setTimeout(res,5));
   await pump();  // the frames up to Durdur
   R.rec=null;syncStart();
-  if(!r.enc||!r.n){if(r.bmp)r.bmp.close();if(r.enc)r.enc.close();status('');toast(r.failed&&r.failed.message==='codec'?'Bu boyutta video kodlanamıyor: daha küçük bir cihaz dene.':'Kayıtta kare yok: sayfa hiç çizilmedi.');return;}
-  R.encoding=true;startBtn.disabled=windowBtn.disabled=shotBtn.disabled=true;status('Video hazırlanıyor…');wait('Video hazırlanıyor…');
+  if(!r.enc||!r.n){if(r.bmp)r.bmp.close();if(r.enc)r.enc.close();status('');toast(tx(r.failed&&r.failed.message==='codec'?'Bu boyutta video kodlanamıyor: daha küçük bir cihaz dene.':'Kayıtta kare yok: sayfa hiç çizilmedi.'));return;}
+  R.encoding=true;startBtn.disabled=windowBtn.disabled=shotBtn.disabled=true;status(tx('Video hazırlanıyor…'));wait(tx('Video hazırlanıyor…'));
   const span=r.n/FPS;
   try{
     if(r.failed)throw r.failed;
@@ -260,14 +261,14 @@ async function stopRecording(){
     await embed(blob,span);
   }catch(e){
     console.warn('Kayıt kodlanamadı:',e);
-    status('');toast(e&&e.message==='codec'?'Bu boyutta video kodlanamıyor: daha küçük bir cihaz dene.':'Kayıt videoya çevrilemedi.');
+    status('');toast(tx(e&&e.message==='codec'?'Bu boyutta video kodlanamıyor: daha küçük bir cihaz dene.':'Kayıt videoya çevrilemedi.'));
   }finally{r.enc.close();if(r.bmp)r.bmp.close();R.encoding=false;wait('');startBtn.disabled=!R.ready;shotBtn.disabled=!R.ready;windowBtn.disabled=!R.ready||R.headed;timeEl.textContent='';}
 }
 // the MP4 goes on the target devices through the screen-video loader (artboard duration from the video, poster null,
 // loop on), the lightbox closes and the studio switches to Canlandır
 async function embed(blob,span){
   const devs=(R.target==='all'?state.devices.slice():[R.dev]).filter(d=>state.devices.includes(d));
-  if(!devs.length){toast('Kaydın gömüleceği cihaz kalmadı.');return;}
+  if(!devs.length){toast(tx('Kaydın gömüleceği cihaz kalmadı.'));return;}
   let host='kayit';try{host=new URL(R.url).hostname.replace(/^www\./,'')||host;}catch(e){/* no url */}
   const file=new File([blob],host+'-kayit.mp4',{type:'video/mp4'}),url=R.url;
   let path='';try{const u=new URL(url);path=u.pathname!=='/'?u.pathname:'';}catch(e){/* no url */}
@@ -278,7 +279,7 @@ async function embed(blob,span){
     d.siteUrl=url;if(d.type==='browser'){d.url=host+path;updateChrome(d);}
   }
   setMode('animate');seek(0);syncAll();
-  toast('Kayıt '+devs.length+' cihaza gömüldü · '+fmtDur(span));
+  toast(tx('Kayıt {n} cihaza gömüldü · {d}',{n:devs.length,d:fmtDur(span)}));
 }
 
 /* ---------- entry: the capture box's "Siteyi aç…" (dev server only) opens the lightbox with the device's address; the

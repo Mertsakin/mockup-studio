@@ -14,6 +14,7 @@ import {invalidateLayout,layout,paintBg,paintItems,ratioNums} from '../ui/layout
 import {syncSliders} from '../ui/sliders.js';
 import {busy,isCancel,paint} from '../ui/busy.js';
 import {toast} from '../ui/toast.js';
+import {t} from '../lang.js';
 import {$,mkCanvas} from '../util.js';
 
 /* ---------- export ---------- */
@@ -94,15 +95,15 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const exportBtn=$('#export'),exportAllBtn=$('#exportAll');
 exportBtn.addEventListener('click',async()=>{
   exportBtn.disabled=true;
-  const b=busy(state.quality==='photo'?'Fotoğraf hazırlanıyor':'Görsel hazırlanıyor');
-  try{await paint();const blob=await renderExport(b.progress);offer('mockup-'+stamp()+'.'+ext(),blob);toast('İndirildi');}
-  catch(e){toast(isCancel(e)?'Dışa aktarım durduruldu':'Görsel oluşturulamadı. Daha küçük bir çözünürlük dene.');}
+  const b=busy(t(state.quality==='photo'?'Fotoğraf hazırlanıyor':'Görsel hazırlanıyor'));
+  try{await paint();const blob=await renderExport(b.progress);offer('mockup-'+stamp()+'.'+ext(),blob);toast(t('İndirildi'));}
+  catch(e){toast(t(isCancel(e)?'Dışa aktarım durduruldu':'Görsel oluşturulamadı. Daha küçük bir çözünürlük dene.'));}
   finally{b.close();exportBtn.disabled=false;}
 });
 exportAllBtn.addEventListener('click',async()=>{
   if(!saved.length)return;
   exportAllBtn.disabled=true;const keep=Object.assign({},state.scene),files=[];
-  const bz=busy('Açılar hazırlanıyor');
+  const bz=busy(t('Açılar hazırlanıyor'));
   try{
     const JSZip=await loadJSZip(),zip=JSZip?new JSZip():null,used={};
     for(let i=0;i<saved.length;i++){
@@ -115,8 +116,8 @@ exportAllBtn.addEventListener('click',async()=>{
     if(zip){const z=await zip.generateAsync({type:'blob'});offer('mockup-acilar-'+stamp()+'.zip',z);}
     // JSZip could not be loaded: fall back to one download per angle (spaced so browsers don't drop them)
     else for(const [n,b] of files){offer(n,b);await wait(250);}
-    toast('İndirildi');
-  }catch(e){Object.assign(state.scene,keep);applyTransform();syncSliders();toast(isCancel(e)?'Dışa aktarım durduruldu':'Görseller oluşturulamadı. Daha küçük bir çözünürlük dene.');}
+    toast(t('İndirildi'));
+  }catch(e){Object.assign(state.scene,keep);applyTransform();syncSliders();toast(t(isCancel(e)?'Dışa aktarım durduruldu':'Görseller oluşturulamadı. Daha küçük bir çözünürlük dene.'));}
   finally{bz.close();exportAllBtn.disabled=false;}
 });
 
@@ -129,9 +130,9 @@ batchBtn.addEventListener('click',()=>batchFile.click());
 batchFile.addEventListener('change',async()=>{
   const files=[...batchFile.files].filter(f=>/^image\//.test(f.type));batchFile.value='';if(!files.length)return;
   const devs=state.devices.filter(d=>d.type!=='model'&&(d.type!=='custom'||d.frameImg));
-  if(!devs.length){toast('Bu artboard\'da ekranı olan cihaz yok.');return;}
+  if(!devs.length){toast(t('Bu artboard\'da ekranı olan cihaz yok.'));return;}
   const keep=devs.map(d=>({d,img:d.img,imgName:d.imgName,video:d.video,videoName:d.videoName,scroll:d.scroll,fit:d.fit}));
-  batchBtn.disabled=true;const bz=busy('Görseller hazırlanıyor'),out=[];
+  batchBtn.disabled=true;const bz=busy(t('Görseller hazırlanıyor')),out=[];
   try{
     const JSZip=await loadJSZip(),zip=JSZip?new JSZip():null,used={};
     for(let i=0;i<files.length;i++){
@@ -148,8 +149,8 @@ batchFile.addEventListener('change',async()=>{
     }
     if(zip){offer('mockup-toplu-'+stamp()+'.zip',await zip.generateAsync({type:'blob'}));}
     else for(const [n,b] of out){offer(n,b);await wait(250);}
-    toast(files.length+' görsel indirildi');
-  }catch(e){toast(isCancel(e)?'Dışa aktarım durduruldu':'Görseller oluşturulamadı: '+(e.message||e));}
+    toast(t('{n} görsel indirildi',{n:files.length}));
+  }catch(e){toast(isCancel(e)?t('Dışa aktarım durduruldu'):t('Görseller oluşturulamadı: {m}',{m:e.message||e}));}
   finally{
     keep.forEach(k=>{Object.assign(k.d,{img:k.img,imgName:k.imgName,video:k.video,videoName:k.videoName,scroll:k.scroll,fit:k.fit});setScreenTexture(k.d);});
     req();bz.close();batchBtn.disabled=false;

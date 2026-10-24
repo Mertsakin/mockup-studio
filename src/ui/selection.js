@@ -12,6 +12,7 @@ import {onSyncUI,syncAll} from './sync.js';
 import {toast} from './toast.js';
 import {outline} from './transform-box.js';
 import {onUi,setUi,ui} from './ui-state.js';
+import {t as tx} from '../lang.js';
 import {$,D2R,V3,clamp} from '../util.js';
 
 /* Multi-selection (editor state, not saved): devices and 2D items picked together with Shift (or ⌘/Ctrl) + click on
@@ -128,9 +129,9 @@ function place(entries,shift){
   if(shift)made.forEach(({it})=>{if(out.includes(it)&&!inFlow(state.items,it))moveBy(it,.02*sizeOf(state)[0],.02*sizeOf(state)[0]);});
   if(out.some(o=>o.type))applyTransform();renderItems();select(out);return out;
 }
-function copyToClipboard(){if(copySelection())toast('Kopyalandı');}
+function copyToClipboard(){if(copySelection())toast(tx('Kopyalandı'));}
 function paste(){if(!clip)return false;place(clip.list,clip.board===doc.active);return true;}
-function duplicateSelection(){const list=selection();if(!list.length)return;place(entriesOf(list),true);toast(list.length>1?list.length+' öğe çoğaltıldı':'Çoğaltıldı');}
+function duplicateSelection(){const list=selection();if(!list.length)return;place(entriesOf(list),true);toast(list.length>1?tx('{n} öğe çoğaltıldı',{n:list.length}):tx('Çoğaltıldı'));}
 const hasClip=()=>!!clip;
 const typing=t=>t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable);
 // system clipboard events: ⌘C / ⌘X / ⌘V (and the browser's menu) go through them
@@ -139,7 +140,7 @@ let sawCopy=false;
 const doCut=()=>{clip.board=null;deleteSelection();};
 // the last press was in the timeline, in Canlandır: ⌘C / ⌘X / ⌘V / ⌘D / ⌘A act on the keys there (timeline.js)
 const tlKeys=()=>ui.tlFocus&&ui.mode==='animate';
-document.addEventListener('copy',e=>{sawCopy=true;if(typing(e.target)||tlKeys()||!copySelection())return;e.preventDefault();e.clipboardData.setData('text/plain','');toast('Kopyalandı');},true);
+document.addEventListener('copy',e=>{sawCopy=true;if(typing(e.target)||tlKeys()||!copySelection())return;e.preventDefault();e.clipboardData.setData('text/plain','');toast(tx('Kopyalandı'));},true);
 document.addEventListener('cut',e=>{sawCopy=true;if(typing(e.target)||tlKeys()||!copySelection())return;e.preventDefault();e.clipboardData.setData('text/plain','');doCut();},true);
 // capture on window, before image-input's screenshot paste: an image on the system clipboard is a screenshot (pasted
 // into the device as before); anything else pastes our copy
@@ -156,7 +157,7 @@ addEventListener('keydown',e=>{
   if(!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey||typing(e.target)||tlKeys()||k.length!==1||!'cxv'.includes(k))return;
   if(k==='v'){if(!clip)return;sawPaste=false;setTimeout(()=>{if(!sawPaste)paste();},80);return;}
   if(!selection().length||(getSelection&&String(getSelection())))return;
-  sawCopy=false;setTimeout(()=>{if(sawCopy||!copySelection())return;if(k==='x')doCut();else toast('Kopyalandı');},80);
+  sawCopy=false;setTimeout(()=>{if(sawCopy||!copySelection())return;if(k==='x')doCut();else toast(tx('Kopyalandı'));},80);
 },true);
 
 /* ---------- outlines of the group's members (the single selection has its own boxes) */
@@ -205,8 +206,8 @@ $('#multiDelete').addEventListener('click',deleteSelection);
 $('#multiDup').addEventListener('click',duplicateSelection);
 onSyncUI(()=>{
   if(!isMulti())return;const list=selection(),nd=list.filter(o=>o.type).length,ni=list.length-nd;
-  $('#multiTitle').textContent=list.length+' öğe seçili';
-  $('#multiWhat').textContent=[nd?nd+' cihaz':'',ni?ni+' 2B öğe':''].filter(Boolean).join(', ');
+  $('#multiTitle').textContent=tx('{n} öğe seçili',{n:list.length});
+  $('#multiWhat').textContent=[nd?tx('{n} cihaz',{n:nd}):'',ni?tx('{n} 2B öğe',{n:ni}):''].filter(Boolean).join(', ');
   $('#multiAlignSec').hidden=ni<2;
   document.querySelectorAll('#multiAlign [data-align$="dist"]').forEach(b=>{b.disabled=ni<3;});
 });
@@ -222,13 +223,13 @@ function frameSelection(auto){
     if(kids.length){const g=wrap(kids,true);if(g){Object.assign(f,{layout:g.layout,wMode:'hug',hMode:'hug'});
       state.items.filter(x=>x.parent===g.id).forEach(x=>{x.parent=f.id;});state.items=state.items.filter(x=>x!==g);}}
     else f.layout=Object.assign({},f.layout||{},{dir:'col'});
-    renderItems();select([f]);toast('Auto layout eklendi');return;
+    renderItems();select([f]);toast(tx('Auto layout eklendi'));return;
   }
-  const f=wrap(list,auto);if(f){select([f]);toast(auto?'Auto layout çerçevesi oluşturuldu':'Çerçeveye alındı');}
+  const f=wrap(list,auto);if(f){select([f]);toast(tx(auto?'Auto layout çerçevesi oluşturuldu':'Çerçeveye alındı'));}
 }
 function unframeSelection(){
   const frames=items2D().filter(isFrame);if(!frames.length)return;
-  const out=frames.flatMap(f=>unwrap(f));select(out);toast('Çerçeveden çıkarıldı');
+  const out=frames.flatMap(f=>unwrap(f));select(out);toast(tx('Çerçeveden çıkarıldı'));
 }
 
 /* ---------- keys: ⌘/Ctrl + A selects everything, ⌘/Ctrl + D duplicates; with a group: arrows nudge (1 px, Shift 10 px

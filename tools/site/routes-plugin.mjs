@@ -7,7 +7,8 @@
 //   <base href>   relative URLs (public files, fetches, images) resolve against the studio's root on any route
 //   a script      decides the route from the address and the stored session: nobody signed in (and not the return of
 //                 a sign-in) goes to /studio/login, remembering where it was going (localStorage shotlight.next); a
-//                 signed-in /studio/login goes home. html.route-login / route-app say which; a home route is covered
+//                 signed-in /studio/login goes home (a ?lang= choice travels with it: src/lang.js). html.route-login /
+//                 route-app say which; a home route is covered
 //                 as the home page from the first paint (html.home-boot, ui/home.js lifts it)
 // In development it also sends / to the base (Vite would only say the page is under /studio/).
 const HOME=['','projects','templates','trash'];
@@ -18,7 +19,8 @@ var ret=/[?&]code=/.test(location.search)||/access_token=/.test(location.hash);
 if(r==='login'&&ret){history.replaceState(null,'',R+location.search+location.hash);r='';}
 else if(r==='login'&&s){history.replaceState(null,'',R);r='';}
 else if(r!=='login'&&!s&&!ret){try{if(r||location.search)localStorage.setItem('shotlight.next',r+location.search);}catch(e){}
-  history.replaceState(null,'',R+'login'+(/error_description=/.test(location.hash+location.search)?location.search+location.hash:''));r='login';}
+  var L=/[?&]lang=(tr|en)\b/.exec(location.search);
+  history.replaceState(null,'',R+'login'+(/error_description=/.test(location.hash+location.search)?location.search+location.hash:L?'?lang='+L[1]:''));r='login';}
 h.classList.add(r==='login'?'route-login':'route-app');
 if(r!=='login'&&${JSON.stringify(HOME)}.indexOf(r)>=0)h.classList.add('home-boot');})();`;
 

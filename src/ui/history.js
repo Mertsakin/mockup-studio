@@ -6,6 +6,7 @@ const activeId=()=>doc.active;
 import {canvas} from '../render/renderer.js';
 import {gizmoHelper} from './gizmo.js';
 import {toast} from './toast.js';
+import {t as tx} from '../lang.js';
 import {$} from '../util.js';
 
 /* Undo / redo, autosave and project files.
@@ -80,13 +81,13 @@ const withExt=(n,zip)=>{n=String(n||'').trim().replace(/[\\/:*?"<>|]+/g,'-');if(
 const suggested=zip=>withExt(fileName||'mockup-proje-'+stamp(),zip);
 function setFileName(n){
   fileName=n||'';const el=$('#projName');
-  el.textContent=fileName?fileName.replace(EXT,'').replace(/\.(json|zip)$/i,''):'Adsız proje';el.title=fileName?fileName+(fileHandle?'':' (indirildi)'):'';
+  el.textContent=fileName?fileName.replace(EXT,'').replace(/\.(json|zip)$/i,''):tx('Adsız proje');el.title=fileName?fileName+(fileHandle?'':' '+tx('(indirildi)')):'';
 }
 // the document as a file: {blob, zip}; a change made a moment ago is recorded first
 async function projectFile(){commitNow();return toProjectFile(snapshot());}
 async function writable(h){
   // a file opened for reading asks once for permission to write (needs the click / ⌘S that started the save)
-  if(h.queryPermission&&(await h.queryPermission({mode:'readwrite'}))!=='granted'&&(await h.requestPermission({mode:'readwrite'}))!=='granted')throw new Error('yazma izni verilmedi');
+  if(h.queryPermission&&(await h.queryPermission({mode:'readwrite'}))!=='granted'&&(await h.requestPermission({mode:'readwrite'}))!=='granted')throw new Error(tx('yazma izni verilmedi'));
   return h.createWritable();
 }
 async function save(as){
@@ -94,7 +95,7 @@ async function save(as){
     commitNow();const zip=needsZip(snapshot());
     if(FS){
       // a .json file cannot hold the video: the zip gets a name of its own (a .zip file keeps taking either content)
-      if(fileHandle&&zip&&!ZIP.test(fileHandle.name)){toast('Video ya da 3B model içeren proje .mockup.zip olarak kaydedilir: yeni bir ad seç.');as=true;}
+      if(fileHandle&&zip&&!ZIP.test(fileHandle.name)){toast(tx('Video ya da 3B model içeren proje .mockup.zip olarak kaydedilir: yeni bir ad seç.'));as=true;}
       if(as||!fileHandle){
         let h;try{h=await window.showSaveFilePicker({suggestedName:suggested(zip),types:FILE_TYPES});}
         catch(e){if(e&&e.name==='AbortError')return false;throw e;}
@@ -107,15 +108,15 @@ async function save(as){
       const {blob}=await projectFile();offer(name,blob);
       setFileName(name);setSaved();toast(name+' indirildi');return true;
     }
-  }catch(e){toast('Proje kaydedilemedi: '+(e.message||e));return false;}
+  }catch(e){toast(tx('Proje kaydedilemedi: {m}',{m:e.message||e}));return false;}
 }
 // fallback name dialog (browsers without the save dialog API)
 function askName(def){
   return new Promise(res=>{
     const sc=document.createElement('div');sc.className='scrim';
-    sc.innerHTML='<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="saveTitle"><div class="dh"><span id="saveTitle">Projeyi kaydet</span></div>'+
-      '<div class="db"><label class="lbl block" for="saveName">Dosya adı</label><input type="text" id="saveName" spellcheck="false" style="width:100%">'+
-      '<p class="hint-sm">Dosya, tarayıcının indirme klasörüne kaydedilir.</p><div class="dfoot"><button class="btn" type="button" data-a="no">Vazgeç</button><button class="btn primary" type="button" data-a="ok">Kaydet</button></div></div></div>';
+    sc.innerHTML='<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="saveTitle"><div class="dh"><span id="saveTitle">'+tx('Projeyi kaydet')+'</span></div>'+
+      '<div class="db"><label class="lbl block" for="saveName">'+tx('Dosya adı')+'</label><input type="text" id="saveName" spellcheck="false" style="width:100%">'+
+      '<p class="hint-sm">'+tx('Dosya, tarayıcının indirme klasörüne kaydedilir.')+'</p><div class="dfoot"><button class="btn" type="button" data-a="no">'+tx('Vazgeç')+'</button><button class="btn primary" type="button" data-a="ok">'+tx('Kaydet')+'</button></div></div></div>';
     document.body.appendChild(sc);const inp=sc.querySelector('#saveName');inp.value=def;inp.focus();inp.setSelectionRange(0,def.replace(EXT,'').length);
     const done=v=>{sc.remove();res(v);};
     sc.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a)done(a.dataset.a==='ok'?inp.value:null);else if(e.target===sc)done(null);});
@@ -127,7 +128,7 @@ $('#saveProjectAs').addEventListener('click',()=>save(true));
 // file: a File / Blob (.mockup.json or .mockup.zip) or the JSON text
 async function openText(file,handle,name){
   const s=await fromProjectFile(file);if(current){past.push(current);future=[];}apply(s);fitAll();fillThumbs();
-  fileHandle=handle||null;setFileName(name);setSaved();toast((name||'Proje')+' açıldı');
+  fileHandle=handle||null;setFileName(name);setSaved();toast(tx('{p} açıldı',{p:name||tx('Proje')}));
 }
 const openEl=$('#openProject');
 $('#openProjectBtn').addEventListener('click',async()=>{
@@ -135,11 +136,11 @@ $('#openProjectBtn').addEventListener('click',async()=>{
   try{
     let h;try{[h]=await window.showOpenFilePicker({types:FILE_TYPES,multiple:false});}catch(e){if(e&&e.name==='AbortError')return;throw e;}
     const f=await h.getFile();await openText(f,h,h.name);
-  }catch(e){toast('Proje açılamadı: '+(e.message||e));}
+  }catch(e){toast(tx('Proje açılamadı: {m}',{m:e.message||e}));}
 });
 openEl.addEventListener('change',async()=>{
   const f=openEl.files[0];openEl.value='';if(!f)return;
-  try{await openText(f,null,f.name);}catch(e){toast('Proje açılamadı: '+(e.message||e));}
+  try{await openText(f,null,f.name);}catch(e){toast(tx('Proje açılamadı: {m}',{m:e.message||e}));}
 });
 
 /* Close the project: an empty document (no artboards, no assets), no current file, the autosave emptied, history
@@ -147,9 +148,9 @@ openEl.addEventListener('change',async()=>{
 function askClose(){
   return new Promise(res=>{
     const sc=document.createElement('div');sc.className='scrim';
-    sc.innerHTML='<div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="closeTitle"><div class="dh"><span id="closeTitle">Projeyi kapat</span></div>'+
-      '<div class="db"><p style="margin:0">Kaydedilmemiş değişiklikler var. Kapatmadan önce kaydetmek ister misin?</p>'+
-      '<div class="dfoot"><button class="btn" type="button" data-a="cancel">Vazgeç</button><button class="btn" type="button" data-a="discard">Kaydetme</button><button class="btn primary" type="button" data-a="save">Kaydet</button></div></div></div>';
+    sc.innerHTML='<div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="closeTitle"><div class="dh"><span id="closeTitle">'+tx('Projeyi kapat')+'</span></div>'+
+      '<div class="db"><p style="margin:0">'+tx('Kaydedilmemiş değişiklikler var. Kapatmadan önce kaydetmek ister misin?')+'</p>'+
+      '<div class="dfoot"><button class="btn" type="button" data-a="cancel">'+tx('Vazgeç')+'</button><button class="btn" type="button" data-a="discard">'+tx('Kaydetme')+'</button><button class="btn primary" type="button" data-a="save">'+tx('Kaydet')+'</button></div></div></div>';
     document.body.appendChild(sc);sc.querySelector('[data-a="save"]').focus();
     const done=v=>{sc.remove();res(v);};
     sc.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a)done(a.dataset.a);else if(e.target===sc)done('cancel');});
@@ -165,7 +166,7 @@ async function closeProject(){
     if(a==='save'&&!(await save(false)))return;
   }
   resetDocument();
-  toast('Proje kapatıldı');
+  toast(tx('Proje kapatıldı'));
   closeHooks.forEach(f=>f());
 }
 const closeHooks=new Set();  // fn() after "Projeyi kapat" (the home page opens: ui/home.js)
@@ -186,7 +187,7 @@ async function startHistory(templateOpened){
   try{
     if(!templateOpened){
       const s=await loadAutosave();
-      if(s&&s.boards.length){applyDoc(s);fitAll();await fillThumbs();toast('Son çalışman geri yüklendi');}
+      if(s&&s.boards.length){applyDoc(s);fitAll();await fillThumbs();toast(tx('Son çalışman geri yüklendi'));}
       else clearAll();
     }
   }finally{document.documentElement.classList.remove('booting');}

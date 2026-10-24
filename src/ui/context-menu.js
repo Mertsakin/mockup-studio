@@ -8,6 +8,7 @@ import {focusSelected} from './navigator.js';
 import {pick} from './pointer.js';
 import {copyToClipboard,deleteSelection,duplicateSelection,frameSelection,hasClip,inSel,isMulti,paste,select,selectAll,selection,unframeSelection} from './selection.js';
 import {fitActive} from './workspace.js';
+import {t} from '../lang.js';
 
 /* Right-click menu on the live artboard. What is under the pointer becomes the selection (unless it is already part
    of it), then the menu offers what applies: clipboard, duplicate, delete, layer order (devices: in depth, layers.js;
@@ -33,22 +34,22 @@ function open(x,y,items){
 }
 const ORDER={front:Infinity,forward:1,backward:-1,back:-Infinity};
 function itemsFor(){
-  const list=selection(),one=list.length===1?list[0]:null,clip=['clipboard','Yapıştır',paste,C+'V',!hasClip()];
-  if(!list.length)return [clip,['layers-minimalistic','Tümünü seç',selectAll,C+'A',!state.devices.length&&!state.items.length],null,
-    ['text-square','Buraya metin ekle',()=>placeText(at.x,at.y)],['hashtag','Buraya çerçeve ekle',()=>placeFrame(at.x,at.y)],['maximize-square','Artboarda yakınlaş',fitActive,S+'2']];
-  const out=[['copy','Kopyala',copyToClipboard,C+'C'],clip,['copy','Çoğalt',duplicateSelection,C+'D'],['trash-bin-minimalistic','Sil',deleteSelection,'⌫'],null];
+  const list=selection(),one=list.length===1?list[0]:null,clip=['clipboard',t('Yapıştır'),paste,C+'V',!hasClip()];
+  if(!list.length)return [clip,['layers-minimalistic',t('Tümünü seç'),selectAll,C+'A',!state.devices.length&&!state.items.length],null,
+    ['text-square',t('Buraya metin ekle'),()=>placeText(at.x,at.y)],['hashtag',t('Buraya çerçeve ekle'),()=>placeFrame(at.x,at.y)],['maximize-square',t('Artboarda yakınlaş'),fitActive,S+'2']];
+  const out=[['copy',t('Kopyala'),copyToClipboard,C+'C'],clip,['copy',t('Çoğalt'),duplicateSelection,C+'D'],['trash-bin-minimalistic',t('Sil'),deleteSelection,'⌫'],null];
   // 2D items: frames (Figma's shortcuts)
   const items=list.filter(o=>!o.type);
-  if(items.length)out.push(['hashtag','Çerçeveye al',()=>frameSelection(false),'⌥'+C+'G'],['layout-list','Auto layout ekle',()=>frameSelection(true),S+'A'],
-    ['layers-minimalistic','Çerçeveden çıkar',unframeSelection,S+C+'G',!items.some(o=>o.kind==='frame')],null);
+  if(items.length)out.push(['hashtag',t('Çerçeveye al'),()=>frameSelection(false),'⌥'+C+'G'],['layout-list',t('Auto layout ekle'),()=>frameSelection(true),S+'A'],
+    ['layers-minimalistic',t('Çerçeveden çıkar'),unframeSelection,S+C+'G',!items.some(o=>o.kind==='frame')],null);
   if(one&&one.type)out.push(
-    ['double-alt-arrow-up','En öne',()=>layer('front'),S+C+']',state.devices.length<2],['alt-arrow-up','Öne',()=>layer('forward'),C+']',state.devices.length<2],
-    ['alt-arrow-down','Arkaya',()=>layer('backward'),C+'[',state.devices.length<2],['double-alt-arrow-down','En arkaya',()=>layer('back'),S+C+'[',state.devices.length<2],
-    null,['target','Odakla',focusSelected,S+'F']);
+    ['double-alt-arrow-up',t('En öne'),()=>layer('front'),S+C+']',state.devices.length<2],['alt-arrow-up',t('Öne'),()=>layer('forward'),C+']',state.devices.length<2],
+    ['alt-arrow-down',t('Arkaya'),()=>layer('backward'),C+'[',state.devices.length<2],['double-alt-arrow-down',t('En arkaya'),()=>layer('back'),S+C+'[',state.devices.length<2],
+    null,['target',t('Odakla'),focusSelected,S+'F']);
   else if(one){
-    out.push(['double-alt-arrow-up','En öne',()=>reorder(one.id,ORDER.front),S+C+']'],['alt-arrow-up','Öne',()=>reorder(one.id,ORDER.forward),C+']'],
-      ['alt-arrow-down','Arkaya',()=>reorder(one.id,ORDER.backward),C+'['],['double-alt-arrow-down','En arkaya',()=>reorder(one.id,ORDER.back),S+C+'[']);
-    if(one.kind==='text')out.push(null,['pen-2','Metni düzenle',()=>editText(one,true),'↵']);
+    out.push(['double-alt-arrow-up',t('En öne'),()=>reorder(one.id,ORDER.front),S+C+']'],['alt-arrow-up',t('Öne'),()=>reorder(one.id,ORDER.forward),C+']'],
+      ['alt-arrow-down',t('Arkaya'),()=>reorder(one.id,ORDER.backward),C+'['],['double-alt-arrow-down',t('En arkaya'),()=>reorder(one.id,ORDER.back),S+C+'[']);
+    if(one.kind==='text')out.push(null,['pen-2',t('Metni düzenle'),()=>editText(one,true),'↵']);
   }
   return out;
 }

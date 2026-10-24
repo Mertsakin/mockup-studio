@@ -17,6 +17,7 @@ import {saveAsTemplate} from './template-gallery.js';
 import {toast} from './toast.js';
 import {onUi,setUi,ui} from './ui-state.js';
 import {fitAll} from './workspace.js';
+import {LANG,LOCALE,setLang,t} from '../lang.js';
 import {$,$$} from '../util.js';
 
 /* Editor shell: inspector that follows the selection (board / device / light / 2D item), layer tree, tools, menus, theme,
@@ -30,8 +31,8 @@ const LIGHT_ICON={sun:'sun',overcast:'sun-fog',window:'sun-fog',bulb:'lightbulb'
 const typing=t=>t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable);
 function labels(list,base){const n={},seen={};list.forEach(x=>{const b=base(x);n[b]=(n[b]||0)+1;});
   return list.map(x=>{const b=base(x);seen[b]=(seen[b]||0)+1;return n[b]>1?b+' '+seen[b]:b;});}
-const devNames=list=>labels(list,typeName);
-const lightNames=list=>labels(list,L=>L.mod==='custom'?'Işık':modOf(L.mod).n);
+const devNames=list=>labels(list,d=>t(typeName(d)));
+const lightNames=list=>labels(list,L=>L.mod==='custom'?t('Işık'):t(modOf(L.mod).n));
 
 /* ---------- inspector ---------- */
 const insp={board:$('#inspBoard'),device:$('#inspDevice'),light:$('#inspLight'),item:$('#inspItem'),multi:$('#inspMulti')};
@@ -59,8 +60,8 @@ function node(o){
   const el=document.createElement('div');el.className='node'+(o.child?' child':' board');el.setAttribute('role','treeitem');el.tabIndex=-1;
   if(o.depth){el.style.setProperty('--depth',o.depth);el.setAttribute('aria-level',String(o.depth+2));}
   el.setAttribute('aria-selected',String(!!o.sel));if(!o.child)el.setAttribute('aria-expanded',String(!!o.open));
-  el.innerHTML=(o.child?'':'<button class="tw" type="button" tabindex="-1" aria-label="'+(o.open?'Daralt':'Genişlet')+'">'+icon(o.open?'alt-arrow-down':'alt-arrow-right',12)+'</button>')+
-    (o.dot?'<span class="dot" style="background:'+o.dot+'"></span>':icon(o.icon,14))+'<span class="nm"></span>'+(o.anim?'<span class="anim-mark" title="Animasyonlu"></span>':'')+'<span class="act"></span>';
+  el.innerHTML=(o.child?'':'<button class="tw" type="button" tabindex="-1" aria-label="'+t(o.open?'Daralt':'Genişlet')+'">'+icon(o.open?'alt-arrow-down':'alt-arrow-right',12)+'</button>')+
+    (o.dot?'<span class="dot" style="background:'+o.dot+'"></span>':icon(o.icon,14))+'<span class="nm"></span>'+(o.anim?'<span class="anim-mark" title="'+t('Animasyonlu')+'"></span>':'')+'<span class="act"></span>';
   el.querySelector('.nm').textContent=o.name;
   const act=el.querySelector('.act');
   (o.actions||[]).forEach(([ic,label,fn])=>{const b=document.createElement('button');b.type='button';b.tabIndex=-1;b.setAttribute('aria-label',label);b.title=label;b.innerHTML=icon(ic,14);
@@ -70,7 +71,7 @@ function node(o){
   return el;
 }
 function startRename(el,b){
-  const nm=el.querySelector('.nm'),inp=document.createElement('input');inp.className='ren';inp.value=b.name;inp.setAttribute('aria-label','Artboard adı');
+  const nm=el.querySelector('.nm'),inp=document.createElement('input');inp.className='ren';inp.value=b.name;inp.setAttribute('aria-label',t('Artboard adı'));
   nm.replaceWith(inp);inp.focus();inp.select();let done=false;
   const end=ok=>{if(done)return;done=true;if(ok)renameBoard(b.id,inp.value);else renderTree();};
   inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')end(true);else if(e.key==='Escape')end(false);});
@@ -85,7 +86,7 @@ function renderTree(){
     tree.appendChild(node({name:b.name,icon:'frame',open,sel:live&&ui.kind==='board',anim:hasAnim(cam),
       toggle:()=>{if(live)return;expanded.has(b.id)?expanded.delete(b.id):expanded.add(b.id);renderTree();},
       pick:()=>{activate(b.id);setUi({kind:'board'});},rename:el=>startRename(el,b),
-      actions:[['pen-2','Yeniden adlandır (F2)',el=>startRename(el,b)],['copy','Kopyasını oluştur',()=>{duplicateBoard(b.id);fitAll();}],['copy','Kopyasını alta oluştur',()=>{duplicateBoard(b.id,'below');fitAll();}],['gallery-add','Şablon olarak kaydet',()=>{activate(b.id);saveAsTemplate();}],['play','Sunumda göster',()=>present(b.id)],['trash-bin-minimalistic','Sil',()=>removeBoard(b.id)]]}));
+      actions:[['pen-2',t('Yeniden adlandır (F2)'),el=>startRename(el,b)],['copy',t('Kopyasını oluştur'),()=>{duplicateBoard(b.id);fitAll();}],['copy',t('Kopyasını alta oluştur'),()=>{duplicateBoard(b.id,'below');fitAll();}],['gallery-add',t('Şablon olarak kaydet'),()=>{activate(b.id);saveAsTemplate();}],['play',t('Sunumda göster'),()=>present(b.id)],['trash-bin-minimalistic',t('Sil'),()=>removeBoard(b.id)]]}));
     if(!open)return;
     const devs=live?state.devices:b.snap.devices,lights=live?state.lights:b.snap.lights;
     const go=(fn)=>{if(!live)activate(b.id);fn();};
@@ -97,20 +98,20 @@ function renderTree(){
     // frames show their children under them, indented (topmost first, like the canvas)
     const isRoot=it=>!(it.parent!=null&&items.some(x=>x.id===it.parent&&x.kind==='frame'));
     const itemNode=(it,depth=0)=>{tree.appendChild(node({child:true,depth,name:it.name,icon:it.kind==='text'?'text-square':it.kind==='frame'?'hashtag':'gallery',anim:hasAnim(it)||!!it.fx,sel:picked(it),
-      pick:e=>{if(!multiPick(e,it))go(()=>selectItem(it.id));},actions:live?[['trash-bin-minimalistic','Sil',()=>removeItem(it.id)]]:[]}));
+      pick:e=>{if(!multiPick(e,it))go(()=>selectItem(it.id));},actions:live?[['trash-bin-minimalistic',t('Sil'),()=>removeItem(it.id)]]:[]}));
       if(it.kind==='frame')items.filter(x=>x.parent===it.id).reverse().forEach(x=>itemNode(x,depth+1));};
     items.filter(it=>it.front&&isRoot(it)).reverse().forEach(it=>itemNode(it));
     devNames(devs).forEach((n,i)=>{const d=devs[i];
       tree.appendChild(node({child:true,name:n,icon:DEV_ICON[d.type]||'smartphone',anim:hasAnim(d),sel:picked(d),
         pick:e=>{if(!multiPick(e,d))go(()=>{state.selected=d.id;syncAll();setUi({kind:'device'});syncTool();});},
-        actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selected=d.id;syncAll();$('#removeDevice').click();}]]:[]}));});
+        actions:live?[['trash-bin-minimalistic',t('Sil'),()=>{state.selected=d.id;syncAll();$('#removeDevice').click();}]]:[]}));});
     lightNames(lights).forEach((n,i)=>{const L=lights[i];
       tree.appendChild(node({child:true,name:n,dot:L.color,anim:hasAnim(L),sel:live&&ui.kind==='light'&&state.selLight===L.id,
         pick:()=>go(()=>{state.selLight=L.id;syncAll();setUi({kind:'light'});}),
-        actions:live?[['trash-bin-minimalistic','Sil',()=>{state.selLight=L.id;syncAll();$('#removeLight').click();}]]:[]}));});
+        actions:live?[['trash-bin-minimalistic',t('Sil'),()=>{state.selLight=L.id;syncAll();$('#removeLight').click();}]]:[]}));});
     items.filter(it=>!it.front&&isRoot(it)).reverse().forEach(it=>itemNode(it));
   });
-  if(!doc.boards.length){const p=document.createElement('p');p.className='empty';p.style.margin='4px 8px';p.textContent='Artboard yok. + ile ya da A tuşuyla yeni bir artboard ekle.';tree.appendChild(p);return;}
+  if(!doc.boards.length){const p=document.createElement('p');p.className='empty';p.style.margin='4px 8px';p.textContent=t('Artboard yok. + ile ya da A tuşuyla yeni bir artboard ekle.');tree.appendChild(p);return;}
   const items=[...tree.children];(items.find(x=>x.getAttribute('aria-selected')==='true')||items[0]).tabIndex=0;
   if(focusedIdx>=0&&items[focusedIdx])items[focusedIdx].focus();
 }
@@ -167,20 +168,20 @@ $('#exportMenuBtn').addEventListener('click',e=>{e.stopPropagation();syncExport(
 // the inspector menu needs a positioned parent
 const inspMenu=$('#addMenu').cloneNode(false);inspMenu.id='inspMenu';$('#inspector').style.position='relative';$('#inspector').appendChild(inspMenu);
 $('#boardMore').addEventListener('click',e=>{e.stopPropagation();openMenu($('#inspMenu'),e.currentTarget,[
-  ['pen-2','Yeniden adlandır',renameActive],
-  ['copy','Kopyasını oluştur',()=>{duplicateBoard();fitAll();}],
-  ['copy','Kopyasını alta oluştur',()=>{duplicateBoard(null,'below');fitAll();}],
-  ['gallery-add','Şablon olarak kaydet',saveAsTemplate],
-  ['play','Sunumda göster',()=>present()],
-  ['trash-bin-minimalistic','Artboardı sil',()=>removeBoard(doc.active)]],{under:true});});
+  ['pen-2',t('Yeniden adlandır'),renameActive],
+  ['copy',t('Kopyasını oluştur'),()=>{duplicateBoard();fitAll();}],
+  ['copy',t('Kopyasını alta oluştur'),()=>{duplicateBoard(null,'below');fitAll();}],
+  ['gallery-add',t('Şablon olarak kaydet'),saveAsTemplate],
+  ['play',t('Sunumda göster'),()=>present()],
+  ['trash-bin-minimalistic',t('Artboardı sil'),()=>removeBoard(doc.active)]],{under:true});});
 
 // dock: add device / light
 $('#dock [data-add="device"]').addEventListener('click',e=>{e.stopPropagation();openMenu($('#addMenu'),e.currentTarget,
-  Object.entries(TYPES).map(([k,n])=>[DEV_ICON[k]||'smartphone',n,()=>{ensureBoard();$('#addType').value=k;$('#addDevice').click();setUi({kind:'device'});syncTool();}])
+  Object.entries(TYPES).map(([k,n])=>[DEV_ICON[k]||'smartphone',t(n),()=>{ensureBoard();$('#addType').value=k;$('#addDevice').click();setUi({kind:'device'});syncTool();}])
     // a GLB / glTF file of the user's own (assets.js loads it into the library and places it)
-    .concat([['box','3B model (GLB)…',()=>{ensureBoard();$('#modelAdd').click();}],null,['widget','Hazır kompozisyonlar…',()=>{selectTab('tpl');}]]));});
+    .concat([['box',t('3B model (GLB)…'),()=>{ensureBoard();$('#modelAdd').click();}],null,['widget',t('Hazır kompozisyonlar…'),()=>{selectTab('tpl');}]]));});
 $('#dock [data-add="light"]').addEventListener('click',e=>{e.stopPropagation();openMenu($('#addMenu'),e.currentTarget,
-  MODS.filter(m=>m.k!=='custom').map(m=>[LIGHT_ICON[m.k]||'sun-2',m.n,()=>{ensureBoard();const n=state.lights.length;$('#addLight').click();
+  MODS.filter(m=>m.k!=='custom').map(m=>[LIGHT_ICON[m.k]||'sun-2',t(m.n),()=>{ensureBoard();const n=state.lights.length;$('#addLight').click();
     if(state.lights.length>n){const b=$('#modGrid [data-mod="'+m.k+'"]');if(b)b.click();setUi({kind:'light'});}}]));});
 const newBoard=()=>{addBoard();setUi({kind:'board'});fitAll();};
 // a new text item, edited in place right away (the layout of a new board settles first)
@@ -190,19 +191,19 @@ $('#addBoardBtn').addEventListener('click',newBoard);$('#addBoardDock').addEvent
 // rough wall-clock time of one export (CLAUDE.md "Hız", M1 Pro): the path tracer's 30 s budget + preparation +
 // OIDN, which grows with the pixel count and runs twice with depth of field
 function exportEta(w){
-  if(state.quality!=='photo')return 'birkaç saniye';
+  if(state.quality!=='photo')return t('birkaç saniye');
   const oidn=w<=1080?4:w<=1920?7:25,s=33+oidn*(state.dof&&state.dof.on?2:1);
-  return s<55?'yaklaşık '+Math.round(s/5)*5+' sn':'yaklaşık '+(Math.round(s/30)/2).toLocaleString('tr-TR')+' dk';
+  return s<55?t('yaklaşık {n} sn',{n:Math.round(s/5)*5}):t('yaklaşık {n} dk',{n:(Math.round(s/30)/2).toLocaleString(LOCALE)});
 }
 function syncExport(){
-  const b=activeBoard();if(!b){$('#exportNote').textContent='Artboard yok';$('#exportBoards').hidden=true;return;}
+  const b=activeBoard();if(!b){$('#exportNote').textContent=t('Artboard yok');$('#exportBoards').hidden=true;return;}
   const [w,h]=exportSize(state.size);  // the output file (the board on the canvas is always the largest size)
   // the live view draws at the screen's real pixel density: when the board is shown larger than the export, the
   // file looks softer than the canvas, so say so
   const s=boardScreen(),live=s?Math.round(s.w*Math.min(window.devicePixelRatio||1,2)):0;
   $('#exportNote').textContent=w+' × '+h+' px · '+exportEta(w)+
-    (state.quality==='photo'?'. Fotoğraf: gerçek ışık ve gölge (yol izleme)':'')+
-    (live>w*1.15&&state.ratio!=='custom'&&state.size<3840?' · Ekranda şu an yaklaşık '+live+' px genişlikte görünüyor; aynı netlik için genişliği 3840 px seç.':'');
+    (state.quality==='photo'?'. '+t('Fotoğraf: gerçek ışık ve gölge (yol izleme)'):'')+
+    (live>w*1.15&&state.ratio!=='custom'&&state.size<3840?' · '+t('Ekranda şu an yaklaşık {n} px genişlikte görünüyor; aynı netlik için genişliği 3840 px seç.',{n:live}):'');
   $('#exportBoards').hidden=doc.boards.length<2;
 }
 ['size','format'].forEach(id=>$('#'+id).addEventListener('change',syncExport));
@@ -211,7 +212,7 @@ $('#export').addEventListener('click',()=>setTimeout(closeMenu,0));
 const slug=s=>{const m={ç:'c',ğ:'g',ı:'i',ö:'o',ş:'s',ü:'u',Ç:'c',Ğ:'g',İ:'i',Ö:'o',Ş:'s',Ü:'u'};return String(s).replace(/[çğıöşüÇĞİÖŞÜ]/g,c=>m[c]).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'artboard';};
 $('#exportBoards').addEventListener('click',async()=>{
   const btn=$('#exportBoards'),back=doc.active,files=[],used={};btn.disabled=true;closeMenu();
-  const bz=busy('Artboardlar hazırlanıyor');
+  const bz=busy(t('Artboardlar hazırlanıyor'));
   try{
     for(let i=0;i<doc.boards.length;i++){
       const b=doc.boards[i];bz.step(i,doc.boards.length,b.name);activate(b.id);
@@ -222,8 +223,8 @@ $('#exportBoards').addEventListener('click',async()=>{
     let JSZip=null;try{JSZip=(await import('jszip')).default;}catch(e){/* separate files */}
     if(JSZip){const z=new JSZip();files.forEach(([n,bl])=>z.file(n,bl));offer('artboardlar.zip',await z.generateAsync({type:'blob'}));}
     else files.forEach(([n,bl])=>offer(n,bl));
-    toast(files.length+' artboard indirildi');
-  }catch(e){toast(isCancel(e)?'Dışa aktarım durduruldu':'Dışa aktarım tamamlanamadı. Daha küçük bir çözünürlük dene.');}
+    toast(t('{n} artboard indirildi',{n:files.length}));
+  }catch(e){toast(t(isCancel(e)?'Dışa aktarım durduruldu':'Dışa aktarım tamamlanamadı. Daha küçük bir çözünürlük dene.'));}
   finally{bz.close();activate(back);btn.disabled=false;closeMenu();}
 });
 
@@ -257,6 +258,8 @@ function applyTheme(t){if(t==='light'||t==='dark')document.documentElement.datas
 let theme='system';try{theme=localStorage.getItem(THEME_KEY)||'system';}catch(e){/* private mode */}
 applyTheme(theme);
 $$('#themeSeg button').forEach(b=>b.addEventListener('click',()=>{applyTheme(b.dataset.theme);try{localStorage.setItem(THEME_KEY,b.dataset.theme);}catch(e){/* ignore */}}));
+// the UI language (src/lang.js): the choice is kept in this browser and the page reloads in it
+$$('#langSeg button').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.lang===LANG));b.addEventListener('click',()=>setLang(b.dataset.lang));});
 
 /* ---------- keys ---------- */
 const TOOL_KEYS={v:'select',w:'move',e:'rotate',o:'orbit',h:'hand'};

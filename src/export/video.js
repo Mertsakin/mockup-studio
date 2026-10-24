@@ -11,6 +11,7 @@ import {anyAnim,applyAt,applyNow,onAnim,stop,targets} from '../ui/animate.js';
 import {invalidateLayout,layout,paintBg,paintItems} from '../ui/layout.js';
 import {toast} from '../ui/toast.js';
 import {ui} from '../ui/ui-state.js';
+import {fmt,t as tx} from '../lang.js';
 import {$,$$,mkCanvas} from '../util.js';
 import {exportSize,offer} from './export.js';
 import {FORMATS,encoderFor,estimate,webmAlpha} from './encoders.js';
@@ -98,52 +99,52 @@ function syncSetup(){
   $$('#vFps button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===X.fps)));
   $('#vRes').closest('.row').hidden=state.ratio==='custom';
   $('#vBlur').checked=X.blur;
-  $('#vDur').textContent=state.anim.dur.toFixed(1).replace('.',',')+' sn';
+  $('#vDur').textContent=fmt(state.anim.dur,1)+' '+tx('sn');
   $('#vFrames').textContent=String(frames());$('#vSize').textContent=w+' × '+h;
   $('#vMb').textContent='~'+Math.max(1,Math.round(estimate(X.format,w,h,fps(),state.anim.dur)/1e6))+' MB';
   $$('#vFmt button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===X.format)));
-  const note=FORMATS[X.format].d+(X.format==='gif'&&state.anim.dur>8?'. '+state.anim.dur.toFixed(0)+' sn uzun bir GIF büyük olur; kısa bir döngü dene.':'');
+  const note=tx(FORMATS[X.format].d)+(X.format==='gif'&&state.anim.dur>8?'. '+tx('{n} sn uzun bir GIF büyük olur; kısa bir döngü dene.',{n:state.anim.dur.toFixed(0)}):'');
   $('#vFmtNote').textContent=note;
   // a transparent board: which formats keep it (GIF always, WebM where the browser encodes alpha, MP4 never)
   if(state.bg==='transparent'){
-    if(X.format==='mp4')$('#vFmtNote').textContent=note+'. Şeffaf arka plan beyaz olur; şeffaf için GIF.';
-    else if(X.format==='gif')$('#vFmtNote').textContent=note+'. Şeffaf arka plan korunur (kenarlar keskin).';
-    else webmAlpha().then(ok=>{if(X.format==='webm')$('#vFmtNote').textContent=note+(ok?'. Şeffaf arka plan korunur.':'. Bu tarayıcı şeffaf WebM kodlayamıyor; arka plan beyaz olur. Şeffaf için GIF.');});
+    if(X.format==='mp4')$('#vFmtNote').textContent=note+'. '+tx('Şeffaf arka plan beyaz olur; şeffaf için GIF.');
+    else if(X.format==='gif')$('#vFmtNote').textContent=note+'. '+tx('Şeffaf arka plan korunur (kenarlar keskin).');
+    else webmAlpha().then(ok=>{if(X.format==='webm')$('#vFmtNote').textContent=note+'. '+tx(ok?'Şeffaf arka plan korunur.':'Bu tarayıcı şeffaf WebM kodlayamıyor; arka plan beyaz olur. Şeffaf için GIF.');});
   }
   $$('#vFps button').forEach(b=>{b.disabled=X.format==='gif';});
   $$('#vQuality button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===X.quality)));
   const photo=X.quality==='photo';$('#vBlurRow').hidden=photo;$('#vQualityNote').hidden=!photo;
-  if(photo){const sec=photoFrameSec(w,h)*frames();$('#vQualityNote').textContent='Her kare yol izlemeyle: kare başına ~'+Math.round(photoFrameSec(w,h))+' sn, bu video için yaklaşık '+(sec<90?Math.round(sec)+' sn':Math.round(sec/60)+' dk')+'. Hareket bulanıklığı yok; uzun sürer, sekmeyi açık tut.';}
-  $('#vSave').textContent=FORMATS[X.format].n+' indir';
+  if(photo){const sec=photoFrameSec(w,h)*frames();$('#vQualityNote').textContent=tx('Her kare yol izlemeyle: kare başına ~{f} sn, bu video için yaklaşık {t}. Hareket bulanıklığı yok; uzun sürer, sekmeyi açık tut.',{f:Math.round(photoFrameSec(w,h)),t:sec<90?Math.round(sec)+' '+tx('sn'):Math.round(sec/60)+' '+tx('dk')});}
+  $('#vSave').textContent=tx('{f} indir',{f:FORMATS[X.format].n});
   const no=typeof VideoEncoder==='undefined'&&X.format!=='gif';  // a GIF needs no WebCodecs
-  $('#vWarn').hidden=!no;$('#vWarn').textContent='Bu tarayıcı video kodlamayı desteklemiyor. Chrome, Edge ya da Safari’yi dene.';
+  $('#vWarn').hidden=!no;$('#vWarn').textContent=tx('Bu tarayıcı video kodlamayı desteklemiyor. Chrome, Edge ya da Safari’yi dene.');
   $('#vGo').disabled=no;
 }
 let blob=null;
 function openDialog(){
-  if(!anyAnim()&&!state.devices.some(hasVideo)){toast('Henüz animasyon yok: önce bir anahtar kare, metin efekti ya da ekran videosu ekle');return;}
-  stop();blob=null;$('#videoSetup').hidden=false;$('#videoRun').hidden=true;$('#videoTitle').textContent='Video dışa aktar';
+  if(!anyAnim()&&!state.devices.some(hasVideo)){toast(tx('Henüz animasyon yok: önce bir anahtar kare, metin efekti ya da ekran videosu ekle'));return;}
+  stop();blob=null;$('#videoSetup').hidden=false;$('#videoRun').hidden=true;$('#videoTitle').textContent=tx('Video dışa aktar');
   syncSetup();scrim.hidden=false;$('#vGo').focus();
 }
 function close(){if(running){cancel=true;return;}scrim.hidden=true;$('#exportMenuBtn').focus();}
 let running=false;
 async function go(){
-  $('#videoSetup').hidden=true;$('#videoRun').hidden=false;$('#vSave').hidden=true;$('#vStop').textContent='İptal';
-  $('#videoTitle').textContent='Video hazırlanıyor';$('#vBar').style.width='0';
+  $('#videoSetup').hidden=true;$('#videoRun').hidden=false;$('#vSave').hidden=true;$('#vStop').textContent=tx('İptal');
+  $('#videoTitle').textContent=tx('Video hazırlanıyor');$('#vBar').style.width='0';
   cancel=false;running=true;const t0=performance.now();
   try{
     blob=await renderVideo((i,n)=>{
       const el=(performance.now()-t0)/1000,eta=el/i*(n-i);
-      $('#vBar').style.width=(i/n*100)+'%';$('#vCount').textContent=i+' / '+n+' kare';
-      $('#vEta').textContent=i<n?'kalan ~'+(eta<60?Math.ceil(eta)+' sn':Math.ceil(eta/60)+' dk'):'';
+      $('#vBar').style.width=(i/n*100)+'%';$('#vCount').textContent=i+' / '+n+' '+tx('kare');
+      $('#vEta').textContent=i<n?tx('kalan ~{t}',{t:eta<60?Math.ceil(eta)+' '+tx('sn'):Math.ceil(eta/60)+' '+tx('dk')}):'';
     });
     running=false;
-    if(!blob){scrim.hidden=true;toast('Video dışa aktarımı iptal edildi');return;}
-    $('#videoTitle').textContent='Video hazır';$('#vEta').textContent=(blob.size/1e6).toFixed(1).replace('.',',')+' MB · '+Math.round((performance.now()-t0)/1000)+' sn';
-    $('#vStop').textContent='Kapat';$('#vSave').hidden=false;$('#vSave').focus();
+    if(!blob){scrim.hidden=true;toast(tx('Video dışa aktarımı iptal edildi'));return;}
+    $('#videoTitle').textContent=tx('Video hazır');$('#vEta').textContent=fmt(blob.size/1e6,1)+' MB · '+Math.round((performance.now()-t0)/1000)+' '+tx('sn');
+    $('#vStop').textContent=tx('Kapat');$('#vSave').hidden=false;$('#vSave').focus();
   }catch(e){
     running=false;scrim.hidden=true;console.warn('Video dışa aktarılamadı:',e);
-    toast(e&&e.message==='codec'?'Bu boyutta video kodlanamıyor. 1080 px dene.':'Video oluşturulamadı. Daha küçük bir çözünürlük dene.');
+    toast(tx(e&&e.message==='codec'?'Bu boyutta video kodlanamıyor. 1080 px dene.':'Video oluşturulamadı. Daha küçük bir çözünürlük dene.'));
   }
 }
 const stamp=()=>{const d=new Date(),z=x=>String(x).padStart(2,'0');return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes());};
@@ -153,7 +154,7 @@ $('#vBlur').addEventListener('change',e=>{X.blur=e.target.checked;});
 $('#vGo').addEventListener('click',go);
 $('#vCancel').addEventListener('click',close);$('#videoX').addEventListener('click',close);
 $('#vStop').addEventListener('click',()=>{if(running)cancel=true;else close();});
-$('#vSave').addEventListener('click',()=>{if(blob)offer('mockup-animasyon-'+stamp()+'.'+FORMATS[X.format].ext,blob);toast('İndirildi');close();});
+$('#vSave').addEventListener('click',()=>{if(blob)offer('mockup-animasyon-'+stamp()+'.'+FORMATS[X.format].ext,blob);toast(tx('İndirildi'));close();});
 $$('#vFmt button').forEach(b=>b.addEventListener('click',()=>{X.format=b.dataset.v;syncSetup();}));
 $$('#vQuality button').forEach(b=>b.addEventListener('click',()=>{X.quality=b.dataset.v;syncSetup();}));
 scrim.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}});

@@ -11,6 +11,7 @@ import {boardScreen,onLayout} from './layout.js';
 import {makeSlider,syncSliders} from './sliders.js';
 import {onSyncUI,syncUI} from './sync.js';
 import {toast} from './toast.js';
+import {t as tx} from '../lang.js';
 import {$,$$,clamp} from '../util.js';
 
 /* Kamera › Objektif and Bokeh (render/lens.js has the optics).
@@ -28,21 +29,21 @@ const G=()=>state.scene;
 
 /* ---------- focal length */
 const lensObj={get mm(){return mmFromFov(state.scene.fov);},set mm(v){state.scene.fov=fovFromMm(v);}};
-makeSlider($('#lensSlot'),{id:'g-mm',k:'mm',l:'Objektif',w:1,min:14,max:300,step:1,reset:50,log:true,f:v=>Math.round(v)+' mm',
-  note:'Odak uzaklığı (tam kare eşdeğeri). Kısa geniş ve derin, uzun düz ve sıkışık bir görünüm verir.'},()=>lensObj);
+makeSlider($('#lensSlot'),{id:'g-mm',k:'mm',l:tx('Objektif'),w:1,min:14,max:300,step:1,reset:50,log:true,f:v=>Math.round(v)+' mm',
+  note:tx('Odak uzaklığı (tam kare eşdeğeri). Kısa geniş ve derin, uzun düz ve sıkışık bir görünüm verir.')},()=>lensObj);
 const mmLabel=$('#s-g-mm').previousElementSibling;
 const lensWrap=$('#lenses');
-LENSES.forEach(L=>{const b=document.createElement('button');b.type='button';b.textContent=L.n+' · f/'+L.f;b.dataset.mm=String(L.mm);
+LENSES.forEach(L=>{const b=document.createElement('button');b.type='button';b.textContent=tx(L.n)+' · f/'+L.f;b.dataset.mm=String(L.mm);
   b.addEventListener('click',()=>{state.scene.fov=fovFromMm(L.mm);state.scene.fnum=L.f;applyTransform();syncSliders();syncUI();});lensWrap.appendChild(b);});
 
 /* ---------- depth of field */
 const onEl=$('#dofOn');
 onEl.addEventListener('change',()=>setDof({on:onEl.checked}));
 // the f-number and the focus distance are camera fields: their fields record like the angles (◆ in Canlandır)
-makeSlider($('#dofSliders'),{id:'g-fnum',k:'fnum',l:'Diyafram',s:'f/',w:1,min:F_STOPS[0],max:22,step:.1,reset:FNUM_DEFAULT,log:true,
-  f:v=>String(+v.toFixed(1)),note:'Küçük sayı geniş açıklık: daha sığ alan derinliği, daha güçlü bokeh.'},G);
-makeSlider($('#dofDistSlot'),{id:'g-focus',k:'focusDist',l:'Odak uzaklığı',s:'Odak',w:1,min:5,max:5000,step:1,reset:FOCUS_DIST_DEFAULT,log:true,scale:.01,f:fmtM,
-  note:'Kameradan net düzleme uzaklık. Canlandır’da anahtar kare alır: iki anda iki cihaza "Buna odakla" bir odak çekmedir.'},G);
+makeSlider($('#dofSliders'),{id:'g-fnum',k:'fnum',l:tx('Diyafram'),s:'f/',w:1,min:F_STOPS[0],max:22,step:.1,reset:FNUM_DEFAULT,log:true,
+  f:v=>String(+v.toFixed(1)),note:tx('Küçük sayı geniş açıklık: daha sığ alan derinliği, daha güçlü bokeh.')},G);
+makeSlider($('#dofDistSlot'),{id:'g-focus',k:'focusDist',l:tx('Odak uzaklığı'),s:tx('Odak'),w:1,min:5,max:5000,step:1,reset:FOCUS_DIST_DEFAULT,log:true,scale:.01,f:fmtM,
+  note:tx('Kameradan net düzleme uzaklık. Canlandır’da anahtar kare alır: iki anda iki cihaza "Buna odakla" bir odak çekmedir.')},G);
 $$('#dofBlades button').forEach(b=>{b.type='button';b.addEventListener('click',()=>setDof({blades:+b.dataset.v}));});
 const bgEl=$('#dofBg');bgEl.addEventListener('change',()=>setDof({bg:bgEl.checked}));
 
@@ -64,12 +65,12 @@ $('#dofCenter').addEventListener('click',()=>setDof({focus:{frame:[.5,.5]}}));
 
 // Hedef: a select of "the selected device", each device, and a point picked on the scene
 const focusEl=$('#dofFocus');
-function devLabel(d){const n=typeName(d),same=state.devices.filter(x=>typeName(x)===n);return n+(same.length>1?' '+(same.indexOf(d)+1):'');}
+function devLabel(d){const n=typeName(d),same=state.devices.filter(x=>typeName(x)===n);return tx(n)+(same.length>1?' '+(same.indexOf(d)+1):'');}
 function fillFocus(){
-  const fc=dof().focus,opts=[['sel','Seçili cihaz']];
+  const fc=dof().focus,opts=[['sel',tx('Seçili cihaz')]];
   state.devices.forEach(d=>opts.push(['d'+d.id,devLabel(d)]));
-  if(fc&&fc.p)opts.push(['p','Seçilen nokta']);
-  opts.push(['pick','Sahneden seç…']);
+  if(fc&&fc.p)opts.push(['p',tx('Seçilen nokta')]);
+  opts.push(['pick',tx('Sahneden seç…')]);
   const key=opts.map(o=>o.join(':')).join('|');
   if(focusEl.dataset.key!==key){focusEl.dataset.key=key;focusEl.innerHTML='';
     opts.forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;focusEl.appendChild(o);});}
@@ -84,7 +85,7 @@ focusEl.addEventListener('change',()=>{
 // Uzaklık › "Buna odakla": a device's current distance becomes the focus distance (an edit: a key in Canlandır)
 const pullEl=$('#dofPull');
 function fillPull(){
-  const opts=[['','Cihaz seç…']];state.devices.forEach(d=>opts.push(['d'+d.id,devLabel(d)+' · '+fmtM(deviceDepth(d))]));
+  const opts=[['',tx('Cihaz seç…')]];state.devices.forEach(d=>opts.push(['d'+d.id,devLabel(d)+' · '+fmtM(deviceDepth(d))]));
   const key=opts.map(o=>o.join(':')).join('|');
   if(pullEl.dataset.key!==key){pullEl.dataset.key=key;pullEl.innerHTML='';
     opts.forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;pullEl.appendChild(o);});}
@@ -97,14 +98,14 @@ pullEl.addEventListener('change',()=>{
 
 /* ---------- picking a focus point: the next click on the scene (Esc cancels) */
 const ray=new THREE.Raycaster();let picking=false;
-function startPick(){picking=true;document.documentElement.dataset.pick='focus';toast('Odaklanacak noktaya tıkla (Esc: vazgeç)');}
+function startPick(){picking=true;document.documentElement.dataset.pick='focus';toast(tx('Odaklanacak noktaya tıkla (Esc: vazgeç)'));}
 function endPick(){picking=false;delete document.documentElement.dataset.pick;}
 canvas.addEventListener('pointerdown',e=>{
   if(!picking||e.button!==0)return;e.preventDefault();e.stopImmediatePropagation();endPick();
   const r=canvas.getBoundingClientRect();
   ray.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
   const hit=ray.intersectObjects([...RT.values()].map(o=>o.holder),true).find(h=>!h.object.userData.ao&&!h.object.userData.decal);
-  if(!hit){toast('Orada bir cihaz yok; odak değişmedi');return;}
+  if(!hit){toast(tx('Orada bir cihaz yok; odak değişmedi'));return;}
   setDof({focus:{p:comp.worldToLocal(hit.point.clone()).toArray().map(x=>+x.toFixed(3))}});
 },true);
 addEventListener('keydown',e=>{if(picking&&e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();endPick();}},true);
@@ -141,14 +142,14 @@ function placeOverlays(){
     const [fx,fy]=dof().focus.frame;
     cross.style.transform='translate('+(s.x+fx*s.w).toFixed(1)+'px,'+(s.y+fy*s.h).toFixed(1)+'px)';
     cross.classList.toggle('hit',!!fi.dev);
-    cross.title=(fi.dev?devLabel(fi.dev)+' · ':fi.near?'Altında cihaz yok, en yakını: '+devLabel(fi.near)+' · ':'')+fmtM(fi.dist)+' · sürükle (Shift: merkeze yapış)';
+    cross.title=(fi.dev?devLabel(fi.dev)+' · ':fi.near?tx('Altında cihaz yok, en yakını: {d}',{d:devLabel(fi.near)})+' · ':'')+fmtM(fi.dist)+' · '+tx('sürükle (Shift: merkeze yapış)');
     cross.setAttribute('aria-valuetext',Math.round(fx*100)+'%, '+Math.round(fy*100)+'%'+(fi.dev?', '+devLabel(fi.dev):''));
   }
   info.hidden=!on;
   if(on){
     // what is sharp: the device (or point) and the distance
-    const what=fi.mode==='dist'?'':fi.point?'Seçilen nokta':fi.dev?devLabel(fi.dev):fi.near?devLabel(fi.near)+' (yakın)':'';
-    const h='Odak'+(what?' · <b></b>':'')+' · '+fmtM(fi.dist)+' · f/'+(+dof().f.toFixed(1));
+    const what=fi.mode==='dist'?'':fi.point?tx('Seçilen nokta'):fi.dev?devLabel(fi.dev):fi.near?devLabel(fi.near)+' '+tx('(yakın)'):'';
+    const h=tx('Odak')+(what?' · <b></b>':'')+' · '+fmtM(fi.dist)+' · f/'+(+dof().f.toFixed(1));
     const sig=h+'|'+what;
     // the height is read only when the text changes (this runs on every req, including the video export's sub-samples)
     if(sig!==infoSig){infoSig=sig;info.innerHTML=h;const b=info.querySelector('b');if(b)b.textContent=what;infoH=info.offsetHeight;}
@@ -169,6 +170,6 @@ onSyncUI(()=>{
   lensWrap.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(Math.abs(+b.dataset.mm-mm)<.5)));
   // the angle of view in the tooltip, and the longer effective lens when Yakınlık goes past the closest camera distance
   const eff=effectiveMm();
-  mmLabel.title='Objektif: '+Math.round(mm)+' mm · görüş açısı '+(+state.scene.fov.toFixed(1))+'°'+
-    (eff>mm*1.02?' · Yakınlıkla etkin '+Math.round(eff)+' mm':'')+' · sürükle, çift tıkla: 50 mm';
+  mmLabel.title=tx('Objektif: {mm} mm · görüş açısı {fov}°',{mm:Math.round(mm),fov:+state.scene.fov.toFixed(1)})+
+    (eff>mm*1.02?' · '+tx('Yakınlıkla etkin {mm} mm',{mm:Math.round(eff)}):'')+' · '+tx('sürükle, çift tıkla: 50 mm');
 });

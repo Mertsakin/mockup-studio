@@ -8,6 +8,7 @@ import {fixHeight,fixWidth,flowIndex,frameAt,isFrame,moveBy,newFrame,nodeOf,plac
 import {moveGroupFrom,saveGroup} from './selection.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {onUi,panning,setUi,ui} from './ui-state.js';
+import {t as tx} from '../lang.js';
 import {$,clamp} from '../util.js';
 
 /* 2D items (PNG / SVG / WebP placed on the artboard, data in state.items, drawn by layout.js).
@@ -19,8 +20,8 @@ import {$,clamp} from '../util.js';
      snapping). Arrow keys nudge 1 px (Shift: 10 px) in output pixels. Esc during a drag cancels. */
 const stage=$('#stagearea'),box=document.createElement('div');
 box.className='ibox';box.hidden=true;
-box.innerHTML='<div class="ibox-line"></div><span class="ibox-stem"></span><button type="button" class="ibox-rot" data-h="rot" aria-label="Döndür"></button>'+
-  ['nw','ne','se','sw'].map(k=>'<button type="button" class="th th-'+k+'" data-h="'+k+'" aria-label="Ölçekle"></button>').join('')+'<span class="tbox-val" hidden></span>';
+box.innerHTML='<div class="ibox-line"></div><span class="ibox-stem"></span><button type="button" class="ibox-rot" data-h="rot" aria-label="'+tx('Döndür')+'"></button>'+
+  ['nw','ne','se','sw'].map(k=>'<button type="button" class="th th-'+k+'" data-h="'+k+'" aria-label="'+tx('Ölçekle')+'"></button>').join('')+'<span class="tbox-val" hidden></span>';
 stage.appendChild(box);
 const val=box.querySelector('.tbox-val');
 
@@ -68,12 +69,12 @@ function addItem(img,name,at){
   const w=Math.min(.34,.34*(bh/bw)*(iw/ih)*1.4,iw/bw);  // not wider than a third, not taller than about half, not upscaled
   let x=.5,y=.5;
   if(at){const s=boardScreen(),p=toStage(at.x,at.y);if(s){x=clamp((p.x-s.x)/s.w,0,1);y=clamp((p.y-s.y)/s.h,0,1);}}
-  const it={id:nextItemId(),name:name||'Görsel',img,x,y,w:Math.max(.02,w),rot:0,opacity:1,front:true};
+  const it={id:nextItemId(),name:name||tx('Görsel'),img,x,y,w:Math.max(.02,w),rot:0,opacity:1,front:true};
   state.items.push(it);renderItems();selectItem(it.id);return it;
 }
 // a new text item (Sıradaki yol 1): near the top of the board, dark or light depending on the background
 function addText(props){
-  const it=Object.assign({id:nextItemId(),name:'Metin',x:.5,y:.14,rot:0,opacity:1,front:true,kind:'text'},TEXT_DEFAULTS,{color:darkBg()?'#ffffff':'#111111'},props);
+  const it=Object.assign({id:nextItemId(),name:tx('Metin'),x:.5,y:.14,rot:0,opacity:1,front:true,kind:'text'},TEXT_DEFAULTS,{text:tx(TEXT_DEFAULTS.text),color:darkBg()?'#ffffff':'#111111'},props);
   state.items.push(it);renderItems();selectItem(it.id);return it;
 }
 // is the board's background dark (by its average colour)? image backgrounds count as light
@@ -216,7 +217,7 @@ const onUp=()=>end(false),onCancel=()=>end(true);
 let editor=null;
 function editText(it,selectAll){
   if(!it||it.kind!=='text')return;endEdit();
-  const ta=document.createElement('textarea');ta.className='tedit';ta.spellcheck=false;ta.setAttribute('aria-label','Metin');ta.value=it.text;
+  const ta=document.createElement('textarea');ta.className='tedit';ta.spellcheck=false;ta.setAttribute('aria-label',tx('Metin'));ta.value=it.text;
   stage.appendChild(ta);editor={ta,it};hideItem(it.id);box.classList.add('editing');
   const fit=()=>{const s=boardScreen(),r=screenRect(it);if(!s||!r){endEdit();return;}
     const px=it.size*s.w,L=textLayout(it);

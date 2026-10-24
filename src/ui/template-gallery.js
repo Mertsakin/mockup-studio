@@ -7,6 +7,7 @@ import {loadShotVideo} from './image-input.js';
 import {toast} from './toast.js';
 import {setUi} from './ui-state.js';
 import {fitAll} from './workspace.js';
+import {t as uiT} from '../lang.js';
 import {$,$$} from '../util.js';
 
 /* The template set (public/templates, made by tools/templates/build.mjs from tools/templates/specs.mjs): the
@@ -47,7 +48,7 @@ function screensOnBoard(){
 const files=new Map();
 async function templateDoc(t,variant){
   const v=t.variants[variant]||t.variants.light,k=v.file;
-  if(!files.has(k))files.set(k,(async()=>{const r=await fetch(BASE+k);if(!r.ok)throw new Error('şablon dosyası '+r.status);return fromProjectFile(await r.text());})());
+  if(!files.has(k))files.set(k,(async()=>{const r=await fetch(BASE+k);if(!r.ok)throw new Error(uiT('şablon dosyası {s}',{s:r.status}));return fromProjectFile(await r.text());})());
   return files.get(k);
 }
 // the device types on a template's first artboard (what screens it needs)
@@ -57,7 +58,7 @@ const deviceTypes=async(t,variant)=>{const d=await templateDoc(t,variant);return
 async function openTemplate(t,variant,dress){
   const doc=await templateDoc(t,variant),ids=[];
   for(const b of doc.boards){
-    const nb=addBoard(b.snap,doc.boards.length>1?b.name:t.name);ids.push(nb.id);
+    const nb=addBoard(b.snap,doc.boards.length>1?b.name:uiT(t.name));ids.push(nb.id);
     if(dress)await dress();
     storeActive();
   }
@@ -67,16 +68,16 @@ async function openTemplate(t,variant,dress){
 /* ---------- the Şablonlar tab */
 const grid=$('#tplGrid'),empty=$('#tplEmpty');
 let goal='all',variant='light';
-const badge=t=>[t.boards>1?t.boards+' ekran':t.ratio,t.motion?'Hareketli':''].filter(Boolean);
+const badge=t=>[t.boards>1?uiT('{n} ekran',{n:t.boards}):t.ratio,t.motion?uiT('Hareketli'):''].filter(Boolean);
 async function renderTab(){
   const all=await templates();
   empty.hidden=all.length>0;
   grid.innerHTML='';
   all.filter(t=>goal==='all'||t.goal===goal).forEach(t=>{
-    const b=document.createElement('button');b.type='button';b.className='tpl';b.title=t.name+': '+t.desc;
+    const b=document.createElement('button');b.type='button';b.className='tpl';b.title=uiT(t.name)+': '+uiT(t.desc);
     b.innerHTML='<span class="tpl-im"><img loading="lazy" alt=""><span class="tpl-b"></span></span><span class="tpl-n"></span>';
     b.querySelector('img').src=BASE+(t.variants[variant]||t.variants.light).thumb;
-    b.querySelector('.tpl-b').textContent=badge(t).join(' · ');b.querySelector('.tpl-n').textContent=t.name;
+    b.querySelector('.tpl-b').textContent=badge(t).join(' · ');b.querySelector('.tpl-n').textContent=uiT(t.name);
     b.addEventListener('click',()=>useFromTab(t));
     // a moving template plays its short preview while pointed at or focused (not with reduced motion)
     const pv=(t.variants[variant]||t.variants.light).preview;
@@ -94,8 +95,8 @@ async function useFromTab(t){
   try{
     const s=screensOnBoard(),ids=await openTemplate(t,variant,async()=>{await dressScreens(s.tall,s.wide);});
     activate(ids[0]);setUi({kind:'board'});fitAll();
-    toast(t.name+(ids.length>1?': '+ids.length+' artboard eklendi':' yeni artboard olarak eklendi')+(t.motion?'. Hareketi Canlandır’da önizle.':''));
-  }catch(e){toast('Şablon açılamadı: '+(e.message||e));}
+    toast((ids.length>1?uiT('{t}: {n} artboard eklendi',{t:uiT(t.name),n:ids.length}):uiT('{t} yeni artboard olarak eklendi',{t:uiT(t.name)}))+(t.motion?'. '+uiT('Hareketi Canlandır’da önizle.'):''));
+  }catch(e){toast(uiT('Şablon açılamadı: {m}',{m:e.message||e}));}
   finally{holdHistory(false);}
   fillThumbs();
 }
@@ -115,7 +116,7 @@ function smaller(url,w){
     i.onerror=()=>res(null);i.src=url;});
 }
 async function saveAsTemplate(){
-  const b=activeBoard();if(!b){toast('Önce bir artboard ekle.');return;}
+  const b=activeBoard();if(!b){toast(uiT('Önce bir artboard ekle.'));return;}
   storeActive();
   // the screens go (keys of device screenshots and videos), everything else stays: scene, lights, text, frames
   const drop=new Set(),devices=b.snap.devices.map(d=>{if(d.img)drop.add(d.img);if(d.video)drop.add(d.video);
@@ -128,16 +129,16 @@ async function saveAsTemplate(){
   try{
     const f=await toProjectFile(doc),rec={id:'u'+Date.now(),name:b.name,created:Date.now(),thumb,blob:f.blob,zip:f.zip};
     await tx('readwrite',st=>st.put(rec));
-    toast('"'+b.name+'" şablon olarak kaydedildi. Şablonlar sekmesinde, tüm projelerde.');renderMine();
-  }catch(e){toast('Şablon kaydedilemedi: '+(e.message||e));}
+    toast(uiT('"{n}" şablon olarak kaydedildi. Şablonlar sekmesinde, tüm projelerde.',{n:b.name}));renderMine();
+  }catch(e){toast(uiT('Şablon kaydedilemedi: {m}',{m:e.message||e}));}
 }
 async function useMine(rec){
   holdHistory(true);
   try{
     const d=await fromProjectFile(rec.blob),s=screensOnBoard(),ids=[];
     for(const b of d.boards){ids.push(addBoard(b.snap,rec.name).id);await dressScreens(s.tall,s.wide);storeActive();}
-    activate(ids[0]);setUi({kind:'board'});fitAll();toast(rec.name+' yeni artboard olarak eklendi');
-  }catch(e){toast('Şablon açılamadı: '+(e.message||e));}
+    activate(ids[0]);setUi({kind:'board'});fitAll();toast(uiT('{t} yeni artboard olarak eklendi',{t:rec.name}));
+  }catch(e){toast(uiT('Şablon açılamadı: {m}',{m:e.message||e}));}
   finally{holdHistory(false);}
   fillThumbs();
 }
@@ -146,20 +147,20 @@ async function renderMine(){
   const l=await mineAll();mineEmpty.hidden=l.length>0;mine.innerHTML='';
   l.forEach(rec=>{
     const w=document.createElement('div');w.className='tpl-mine';
-    const b=document.createElement('button');b.type='button';b.className='tpl';b.title=rec.name+': yeni artboard olarak ekle';
+    const b=document.createElement('button');b.type='button';b.className='tpl';b.title=rec.name+': '+uiT('yeni artboard olarak ekle');
     b.innerHTML='<span class="tpl-im"><img alt=""></span><span class="tpl-n"></span>';if(rec.thumb)b.querySelector('img').src=rec.thumb;
     b.querySelector('.tpl-n').textContent=rec.name;b.addEventListener('click',()=>useMine(rec));
     const acts=document.createElement('span');acts.className='tpl-acts';
     const act=(label,text,fn)=>{const x=document.createElement('button');x.type='button';x.className='ib sm';x.setAttribute('aria-label',rec.name+': '+label);x.title=label;x.textContent=text;
       x.addEventListener('click',e=>{e.stopPropagation();fn();});acts.appendChild(x);};
-    act('Yeniden adlandır','✎',()=>rename(rec,b.querySelector('.tpl-n')));
-    act('Dosya olarak indir','⤓',()=>download(rec));
-    act('Şablonu sil','✕',async()=>{await tx('readwrite',st=>st.delete(rec.id));renderMine();toast('Şablon silindi');});
+    act(uiT('Yeniden adlandır'),'✎',()=>rename(rec,b.querySelector('.tpl-n')));
+    act(uiT('Dosya olarak indir'),'⤓',()=>download(rec));
+    act(uiT('Şablonu sil'),'✕',async()=>{await tx('readwrite',st=>st.delete(rec.id));renderMine();toast(uiT('Şablon silindi'));});
     w.append(b,acts);mine.appendChild(w);});
 }
 // the name in place: Enter keeps it, Esc or an empty name puts the old one back
 function rename(rec,el){
-  const inp=document.createElement('input');inp.type='text';inp.className='tpl-ren';inp.value=rec.name;inp.setAttribute('aria-label','Şablon adı');
+  const inp=document.createElement('input');inp.type='text';inp.className='tpl-ren';inp.value=rec.name;inp.setAttribute('aria-label',uiT('Şablon adı'));
   el.replaceWith(inp);inp.focus();inp.select();
   let done=false;
   const end=async ok=>{if(done)return;done=true;const v=inp.value.trim();
@@ -185,13 +186,13 @@ async function importFiles(files){
       const d=await fromProjectFile(f),b=d.boards[0];if(!b)continue;
       const drop=new Set(),devices=(b.snap.devices||[]).map(x=>{if(x.img)drop.add(x.img);if(x.video)drop.add(x.video);return Object.assign({},x,{img:null,imgName:'',video:null,videoName:'',scroll:0,siteUrl:''});});
       const images={};for(const k in b.snap.images)if(!drop.has(k))images[k]=b.snap.images[k];
-      const name=(b.name&&!/^Artboard \d+$/.test(b.name)?b.name:f.name.replace(/\.mockup(-sablon)?\.(json|zip)$/i,'').replace(/\.(json|zip)$/i,''))||'Şablon';
+      const name=(b.name&&!/^Artboard \d+$/.test(b.name)?b.name:f.name.replace(/\.mockup(-sablon)?\.(json|zip)$/i,'').replace(/\.(json|zip)$/i,''))||uiT('Şablon');
       const doc={v:2,layout:'max',active:1,boards:[{id:1,name,x:0,y:0,snap:Object.assign({},b.snap,{devices,images}),thumb:b.thumb||null}],fonts:d.fonts||[]};
       const pf=await toProjectFile(doc);
       await tx('readwrite',st=>st.put({id:'u'+Date.now()+'-'+n,name,created:Date.now(),thumb:b.thumb||null,blob:pf.blob,zip:pf.zip}));n++;
-    }catch(e){toast(f.name+' açılamadı: '+(e.message||e));}
+    }catch(e){toast(uiT('{f} açılamadı: {m}',{f:f.name,m:e.message||e}));}
   }
-  if(n){toast(n+' şablon içe aktarıldı');renderMine();}
+  if(n){toast(uiT('{n} şablon içe aktarıldı',{n}));renderMine();}
 }
 $('#tplImport').addEventListener('click',()=>$('#tplImportFile').click());
 $('#tplImportFile').addEventListener('change',e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)importFiles(fs);});
@@ -206,9 +207,9 @@ renderTab();
    the last session); it is added once start-up has settled */
 const urlTemplate=(()=>{try{const q=new URLSearchParams(location.search);return q.get('template')?{id:q.get('template'),v:q.get('v')==='dark'?'dark':'light'}:null;}catch(e){return null;}})();
 if(urlTemplate){
-  const go=async()=>{const t=(await templates()).find(x=>x.id===urlTemplate.id);if(!t){toast('Şablon bulunamadı: '+urlTemplate.id);return;}
+  const go=async()=>{const t=(await templates()).find(x=>x.id===urlTemplate.id);if(!t){toast(uiT('Şablon bulunamadı: {id}',{id:urlTemplate.id}));return;}
     // the start-up board (the default scene, kept because the last session was not restored) gives way
-    try{clearAll();const ids=await openTemplate(t,urlTemplate.v);activate(ids[0]);setUi({kind:'board'});fitAll();fillThumbs();}catch(e){toast('Şablon açılamadı: '+(e.message||e));}};
+    try{clearAll();const ids=await openTemplate(t,urlTemplate.v);activate(ids[0]);setUi({kind:'board'});fitAll();fillThumbs();}catch(e){toast(uiT('Şablon açılamadı: {m}',{m:e.message||e}));}};
   const wait=()=>{if(document.documentElement.classList.contains('booting'))setTimeout(wait,50);else go();};wait();
 }
 

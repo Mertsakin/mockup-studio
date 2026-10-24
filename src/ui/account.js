@@ -10,6 +10,7 @@ import {showHome} from './home.js';
 import {deleteAccountAction,downloadDataAction,isLeaving,leave} from './projects.js';
 import {toLogin} from './router.js';
 import {signInForm} from './signin-form.js';
+import {LANG,LANGS,fmt,setLang,t} from '../lang.js';
 import {$} from '../util.js';
 
 const wrap=$('#acctWrap'),signBtn=$('#signInBtn'),acctBtn=$('#acctBtn'),menu=$('#acctMenu');
@@ -27,7 +28,7 @@ if(cloudEnabled){
 }
 
 // ---------- the top bar and the account menu
-const mb=n=>n<2**30?(n/2**20).toFixed(n<10*2**20?1:0).replace('.',',')+' MB':(n/2**30).toFixed(1).replace('.',',')+' GB';
+const mb=n=>n<2**30?fmt(n/2**20,n<10*2**20?1:0)+' MB':fmt(n/2**30,1)+' GB';
 function initials(a){const n=(a.profile&&a.profile.name)||(a.user&&a.user.email)||'?';return n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();}
 function draw(a){
   const on=!!a.user;
@@ -42,7 +43,7 @@ function draw(a){
   acctBtn.querySelector('.acct-t b').textContent=name;
   acctBtn.querySelector('.acct-bar i').style.width=Math.min(100,used/2**31*100).toFixed(1)+'%';
   acctBtn.querySelector('.acct-n').textContent=mb(used)+' / 2 GB';
-  acctBtn.setAttribute('aria-label','Hesap: '+(p.name||a.user.email));
+  acctBtn.setAttribute('aria-label',t('Hesap: {n}',{n:p.name||a.user.email}));
   if(!menu.hidden)fillMenu();  // the profile arrived while the menu was open
 }
 function closeMenu(){if(menu.hidden)return;menu.hidden=true;acctBtn.setAttribute('aria-expanded','false');}
@@ -51,15 +52,17 @@ function fillMenu(){
   menu.innerHTML='<div class="acct-head"><b></b><span></span></div>'+
     '<div class="mlabel acct-use"></div>'+
     '<div class="msep" role="separator"></div>'+
-    '<button class="mi" role="menuitem" type="button" data-a="projects">'+icon('folder-with-files')+'<span>Projelerim…</span></button>'+
+    '<button class="mi" role="menuitem" type="button" data-a="projects">'+icon('folder-with-files')+'<span>'+t('Projelerim…')+'</span></button>'+
     '<div class="msep" role="separator"></div>'+
-    '<button class="mi" role="menuitem" type="button" data-a="download">'+icon('download-minimalistic')+'<span>Verini indir</span></button>'+
-    '<button class="mi danger" role="menuitem" type="button" data-a="delete">'+icon('trash-bin-minimalistic')+'<span>Hesabı sil…</span></button>'+
+    '<div class="mlabel">'+t('Dil')+'</div><div class="seg seg-menu lang-seg" role="group" aria-label="'+t('Dil')+'">'+Object.keys(LANGS).map(k=>'<button type="button" data-lang="'+k+'" lang="'+k+'" aria-pressed="'+(k===LANG)+'">'+LANGS[k]+'</button>').join('')+'</div>'+
     '<div class="msep" role="separator"></div>'+
-    '<button class="mi" role="menuitem" type="button" data-a="out">'+icon('logout-2')+'<span>Çıkış yap</span></button>';
+    '<button class="mi" role="menuitem" type="button" data-a="download">'+icon('download-minimalistic')+'<span>'+t('Verini indir')+'</span></button>'+
+    '<button class="mi danger" role="menuitem" type="button" data-a="delete">'+icon('trash-bin-minimalistic')+'<span>'+t('Hesabı sil…')+'</span></button>'+
+    '<div class="msep" role="separator"></div>'+
+    '<button class="mi" role="menuitem" type="button" data-a="out">'+icon('logout-2')+'<span>'+t('Çıkış yap')+'</span></button>';
   menu.querySelector('.acct-head b').textContent=p.name||'';
   menu.querySelector('.acct-head span').textContent=auth.user.email||'';
-  const use=menu.querySelector('.acct-use');use.textContent='Bulutta '+(used/2**20).toFixed(used<10*2**20?1:0).replace('.',',')+' MB / 2 GB kullanılıyor';use.hidden=!auth.profile;
+  const use=menu.querySelector('.acct-use');use.textContent=t('Bulutta {n} MB / 2 GB kullanılıyor',{n:fmt(used/2**20,used<10*2**20?1:0)});use.hidden=!auth.profile;
 }
 function openMenu(){
   fillMenu();
@@ -68,6 +71,7 @@ function openMenu(){
 }
 acctBtn.addEventListener('click',e=>{e.stopPropagation();if(menu.hidden)openMenu();else closeMenu();});
 menu.addEventListener('click',e=>{
+  const l=e.target.closest('[data-lang]');if(l){setLang(l.dataset.lang);return;}
   const b=e.target.closest('[data-a]');if(!b)return;closeMenu();
   if(b.dataset.a==='projects')showHome('all');
   else if(b.dataset.a==='download')downloadDataAction();
@@ -87,7 +91,7 @@ function openSignIn(){
   client().catch(()=>{});
   const sc=document.createElement('div');sc.className='scrim';sc.id='signInScrim';
   sc.innerHTML='<div class="dialog signin-dlg" role="dialog" aria-modal="true" aria-labelledby="siT">'+
-    '<div class="dh"><span id="siT">Giriş yap</span><button class="ib sm" type="button" data-a="close" aria-label="Kapat">'+icon('close-circle')+'</button></div>'+
+    '<div class="dh"><span id="siT">'+t('Giriş yap')+'</span><button class="ib sm" type="button" data-a="close" aria-label="'+t('Kapat')+'">'+icon('close-circle')+'</button></div>'+
     '<div class="db"></div></div>';
   document.body.appendChild(sc);
   const f=signInForm(sc.querySelector('.db'));

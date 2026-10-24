@@ -10,7 +10,7 @@ const L=local(),STUDIO=process.argv[2]||STUDIO_URL,admin=createClient(L.url,L.se
 const email='popups-'+Date.now()+'@shotlight.test',password='pw-'+crypto.randomUUID();
 const {data:u}=await admin.auth.admin.createUser({email,password,email_confirm:true});
 let fails=0;const ok=(c,m)=>{console.log((c?'  ok   ':'  FAIL ')+m);if(!c)fails++;};
-const b=await chromium.launch({args:['--use-angle=metal']}),p=await b.newPage({viewport:{width:1280,height:800}});
+const b=await chromium.launch({args:['--use-angle=metal']}),p=await b.newPage({locale:'tr-TR',viewport:{width:1280,height:800}});
 const errors=[];p.on('pageerror',e=>errors.push(e.message));
 // what is on top in the middle of the window
 const top=()=>p.evaluate(()=>{const e=document.elementFromPoint(innerWidth/2,innerHeight/2);return e?(e.closest('.store-dlg')?'store':e.closest('.wl-modal')?'welcome':e.closest('#home')?'home':'other'):'none';});

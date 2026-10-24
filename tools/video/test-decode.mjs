@@ -96,7 +96,7 @@ try{
   for(const ext of ['mp4','webm']){
     const src=source(ext),mime=ext==='mp4'?'video/mp4':'video/webm';  // the ffmpeg encodes drop '-pix_fmt': the filter chain ends in yuv420p
     console.log('\n'+ext.toUpperCase()+' ('+src+')');
-    const page=await browser.newPage({viewport:{width:1400,height:900}});
+    const page=await browser.newPage({locale:'tr-TR',viewport:{width:1400,height:900}});
     const errs=[],warns=[];
     page.on('pageerror',e=>errs.push(String(e)));
     page.on('console',m=>{const s=m.text();if(m.type()==='error')errs.push(s);else if(/WebCodecs ile çözülemedi/.test(s))warns.push(s);});

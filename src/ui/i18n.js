@@ -5,6 +5,7 @@ import {renderItems} from './layout.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {toast} from './toast.js';
 import {offer,renderExport} from '../export/export.js';
+import {t as tx} from '../lang.js';
 import {$} from '../util.js';
 
 /* Languages of a document (mağaza görselleri, sosyal: one set of artboards, many languages). doc.langs lists them
@@ -65,9 +66,9 @@ function downloadCsv(){
   offer('ceviriler.csv',new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}));
 }
 async function importCsv(file){
-  const rows=parseCsv((await file.text()).replace(/^\uFEFF/,''));if(rows.length<2){toast('Tabloda satır yok.');return;}
+  const rows=parseCsv((await file.text()).replace(/^\uFEFF/,''));if(rows.length<2){toast(tx('Tabloda satır yok.'));return;}
   const head=rows[0].map(h=>h.trim()),ki=head.indexOf('anahtar');
-  if(ki<0){toast('Tabloda "anahtar" sütunu yok: önce çeviri tablosunu indir, onu doldur.');return;}
+  if(ki<0){toast(tx('Tabloda "anahtar" sütunu yok: önce çeviri tablosunu indir, onu doldur.'));return;}
   // language columns: the document's, plus any known code in the header (a new language comes in with the table)
   const cols=head.map((h,i)=>[h,i]).filter(([h])=>LANGS.some(l=>l[0]===h)||doc.langs.includes(h));
   cols.forEach(([h])=>addLang(h));
@@ -77,7 +78,7 @@ async function importCsv(file){
     cols.forEach(([h,i])=>{const v=r[i];if(v==null||v==='')return;if(h===doc.lang)x.it.text=v;else x.it.loc[h]=v;});n++;}
   doc.boards.forEach(b=>{if(b.id!==doc.active)b.thumb=null;});
   renderItems();syncAll();fillThumbs();sync();
-  toast(n+' metin güncellendi'+(cols.length?' · '+cols.map(([h])=>h).join(', '):''));
+  toast(tx('{n} metin güncellendi',{n})+(cols.length?' · '+cols.map(([h])=>h).join(', '):''));
 }
 
 /* ---------- export: every board in every language, a folder per language */
@@ -85,7 +86,7 @@ const slug=s=>String(s).toLowerCase().replace(/[çğıöşü]/g,c=>({ç:'c',ğ:'
 async function exportAllLangs(){
   if(doc.langs.length<2)return;
   const back=doc.active,lang0=doc.lang,total=doc.langs.length*doc.boards.length,ext=state.format==='jpg'?'jpg':'png';
-  const bz=busy('Diller hazırlanıyor');let k=0;
+  const bz=busy(tx('Diller hazırlanıyor'));let k=0;
   try{
     const JSZip=(await import('jszip')).default,zip=new JSZip();
     for(const l of doc.langs){
@@ -95,8 +96,8 @@ async function exportAllLangs(){
         zip.file(l+'/'+n+'.'+ext,await renderExport(bz.progress));}
     }
     offer('diller.zip',await zip.generateAsync({type:'blob'}));
-    toast(doc.langs.length+' dil × '+doc.boards.length+' artboard indirildi');
-  }catch(e){toast(isCancel(e)?'Dışa aktarım durduruldu':'Dışa aktarım tamamlanamadı: '+(e.message||e));}
+    toast(tx('{l} dil × {n} artboard indirildi',{l:doc.langs.length,n:doc.boards.length}));
+  }catch(e){toast(isCancel(e)?tx('Dışa aktarım durduruldu'):tx('Dışa aktarım tamamlanamadı: {m}',{m:e.message||e}));}
   finally{bz.close();activate(back);setLang(lang0);}
 }
 
@@ -104,8 +105,8 @@ async function exportAllLangs(){
 function sync(){
   const on=doc.langs.length>0,sel=$('#langSel');
   $('#langRow').hidden=!on;$('#exportLangs').hidden=doc.langs.length<2;
-  $('#langEdit').textContent=on?'Diller ve çeviriler…':'Çok dilli yap…';
-  if(on){sel.innerHTML='';doc.langs.forEach(c=>sel.appendChild(new Option(nameOf(c)+(c===doc.langs[0]?' (ana dil)':''),c)));sel.value=doc.lang;}
+  $('#langEdit').textContent=tx(on?'Diller ve çeviriler…':'Çok dilli yap…');
+  if(on){sel.innerHTML='';doc.langs.forEach(c=>sel.appendChild(new Option(nameOf(c)+(c===doc.langs[0]?' '+tx('(ana dil)'):''),c)));sel.value=doc.lang;}
   // the selected text item: a field per other language
   const box=$('#textLoc'),it=selItem();
   box.hidden=!(on&&it&&it.kind==='text');
@@ -113,8 +114,8 @@ function sync(){
     box.innerHTML='';
     doc.langs.filter(c=>c!==doc.lang).forEach(c=>{
       const l=document.createElement('label');l.className='loc';l.innerHTML='<span></span><textarea rows="1" spellcheck="false"></textarea>';
-      l.firstChild.textContent=c;l.title=nameOf(c);const ta=l.lastChild;ta.setAttribute('aria-label','Metin, '+nameOf(c));ta.value=(it.loc&&it.loc[c])||'';
-      ta.placeholder=c===doc.langs[0]?'':'çevrilmedi: ana dil görünür';
+      l.firstChild.textContent=c;l.title=nameOf(c);const ta=l.lastChild;ta.setAttribute('aria-label',tx('Metin')+', '+nameOf(c));ta.value=(it.loc&&it.loc[c])||'';
+      ta.placeholder=c===doc.langs[0]?'':tx('çevrilmedi: ana dil görünür');
       ta.addEventListener('input',()=>{it.loc=it.loc||{};it.loc[c]=ta.value;});
       box.appendChild(l);});
   }
@@ -127,14 +128,14 @@ $('#langEdit').addEventListener('click',openDialog);
 function openDialog(){
   storeActive();
   const sc=document.createElement('div');sc.className='scrim';
-  sc.innerHTML='<div class="dialog lang-dlg" role="dialog" aria-modal="true" aria-labelledby="lgT"><div class="dh"><span id="lgT">Diller ve çeviriler</span>'+
-    '<button class="ib sm" type="button" data-a="close" aria-label="Kapat"><span>✕</span></button></div><div class="db">'+
-    '<p class="hint-sm">Her metin öğesi seçilen dillerde ayrı içerik taşır. Dili Dışa aktar menüsünden değiştir; tuvalde düzenlediğin metin o dile yazılır. On dili birden doldurmak için çeviri tablosunu indir, doldur, geri yükle.</p>'+
-    '<div class="row" id="lgBaseRow"><label class="lbl" for="lgBase">Ana dil</label><select id="lgBase"></select></div>'+
-    '<div class="lang-grid" id="lgList" role="group" aria-label="Diller"></div>'+
-    '<div class="row"><button class="btn" type="button" data-a="csv">Çeviri tablosunu indir (CSV)</button><button class="btn" type="button" data-a="import">Tabloyu yükle…</button></div>'+
+  sc.innerHTML='<div class="dialog lang-dlg" role="dialog" aria-modal="true" aria-labelledby="lgT"><div class="dh"><span id="lgT">'+tx('Diller ve çeviriler')+'</span>'+
+    '<button class="ib sm" type="button" data-a="close" aria-label="'+tx('Kapat')+'"><span>✕</span></button></div><div class="db">'+
+    '<p class="hint-sm">'+tx('Her metin öğesi seçilen dillerde ayrı içerik taşır. Dili Dışa aktar menüsünden değiştir; tuvalde düzenlediğin metin o dile yazılır. On dili birden doldurmak için çeviri tablosunu indir, doldur, geri yükle.')+'</p>'+
+    '<div class="row" id="lgBaseRow"><label class="lbl" for="lgBase">'+tx('Ana dil')+'</label><select id="lgBase"></select></div>'+
+    '<div class="lang-grid" id="lgList" role="group" aria-label="'+tx('Diller')+'"></div>'+
+    '<div class="row"><button class="btn" type="button" data-a="csv">'+tx('Çeviri tablosunu indir (CSV)')+'</button><button class="btn" type="button" data-a="import">'+tx('Tabloyu yükle…')+'</button></div>'+
     '<input type="file" accept=".csv,text/csv" hidden id="lgFile">'+
-    '<div class="dfoot"><button class="btn primary" type="button" data-a="close">Tamam</button></div></div></div>';
+    '<div class="dfoot"><button class="btn primary" type="button" data-a="close">'+tx('Tamam')+'</button></div></div></div>';
   document.body.appendChild(sc);
   const q=s=>sc.querySelector(s);
   const draw=()=>{
@@ -143,7 +144,7 @@ function openDialog(){
     const list=q('#lgList');list.innerHTML='';
     LANGS.forEach(([c,n])=>{const l=document.createElement('label');l.className='lang';
       l.innerHTML='<input type="checkbox"><span></span>';const cb=l.firstChild;cb.checked=doc.langs.includes(c);cb.disabled=c===base;
-      l.lastChild.textContent=n+(c===base?' (ana)':'');
+      l.lastChild.textContent=n+(c===base?' '+tx('(ana)'):'');
       cb.addEventListener('change',()=>{
         if(cb.checked){if(!doc.langs.length)addLang(q('#lgBase').value);addLang(c);}else removeLang(c);
         draw();sync();});

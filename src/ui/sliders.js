@@ -3,6 +3,7 @@ import {renderer} from '../render/renderer.js';
 import {applyTransform} from '../render/transform.js';
 import {SCALE_MAX,SCALE_MIN,ZOOM_MAX,ZOOM_MIN} from '../state/constants.js';
 import {sel,state,view} from '../state/state.js';
+import {t} from '../lang.js';
 import {$} from '../util.js';
 
 /* ---------- value fields (formerly range sliders) ----------
@@ -24,7 +25,7 @@ function makeSlider(parent,def,getObj){
   const el=document.createElement('div');el.className='nf sl';const id='s-'+def.id;el.dataset.w=String(def.w||2);
   el.innerHTML='<label class="nfk" for="'+id+'"></label><input type="text" id="'+id+'" inputmode="decimal" spellcheck="false" autocomplete="off">';
   const lab=el.firstChild,input=el.lastChild;lab.textContent=def.s||def.l;
-  lab.title=def.l+(def.note?': '+def.note:'')+' · sürükle, çift tıkla: varsayılan';input.setAttribute('aria-label',def.l);
+  lab.title=def.l+(def.note?': '+def.note:'')+' · '+t('sürükle, çift tıkla: varsayılan');input.setAttribute('aria-label',def.l);
   if(def.only)el.dataset.only=def.only;
   if(def.notmod)el.dataset.notmod=def.notmod;
   const set=v=>{const o=getObj();if(!o||!Number.isFinite(v))return;const [a,b]=bounds(def,o[def.k]);
@@ -55,27 +56,27 @@ function makeSlider(parent,def,getObj){
 function syncOne(s){if(!s)return;const o=s.getObj();if(!o||o[s.def.k]===undefined||document.activeElement===s.input)return;s.input.value=s.def.f(o[s.def.k]);}
 const G=()=>state.scene;
 [
-  {id:'g-ry',k:'ry',l:'Dönüş',min:-180,max:180,step:1,reset:0,f:fDeg},
-  {id:'g-rx',k:'rx',l:'Eğim',min:-90,max:90,step:1,reset:0,f:fDeg},
-  {id:'g-rz',k:'rz',l:'Yatış',min:-180,max:180,step:1,reset:0,f:fDeg},
-  {id:'g-zoom',k:'zoom',l:'Yakınlık',min:ZOOM_MIN,max:ZOOM_MAX,step:.01,reset:1,f:fX,log:true},
-  {id:'g-panX',k:'panX',l:'Yatay kayma',s:'Yatay',min:-.6,max:.6,step:.01,reset:0,f:fPct},
-  {id:'g-panY',k:'panY',l:'Dikey kayma',s:'Dikey',min:-.6,max:.6,step:.01,reset:0,f:fPct}
+  {id:'g-ry',k:'ry',l:t('Dönüş'),min:-180,max:180,step:1,reset:0,f:fDeg},
+  {id:'g-rx',k:'rx',l:t('Eğim'),min:-90,max:90,step:1,reset:0,f:fDeg},
+  {id:'g-rz',k:'rz',l:t('Yatış'),min:-180,max:180,step:1,reset:0,f:fDeg},
+  {id:'g-zoom',k:'zoom',l:t('Yakınlık'),min:ZOOM_MIN,max:ZOOM_MAX,step:.01,reset:1,f:fX,log:true},
+  {id:'g-panX',k:'panX',l:t('Yatay kayma'),s:t('Yatay'),min:-.6,max:.6,step:.01,reset:0,f:fPct},
+  {id:'g-panY',k:'panY',l:t('Dikey kayma'),s:t('Dikey'),min:-.6,max:.6,step:.01,reset:0,f:fPct}
 ].forEach(d=>makeSlider(d.k==='panX'||d.k==='panY'?$('#panSliders'):$('#angleSliders'),d,G));  // the shift lives under "Kayma"
 [
-  {id:'d-px',k:'px',l:'Yatay',s:'X',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
-  {id:'d-py',k:'py',l:'Dikey',s:'Y',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
-  {id:'d-pz',k:'pz',l:'Derinlik',s:'Z',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
-  {id:'d-ry',k:'ry',l:'Dönüş',min:-180,max:180,step:1,reset:0,f:fDeg},
-  {id:'d-rx',k:'rx',l:'Eğim',min:-90,max:90,step:1,reset:0,f:fDeg},
-  {id:'d-rz',k:'rz',l:'Yatış',min:-180,max:180,step:1,reset:0,f:fDeg},
-  {id:'d-scale',k:'scale',l:'Ölçek',min:SCALE_MIN,max:SCALE_MAX,step:.01,reset:1,f:fX,log:true}
+  {id:'d-px',k:'px',l:t('Yatay'),s:'X',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
+  {id:'d-py',k:'py',l:t('Dikey'),s:'Y',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
+  {id:'d-pz',k:'pz',l:t('Derinlik'),s:'Z',w:3,min:-60,max:60,step:.1,reset:0,f:fU,span:POS_SPAN},
+  {id:'d-ry',k:'ry',l:t('Dönüş'),min:-180,max:180,step:1,reset:0,f:fDeg},
+  {id:'d-rx',k:'rx',l:t('Eğim'),min:-90,max:90,step:1,reset:0,f:fDeg},
+  {id:'d-rz',k:'rz',l:t('Yatış'),min:-180,max:180,step:1,reset:0,f:fDeg},
+  {id:'d-scale',k:'scale',l:t('Ölçek'),min:SCALE_MIN,max:SCALE_MAX,step:.01,reset:1,f:fX,log:true}
 ].forEach(d=>makeSlider($('#devSliders'),d,sel));
-makeSlider($('#lidSlot'),{id:'d-lid',k:'lidAngle',l:'Kapak açısı',s:'Kapak',min:70,max:170,step:1,reset:112,f:fDeg},sel);
-makeSlider($('#shadowSlot'),{id:'g-shadow',k:'shadowOpacity',l:'Yoğunluk',min:.05,max:1,step:.01,reset:.55,f:fPct},()=>state);
-makeSlider($('#wallSlot'),{id:'g-wall',k:'wallGap',l:'Duvar mesafesi',s:'Duvar',min:0,max:1.5,step:.01,reset:.35,f:fPct},()=>state);
-makeSlider($('#ambientSlot'),{id:'g-exp',k:'exposure',l:'Pozlama',min:.4,max:2.2,step:.01,reset:1,f:v=>v.toFixed(2),after:()=>{renderer.toneMappingExposure=state.exposure;}},()=>state);
-makeSlider($('#ambientSlot'),{id:'g-amb',k:'ambient',l:'Ortam ışığı',s:'Ortam',min:0,max:2,step:.01,reset:1,f:fPct,note:'Işıkların dışında kalan genel aydınlık. Azaldıkça gölgeler koyulaşır.',after:applyAmbient},()=>state);
+makeSlider($('#lidSlot'),{id:'d-lid',k:'lidAngle',l:t('Kapak açısı'),s:t('Kapak'),min:70,max:170,step:1,reset:112,f:fDeg},sel);
+makeSlider($('#shadowSlot'),{id:'g-shadow',k:'shadowOpacity',l:t('Yoğunluk'),min:.05,max:1,step:.01,reset:.55,f:fPct},()=>state);
+makeSlider($('#wallSlot'),{id:'g-wall',k:'wallGap',l:t('Duvar mesafesi'),s:t('Duvar'),min:0,max:1.5,step:.01,reset:.35,f:fPct},()=>state);
+makeSlider($('#ambientSlot'),{id:'g-exp',k:'exposure',l:t('Pozlama'),min:.4,max:2.2,step:.01,reset:1,f:v=>v.toFixed(2),after:()=>{renderer.toneMappingExposure=state.exposure;}},()=>state);
+makeSlider($('#ambientSlot'),{id:'g-amb',k:'ambient',l:t('Ortam ışığı'),s:t('Ortam'),min:0,max:2,step:.01,reset:1,f:fPct,note:t('Işıkların dışında kalan genel aydınlık. Azaldıkça gölgeler koyulaşır.'),after:applyAmbient},()=>state);
 function syncSliders(){SLIDERS.forEach(syncOne);}
 
 export {fDeg,fPct,fX,makeSlider,syncSliders};

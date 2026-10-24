@@ -2,6 +2,7 @@ import {tex} from './materials.js';
 import {RT} from './rt.js';
 import {MAX_TEX,req} from '../render/renderer.js';
 import {THEMES} from '../state/constants.js';
+import {t as tx} from '../lang.js';
 import {mkCanvas,roundRect} from '../util.js';
 
 function updateChrome(d){
@@ -25,9 +26,9 @@ function drawPlaceholder(g,x,y,w,h){
   g.fillStyle=gr;g.fillRect(x,y,w,h);
   const s=Math.min(w,h);g.textAlign='center';g.textBaseline='middle';
   g.fillStyle='rgba(255,255,255,.94)';g.font='600 '+(s*.068)+'px "Instrument Sans", system-ui, sans-serif';
-  g.fillText('Ekran görüntünü ekle',x+w/2,y+h/2-s*.04);
+  g.fillText(tx('Ekran görüntünü ekle'),x+w/2,y+h/2-s*.04);
   g.fillStyle='rgba(255,255,255,.72)';g.font='400 '+(s*.042)+'px "Instrument Sans", system-ui, sans-serif';
-  g.fillText('Görsel seç ya da sürükle bırak',x+w/2,y+h/2+s*.05);
+  g.fillText(tx('Görsel seç ya da sürükle bırak'),x+w/2,y+h/2+s*.05);
 }
 // pixel size of a screen source: an image, a video element or a decoded video frame (displayWidth: after rotation)
 const mediaSize=m=>[m.displayWidth||m.videoWidth||m.naturalWidth||m.width||1,m.displayHeight||m.videoHeight||m.naturalHeight||m.height||1];
@@ -82,8 +83,8 @@ function customCanvas(d){
     g.fillStyle='rgba(120,128,140,.16)';roundRect(g,10,10,880,1580,90);g.fill();
     g.setLineDash([24,16]);g.lineWidth=6;g.strokeStyle='rgba(120,128,140,.75)';g.stroke();
     g.fillStyle='#6b7380';g.textAlign='center';g.textBaseline='middle';
-    g.font='600 58px "Instrument Sans", system-ui, sans-serif';g.fillText('Çerçeve PNG\u2019si yükle',450,760);
-    g.font='400 36px "Instrument Sans", system-ui, sans-serif';g.fillText('Ekran alanı şeffaf olmalı',450,840);
+    g.font='600 58px "Instrument Sans", system-ui, sans-serif';g.fillText(tx('Çerçeve PNG\u2019si yükle'),450,760);
+    g.font='400 36px "Instrument Sans", system-ui, sans-serif';g.fillText(tx('Ekran alanı şeffaf olmalı'),450,840);
     return c;
   }
   const iw=fi.naturalWidth,ih=fi.naturalHeight,s=Math.min(1,CUSTOM_MAX/Math.max(iw,ih)),cw=Math.round(iw*s),ch=Math.round(ih*s);

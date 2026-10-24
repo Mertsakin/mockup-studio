@@ -89,7 +89,7 @@ try{
   for(const t of TEMPLATES.filter(x=>!only.length||only.includes(x.id))){
     const entry={id:t.id,name:t.n,goal:t.goal,goalName:GOALS[t.goal],desc:t.d,ratio:t.set?'9:19.5':null,boards:t.set||1,motion:t.goal==='video',variants:{}};
     for(const v of VARIANTS){
-      const page=await browser.newPage({viewport:{width:1400,height:900}});
+      const page=await browser.newPage({locale:'tr-TR',viewport:{width:1400,height:900}});
       await page.addInitScript(()=>{window.__noPhotoPreview=true;});
       page.on('pageerror',e=>{failed=true;console.error(t.id,v,'page error:',e.message);});
       page.on('console',m=>{if(m.type()==='error'){failed=true;console.error(t.id,v,'console error:',m.text());}});

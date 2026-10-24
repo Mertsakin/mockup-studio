@@ -5,6 +5,7 @@ import {fixHeight,fixWidth,keepPlace,nodeOf,setCenter} from './frames.js';
 import {renderItems} from './layout.js';
 import {numField} from './numfield.js';
 import {onSyncUI,syncAll} from './sync.js';
+import {t as tx} from '../lang.js';
 import {$,$$} from '../util.js';
 
 /* The item inspector's Figma part: position (X, Y: top-left in the parent's space, board px), size (W, H with Sabit /
@@ -35,8 +36,8 @@ const pos=axis=>({get:()=>{const n=node();return n?round(axis==='x'?n.x:n.y):nul
     if(!pn){i.x=+(lx/W).toFixed(5);i.y=+(ly/H).toFixed(5);}else{i.x=+(lx/pn.w).toFixed(5);i.y=+(ly/pn.h).toFixed(5);}
     after();},
   disabled:()=>{const i=selItem();return !!i&&inFlow(state.items,i);}});
-add(geo,Object.assign({id:'nf-x',label:'X',title:'X (px, üst sol köşe)'},pos('x')));
-add(geo,Object.assign({id:'nf-y',label:'Y',title:'Y (px, üst sol köşe)'},pos('y')));
+add(geo,Object.assign({id:'nf-x',label:'X',title:tx('X (px, üst sol köşe)')},pos('x')));
+add(geo,Object.assign({id:'nf-y',label:'Y',title:tx('Y (px, üst sol köşe)')},pos('y')));
 
 // W / H: a number is a fixed size; "50%" a share of the parent; "fill" / "doldur", "hug" / "sar" the modes
 const KEY={fill:'fill',doldur:'fill',hug:'hug',sar:'hug',auto:'hug',otomatik:'hug'};
@@ -56,22 +57,22 @@ function applyMode(axis,m){
   else if(m==='pct'){i[axis==='w'?'wMode':'hMode']='pct';i[axis==='w'?'wPct':'hPct']=+((axis==='w'?n.w/inner.w:n.h/inner.h)).toFixed(4);}
   else{if(m==='hug'&&isImage(i))return;i[axis==='w'?'wMode':'hMode']=m;if(m==='hug'&&i.kind==='text'&&axis==='w')i.wrap=0;}
 }
-const MODES={fixed:'Sabit',hug:'Sar',fill:'Doldur',pct:'%'};
+const MODES={fixed:'Sabit@size',hug:'Sar',fill:'Doldur',pct:'%'};  // dictionary keys (t strips the context)
 function sizeField(axis){
   const wrap=document.createElement('div');wrap.className='nfsize';geo.appendChild(wrap);
-  const f=add(wrap,{id:'nf-'+axis,label:axis.toUpperCase(),title:(axis==='w'?'Genişlik':'Yükseklik')+' (px, % ya da fill / hug)',
+  const f=add(wrap,{id:'nf-'+axis,label:axis.toUpperCase(),title:tx(axis==='w'?'Genişlik':'Yükseklik')+' '+tx('(px, % ya da fill / hug)'),
     get:()=>{const n=node();return n?round(axis==='w'?n.w:n.h):null;},set:v=>setSize(axis,v),
     // text and images get their height from their content
     disabled:()=>{const i=selItem();return axis==='h'&&!!i&&!isFrame(i);}});
-  const sel=document.createElement('select');sel.className='nfmode';sel.setAttribute('aria-label',(axis==='w'?'Genişlik':'Yükseklik')+' modu');
-  Object.entries(MODES).forEach(([k,n])=>sel.appendChild(new Option(n,k)));wrap.appendChild(sel);
+  const sel=document.createElement('select');sel.className='nfmode';sel.setAttribute('aria-label',tx(axis==='w'?'Genişlik':'Yükseklik')+' '+tx('modu'));
+  Object.entries(MODES).forEach(([k,n])=>sel.appendChild(new Option(tx(n),k)));wrap.appendChild(sel);
   sel.addEventListener('change',()=>setMode(axis,sel.value));
   return {f,sel};
 }
 const W_=sizeField('w'),H_=sizeField('h');
-add(geo,{id:'nf-r',label:'R',title:'Döndürme (°)',suffix:'°',get:()=>{const i=selItem();return i?round(i.rot||0):null;},
+add(geo,{id:'nf-r',label:'R',title:tx('Döndürme (°)'),suffix:'°',get:()=>{const i=selItem();return i?round(i.rot||0):null;},
   set:v=>{const i=selItem();if(i&&typeof v==='number'){i.rot=+(((v+180)%360+360)%360-180).toFixed(1);after();}}});
-add(geo,{id:'nf-op',label:'Opaklık',title:'Opaklık (%)',suffix:'%',min:0,max:100,
+add(geo,{id:'nf-op',label:tx('Opaklık'),title:tx('Opaklık (%)'),suffix:'%',min:0,max:100,
   get:()=>{const i=selItem();return i?Math.round((i.opacity??1)*100):null;},set:v=>{const i=selItem();if(i&&typeof v==='number'){i.opacity=v/100;after();}}});
 $$('#itemAbs button').forEach(b=>b.addEventListener('click',()=>{
   const i=selItem();if(!i)return;const n=nodeOf(i);
@@ -93,12 +94,12 @@ $$('#alDir button').forEach(b=>b.addEventListener('click',()=>{
 // 3 x 3 alignment: columns are horizontal, rows vertical, whatever the direction (like Figma)
 const grid=$('#alGrid'),POS=['start','center','end'];
 for(let r=0;r<3;r++)for(let c=0;c<3;c++){const b=document.createElement('button');b.type='button';b.dataset.r=r;b.dataset.c=c;
-  b.setAttribute('aria-label',['Üst','Orta','Alt'][r]+' '+['sol','orta','sağ'][c]);b.innerHTML='<i></i>';grid.appendChild(b);
+  b.setAttribute('aria-label',tx(['Üst','Orta','Alt'][r])+' '+tx(['sol','orta','sağ'][c]));b.innerHTML='<i></i>';grid.appendChild(b);
   b.addEventListener('click',()=>{const l=L();if(!l)return;const row=l.dir==='row',main=POS[row?c:r],cross=POS[row?r:c];
     setL({justify:l.justify==='between'?'between':main,align:l.align==='stretch'?'stretch':cross,_main:main,_cross:cross});});}
 const lenField=(parent,id,label,title,get,set)=>add(parent,{id,label,title,min:0,get:()=>{const l=L();return l?round(get(l)*BW()):null;},
   set:v=>{if(typeof v==='number'){const l=L();if(l)set(l,Math.max(0,v)/BW());}}});
-lenField($('#alGap'),'nf-gap','Aralık','Öğeler arası boşluk (px)',l=>l.gap||0,(l,v)=>setL({gap:+v.toFixed(5)})).el.classList.add('wide');
+lenField($('#alGap'),'nf-gap',tx('Aralık'),tx('Öğeler arası boşluk (px)'),l=>l.gap||0,(l,v)=>setL({gap:+v.toFixed(5)})).el.classList.add('wide');
 $('#alBetween').addEventListener('change',e=>{const l=L();if(!l)return;setL({justify:e.target.checked?'between':(l._main||'start')});});
 $('#alStretch').addEventListener('change',e=>{const l=L();if(!l)return;setL({align:e.target.checked?'stretch':(l._cross||'start')});});
 // padding: horizontal and vertical, or each side
@@ -108,14 +109,14 @@ const PADS=[
   {id:'nf-ph',label:'Yatay',title:'Yatay iç boşluk (px)',ks:[1,3],both:true},{id:'nf-pv',label:'Dikey',title:'Dikey iç boşluk (px)',ks:[0,2],both:true},
   {id:'nf-pt',label:'Üst',title:'Üst iç boşluk (px)',ks:[0]},{id:'nf-pr',label:'Sağ',title:'Sağ iç boşluk (px)',ks:[1]},
   {id:'nf-pb',label:'Alt',title:'Alt iç boşluk (px)',ks:[2]},{id:'nf-pl',label:'Sol',title:'Sol iç boşluk (px)',ks:[3]}];
-const padFields=PADS.map(d=>({d,f:lenField(padBox,d.id,d.label,d.title,l=>pad(l,d.ks[0]),(l,v)=>setPad(d.ks,v))}));
+const padFields=PADS.map(d=>({d,f:lenField(padBox,d.id,tx(d.label),tx(d.title),l=>pad(l,d.ks[0]),(l,v)=>setPad(d.ks,v))}));
 let padEach=false;
 $('#alPadEach').addEventListener('change',e=>{padEach=e.target.checked;syncAll();});
 
 /* ---------- frame look */
 $('#frFillOn').addEventListener('change',e=>{const i=selItem();if(isFrame(i)){i.fillOn=e.target.checked;if(!i.fill)i.fill='#ffffff';after();}});
 $('#frFill').addEventListener('input',e=>{const i=selItem();if(isFrame(i)){i.fill=e.target.value;i.fillOn=true;renderItems();}});
-add($('#frGrid'),{id:'nf-rad',label:'Köşe',title:'Köşe yarıçapı (px)',min:0,get:()=>{const i=selItem();return isFrame(i)?round((i.radius||0)*BW()):null;},
+add($('#frGrid'),{id:'nf-rad',label:tx('Köşe'),title:tx('Köşe yarıçapı (px)'),min:0,get:()=>{const i=selItem();return isFrame(i)?round((i.radius||0)*BW()):null;},
   set:v=>{const i=selItem();if(isFrame(i)&&typeof v==='number'){i.radius=+(Math.max(0,v)/BW()).toFixed(5);after();}}}).el.classList.add('wide');
 $('#frClip').addEventListener('change',e=>{const i=selItem();if(isFrame(i)){i.clip=e.target.checked;after();}});
 

@@ -3,6 +3,7 @@
    Light on purpose: the sign-in page loads it without the editor. */
 import {PROVIDERS,signInEmail,signInWith} from '../io/cloud.js';
 import {icon} from './icons.js';
+import {t} from '../lang.js';
 import {toast} from './toast.js';
 
 // the providers' own marks, as their sign-in guidelines ask (Google in colour, GitHub and Apple in the text colour)
@@ -16,15 +17,15 @@ const NAME={google:'Google',github:'GitHub',apple:'Apple'};
    is sent. Shared by the gate and the dialog. */
 function signInForm(root){
   root.innerHTML='<div class="si-form">'+
-      '<div class="si-prov">'+PROVIDERS.filter(p=>MARK[p]).map(p=>'<button class="btn si-btn" type="button" data-p="'+p+'">'+MARK[p]+'<span>'+NAME[p]+' ile devam et</span></button>').join('')+'</div>'+
-      (PROVIDERS.some(p=>MARK[p])?'<div class="si-or"><span>ya da</span></div>':'')+
-      '<form class="si-mail" novalidate><label class="lbl" for="siEmail">E-posta</label>'+
-        '<input type="email" id="siEmail" autocomplete="email" inputmode="email" placeholder="ad@ornek.com" required aria-describedby="siErr">'+
+      '<div class="si-prov">'+PROVIDERS.filter(p=>MARK[p]).map(p=>'<button class="btn si-btn" type="button" data-p="'+p+'">'+MARK[p]+'<span>'+t('{p} ile devam et',{p:NAME[p]})+'</span></button>').join('')+'</div>'+
+      (PROVIDERS.some(p=>MARK[p])?'<div class="si-or"><span>'+t('ya da')+'</span></div>':'')+
+      '<form class="si-mail" novalidate><label class="lbl" for="siEmail">'+t('E-posta')+'</label>'+
+        '<input type="email" id="siEmail" autocomplete="email" inputmode="email" placeholder="'+t('ad@ornek.com')+'" required aria-describedby="siErr">'+
         '<p class="si-err" id="siErr" role="alert" hidden></p>'+
-        '<button class="btn primary" type="submit">'+icon('letter')+'<span>Giriş bağlantısı gönder</span></button></form>'+
+        '<button class="btn primary" type="submit">'+icon('letter')+'<span>'+t('Giriş bağlantısı gönder')+'</span></button></form>'+
     '</div>'+
-    '<div class="si-sent-wrap" hidden><div class="si-sent">'+icon('letter')+'<b>E-postanı kontrol et</b><p></p></div>'+
-      '<div class="dfoot"><button class="btn" type="button" data-a="back">Başka adres</button></div></div>';
+    '<div class="si-sent-wrap" hidden><div class="si-sent">'+icon('letter')+'<b>'+t('E-postanı kontrol et')+'</b><p></p></div>'+
+      '<div class="dfoot"><button class="btn" type="button" data-a="back">'+t('Başka adres')+'</button></div></div>';
   const q=s=>root.querySelector(s),err=q('#siErr'),email=q('#siEmail');
   const showErr=m=>{err.textContent=m;err.hidden=!m;email.setAttribute('aria-invalid',String(!!m));};
   email.addEventListener('input',()=>showErr(''));
@@ -34,19 +35,19 @@ function signInForm(root){
     const p=e.target.closest('[data-p]');if(!p)return;
     p.disabled=true;
     try{await signInWith(p.dataset.p);}  // the page goes to the provider and comes back signed in
-    catch(er){p.disabled=false;toast(NAME[p.dataset.p]+' ile giriş açılamadı: '+er.message);}
+    catch(er){p.disabled=false;toast(t('{p} ile giriş açılamadı: {m}',{p:NAME[p.dataset.p],m:er.message}));}
   });
   q('.si-mail').addEventListener('submit',async e=>{
     e.preventDefault();
     const v=email.value.trim();
-    if(!v){showErr('E-posta adresini yaz.');email.focus();return;}
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){showErr('Bu bir e-posta adresine benzemiyor.');email.focus();return;}
+    if(!v){showErr(t('E-posta adresini yaz.'));email.focus();return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){showErr(t('Bu bir e-posta adresine benzemiyor.'));email.focus();return;}
     const b=e.submitter||q('.si-mail .btn');b.disabled=true;
     try{
       await signInEmail(v);
-      q('.si-sent p').textContent=v+' adresine bir giriş bağlantısı gönderdik. Bağlantıya bu tarayıcıda tıkla; birkaç dakika içinde gelmezse istenmeyen e-postalara bak.';
+      q('.si-sent p').textContent=t('{e} adresine bir giriş bağlantısı gönderdik. Bağlantıya bu tarayıcıda tıkla; birkaç dakika içinde gelmezse istenmeyen e-postalara bak.',{e:v});
       q('.si-form').hidden=true;q('.si-sent-wrap').hidden=false;q('[data-a="back"]').focus();
-    }catch(er){showErr(/rate|limit|seconds/i.test(er.message)?'Çok sık denendi; biraz bekleyip yeniden dene.':'Bağlantı gönderilemedi: '+er.message);}
+    }catch(er){showErr(/rate|limit|seconds/i.test(er.message)?t('Çok sık denendi; biraz bekleyip yeniden dene.'):t('Bağlantı gönderilemedi: {m}',{m:er.message}));}
     finally{b.disabled=false;}
   });
   return {focus:()=>(q('.si-btn')||email).focus()};

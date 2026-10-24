@@ -12,6 +12,7 @@ import {busy,isCancel} from './busy.js';
 import {historyReady,isDirty,markSaved,putDoc,resetDocument,takeDoc} from './history.js';
 import {go,parse,toLogin} from './router.js';
 import {toast} from './toast.js';
+import {LOCALE,fmt,t as tx} from '../lang.js';
 import {$} from '../util.js';
 
 const KEY='shotlight.cloud.project';
@@ -20,7 +21,7 @@ try{cur=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){cur=null;}
 function remember(p){cur=p?{id:p.id,version:p.version,name:p.name,user:auth.user&&auth.user.id}:null;
   try{if(cur)localStorage.setItem(KEY,JSON.stringify(cur));else localStorage.removeItem(KEY);}catch(e){/* no storage */}
   showName();}
-function showName(){const el=$('#projName');if(cur&&auth.user){el.title='Bulutta: '+cur.name;}}
+function showName(){const el=$('#projName');if(cur&&auth.user){el.title=tx('Bulutta: {n}',{n:cur.name});}}
 const mine=()=>cur&&auth.user&&cur.user===auth.user.id?cur:null;
 
 const saveBtn=$('#cloudSaveBtn'),openBtn=$('#cloudOpenBtn');
@@ -73,11 +74,11 @@ function dialog(title,body,buttons,{role='dialog',cls='',valid=null}={}){
 }
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 async function askName(title,def,okLabel){
-  const r=await dialog(title,'<label class="lbl block" for="pdName">Proje adı</label><input type="text" id="pdName" maxlength="120" spellcheck="false" style="width:100%" value="'+esc(def)+'" aria-describedby="pdErr"><p class="pd-err" id="pdErr" role="alert" hidden>Bir ad yaz.</p>',
-    [['no','Vazgeç'],['ok',okLabel,true]]);
+  const r=await dialog(title,'<label class="lbl block" for="pdName">'+tx('Proje adı')+'</label><input type="text" id="pdName" maxlength="120" spellcheck="false" style="width:100%" value="'+esc(def)+'" aria-describedby="pdErr"><p class="pd-err" id="pdErr" role="alert" hidden>'+tx('Bir ad yaz.')+'</p>',
+    [['no',tx('Vazgeç')],['ok',okLabel,true]]);
   return r&&r.v==='ok'?r.text:null;
 }
-const confirmBox=(title,text,okLabel)=>dialog(title,'<p class="pd-text"></p>'.replace('</p>',esc(text)+'</p>'),[['no','Vazgeç'],['ok',okLabel,true]],{role:'alertdialog'}).then(r=>!!r&&r.v==='ok');
+const confirmBox=(title,text,okLabel)=>dialog(title,'<p class="pd-text"></p>'.replace('</p>',esc(text)+'</p>'),[['no',tx('Vazgeç')],['ok',okLabel,true]],{role:'alertdialog'}).then(r=>!!r&&r.v==='ok');
 
 // the active board's thumbnail as a small WebP for the list
 async function thumbBlob(d){
@@ -87,39 +88,39 @@ async function thumbBlob(d){
   c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
   return new Promise(r=>c.toBlob(r,'image/webp',.82));
 }
-const mb=n=>(n/2**20).toFixed(n<10*2**20?1:0).replace('.',',')+' MB';
+const mb=n=>fmt(n/2**20,n<10*2**20?1:0)+' MB';
 const pad=n=>String(n).padStart(2,'0');
 
 // ---------- save
 let saving=false;
 async function saveToCloud({asNew=false}={}){
-  if(!auth.user){toast('Buluta kaydetmek için giriş yap.');return false;}
+  if(!auth.user){toast(tx('Buluta kaydetmek için giriş yap.'));return false;}
   if(saving)return false;
-  if(!doc.boards.length){toast('Kaydedilecek bir artboard yok.');return false;}
+  if(!doc.boards.length){toast(tx('Kaydedilecek bir artboard yok.'));return false;}
   let p=asNew?null:mine();
   if(!p){
-    const name=await askName(asNew?'Yeni proje olarak kaydet':'Buluta kaydet',$('#projName').textContent.replace(/^Mockup stüdyosu$|^Shotlight$|^Adsız proje$/,'')||'Adsız proje','Kaydet');
+    const name=await askName(tx(asNew?'Yeni proje olarak kaydet':'Buluta kaydet'),$('#projName').textContent.replace(/^Mockup stüdyosu$|^Shotlight$|^Adsız proje$|^Untitled project$/,'')||tx('Adsız proje'),tx('Kaydet'));
     if(!name)return false;
     try{p=await createProject(name);}catch(e){toast(e.message);return false;}
   }
   saving=true;
   try{
     storeActive();const d=takeDoc(),thumb=await thumbBlob(d);
-    toast('Buluta kaydediliyor…');
-    const v=await saveProject(p,d,thumb,(done,total)=>{if(total>2*2**20)toast('Yükleniyor: '+mb(done)+' / '+mb(total));});
+    toast(tx('Buluta kaydediliyor…'));
+    const v=await saveProject(p,d,thumb,(done,total)=>{if(total>2*2**20)toast(tx('Yükleniyor: {a} / {b}',{a:mb(done),b:mb(total)}));});
     remember(Object.assign({},p,{version:v}));markSaved(p.name);showName();
     {const r=parse();if(r.name==='edit'||(r.name==='project'&&r.id!==p.id))go({name:'project',id:p.id},{replace:true});}  // the open work is this project now: its address
-    toast(p.name+' buluta kaydedildi');return true;
+    toast(tx('{p} buluta kaydedildi',{p:p.name}));return true;
   }catch(e){
     if(e.conflict)return resolveConflict(p);
-    if(e.gone){remember(null);toast(e.message+' Yeni proje olarak kaydedebilirsin.');return false;}
-    toast(e.quota?'Depolama alanın doldu (2 GB). Eski projelerden birini sil.':'Kaydedilemedi: '+e.message);return false;
+    if(e.gone){remember(null);toast(e.message+' '+tx('Yeni proje olarak kaydedebilirsin.'));return false;}
+    toast(e.quota?tx('Depolama alanın doldu (2 GB). Eski projelerden birini sil.'):tx('Kaydedilemedi: {m}',{m:e.message}));return false;
   }finally{saving=false;}
 }
 // someone (another tab or device) saved this project after we opened it
 async function resolveConflict(p){
-  const r=await dialog('Proje başka bir yerde değişti','<p class="pd-text">'+esc(p.name)+' sen açtıktan sonra başka bir sekmede ya da cihazda kaydedildi. Ne yapalım?</p>',
-    [['copy','Kopya olarak kaydet'],['open','Bulutakini aç'],['mine','Benimkini kaydet',true]],{role:'alertdialog'});
+  const r=await dialog(tx('Proje başka bir yerde değişti'),'<p class="pd-text">'+esc(tx('{p} sen açtıktan sonra başka bir sekmede ya da cihazda kaydedildi. Ne yapalım?',{p:p.name}))+'</p>',
+    [['copy',tx('Kopya olarak kaydet')],['open',tx('Bulutakini aç')],['mine',tx('Benimkini kaydet'),true]],{role:'alertdialog'});
   if(!r)return false;
   if(r.v==='open')return openFromCloud(p.id,{force:true});
   if(r.v==='copy'){remember(null);return saveToCloud({asNew:true});}
@@ -130,46 +131,46 @@ async function resolveConflict(p){
 
 // ---------- open
 async function openFromCloud(id,{force=false}={}){
-  if(!force&&isDirty()&&!(await confirmBox('Projeyi aç','Açık çalışmada kaydedilmemiş değişiklikler var; açılacak proje onun yerini alır.','Yine de aç')))return false;
+  if(!force&&isDirty()&&!(await confirmBox(tx('Projeyi aç'),tx('Açık çalışmada kaydedilmemiş değişiklikler var; açılacak proje onun yerini alır.'),tx('Yine de aç'))))return false;
   try{
-    toast('Proje açılıyor…');
-    const {project,doc:d}=await openProject(id,(n,total)=>{if(total>3)toast('Proje açılıyor… '+n+' / '+total);});
+    toast(tx('Proje açılıyor…'));
+    const {project,doc:d}=await openProject(id,(n,total)=>{if(total>3)toast(tx('Proje açılıyor…')+' '+n+' / '+total);});
     putDoc(d,project.name);remember(project);
-    toast(project.name+' açıldı');return true;
-  }catch(e){toast('Proje açılamadı: '+e.message);return false;}
+    toast(tx('{p} açıldı',{p:project.name}));return true;
+  }catch(e){toast(tx('Proje açılamadı: {m}',{m:e.message}));return false;}
 }
 
 // ---------- actions on a project ({id, name}); each returns whether something changed
 const openId=()=>{const m=mine();return m?m.id:null;};
 async function renameAction(p){
-  const n=await askName('Yeniden adlandır',p.name,'Kaydet');if(!n||n===p.name)return false;
+  const n=await askName(tx('Yeniden adlandır'),p.name,tx('Kaydet'));if(!n||n===p.name)return false;
   await renameProject(p.id,n);
   if(openId()===p.id){remember(Object.assign({},cur,{name:n}));markSaved(n);}
-  toast('Proje yeniden adlandırıldı');return true;
+  toast(tx('Proje yeniden adlandırıldı'));return true;
 }
-async function duplicateAction(p){toast('Çoğaltılıyor…');await duplicateProject(p.id);toast(p.name+' çoğaltıldı');return true;}
+async function duplicateAction(p){toast(tx('Çoğaltılıyor…'));await duplicateProject(p.id);toast(tx('{p} çoğaltıldı',{p:p.name}));return true;}
 async function trashAction(p){
   // the open project goes with it: its work closes here too (it would stay as an "Açık çalışma" card otherwise)
   const open=openId()===p.id;
-  const text=p.name+' çöp kutusuna taşınacak; 30 gün içinde geri getirebilirsin.'+(open?' Açık olduğu için kapanacak'+(isDirty()?'; buluta kaydedilmemiş değişiklikler kaybolur.':'.'):'');
-  if(!(await confirmBox('Çöp kutusuna taşı',text,'Taşı')))return false;
+  const text=tx('{p} çöp kutusuna taşınacak; 30 gün içinde geri getirebilirsin.',{p:p.name})+(open?' '+tx(isDirty()?'Açık olduğu için kapanacak; buluta kaydedilmemiş değişiklikler kaybolur.':'Açık olduğu için kapanacak.'):'');
+  if(!(await confirmBox(tx('Çöp kutusuna taşı'),text,tx('Taşı'))))return false;
   await trashProject(p.id);
   if(open){await resetDocument();remember(null);}
-  toast(p.name+' çöp kutusuna taşındı');return true;
+  toast(tx('{p} çöp kutusuna taşındı',{p:p.name}));return true;
 }
 // the open work that is not a cloud project (the home page's "Açık çalışma" card): gone for good after asking
 async function discardAction(){
-  if(!(await confirmBox('Açık çalışmayı sil','Bu çalışma buluta kaydedilmedi; silinince geri getirilemez.','Sil')))return false;
-  await resetDocument();remember(null);toast('Açık çalışma silindi');return true;
+  if(!(await confirmBox(tx('Açık çalışmayı sil'),tx('Bu çalışma buluta kaydedilmedi; silinince geri getirilemez.'),tx('Sil'))))return false;
+  await resetDocument();remember(null);toast(tx('Açık çalışma silindi'));return true;
 }
-async function restoreAction(p){await restoreProject(p.id);toast(p.name+' geri getirildi');return true;}
+async function restoreAction(p){await restoreProject(p.id);toast(tx('{p} geri getirildi',{p:p.name}));return true;}
 async function destroyAction(p){
-  if(!(await confirmBox('Kalıcı olarak sil',p.name+' kalıcı olarak silinecek. Bu geri alınamaz.','Kalıcı olarak sil')))return false;
-  await destroyProject(p.id);toast(p.name+' kalıcı olarak silindi');return true;
+  if(!(await confirmBox(tx('Kalıcı olarak sil'),tx('{p} kalıcı olarak silinecek. Bu geri alınamaz.',{p:p.name}),tx('Kalıcı olarak sil'))))return false;
+  await destroyProject(p.id);toast(tx('{p} kalıcı olarak silindi',{p:p.name}));return true;
 }
 // a new, empty document in place of the open one (asks when it has unsaved changes); false when the user declined
 async function newProject(){
-  if(isDirty()&&!(await confirmBox('Yeni proje','Açık çalışmada kaydedilmemiş değişiklikler var; yeni proje onun yerini alır.','Yeni proje')))return false;
+  if(isDirty()&&!(await confirmBox(tx('Yeni proje'),tx('Açık çalışmada kaydedilmemiş değişiklikler var; yeni proje onun yerini alır.'),tx('Yeni proje'))))return false;
   await resetDocument();remember(null);return true;
 }
 // signing out: unsaved work asks first, then this browser's work is emptied (it is no one's once signed out)
@@ -177,15 +178,15 @@ let leavingNow=false;
 const isLeaving=()=>leavingNow;
 async function leave(){
   if(isDirty()){
-    const r=await dialog('Çıkış yap','<p class="pd-text">Kaydedilmemiş değişiklikler var. Çıkınca bu tarayıcıdaki çalışma kapanır.</p>',
-      [['cancel','Vazgeç'],['discard','Kaydetmeden çık'],['save','Buluta kaydet ve çık',true]],{role:'alertdialog'});
+    const r=await dialog(tx('Çıkış yap'),'<p class="pd-text">'+tx('Kaydedilmemiş değişiklikler var. Çıkınca bu tarayıcıdaki çalışma kapanır.')+'</p>',
+      [['cancel',tx('Vazgeç')],['discard',tx('Kaydetmeden çık')],['save',tx('Buluta kaydet ve çık'),true]],{role:'alertdialog'});
     if(!r||r.v==='cancel')return false;
     if(r.v==='save'&&!(await saveToCloud()))return false;
   }
   // the sign-in page once this browser's work is emptied (the signed-out event would go there before it is)
   leavingNow=true;
   try{await signOut();await forgetLocal();toLogin();return true;}
-  catch(err){leavingNow=false;toast('Çıkış yapılamadı: '+err.message);return false;}
+  catch(err){leavingNow=false;toast(tx('Çıkış yapılamadı: {m}',{m:err.message}));return false;}
 }
 
 // ---------- the account itself (docs/uyelik.md §5, step 5; the privacy note promises both)
@@ -195,15 +196,15 @@ let exporting=false;
 async function downloadDataAction(){
   if(!auth.user||exporting)return false;
   exporting=true;
-  const b=busy('Verin hazırlanıyor',{stage:p=>p==null?'Projeler indiriliyor':'Dosya hazırlanıyor'});
+  const b=busy(tx('Verin hazırlanıyor'),{stage:p=>tx(p==null?'Projeler indiriliyor':'Dosya hazırlanıyor')});
   try{
     const r=await exportAccount((i,n,name)=>b.step(i,n,name));
-    if(!r.total){toast('Bulutta kayıtlı projen yok; indirilecek bir şey yok.');return false;}
+    if(!r.total){toast(tx('Bulutta kayıtlı projen yok; indirilecek bir şey yok.'));return false;}
     b.progress(1);
     const d=new Date();offer('shotlight-hesap-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.zip',r.blob);
-    toast(r.count+' proje indirildi');return true;
+    toast(tx('{n} proje indirildi',{n:r.count}));return true;
   }catch(e){
-    if(!isCancel(e))toast('Verin indirilemedi: '+e.message);return false;
+    if(!isCancel(e))toast(tx('Verin indirilemedi: {m}',{m:e.message}));return false;
   }finally{b.close();exporting=false;}
 }
 /* "Hesabı sil": asks with what goes (projects, the space used), confirmed by typing the words; then the Worker removes
@@ -214,15 +215,16 @@ async function deleteAccountAction(){
   if(!auth.user)return false;
   let n=null;try{[n]=await Promise.all([countProjects(),loadProfile()]);}catch(e){/* the question still makes sense without the count */}
   const used=auth.profile&&auth.profile.storage_bytes||0;
-  const what=n==null?'projelerin ve dosyaların':(n?'<b>'+n+' proje</b>'+(n>1?' (çöp kutusundakiler dahil)':'')+' ve bulutta <b>'+mb(used)+'</b> dosya':'bulutta hiç projen yok');
-  const r=await dialog('Hesabı sil','<p class="pd-text">Hesabın kalıcı olarak silinecek: '+what+'. Bu geri alınamaz; önce verini indirmek istersen Vazgeç\'e bas.</p>'+
-    '<label class="lbl block" for="pdConfirm" style="margin-top:12px">Onaylamak için <b>Hesabı sil</b> yaz</label><input type="text" id="pdConfirm" autocomplete="off" spellcheck="false" style="width:100%" aria-describedby="pdErr"><p class="pd-err" id="pdErr" role="alert" hidden>Onaylamak için "Hesabı sil" yazman gerekiyor.</p>',
-    [['no','Vazgeç'],['ok','Hesabı sil',true,true]],{role:'alertdialog',valid:t=>t.trim().toLocaleLowerCase('tr')==='hesabı sil'});
+  const what=n==null?tx('projelerin ve dosyaların'):(n?'<b>'+tx('{n} proje',{n})+'</b>'+(n>1?' '+tx('(çöp kutusundakiler dahil)'):'')+' '+tx('ve bulutta <b>{mb}</b> dosya',{mb:mb(used)}):tx('bulutta hiç projen yok'));
+  const word=tx('Hesabı sil');
+  const r=await dialog(word,'<p class="pd-text">'+tx('Hesabın kalıcı olarak silinecek: {what}. Bu geri alınamaz; önce verini indirmek istersen Vazgeç\'e bas.',{what})+'</p>'+
+    '<label class="lbl block" for="pdConfirm" style="margin-top:12px">'+tx('Onaylamak için <b>{w}</b> yaz',{w:word})+'</label><input type="text" id="pdConfirm" autocomplete="off" spellcheck="false" style="width:100%" aria-describedby="pdErr"><p class="pd-err" id="pdErr" role="alert" hidden>'+tx('Onaylamak için "{w}" yazman gerekiyor.',{w:word})+'</p>',
+    [['no',tx('Vazgeç')],['ok',word,true,true]],{role:'alertdialog',valid:t=>t.trim().toLocaleLowerCase(LOCALE)===word.toLocaleLowerCase(LOCALE)});
   if(!r||r.v!=='ok')return false;
-  toast('Hesap siliniyor…');
+  toast(tx('Hesap siliniyor…'));
   leavingNow=true;
   try{await deleteAccount();}
-  catch(e){leavingNow=false;toast(e.auth?'Oturum kapalı: yeniden giriş yap.':'Hesap silinemedi: '+e.message);return false;}
+  catch(e){leavingNow=false;toast(e.auth?tx('Oturum kapalı: yeniden giriş yap.'):tx('Hesap silinemedi: {m}',{m:e.message}));return false;}
   try{await signOut();}catch(e){/* the user is gone: the server may refuse */}
   forgetSession();
   await forgetLocal();

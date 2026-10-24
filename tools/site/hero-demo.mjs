@@ -36,7 +36,7 @@ const server=await createServer({root:ROOT,logLevel:'error',server:{port:0,stric
 await server.listen();
 const browser=await chromium.launch({args:['--use-angle=metal']});
 try{
-  const page=await browser.newPage({viewport:{width:1400,height:900}});
+  const page=await browser.newPage({locale:'tr-TR',viewport:{width:1400,height:900}});
   await page.addInitScript(()=>{window.__noPhotoPreview=true;});
   page.on('pageerror',e=>console.error('page error:',e.message));
   await page.goto(server.resolvedUrls.local[0]);

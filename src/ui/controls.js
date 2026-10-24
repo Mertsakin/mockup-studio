@@ -7,6 +7,7 @@ import {setGizmoMode} from './gizmo.js';
 import {bgCss,layout} from './layout.js';
 import {fDeg,makeSlider} from './sliders.js';
 import {onSyncUI,syncUI} from './sync.js';
+import {t} from '../lang.js';
 import {$,$$} from '../util.js';
 
 /* ---------- generic segs & inputs ---------- */
@@ -41,7 +42,7 @@ const ART=['customW','customH'].map(k=>{const el=$('#'+k);el.value=state[k];
   el.addEventListener('input',()=>read(false));el.addEventListener('change',()=>read(true));return el;});
 const previewEl=$('#photoPreview');previewEl.checked=state.photoPreview;previewEl.addEventListener('change',()=>{state.photoPreview=previewEl.checked;req();});
 // gradient angle (linear only)
-makeSlider($('#gradAngleSlot'),{id:'g-gang',k:'gradAngle',l:'Açı',min:0,max:360,step:1,reset:135,f:fDeg,after:bgCss},()=>state);
+makeSlider($('#gradAngleSlot'),{id:'g-gang',k:'gradAngle',l:t('Açı'),min:0,max:360,step:1,reset:135,f:fDeg,after:bgCss},()=>state);
 onSyncUI(()=>{
   // inputs bound once at start-up; templates change state underneath them
   ['solid','bg1','bg2','shadowColor'].forEach(k=>{const el=$('#'+k);if(el&&document.activeElement!==el)el.value=state[k];});
@@ -56,7 +57,7 @@ onSyncUI(()=>{
   $('#gradAngleSlot').hidden=state.bg!=='gradient'||state.gradType==='radial';  // the angle is for linear gradients
   $('#shadowSlot').hidden=state.env==='space'||!(state.floor||state.wall);
   $('#wallSlot').hidden=!state.wall;
-  $('#export').textContent=(state.format==='jpg'?'JPG':'PNG')+' indir';  // png24: still a .png
+  $('#export').textContent=t('{f} indir',{f:state.format==='jpg'?'JPG':'PNG'});  // png24: still a .png
 });
 
 export {parseV};

@@ -1031,6 +1031,12 @@ html.wl-on .main>.panel,html.wl-on .stage>:not(.welcome){display:none!important}
 .ag-sub{margin:6px 0 18px;color:var(--ink-2)}
 .ag-form .si-prov{margin-top:0}
 .ag-form .si-sent-wrap .dfoot{justify-content:center}
+/* the UI language under the sign-in card (src/login.js) and in the menus (.lang-seg: index.html, ui/account.js) */
+.ag-lang{display:flex;justify-content:center;gap:4px;margin-top:18px;font-size:12px;color:var(--muted)}
+.ag-lang button{padding:3px 8px;border-radius:6px;color:inherit}
+.ag-lang button:hover{background:var(--field-hover);color:var(--ink)}
+.ag-lang button[aria-pressed="true"]{color:var(--ink);font-weight:600}
+.ag-lang button+button::before{content:"·";margin-right:8px;color:var(--muted);font-weight:400}
 /* the sign-in page (/studio/login, src/login.js): the editor's markup is in the page but none of it shows (its code never loads) */
 html.route-login body>:not(#authGate):not(.toast){display:none!important}
 html.route-login .toast{z-index:95}

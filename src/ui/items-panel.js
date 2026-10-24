@@ -11,6 +11,7 @@ import {numField} from './numfield.js';
 import {fPct,fX,makeSlider} from './sliders.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {toast} from './toast.js';
+import {fmt,t as tx} from '../lang.js';
 import {$,$$} from '../util.js';
 
 /* Inspector for the selected 2D item (ui.kind 'item'): the text and its effects, name, delete, in front of / behind
@@ -25,41 +26,41 @@ let prevBox=null;
 const textAfter=()=>{const t=selItem();if(t&&prevBox){const [W,H]=sizeOf(state);moveAnchor(t,W,H,prevBox);}after();};
 const edit=fn=>{const t=selItem();if(!t||t.kind!=='text')return;const [W,H]=sizeOf(state);keepAnchor(t,W,H,()=>fn(t));after();};
 // font size: a number field in board px (the item stores it as a fraction of the board width)
-const fsField=numField({id:'nf-fs',label:'Boyut',title:'Yazı boyutu (px)',min:1,max:2000,
+const fsField=numField({id:'nf-fs',label:tx('Boyut'),title:tx('Yazı boyutu (px)'),min:1,max:2000,
   get:()=>selItem()?Math.round((selItem().size||.06)*boardW()):null,set:v=>{if(typeof v==='number')edit(t=>{t.size=+(v/boardW()).toFixed(5);});}});
 $('#textSizeSlot').appendChild(fsField.el);
 [
-  {id:'t-lh',k:'lh',l:'Satır aralığı',s:'Satır',w:3,min:.7,max:2.5,step:.01,reset:1.15,f:fX,after:textAfter},
-  {id:'t-ls',k:'ls',l:'Harf aralığı',s:'Harf',w:3,min:-.1,max:.5,step:.005,reset:0,f:fPct,after:textAfter},
+  {id:'t-lh',k:'lh',l:tx('Satır aralığı'),s:tx('Satır'),w:3,min:.7,max:2.5,step:.01,reset:1.15,f:fX,after:textAfter},
+  {id:'t-ls',k:'ls',l:tx('Harf aralığı'),s:tx('Harf'),w:3,min:-.1,max:.5,step:.005,reset:0,f:fPct,after:textAfter},
 ].forEach(d=>makeSlider($('#textSliders'),d,it));
-makeSlider($('#textMoreSliders'),{id:'t-shadow',k:'shadow',l:'Gölge',min:0,max:1,step:.01,reset:0,f:fPct,after:textAfter},it);
+makeSlider($('#textMoreSliders'),{id:'t-shadow',k:'shadow',l:tx('Gölge'),min:0,max:1,step:.01,reset:0,f:fPct,after:textAfter},it);
 
 const body=$('#textBody'),fontEl=$('#textFont'),weightEl=$('#textWeight');
 body.addEventListener('input',()=>edit(t=>{t.text=body.value;}));
 body.addEventListener('blur',()=>{const t=selItem();if(t&&t.kind==='text'&&!t.text.trim())removeItem(t.id);});
 const KIND={sans:'Sans serif',serif:'Serif',monospace:'Eş aralıklı',cursive:'El yazısı'};
-Object.entries(KIND).forEach(([k,label])=>{const g=document.createElement('optgroup');g.label=label;
+Object.entries(KIND).forEach(([k,label])=>{const g=document.createElement('optgroup');g.label=tx(label);
   FONTS.filter(f=>f.kind===k).forEach(f=>g.appendChild(new Option(f.name,f.name)));fontEl.appendChild(g);});
 // uploaded fonts (TTF / OTF / WOFF / WOFF2) belong to the document (doc.fonts, saved with it); the menu lists them last
-const upGroup=document.createElement('optgroup');upGroup.label='Yüklenen';fontEl.appendChild(upGroup);
+const upGroup=document.createElement('optgroup');upGroup.label=tx('Yüklenen');fontEl.appendChild(upGroup);
 const UPLOAD='__upload';let shownCustom='';
 function fillCustom(){
   const names=customFonts(),key=names.join('\u0001');if(key===shownCustom)return;shownCustom=key;
-  upGroup.innerHTML='';names.forEach(n=>upGroup.appendChild(new Option(n,n)));upGroup.appendChild(new Option('Yazı tipi yükle…',UPLOAD));
+  upGroup.innerHTML='';names.forEach(n=>upGroup.appendChild(new Option(n,n)));upGroup.appendChild(new Option(tx('Yazı tipi yükle…'),UPLOAD));
 }
 fillCustom();
 const fontFile=document.createElement('input');fontFile.type='file';fontFile.accept='.ttf,.otf,.woff,.woff2,font/*';fontFile.hidden=true;document.body.appendChild(fontFile);
 fontFile.addEventListener('change',()=>{
   const f=fontFile.files[0];fontFile.value='';if(!f)return;
-  if(f.size>8e6){toast('Yazı tipi dosyası çok büyük (en çok 8 MB).');return;}
+  if(f.size>8e6){toast(tx('Yazı tipi dosyası çok büyük (en çok 8 MB).'));return;}
   // family name from the file name ("Brand-Bold.woff2" -> "Brand Bold"); a Google font's name gets a suffix
-  let family=f.name.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').replace(/["\\]/g,'').trim().slice(0,40)||'Yazı tipi';
-  if(FONTS.some(x=>x.name===family))family+=' (yüklenen)';
+  let family=f.name.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').replace(/["\\]/g,'').trim().slice(0,40)||tx('Yazı tipi');
+  if(FONTS.some(x=>x.name===family))family+=' '+tx('(yüklenen)');
   const rd=new FileReader();
   rd.onload=()=>{const data=String(rd.result),old=doc.fonts.find(x=>x.family===family);
     if(old)old.data=data;else doc.fonts.push({family,data});
     addFontFace(family,data);fillCustom();edit(t=>{t.font=family;t.weight=fitWeight(family,t.weight);});};
-  rd.onerror=()=>toast('Yazı tipi okunamadı.');rd.readAsDataURL(f);
+  rd.onerror=()=>toast(tx('Yazı tipi okunamadı.'));rd.readAsDataURL(f);
 });
 fontEl.addEventListener('change',()=>{
   if(fontEl.value===UPLOAD){fontEl.value=it().font;fontFile.click();return;}
@@ -76,15 +77,15 @@ const fxOf=ph=>{const t=selItem();return t&&t.fx&&t.fx[ph]||{};};
 const fxAfter=()=>{renderItems();syncAll();};
 const opt=(el,v,label)=>el.appendChild(new Option(label,v));
 const FX_SEL={in:$('#fxIn'),out:$('#fxOut'),loop:$('#fxLoop')};
-opt(FX_SEL.in,'','Yok');opt(FX_SEL.out,'','Yok');opt(FX_SEL.loop,'','Yok');
-Object.entries(FX).forEach(([k,d])=>{opt(FX_SEL.in,k,d.n);if(!d.inOnly)opt(FX_SEL.out,k,d.n);});
-Object.entries(LOOPS).forEach(([k,n])=>opt(FX_SEL.loop,k,n));
+opt(FX_SEL.in,'',tx('Yok'));opt(FX_SEL.out,'',tx('Yok'));opt(FX_SEL.loop,'',tx('Yok'));
+Object.entries(FX).forEach(([k,d])=>{opt(FX_SEL.in,k,tx(d.n));if(!d.inOnly)opt(FX_SEL.out,k,tx(d.n));});
+Object.entries(LOOPS).forEach(([k,n])=>opt(FX_SEL.loop,k,tx(n)));
 // option rows per phase, built once; which rows show depends on the effect type
 function seg(parent,label,ph,key,choices){
   // full width (the choices are words): the label is the group's accessible name
   const row=document.createElement('div');row.className='seg seg-wide fxseg';row.setAttribute('role','group');row.setAttribute('aria-label',label);row.dataset.key=key;
   const g=row;
-  Object.entries(choices).forEach(([v,n])=>{const b=document.createElement('button');b.type='button';b.dataset.v=v;b.textContent=n;
+  Object.entries(choices).forEach(([v,n])=>{const b=document.createElement('button');b.type='button';b.dataset.v=v;b.textContent=tx(n);
     // another split gets that split's usual overlap
     b.addEventListener('click',()=>{const f=fxOf(ph);if(f.type){f[key]=v;if(key==='split')f.stagger=STAGGER[v];fxAfter();}});g.appendChild(b);});
   parent.appendChild(row);return row;
@@ -92,30 +93,30 @@ function seg(parent,label,ph,key,choices){
 function pick(parent,label,ph,key,choices){
   const row=document.createElement('div');row.className='row';row.dataset.key=key;const id='fx-'+ph+'-'+key;
   row.innerHTML='<label class="lbl" for="'+id+'"></label><select id="'+id+'"></select>';row.firstChild.textContent=label;
-  const el=row.lastChild;Object.entries(choices).forEach(([v,n])=>opt(el,v,n));
+  const el=row.lastChild;Object.entries(choices).forEach(([v,n])=>opt(el,v,tx(n)));
   el.addEventListener('change',()=>{const f=fxOf(ph);if(f.type){f[key]=el.value;fxAfter();}});parent.appendChild(row);return row;
 }
-const fmtS=v=>v.toFixed(2).replace('.',',')+' sn';
+const fmtS=v=>fmt(v,2)+' '+tx('sn');
 const FX_ROWS={};
 ['in','out'].forEach(ph=>{
   const box=$(ph==='in'?'#fxInOpts':'#fxOutOpts'),get=()=>fxOf(ph),after=()=>{setDuration(state.anim.dur);fxAfter();};
-  makeSlider(box,{id:'fx-'+ph+'-t',k:'t',l:'Başlangıç',min:0,max:30,step:.05,reset:0,f:fmtS,after},get);
-  makeSlider(box,{id:'fx-'+ph+'-dur',k:'dur',l:'Süre',min:.2,max:6,step:.05,reset:1.2,f:fmtS,after},get);
+  makeSlider(box,{id:'fx-'+ph+'-t',k:'t',l:tx('Başlangıç'),min:0,max:30,step:.05,reset:0,f:fmtS,after},get);
+  makeSlider(box,{id:'fx-'+ph+'-dur',k:'dur',l:tx('Süre'),min:.2,max:6,step:.05,reset:1.2,f:fmtS,after},get);
   FX_ROWS[ph]={box,
-    split:seg(box,'Bölme',ph,'split',SPLITS),
-    stagger:(makeSlider(box,{id:'fx-'+ph+'-st',k:'stagger',l:'Kademe',min:0,max:1,step:.01,reset:.5,f:fPct,after:fxAfter,
-      note:'0: hepsi birlikte, %100: biri bitince diğeri başlar.'},get),box.lastChild),
-    order:pick(box,'Sıra',ph,'order',ORDERS),
-    ease:pick(box,'Yumuşatma',ph,'ease',FX_EASES),
-    chars:pick(box,'Karakterler',ph,'chars',CHARSETS),
+    split:seg(box,tx('Bölme'),ph,'split',SPLITS),
+    stagger:(makeSlider(box,{id:'fx-'+ph+'-st',k:'stagger',l:tx('Kademe'),min:0,max:1,step:.01,reset:.5,f:fPct,after:fxAfter,
+      note:tx('0: hepsi birlikte, %100: biri bitince diğeri başlar.')},get),box.lastChild),
+    order:pick(box,tx('Sıra'),ph,'order',ORDERS),
+    ease:pick(box,tx('Yumuşatma'),ph,'ease',FX_EASES),
+    chars:pick(box,tx('Karakterler'),ph,'chars',CHARSETS),
     cursor:(()=>{const row=document.createElement('div');row.className='row';row.dataset.key='cursor';
-      row.innerHTML='<span class="lbl">İmleç</span><label class="switch"><input type="checkbox" aria-label="Daktilo imleci"><span></span></label>';
+      row.innerHTML='<span class="lbl">'+tx('İmleç')+'</span><label class="switch"><input type="checkbox" aria-label="'+tx('Daktilo imleci')+'"><span></span></label>';
       row.querySelector('input').addEventListener('change',e=>{const f=fxOf(ph);if(f.type){f.cursor=e.target.checked;fxAfter();}});box.appendChild(row);return row;})()};
 });
 {
   const box=$('#fxLoopOpts'),get=()=>fxOf('loop');
-  makeSlider(box,{id:'fx-loop-amp',k:'amp',l:'Şiddet',min:0,max:1,step:.01,reset:.5,f:fPct,after:fxAfter},get);
-  makeSlider(box,{id:'fx-loop-speed',k:'speed',l:'Hız',min:.1,max:4,step:.05,reset:1,f:v=>v.toFixed(2).replace('.',',')+' /sn',after:fxAfter},get);
+  makeSlider(box,{id:'fx-loop-amp',k:'amp',l:tx('Şiddet'),min:0,max:1,step:.01,reset:.5,f:fPct,after:fxAfter},get);
+  makeSlider(box,{id:'fx-loop-speed',k:'speed',l:tx('Hız'),min:.1,max:4,step:.05,reset:1,f:v=>fmt(v,2)+' /'+tx('sn'),after:fxAfter},get);
 }
 // which options an effect type uses
 const USES={typewriter:['cursor'],scramble:['order','chars'],counter:['ease']};
@@ -172,7 +173,7 @@ onSyncUI(()=>{
   if(document.activeElement!==body&&body.value!==i.text)body.value=i.text;
   fillCustom();fontEl.value=i.font;
   const ws=weightsOf(i.font);
-  if(weightEl.dataset.font!==i.font){weightEl.dataset.font=i.font;weightEl.innerHTML='';ws.forEach(w=>weightEl.appendChild(new Option(WEIGHT_NAMES[w]||String(w),String(w))));}
+  if(weightEl.dataset.font!==i.font){weightEl.dataset.font=i.font;weightEl.innerHTML='';ws.forEach(w=>weightEl.appendChild(new Option(WEIGHT_NAMES[w]?tx(WEIGHT_NAMES[w]):String(w),String(w))));}
   weightEl.value=String(i.weight);
   $('#textItalic').setAttribute('aria-pressed',String(!!i.italic));
   press('#textAlign',i.align);press('#textFill',i.fill);

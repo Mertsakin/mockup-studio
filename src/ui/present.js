@@ -7,6 +7,7 @@ import {icon} from './icons.js';
 import {select} from './selection.js';
 import {setUi,ui} from './ui-state.js';
 import {fitPresent,restoreView,viewState} from './workspace.js';
+import {t as tx} from '../lang.js';
 import {$} from '../util.js';
 
 /* Presentation (Figma's Present): the active artboard alone fills the window (the browser's fullscreen when it
@@ -22,12 +23,12 @@ const atEnd=()=>A.t>=state.anim.dur-1e-6;
 
 /* --- the floating bar: previous / name and count / next, play-pause for an animated board, leave */
 function build(){
-  bar=document.createElement('div');bar.className='present-bar';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','Sunum');
-  bar.innerHTML='<button class="ib" type="button" data-act="prev" aria-label="Önceki artboard">'+icon('alt-arrow-left',18)+'<span class="tip">Önceki <kbd>←</kbd></span></button>'+
+  bar=document.createElement('div');bar.className='present-bar';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label',tx('Sunum'));
+  bar.innerHTML='<button class="ib" type="button" data-act="prev" aria-label="'+tx('Önceki artboard')+'">'+icon('alt-arrow-left',18)+'<span class="tip">'+tx('Önceki')+' <kbd>←</kbd></span></button>'+
     '<span class="pb-name"><b data-f="name"></b><span data-f="n"></span></span>'+
-    '<button class="ib" type="button" data-act="next" aria-label="Sonraki artboard">'+icon('alt-arrow-right',18)+'<span class="tip">Sonraki <kbd>→</kbd></span></button>'+
-    '<button class="ib" type="button" data-act="play" aria-label="Duraklat" hidden><span data-f="play"></span><span class="tip"><span data-f="playTip">Duraklat</span> <kbd>Boşluk</kbd></span></button>'+
-    '<span class="vr"></span><button class="ib" type="button" data-act="exit" aria-label="Sunumdan çık">'+icon('close-circle',18)+'<span class="tip">Çık <kbd>Esc</kbd></span></button>';
+    '<button class="ib" type="button" data-act="next" aria-label="'+tx('Sonraki artboard')+'">'+icon('alt-arrow-right',18)+'<span class="tip">'+tx('Sonraki')+' <kbd>→</kbd></span></button>'+
+    '<button class="ib" type="button" data-act="play" aria-label="'+tx('Duraklat')+'" hidden><span data-f="play"></span><span class="tip"><span data-f="playTip">'+tx('Duraklat')+'</span> <kbd>'+tx('Boşluk')+'</kbd></span></button>'+
+    '<span class="vr"></span><button class="ib" type="button" data-act="exit" aria-label="'+tx('Sunumdan çık')+'">'+icon('close-circle',18)+'<span class="tip">'+tx('Çık')+' <kbd>Esc</kbd></span></button>';
   els={name:bar.querySelector('[data-f="name"]'),n:bar.querySelector('[data-f="n"]'),play:bar.querySelector('[data-act="play"]'),
     playIcon:bar.querySelector('[data-f="play"]'),playTip:bar.querySelector('[data-f="playTip"]'),nav:[...bar.querySelectorAll('[data-act="prev"],[data-act="next"]')]};
   const acts={prev:()=>step(-1),next:()=>step(1),play:togglePlay,exit};

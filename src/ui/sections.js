@@ -6,6 +6,7 @@ import {sel,selItem,state} from '../state/state.js';
 import {doc,onBoards,sizeOf} from './boards.js';
 import {icon} from './icons.js';
 import {onSyncUI} from './sync.js';
+import {t} from '../lang.js';
 import {$$} from '../util.js';
 
 /* Inspector sections that fold (section.sec[data-sec]): the header toggles the body; a folded section is one line, its
@@ -17,27 +18,27 @@ const FOLDED=new Set(['board-env','board-light','dev-layer','item-fx','item-laye
 let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){/* private mode */}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){/* ignore */}};
 const deg=v=>Math.round(v)+'°';
-const BG={transparent:'Yok',solid:'Düz renk',gradient:'Geçiş',image:'Görsel'};
+const BG={transparent:'Yok',solid:'Düz renk',gradient:'Geçiş',image:'Görsel'};  // keys of the dictionary too
 const SUMMARY={
-  'board-size':()=>{const [w,h]=sizeOf(state);return (state.ratio==='custom'?'Özel':state.ratio)+' · '+w+' × '+h;},
+  'board-size':()=>{const [w,h]=sizeOf(state);return (state.ratio==='custom'?t('Özel'):state.ratio)+' · '+w+' × '+h;},
   'board-camera':()=>{const S=state.scene,d=state.dof;return Math.round(mmFromFov(S.fov))+' mm'+(d&&d.on?' f/'+(+fnum().toFixed(1)):'')+' · '+deg(S.ry)+' · '+deg(S.rx)+' · '+S.zoom.toFixed(2)+'×';},
-  'board-bg':()=>BG[state.bg]||'',
-  'board-env':()=>(state.env==='space'?'Uzay':'Stüdyo')+(state.env!=='space'&&state.floor?' · gölge %'+Math.round(state.shadowOpacity*100):''),
-  'board-light':()=>{const n=state.lights.length;return n?modOf(state.lights[0].mod).n+(n>1?' + '+(n-1):''):'Işık yok';},
-  'dev-screen':()=>{const d=sel();return d&&d.video?d.videoName||'Video':d&&d.img?d.imgName||'Görsel':'Görsel yok';},
-  'dev-model':()=>{const d=sel();if(!d)return '';const c=COLORS.find(x=>x.k===d.colorKey);return typeName(d)+(c&&d.type!=='model'?' · '+c.n:'');},
+  'board-bg':()=>t(BG[state.bg]||''),
+  'board-env':()=>t(state.env==='space'?'Uzay':'Stüdyo')+(state.env!=='space'&&state.floor?' · '+t('gölge %{n}',{n:Math.round(state.shadowOpacity*100)}):''),
+  'board-light':()=>{const n=state.lights.length;return n?t(modOf(state.lights[0].mod).n)+(n>1?' + '+(n-1):''):t('Işık yok');},
+  'dev-screen':()=>{const d=sel();return d&&d.video?d.videoName||t('Video'):d&&d.img?d.imgName||t('Görsel'):t('Görsel yok');},
+  'dev-model':()=>{const d=sel();if(!d)return '';const c=COLORS.find(x=>x.k===d.colorKey);return t(typeName(d))+(c&&d.type!=='model'?' · '+t(c.n):'');},
   'dev-transform':()=>{const d=sel();return d?d.scale.toFixed(2)+'×':'';},
-  'dev-layer':()=>state.devices.length>1?state.devices.length+' cihaz':'',
+  'dev-layer':()=>state.devices.length>1?t('{n} cihaz',{n:state.devices.length}):'',
   'item-text':()=>{const i=selItem();return i&&i.kind==='text'?i.font+' · '+Math.round((i.size||0)*sizeOf(state)[0]):'';},
-  'item-fx':()=>{const i=selItem(),f=i&&i.fx;if(!f)return 'Yok';return [f.in&&FX[f.in.type]&&FX[f.in.type].n,f.out&&'çıkış',f.loop&&'sürekli'].filter(Boolean).join(' · ')||'Yok';},
-  'item-layer':()=>{const i=selItem();return i?(i.front?'Cihazların önünde':'Cihazların arkasında'):'';},
+  'item-fx':()=>{const i=selItem(),f=i&&i.fx;if(!f)return t('Yok');return [f.in&&FX[f.in.type]&&t(FX[f.in.type].n),f.out&&t('çıkış'),f.loop&&t('sürekli')].filter(Boolean).join(' · ')||t('Yok');},
+  'item-layer':()=>{const i=selItem();return i?t(i.front?'Cihazların önünde':'Cihazların arkasında'):'';},
   // left panel
-  'left-boards':()=>{const n=doc.boards.length;return n?n+' artboard':'';},
-  'left-angles':()=>{const n=document.getElementById('savedList').children.length;return n?n+' açı':'Yok';},
-  'left-assets':()=>{const n=doc.assets.length;return n?n+' varlık':'Yok';},
-  'tpl-comps':()=>document.getElementById('comps').children.length+' kompozisyon',
-  'tpl-grid':()=>{const n=document.getElementById('tplGrid').children.length;return n?n+' şablon':'Yok';},
-  'item-al':()=>{const i=selItem(),l=i&&i.layout;return !l||l.dir==='none'?'Yok':l.dir==='row'?'Yatay':'Dikey';}
+  'left-boards':()=>{const n=doc.boards.length;return n?t('{n} artboard',{n}):'';},
+  'left-angles':()=>{const n=document.getElementById('savedList').children.length;return n?t('{n} açı',{n}):t('Yok');},
+  'left-assets':()=>{const n=doc.assets.length;return n?t('{n} varlık',{n}):t('Yok');},
+  'tpl-comps':()=>t('{n} kompozisyon',{n:document.getElementById('comps').children.length}),
+  'tpl-grid':()=>{const n=document.getElementById('tplGrid').children.length;return n?t('{n} şablon',{n}):t('Yok');},
+  'item-al':()=>{const i=selItem(),l=i&&i.layout;return t(!l||l.dir==='none'?'Yok':l.dir==='row'?'Yatay':'Dikey');}
 };
 const secs=[...document.querySelectorAll('section.sec[data-sec]')];
 function setOpen(sec,open){

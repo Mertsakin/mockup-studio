@@ -19,7 +19,7 @@ const W=+process.env.W||640,H=+process.env.H||800,SAMPLES=+process.env.SAMPLES||
   const browser=await chromium.launch({args:process.env.GPU?['--use-angle=metal']:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   let failed=false;
   try{
-    const page=await browser.newPage({viewport:{width:1400,height:900}});
+    const page=await browser.newPage({locale:'tr-TR',viewport:{width:1400,height:900}});
     await page.addInitScript(()=>{window.__noPhotoPreview=true;});
     if(process.env.PT_DEBUG)await page.addInitScript(()=>{window.__ptDebug=true;});  // keep renders deterministic
     if(process.env.PT_TUNE)await page.addInitScript(v=>{window.__ptTune=JSON.parse(v);},process.env.PT_TUNE);  // photo quality: {samples, budget (ms)} instead of the export's

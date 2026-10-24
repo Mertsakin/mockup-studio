@@ -21,7 +21,7 @@ const {data:created}=await admin.auth.admin.createUser({email,password,email_con
 const uid=created.user.id;
 const b=await chromium.launch({args:['--use-angle=metal']});
 async function studio(tag){
-  const ctx=await b.newContext({viewport:{width:1280,height:800}}),p=await ctx.newPage();
+  const ctx=await b.newContext({locale:'tr-TR',viewport:{width:1280,height:800}}),p=await ctx.newPage();
   p.errs=[];p.on('pageerror',e=>p.errs.push(tag+': '+e.message));
   p.mediaPuts=0;p.on('request',r=>{if(r.method()==='PUT'&&/\/media\/[0-9a-f]{64}/.test(r.url()))p.mediaPuts++;});
   await p.addInitScript(()=>{window.__noPhotoPreview=true;});

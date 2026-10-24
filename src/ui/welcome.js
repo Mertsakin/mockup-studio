@@ -15,6 +15,7 @@ import {onSyncUI} from './sync.js';
 import {toast} from './toast.js';
 import {setUi,ui} from './ui-state.js';
 import {fitAll} from './workspace.js';
+import {t as tx} from '../lang.js';
 import {$,$$} from '../util.js';
 
 /* The welcome card: an empty document (no artboard) opens on it instead of on a bare canvas
@@ -56,7 +57,7 @@ onBoards(sync);onSyncUI(sync);
 
 captureAvailable().then(ok=>{
   $('#wlUrlRow').hidden=$('#wlOr').hidden=!ok;
-  if(!ok)$('#wlSub').textContent='Ekran görüntülerini ya da ekran videonu bırak; telefon, tablet ve dizüstünde hazır sahneler kuralım.';
+  if(!ok)$('#wlSub').textContent=tx('Ekran görüntülerini ya da ekran videonu bırak; telefon, tablet ve dizüstünde hazır sahneler kuralım.');
 });
 
 $$('#welcome [data-goal]').forEach(b=>b.addEventListener('click',()=>{
@@ -76,11 +77,11 @@ function recipes(tall,wide){
 // a screen: {img} or {file, video: true}, with its shape
 async function readScreen(file){
   if(isVideoFile(file)){
-    const v=await loadVideo(URL.createObjectURL(file));const [w,h]=videoSize(v);v.pause();return {file,video:true,name:file.name||'Video',wide:w>h};
+    const v=await loadVideo(URL.createObjectURL(file));const [w,h]=videoSize(v);v.pause();return {file,video:true,name:file.name||tx('Video'),wide:w>h};
   }
   if(!/^image\//.test(file.type))return null;
   const img=await new Promise((ok,fail)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=fail;i.src=URL.createObjectURL(file);});
-  return {img,name:file.name||'Görsel',wide:img.naturalWidth>img.naturalHeight};
+  return {img,name:file.name||tx('Görsel'),wide:img.naturalWidth>img.naturalHeight};
 }
 // a dark screenshot (a dark-themed app) gets the templates' dark variant
 function variantFor(img){
@@ -97,12 +98,12 @@ async function suggest(has,comps,dress,variant){
   for(const t of (await templates()).filter(x=>x.goal===goal)){
     if(out.length>=4)break;
     let types;try{types=await deviceTypes(t,variant);}catch(e){continue;}
-    if(types.length&&types.every(has))out.push({n:t.name,tpl:true,build:async()=>(await openTemplate(t,variant,dress))[0]});
+    if(types.length&&types.every(has))out.push({n:tx(t.name),tpl:true,build:async()=>(await openTemplate(t,variant,dress))[0]});
   }
   for(const c of comps){
     if(out.length>=4)break;
     if(out.some(o=>o.n===c.n))continue;
-    out.push({n:c.n,build:async()=>{const b=addBoard(null,c.n);
+    out.push({n:tx(c.n),build:async()=>{const b=addBoard(null,tx(c.n));
       if(c.ratio){state.ratio=c.ratio;layout();}  // before the composition, so it frames for this shape
       applyComp(c);await dress();return b.id;}});
   }
@@ -112,20 +113,20 @@ const frames=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(
 // what the scenes are for: a social post gets the first two scenes square and upright (1:1, 9:16)
 function forGoal(list){
   if(goal!=='social')return list;
-  return list.slice(0,2).flatMap(c=>['1:1','9:16'].map(r=>Object.assign({},c,{n:c.n+' · '+r,ratio:r})));
+  return list.slice(0,2).flatMap(c=>['1:1','9:16'].map(r=>Object.assign({},c,{n:tx(c.n)+' · '+r,ratio:r})));
 }
-const GOAL_NOTE={video:' · hareketiyle Canlandır\'da açılır'};
+const GOAL_NOTE={video:'hareketiyle Canlandır\'da açılır'};
 
 async function fromFiles(files){
   if(picking)return;
   let screens;
   try{screens=(await Promise.all(files.map(f=>readScreen(f).catch(()=>null)))).filter(Boolean);}catch(e){screens=[];}
-  if(!screens.length){toast('Bu dosyalar açılamadı. PNG, JPG, WebP ya da MP4 / WebM dene.');return;}
+  if(!screens.length){toast(tx('Bu dosyalar açılamadı. PNG, JPG, WebP ya da MP4 / WebM dene.'));return;}
   const tall=screens.filter(s=>!s.wide),wide=screens.filter(s=>s.wide);
   const first=(tall[0]||wide[0]).img;
   const list=await suggest(type=>MOBILE.has(type)?tall.length>0:wide.length>0,forGoal(recipes(tall.length>0,wide.length>0)),
     ()=>dressScreens(tall,wide),variantFor(first));
-  await buildScenes(list,screens.length===1?screens[0].name:screens.length+' ekran');
+  await buildScenes(list,screens.length===1?screens[0].name:tx('{n} ekran',{n:screens.length}));
 }
 
 // builds one board per suggestion, renders their thumbnails and opens the picker
@@ -133,14 +134,14 @@ async function buildScenes(list,what){
   holdHistory(true);
   picking={ids:[],chosen:new Set(),tpl:new Set()};
   start.hidden=true;pick.hidden=false;
-  $('#wlPickTitle').textContent='Sahneler hazırlanıyor';$('#wlPickSub').textContent='';$('#wlPickSub').textContent=what;
-  $('#wlAdd').disabled=true;$('#wlAdd').textContent='Artboard ekle';
+  $('#wlPickTitle').textContent=tx('Sahneler hazırlanıyor');$('#wlPickSub').textContent='';$('#wlPickSub').textContent=what;
+  $('#wlAdd').disabled=true;$('#wlAdd').textContent=tx('Artboard ekle');
   const grid=$('#wlGrid');grid.innerHTML='';
   const tiles=list.map(r=>{
     const b=document.createElement('button');b.type='button';b.className='wl-res';b.setAttribute('aria-pressed','false');b.disabled=true;
     b.innerHTML='<span class="im wait"></span><span class="ck" aria-hidden="true"></span><b></b>';b.querySelector('b').textContent=r.n;
     grid.appendChild(b);return b;});
-  $('#wlStatus').textContent='Sahneler hazırlanıyor… 0 / '+list.length;
+  $('#wlStatus').textContent=tx('Sahneler hazırlanıyor…')+' 0 / '+list.length;
   try{
     for(let i=0;i<list.length;i++){
       if(!picking)return;
@@ -150,16 +151,16 @@ async function buildScenes(list,what){
       const t=tiles[i],[w,h]=boardSize(b);t.dataset.id=b.id;t.style.setProperty('--ar',w+'/'+h);
       const im=t.querySelector('.im');im.classList.remove('wait');if(b.thumb)im.style.backgroundImage='url("'+b.thumb+'")';
       t.disabled=false;if(i<2)choose(t,true);
-      $('#wlStatus').textContent=i+1<list.length?'Sahneler hazırlanıyor… '+(i+1)+' / '+list.length:'';
+      $('#wlStatus').textContent=i+1<list.length?tx('Sahneler hazırlanıyor…')+' '+(i+1)+' / '+list.length:'';
     }
-  }catch(e){toast('Sahneler kurulamadı: '+(e.message||e));back();return;}
-  $('#wlPickTitle').textContent=list.length+' sahne';
-  $('#wlPickSub').textContent=what+' · istediğin kadarını seç, her biri ayrı artboard olur'+(GOAL_NOTE[goal]||'');
+  }catch(e){toast(tx('Sahneler kurulamadı: {m}',{m:e.message||e}));back();return;}
+  $('#wlPickTitle').textContent=tx('{n} sahne',{n:list.length});
+  $('#wlPickSub').textContent=what+' · '+tx('istediğin kadarını seç, her biri ayrı artboard olur')+(GOAL_NOTE[goal]?' · '+tx(GOAL_NOTE[goal]):'');
   $('#wlPickTitle').focus();
 }
 function choose(t,on){
   const id=+t.dataset.id;if(on)picking.chosen.add(id);else picking.chosen.delete(id);t.setAttribute('aria-pressed',String(on));
-  const n=picking.chosen.size;$('#wlAdd').disabled=!n;$('#wlAdd').textContent=n?n+' artboard ekle':'Bir sahne seç';
+  const n=picking.chosen.size;$('#wlAdd').disabled=!n;$('#wlAdd').textContent=n?tx('{n} artboard ekle',{n}):tx('Bir sahne seç');
 }
 $('#wlGrid').addEventListener('click',e=>{const t=e.target.closest('.wl-res');if(!t||t.disabled||!picking)return;choose(t,!picking.chosen.has(+t.dataset.id));});
 
@@ -180,7 +181,7 @@ function confirm(){
   if(video)setMode('animate');
   coach();
   requestAnimationFrame(()=>fitAll());
-  toast(keep.length+' artboard eklendi');
+  toast(tx('{n} artboard eklendi',{n:keep.length}));
   if(m&&m.done)m.done();
 }
 // back to the start card: the scenes go, the document is empty again
@@ -206,24 +207,24 @@ let run=0;  // the current capture; Vazgeç or a new one makes older answers sta
 async function fromUrl(raw){
   if(picking||start.classList.contains('wl-busy'))return;
   const url=normalizeUrl(raw),me=++run;
-  try{new URL(url);}catch(e){toast('Bu bir adres gibi görünmüyor.');$('#wlUrl').focus();return;}
-  start.classList.add('wl-busy');$('#wlProg').hidden=false;$('#wlGo').textContent='Yakalanıyor…';
-  $('#wlPnote').textContent='Sayfa her cihazın kendi genişliğinde açılıyor…';$('#wlCancel').hidden=false;
+  try{new URL(url);}catch(e){toast(tx('Bu bir adres gibi görünmüyor.'));$('#wlUrl').focus();return;}
+  start.classList.add('wl-busy');$('#wlProg').hidden=false;$('#wlGo').textContent=tx('Yakalanıyor…');
+  $('#wlPnote').textContent=tx('Sayfa her cihazın kendi genişliğinde açılıyor…');$('#wlCancel').hidden=false;
   const rows=$('#wlProws');rows.innerHTML='';
   const jobs=SITE.map(s=>{
     const v=viewportOf(s.type),row=document.createElement('div');row.className='wl-prow run';
     row.innerHTML='<span class="wl-dot" aria-hidden="true"></span><span></span><span class="v"></span>';
-    row.children[1].textContent=s.n;row.children[2].textContent=v.width+' px';rows.appendChild(row);
+    row.children[1].textContent=tx(s.n);row.children[2].textContent=v.width+' px';rows.appendChild(row);
     const p=captureShots(url,[Object.assign({id:s.type},v)]).then(async r=>{
       const img=await shotImage(r.shots[s.type]);if(me===run){row.className='wl-prow ok';}return {type:s.type,img,finalUrl:r.finalUrl||url};
-    }).catch(e=>{if(me===run){row.className='wl-prow fail';row.children[2].textContent='alınamadı';}throw e;});
+    }).catch(e=>{if(me===run){row.className='wl-prow fail';row.children[2].textContent=tx('alınamadı');}throw e;});
     return p;});
   const res=await Promise.allSettled(jobs);
   if(me!==run)return;  // cancelled meanwhile
   const shots={};res.forEach(r=>{if(r.status==='fulfilled')shots[r.value.type]=r.value;});
   // no phone shot: the rows stay with the reason under them, the address can be fixed and sent again
   if(!shots.phone){const e=res.find(r=>r.status==='rejected'),why=e&&e.reason;
-    endCapture(true);$('#wlPnote').textContent=why&&why.user?why.message:'Sayfa yakalanamadı'+(why?': '+(why.message||why):'.');$('#wlUrl').focus();return;}
+    endCapture(true);$('#wlPnote').textContent=why&&why.user?why.message:tx('Sayfa yakalanamadı')+(why?': '+(why.message||why):'.');$('#wlUrl').focus();return;}
   endCapture();
   // a scene is offered when all its devices have their shot (a monitor shows the laptop's)
   const shotOf=type=>shots[type]||(type==='monitor'?shots.laptop:null);
@@ -232,7 +233,7 @@ async function fromUrl(raw){
     async()=>{state.devices.forEach(d=>{const s=shotOf(d.type);if(s)putShot(d,s.img,s.finalUrl,raw);});},variantFor(shots.phone.img));
   await buildScenes(list,name);
 }
-function endCapture(keep){start.classList.remove('wl-busy');$('#wlProg').hidden=!keep;$('#wlCancel').hidden=true;$('#wlGo').textContent='Mockup oluştur';}
+function endCapture(keep){start.classList.remove('wl-busy');$('#wlProg').hidden=!keep;$('#wlCancel').hidden=true;$('#wlGo').textContent=tx('Mockup oluştur');}
 $('#wlCancel').addEventListener('click',()=>{run++;endCapture();$('#wlUrl').focus();});
 
 // what the card was given: a site address or files (in the window over the home page: before() first)

@@ -1,6 +1,7 @@
 import {setScreenTexture} from './screen.js';
 import {designT} from '../state/anim.js';
 import {state} from '../state/state.js';
+import {fmt,t as tx} from '../lang.js';
 
 /* Video on a device screen (v1: silent). d.video is an HTMLVideoElement (muted, inline, blob URL); the frame shown is a
    pure function of the artboard time: video time = d.videoT0 + (d.videoLoop ? t mod rest : min(t, rest)), rest being
@@ -103,7 +104,7 @@ function loadVideo(src){
   });
 }
 const videoSize=v=>[v.videoWidth||1,v.videoHeight||1];
-const fmtDur=s=>{s=Math.max(0,s||0);const m=Math.floor(s/60),r=s-m*60;return m?m+':'+String(Math.floor(r)).padStart(2,'0'):r.toFixed(1).replace('.',',')+' sn';};
+const fmtDur=s=>{s=Math.max(0,s||0);const m=Math.floor(s/60),r=s-m*60;return m?m+':'+String(Math.floor(r)).padStart(2,'0'):fmt(r,1)+' '+tx('sn');};
 
 /* Browser recordings (MediaRecorder WebM) and fragmented MP4s report no duration (Infinity) until the browser has
    scanned the file, which happens on the first seek: without this the artboard duration and the trim limits would read

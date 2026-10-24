@@ -2,6 +2,7 @@ import {DEF_LAYOUT,anchorOff,inFlow,lay,parentOf,resolve,subtree} from '../rende
 import {nextItemId,state} from '../state/state.js';
 import {sizeOf} from './boards.js';
 import {renderItems} from './layout.js';
+import {t as tx} from '../lang.js';
 
 /* The 2D item tree (frames hold items, render/item-layout.js): operations that keep what you see in place.
    Sibling order is the order in state.items (the tree comes from the parent links), so moving an item among its
@@ -84,7 +85,7 @@ function removeTree(it){const gone=new Set(subtree(state.items,it));state.items=
 
 /* ---------- making frames */
 function newFrame(props){
-  return Object.assign({id:nextItemId(),kind:'frame',anc:1,name:'Çerçeve',x:.5,y:.5,w:.4,h:.3,rot:0,opacity:1,front:true,
+  return Object.assign({id:nextItemId(),kind:'frame',anc:1,name:tx('Çerçeve'),x:.5,y:.5,w:.4,h:.3,rot:0,opacity:1,front:true,
     fill:'#ffffff',fillOn:true,radius:0,clip:false,wMode:'fixed',hMode:'fixed',layout:Object.assign({},DEF_LAYOUT)},props);
 }
 // wraps the items (they must share a parent: the first one's) in a new frame around them; auto: with auto layout,
@@ -97,7 +98,7 @@ function wrap(list,auto){
   const ext=ns.map(n=>{const a=n.arot*D2R,ex=(Math.abs(n.w*Math.cos(a))+Math.abs(n.h*Math.sin(a)))/2,ey=(Math.abs(n.w*Math.sin(a))+Math.abs(n.h*Math.cos(a)))/2;
     return {n,x0:n.cx-ex,x1:n.cx+ex,y0:n.cy-ey,y1:n.cy+ey};});
   const X0=Math.min(...ext.map(e=>e.x0)),X1=Math.max(...ext.map(e=>e.x1)),Y0=Math.min(...ext.map(e=>e.y0)),Y1=Math.max(...ext.map(e=>e.y1));
-  const f=newFrame({name:auto?'Auto layout':'Çerçeve',w:+((X1-X0)/W).toFixed(5),h:+((Y1-Y0)/W).toFixed(5),fillOn:false,front:frontOf(list[0])});
+  const f=newFrame({name:auto?'Auto layout':tx('Çerçeve'),w:+((X1-X0)/W).toFixed(5),h:+((Y1-Y0)/W).toFixed(5),fillOn:false,front:frontOf(list[0])});
   if(p){const l=toLocal(p,(X0+X1)/2,(Y0+Y1)/2),pn=nodeOf(p);f.parent=p.id;f.x=+(l.x/pn.w).toFixed(5);f.y=+(l.y/pn.h).toFixed(5);f.rot=0;}
   else{f.x=+((X0+X1)/2/W).toFixed(5);f.y=+((Y0+Y1)/2/H).toFixed(5);}
   const first=Math.min(...list.map(it=>state.items.indexOf(it)));state.items.splice(first,0,f);

@@ -3,6 +3,7 @@ import {screenPixelWidth,setScreenTexture,updateChrome} from '../devices/screen.
 import {state} from '../state/state.js';
 import {onSyncUI,syncAll} from './sync.js';
 import {toast} from './toast.js';
+import {t} from '../lang.js';
 import {$} from '../util.js';
 
 /* "Web sitesinden": captures a URL at a device's own viewport (responsive layout) through the dev server's
@@ -42,10 +43,10 @@ async function captureShots(url,targets,opts={}){
   let r;
   try{r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({url,targets},opts))});}
   // no answer at all: the dev server has stopped (or the page was opened from the build / a file)
-  catch(e){throw userError(SERVICE?'Yakalama servisine ulaşılamadı. Biraz sonra yeniden dene ya da ekran görüntüsü yükle.':'Yakalama sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.');}
+  catch(e){throw userError(t(SERVICE?'Yakalama servisine ulaşılamadı. Biraz sonra yeniden dene ya da ekran görüntüsü yükle.':'Yakalama sunucusuna ulaşılamadı. Geliştirme sunucusunu başlat (npm run dev) ve sayfayı yenile.'));}
   // a static deployment has no capture endpoint: 404, or an HTML fallback page instead of JSON
-  if(r.status===404||!(r.headers.get('content-type')||'').includes('application/json'))throw userError('Web sitesinden yakalama yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).');
-  const res=await r.json();if(r.status===429)throw userError(res.error);if(!r.ok)throw userError('Yakalanamadı: '+(res.error||r.statusText));
+  if(r.status===404||!(r.headers.get('content-type')||'').includes('application/json'))throw userError(t('Web sitesinden yakalama yalnızca yerel geliştirme sunucusunda çalışır (npm run dev).'));
+  const res=await r.json();if(r.status===429)throw userError(res.error);if(!r.ok)throw userError(t('Yakalanamadı: {m}',{m:res.error||r.statusText}));
   return res;
 }
 // the capture options in the Ekran section (editor settings, not part of the document)
@@ -55,7 +56,7 @@ const captureOpts=()=>({wait:+$('#capWait').value||0,dark:$('#capDark').checked,
 let avail=null;
 const captureAvailable=()=>avail||(avail=!import.meta.env.DEV&&!SERVICE?Promise.resolve(false)
   :fetch(ENDPOINT+'/ping').then(r=>r.ok&&(r.headers.get('content-type')||'').includes('application/json')).catch(()=>false));
-const shotImage=src=>new Promise((ok,fail)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>fail(userError('Yakalanan görüntü açılamadı.'));img.src=src;});
+const shotImage=src=>new Promise((ok,fail)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>fail(userError(t('Yakalanan görüntü açılamadı.')));img.src=src;});
 // puts a captured page on a device's screen, scrolled to the top (siteUrl: the address as the user typed it)
 function putShot(d,img,url,siteUrl){
   const final=new URL(url),name=siteName(url);
@@ -90,15 +91,15 @@ async function capture(everyDevice){
   raw=normalizeUrl(raw);
   const devices=everyDevice?state.devices:state.devices.filter(d=>d.id===state.selected);
   const groups=shotGroups(devices);
-  if(!groups.length){toast('Yakalanacak ekran yok. Kendi çerçeven için önce bir çerçeve PNG\u2019si yükle.');return;}
+  if(!groups.length){toast(t('Yakalanacak ekran yok. Kendi çerçeven için önce bir çerçeve PNG\u2019si yükle.'));return;}
   const btn=everyDevice?all:one,label=btn.textContent;
-  one.disabled=all.disabled=true;btn.textContent='Yakalanıyor…'+(groups.length>1?' ('+groups.length+' görünüm)':'');
+  one.disabled=all.disabled=true;btn.textContent=t('Yakalanıyor…')+(groups.length>1?' '+t('({n} görünüm)',{n:groups.length}):'');
   try{
     const res=await captureShots(raw,groups.map(g=>g.target),captureOpts());
     const name=siteName(res.finalUrl||raw);
     for(const g of groups){const img=await shotImage(res.shots[g.target.id]);g.devices.forEach(d=>putShot(d,img,res.finalUrl||raw,input.value.trim()));}
-    syncAll();toast(res.missing?'Seçici sayfada bulunamadı: sayfa en üstten yakalandı.':name+(everyDevice?' tüm cihazlara':' bu cihaza')+' yerleştirildi. Ekranın üzerinde tekerlekle kaydırabilirsin.');
-  }catch(e){toast(e.user?e.message:'Yakalanamadı: '+(e.message||e));}
+    syncAll();toast(res.missing?t('Seçici sayfada bulunamadı: sayfa en üstten yakalandı.'):t(everyDevice?'{s} tüm cihazlara yerleştirildi.':'{s} bu cihaza yerleştirildi.',{s:name})+' '+t('Ekranın üzerinde tekerlekle kaydırabilirsin.'));
+  }catch(e){toast(e.user?e.message:t('Yakalanamadı: {m}',{m:e.message||e}));}
   finally{one.disabled=all.disabled=false;btn.textContent=label;}
 }
 one.addEventListener('click',()=>capture(false));

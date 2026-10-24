@@ -16,6 +16,7 @@ import {onSyncUI,syncAll} from './sync.js';
 import {toast} from './toast.js';
 import {setUi} from './ui-state.js';
 import {fitAll} from './workspace.js';
+import {LOCALE,t} from '../lang.js';
 import {$,D2R} from '../util.js';
 
 /* Store listing sets (Sıradaki yol 4): App Store / Google Play sized artboards (STORE_SIZES), 3–8 screens with a
@@ -42,6 +43,8 @@ const SAMPLE=['Her şey tek yerde | Görevlerin, notların ve takvimin yan yana.
   'Ücretsiz başla | Kurulum bir dakika sürer.','Gece de rahat | Karanlık mod gözünü yormaz.','Verilerin güvende | Uçtan uca şifreleme.',
   'Hemen indir | Binlerce ekip zaten kullanıyor.'];
 
+// the sample headlines in the UI language (they go into the set's texts: the user's language, not the document's)
+const sample=n=>SAMPLE.slice(0,n).map(s=>t(s)).join('\n');
 const mix=(a,b,t)=>'#'+[1,3,5].map(i=>Math.round(parseInt(a.slice(i,i+2),16)*(1-t)+parseInt(b.slice(i,i+2),16)*t).toString(16).padStart(2,'0')).join('');
 const parse=text=>text.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const [h,...s]=l.split('|');return {h:h.trim(),s:s.join('|').trim()};});
 
@@ -65,12 +68,12 @@ function addTexts(o,i){
   const line=o.lines[i]||{h:'',s:''},W=o.size.w,H=o.size.h,land=W>H,T=o.theme;
   const hs=land?.052:.085,ss=land?.024:.04,width=land?.4:.84,margin=land?.07:.06;
   if(!line.h&&!line.s)return;
-  const f=addFrame({name:'Başlık bloğu',fillOn:false,radius:0,wMode:'fixed',w:width,hMode:'hug',x:land?margin+width/2:.5,y:.5,
+  const f=addFrame({name:t('Başlık bloğu'),fillOn:false,radius:0,wMode:'fixed',w:width,hMode:'hug',x:land?margin+width/2:.5,y:.5,
     layout:{dir:'col',gap:+((land?.03:.012)*H/W).toFixed(5),pad:[0,0,0,0],justify:'start',align:land?'start':'center'}});
   const add=(text,size,props)=>{if(!text)return;
     const it=addText(Object.assign({text,font:o.font,size,wMode:'fill',wrap:0,lh:1.08,align:land?'left':'center',color:T.ink},props));it.parent=f.id;};
-  add(line.h,hs,{weight:800,ls:-.02,name:'Başlık'});
-  add(line.s,ss,{weight:500,lh:1.3,color:T.sub,name:'Alt başlık'});
+  add(line.h,hs,{weight:800,ls:-.02,name:t('Başlık')});
+  add(line.s,ss,{weight:500,lh:1.3,color:T.sub,name:t('Alt başlık')});
   renderItems();
   // the block hugs its height, so its stored y is its top edge (it grows downwards when a headline gets longer):
   // the margin (portrait), or centred once its height is known (landscape)
@@ -90,7 +93,7 @@ function frame(heightWorld,frac,aspect){
 const devHeight=d=>{const b=deviceBox(d.id);return b.isEmpty()?14.7:b.max.y-b.min.y;};
 function device(o,k,props){
   const d=newDevice(o.size.dev,Object.assign({colorKey:o.theme.dev,glare:true,fit:'cover'},props));
-  const img=o.shots[k];if(img){d.img=img;d.imgName=img.dataset.name||'Ekran görüntüsü';}
+  const img=o.shots[k];if(img){d.img=img;d.imgName=img.dataset.name||t('Ekran görüntüsü');}
   state.devices.push(d);buildRT(d);return d;
 }
 // Klasik / Dönüşümlü: one device per screen, low in the frame (its bottom runs off the board a little)
@@ -121,7 +124,7 @@ async function generate(o){
   o.g=Date.now();o.n=o.single?1:o.n;
   const boards=[];
   for(let i=0;i<o.n;i++){
-    const b=addBoard(null,o.size.single?base+' öne çıkan':base+' '+(i+1));boards.push(b);
+    const b=addBoard(null,o.size.single?t('{s} öne çıkan',{s:base}):base+' '+(i+1));boards.push(b);
     setupBoard(o,i);
     if(o.layout!=='pano')soloDevice(o,i);
     renderItems();syncAll();
@@ -132,7 +135,7 @@ async function generate(o){
     storeActive();  // the scene goes to the other screens of the set (boards.js syncPano)
   }
   select([]);setUi({kind:'board'});fitAll();
-  toast(o.n+' ekranlık '+base+' seti oluşturuldu');
+  toast(t('{n} ekranlık {s} seti oluşturuldu',{n:o.n,s:base}));
 }
 
 /* ---------- dialog */
@@ -140,28 +143,28 @@ async function generate(o){
 // {before: async () => go on?, after} around making the set
 function openDialog(pre,hooks){
   const sc=document.createElement('div');sc.className='scrim';
-  sc.innerHTML='<div class="dialog store-dlg" role="dialog" aria-modal="true" aria-labelledby="stTitle"><div class="dh"><span id="stTitle">Mağaza seti oluştur</span>'+
-    '<button class="ib sm" type="button" data-a="cancel" aria-label="Kapat"><span>✕</span></button></div><div class="db">'+
-    '<div class="row"><label class="lbl" for="stSize">Ölçü</label><select id="stSize"></select></div>'+
-    '<div class="row" id="stCountRow"><span class="lbl">Ekran sayısı</span><div class="seg" id="stCount" role="group" aria-label="Ekran sayısı"></div></div>'+
-    '<div class="row"><span class="lbl">Düzen</span><div class="seg" id="stLayout" role="group" aria-label="Düzen"></div></div>'+
-    '<div class="row"><span class="lbl">Renk</span><div class="swatches" id="stTheme" role="group" aria-label="Renk teması"></div></div>'+
-    '<div class="row"><label class="lbl" for="stFont">Yazı tipi</label><select id="stFont"></select></div>'+
-    '<label class="lbl block" for="stLines">Başlıklar: her satır bir ekran, alt başlığı | ile ayır</label><textarea class="tbody" id="stLines" rows="6" spellcheck="false"></textarea>'+
-    '<div class="row"><span class="lbl">Ekran görüntüleri</span><span class="cells"><button class="btn" type="button" id="stShotsBtn">Seç…</button></span></div>'+
-    '<p class="hint-sm" id="stShotsNote">İstersen sonra da ekleyebilirsin. Sırayla ekranlara yerleşir (dosya adına göre).</p>'+
+  sc.innerHTML='<div class="dialog store-dlg" role="dialog" aria-modal="true" aria-labelledby="stTitle"><div class="dh"><span id="stTitle">'+t('Mağaza seti oluştur')+'</span>'+
+    '<button class="ib sm" type="button" data-a="cancel" aria-label="'+t('Kapat')+'"><span>✕</span></button></div><div class="db">'+
+    '<div class="row"><label class="lbl" for="stSize">'+t('Ölçü')+'</label><select id="stSize"></select></div>'+
+    '<div class="row" id="stCountRow"><span class="lbl">'+t('Ekran sayısı')+'</span><div class="seg" id="stCount" role="group" aria-label="'+t('Ekran sayısı')+'"></div></div>'+
+    '<div class="row"><span class="lbl">'+t('Düzen@store')+'</span><div class="seg" id="stLayout" role="group" aria-label="'+t('Düzen@store')+'"></div></div>'+
+    '<div class="row"><span class="lbl">'+t('Renk')+'</span><div class="swatches" id="stTheme" role="group" aria-label="'+t('Renk teması')+'"></div></div>'+
+    '<div class="row"><label class="lbl" for="stFont">'+t('Yazı tipi')+'</label><select id="stFont"></select></div>'+
+    '<label class="lbl block" for="stLines">'+t('Başlıklar: her satır bir ekran, alt başlığı | ile ayır')+'</label><textarea class="tbody" id="stLines" rows="6" spellcheck="false"></textarea>'+
+    '<div class="row"><span class="lbl">'+t('Ekran görüntüleri')+'</span><span class="cells"><button class="btn" type="button" id="stShotsBtn">'+t('Seç…')+'</button></span></div>'+
+    '<p class="hint-sm" id="stShotsNote">'+t('İstersen sonra da ekleyebilirsin. Sırayla ekranlara yerleşir (dosya adına göre).')+'</p>'+
     '<input type="file" id="stShots" accept="image/*" multiple hidden>'+
-    '<div class="dfoot"><button class="btn" type="button" data-a="cancel">Vazgeç</button><button class="btn primary" type="button" data-a="go">Oluştur</button></div></div></div>';
+    '<div class="dfoot"><button class="btn" type="button" data-a="cancel">'+t('Vazgeç')+'</button><button class="btn primary" type="button" data-a="go">'+t('Oluştur')+'</button></div></div></div>';
   document.body.appendChild(sc);
   const q=s=>sc.querySelector(s),o={n:5,layout:'classic',theme:THEMES[0],font:'Plus Jakarta Sans',shots:Array.isArray(pre)?pre:[]};
-  if(o.shots.length){o.n=Math.max(3,Math.min(8,o.shots.length));q('#stShotsNote').textContent=o.shots.length+' görsel seçildi; sırayla ekranlara yerleşecek.';}
-  STORE_SIZES.forEach(z=>q('#stSize').appendChild(new Option(z.store+' · '+z.n+' ('+z.w+' × '+z.h+')',z.id)));
+  if(o.shots.length){o.n=Math.max(3,Math.min(8,o.shots.length));q('#stShotsNote').textContent=t('{n} görsel seçildi; sırayla ekranlara yerleşecek.',{n:o.shots.length});}
+  STORE_SIZES.forEach(z=>q('#stSize').appendChild(new Option(z.store+' · '+t(z.n)+' ('+z.w+' × '+z.h+')',z.id)));
   FONTS.forEach(f=>q('#stFont').appendChild(new Option(f.name,f.name)));q('#stFont').value=o.font;
   [3,4,5,6,7,8].forEach(n=>{const b=document.createElement('button');b.type='button';b.textContent=n;b.dataset.v=n;q('#stCount').appendChild(b);});
-  Object.entries(LAYOUTS).forEach(([k,n])=>{const b=document.createElement('button');b.type='button';b.textContent=n;b.dataset.v=k;q('#stLayout').appendChild(b);});
-  THEMES.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='sw';b.dataset.v=t.id;b.title=t.n;b.setAttribute('aria-label',t.n);
-    b.style.background='linear-gradient(135deg,'+t.c1+','+t.c2+')';q('#stTheme').appendChild(b);});
-  q('#stLines').value=SAMPLE.slice(0,o.n).join('\n');
+  Object.entries(LAYOUTS).forEach(([k,n])=>{const b=document.createElement('button');b.type='button';b.textContent=t(n);b.dataset.v=k;q('#stLayout').appendChild(b);});
+  THEMES.forEach(th=>{const b=document.createElement('button');b.type='button';b.className='sw';b.dataset.v=th.id;b.title=t(th.n);b.setAttribute('aria-label',t(th.n));
+    b.style.background='linear-gradient(135deg,'+th.c1+','+th.c2+')';q('#stTheme').appendChild(b);});
+  q('#stLines').value=sample(o.n);
   const sync=()=>{
     const z=STORE_SIZES.find(x=>x.id===q('#stSize').value)||STORE_SIZES[0];
     q('#stCountRow').hidden=!!z.single;
@@ -173,15 +176,15 @@ function openDialog(pre,hooks){
   q('#stCount').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     const prev=o.n;o.n=+b.dataset.v;
     // the sample headlines follow the count while they are untouched
-    const cur=q('#stLines').value;if(cur===SAMPLE.slice(0,prev).join('\n'))q('#stLines').value=SAMPLE.slice(0,o.n).join('\n');sync();});
+    const cur=q('#stLines').value;if(cur===sample(prev))q('#stLines').value=sample(o.n);sync();});
   q('#stLayout').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!b.disabled){o.layout=b.dataset.v;sync();}});
   q('#stTheme').addEventListener('click',e=>{const b=e.target.closest('button');if(b){o.theme=THEMES.find(t=>t.id===b.dataset.v);sync();}});
   q('#stFont').addEventListener('change',e=>{o.font=e.target.value;});
   q('#stShotsBtn').addEventListener('click',()=>q('#stShots').click());
   q('#stShots').addEventListener('change',async e=>{
-    const files=[...e.target.files].sort((a,b)=>a.name.localeCompare(b.name,'tr',{numeric:true}));
+    const files=[...e.target.files].sort((a,b)=>a.name.localeCompare(b.name,LOCALE,{numeric:true}));
     o.shots=await Promise.all(files.map(f=>new Promise(res=>{const img=new Image();img.dataset.name=f.name;img.onload=()=>res(img);img.onerror=()=>res(null);img.src=URL.createObjectURL(f);})));
-    o.shots=o.shots.filter(Boolean);q('#stShotsNote').textContent=o.shots.length+' görsel seçildi; sırayla ekranlara yerleşecek.';
+    o.shots=o.shots.filter(Boolean);q('#stShotsNote').textContent=t('{n} görsel seçildi; sırayla ekranlara yerleşecek.',{n:o.shots.length});
   });
   const close=()=>sc.remove();
   sc.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(!a){if(e.target===sc)close();return;}
@@ -193,7 +196,7 @@ function openDialog(pre,hooks){
     (async()=>{
       if(hooks&&hooks.before&&!(await hooks.before()))return;
       await generate({size:z,n,single:!!z.single,layout:z.single&&o.layout==='pano'?'classic':o.layout,theme:o.theme,font:o.font,shots:o.shots,
-        lines:[...Array(n)].map((_,i)=>lines[i]||parse(SAMPLE[i%SAMPLE.length])[0])});
+        lines:[...Array(n)].map((_,i)=>lines[i]||parse(t(SAMPLE[i%SAMPLE.length]))[0])});
       if(hooks&&hooks.after)hooks.after();
     })();
   });
@@ -206,15 +209,15 @@ $('#storeSetBtn').addEventListener('click',()=>openDialog());
    artboard exactly that big and switches the export to 24-bit PNG */
 const RATIOS=['1:1','4:5','9:16','16:9','4:3','21:9'];
 const sizeEl=$('#ratioSel');
-{const g=document.createElement('optgroup');g.label='Oran';RATIOS.forEach(r=>g.appendChild(new Option(r,'r:'+r)));sizeEl.appendChild(g);}
+{const g=document.createElement('optgroup');g.label=t('Oran');RATIOS.forEach(r=>g.appendChild(new Option(r,'r:'+r)));sizeEl.appendChild(g);}
 ['App Store','Google Play'].forEach(st=>{const g=document.createElement('optgroup');g.label=st;
-  STORE_SIZES.filter(z=>z.store===st).forEach(z=>g.appendChild(new Option(z.n+' · '+z.w+' × '+z.h,'s:'+z.id)));sizeEl.appendChild(g);});
-sizeEl.appendChild(new Option('Özel boyut…','custom'));
+  STORE_SIZES.filter(z=>z.store===st).forEach(z=>g.appendChild(new Option(t(z.n)+' · '+z.w+' × '+z.h,'s:'+z.id)));sizeEl.appendChild(g);});
+sizeEl.appendChild(new Option(t('Özel boyut…'),'custom'));
 sizeEl.addEventListener('change',()=>{
   const v=sizeEl.value;
   if(v.startsWith('r:'))state.ratio=v.slice(2);
   else if(v==='custom')state.ratio='custom';
-  else{const z=STORE_SIZES.find(x=>'s:'+x.id===v);if(z){Object.assign(state,{ratio:'custom',customW:z.w,customH:z.h,format:'png24'});toast(z.store+' '+z.n+': '+z.w+' × '+z.h+' px, saydamsız PNG');}}
+  else{const z=STORE_SIZES.find(x=>'s:'+x.id===v);if(z){Object.assign(state,{ratio:'custom',customW:z.w,customH:z.h,format:'png24'});toast(z.store+' '+t(z.n)+': '+t('{w} × {h} px, saydamsız PNG',{w:z.w,h:z.h}));}}
   layout();syncAll();
 });
 onSyncUI(()=>{

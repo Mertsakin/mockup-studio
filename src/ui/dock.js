@@ -1,5 +1,6 @@
 import {icon} from './icons.js';
 import {onUi,setUi,ui} from './ui-state.js';
+import {t as tx} from '../lang.js';
 import {$} from '../util.js';
 
 /* The dock's selection tools share one button (Figma's move / scale): Seç, Taşı, Döndür. The button shows the tool in
@@ -9,9 +10,9 @@ const TOOLS=[['select','cursor','Seç','V'],['move','move','Taşı (eksenler)','
 const main=$('#selMain'),chev=$('#selChev');
 function show(k){
   const t=TOOLS.find(x=>x[0]===k);if(!t)return;
-  main.dataset.tool=k;main.setAttribute('aria-label',t[2]);
+  main.dataset.tool=k;main.setAttribute('aria-label',tx(t[2]));
   main.querySelector('.ti').innerHTML=icon(t[1],18);
-  main.querySelector('.tip').innerHTML=t[2]+' <kbd>'+t[3]+'</kbd>'+(k==='select'?' · cihazı ölçekle <kbd>⌘T</kbd>':'');
+  main.querySelector('.tip').innerHTML=tx(t[2])+' <kbd>'+t[3]+'</kbd>'+(k==='select'?' · '+tx('cihazı ölçekle')+' <kbd>⌘T</kbd>':'');
 }
 onUi(()=>{if(TOOLS.some(t=>t[0]===ui.tool))show(ui.tool);});
 
@@ -22,7 +23,7 @@ chev.addEventListener('click',e=>{
   menu.innerHTML='';
   TOOLS.forEach(([k,ic,n,kb])=>{const b=document.createElement('button');b.type='button';b.className='mi';b.setAttribute('role','menuitem');
     if(ui.tool===k)b.classList.add('on');
-    b.innerHTML=icon(ic)+'<span></span><kbd>'+kb+'</kbd>';b.querySelector('span').textContent=n;
+    b.innerHTML=icon(ic)+'<span></span><kbd>'+kb+'</kbd>';b.querySelector('span').textContent=tx(n);
     b.addEventListener('click',()=>{close();setUi({tool:k});});menu.appendChild(b);});
   menu.hidden=false;chev.setAttribute('aria-expanded','true');
   const r=main.getBoundingClientRect();menu.style.left=r.left+'px';menu.style.top=(r.top-menu.offsetHeight-8)+'px';

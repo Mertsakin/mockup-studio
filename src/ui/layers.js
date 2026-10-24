@@ -9,6 +9,7 @@ import {ui} from './ui-state.js';
 import {syncSliders} from './sliders.js';
 import {onSyncUI} from './sync.js';
 import {toast} from './toast.js';
+import {t} from '../lang.js';
 import {$,clamp} from '../util.js';
 import {POS_MAX,SCALE_MAX,SCALE_MIN} from '../state/constants.js';
 
@@ -57,9 +58,9 @@ function layer(cmd){
   let need=null;
   if(cmd==='front'){const n=Math.min(...others.map(o=>depth(o).near));need=x=>front({...x,near0:n});}
   else if(cmd==='back'){const f=Math.max(...others.map(o=>depth(o).far));need=x=>back({...x,far0:f});}
-  else if(cmd==='forward'){if(i===list.length-1){toast('Zaten en önde');return;}const n=depth(list[i+1]).near;need=x=>front({...x,near0:n});}
-  else if(cmd==='backward'){if(i===0){toast('Zaten en arkada');return;}const f=depth(list[i-1]).far;need=x=>back({...x,far0:f});}
-  if(Math.abs(need(depth(d)))<1e-3){toast(cmd==='front'||cmd==='forward'?'Zaten önde':'Zaten arkada');return;}
+  else if(cmd==='forward'){if(i===list.length-1){toast(t('Zaten en önde'));return;}const n=depth(list[i+1]).near;need=x=>front({...x,near0:n});}
+  else if(cmd==='backward'){if(i===0){toast(t('Zaten en arkada'));return;}const f=depth(list[i-1]).far;need=x=>back({...x,far0:f});}
+  if(Math.abs(need(depth(d)))<1e-3){toast(t(cmd==='front'||cmd==='forward'?'Zaten önde':'Zaten arkada'));return;}
   settle(d,need);syncSliders();
 }
 

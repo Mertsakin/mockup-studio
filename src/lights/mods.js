@@ -1,4 +1,5 @@
 /* ---------- lights ---------- */
+import {t as tx} from '../lang.js';
 const MAX_LIGHTS=8;
 const LTYPES={directional:'Yönlü',point:'Nokta',spot:'Spot'};
 let lid=0;
@@ -37,10 +38,10 @@ const LIGHT_PRESETS=[
 function lightTan(L){const m=modOf(L.mod);return m.tan!==undefined?m.tan:L.size/Math.max(.05,L.dist);}
 function shadowCharacter(L){
   const t=lightTan(L);
-  const c=t<.03?'çok sert, keskin kenarlı':t<.12?'sert':t<.35?'orta yumuşaklıkta':t<.8?'yumuşak':'çok yumuşak, dağınık';
-  const tip=L.mod==='sun'?'Güneş çok uzakta olduğu için gölge kenarları hep keskindir; yalnızca cisimden uzaklaştıkça hafifçe açılır.'
-    :'Kaynağı büyütünce ya da ışığı yaklaştırınca gölge yumuşar, küçültünce ya da uzaklaştırınca sertleşir.';
-  return '<b>Gölge: '+c+'.</b> '+tip;
+  const c=tx(t<.03?'çok sert, keskin kenarlı':t<.12?'sert':t<.35?'orta yumuşaklıkta':t<.8?'yumuşak':'çok yumuşak, dağınık');
+  const tip=tx(L.mod==='sun'?'Güneş çok uzakta olduğu için gölge kenarları hep keskindir; yalnızca cisimden uzaklaştıkça hafifçe açılır.'
+    :'Kaynağı büyütünce ya da ışığı yaklaştırınca gölge yumuşar, küçültünce ya da uzaklaştırınca sertleşir.');
+  return '<b>'+tx('Gölge: {c}.',{c})+'</b> '+tip;
 }
 
 export {LIGHT_PRESETS,LTYPES,MAX_LIGHTS,MODS,lightTan,modOf,newLight,reserveLightIds,shadowCharacter};

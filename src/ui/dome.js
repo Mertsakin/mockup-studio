@@ -4,6 +4,7 @@ import {applyTransform} from '../render/transform.js';
 import {state} from '../state/state.js';
 import {syncSliders} from './sliders.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
+import {t as tx} from '../lang.js';
 import {$,D2R,clamp,wrap} from '../util.js';
 
 /* ---------- light map (top view) & direct light dragging ---------- */
@@ -41,7 +42,7 @@ function renderDome(){
   });
   domeDots.forEach((d,id)=>{if(!alive.has(id)){d.g.remove();domeDots.delete(id);}});
   const L=selLight();
-  domeCap.textContent=L?('Işık '+(state.lights.indexOf(L)+1)+': yön '+Math.round(L.az)+'°, yükseklik '+Math.round(L.el)+'°'):'';
+  domeCap.textContent=L?tx('Işık {n}: yön {az}°, yükseklik {el}°',{n:state.lights.indexOf(L)+1,az:Math.round(L.az),el:Math.round(L.el)}):'';
 }
 function domePoint(e){const r=domeSvg.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*224-112,y:(e.clientY-r.top)/r.height*224-112};}
 function setFromDome(L,pt){const r=Math.min(1,Math.hypot(pt.x,pt.y)/100);L.el=clamp(90*(1-r),2,90);L.az=wrap(Math.atan2(pt.x,pt.y)/D2R);}

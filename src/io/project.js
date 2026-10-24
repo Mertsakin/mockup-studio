@@ -11,6 +11,7 @@ import {comp} from '../render/stage.js';
 import {applyTransform} from '../render/transform.js';
 import {DEFAULT_MODEL_CM} from '../state/constants.js';
 import {reserveDeviceIds,reserveItemIds,state,view} from '../state/state.js';
+import {t as tx} from '../lang.js';
 
 /* Whole-scene snapshots, shared by undo/redo, autosave and project files.
    A snapshot is plain data: the studio state (devices, lights, scene angle, background, artboard…) plus the
@@ -140,14 +141,14 @@ async function fromProjectFile(src){
     const buf=await src.arrayBuffer();
     if(isZip(new Uint8Array(buf,0,4))){
       const JSZip=(await import('jszip')).default,zip=await JSZip.loadAsync(buf),pj=zip.file('project.json');
-      if(!pj)throw new Error('Bu bir mockup stüdyosu proje dosyası değil.');
+      if(!pj)throw new Error(tx('Bu bir mockup stüdyosu proje dosyası değil.'));
       text=await pj.async('string');
       for(const f of Object.values(zip.files)){const m=/^media\/([a-z]\d+)\.(\w+)$/.exec(f.name);if(!m||f.dir)continue;
         media[m[1]]=new Blob([await f.async('arraybuffer')],{type:MIME[m[2].toLowerCase()]||'application/octet-stream'});}
     } else text=new TextDecoder().decode(buf);
   }
   const p=JSON.parse(text);
-  if(p.app!=='mockup-studio'||!(Array.isArray(p.boards)||Array.isArray(p.devices)))throw new Error('Bu bir mockup stüdyosu proje dosyası değil.');
+  if(p.app!=='mockup-studio'||!(Array.isArray(p.boards)||Array.isArray(p.devices)))throw new Error(tx('Bu bir mockup stüdyosu proje dosyası değil.'));
   const images={};
   // a file whose media cannot be loaded (a broken model, say) still opens: that device shows a placeholder
   const safe=async(src,k)=>{try{return adopt(await loadMedia(src,k),k);}catch(e){console.warn('Medya açılamadı:',k,e);return null;}};

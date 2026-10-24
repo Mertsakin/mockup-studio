@@ -15,7 +15,7 @@ let fails=0;const ok=(c,m)=>{console.log((c?'  ok   ':'  FAIL ')+m);if(!c)fails+
 const b=await chromium.launch({args:['--use-angle=metal']}),errs=[];
 const path=p=>new URL(p.url()).pathname;
 const at=(p,re)=>p.waitForURL(x=>re.test(x.pathname),{timeout:20000}).then(()=>true,()=>false);
-async function page(){const ctx=await b.newContext({viewport:{width:1280,height:800}}),p=await ctx.newPage();
+async function page(){const ctx=await b.newContext({locale:'tr-TR',viewport:{width:1280,height:800}}),p=await ctx.newPage();
   p.on('pageerror',e=>errs.push(e.message));await p.addInitScript(()=>{window.__noPhotoPreview=true;});return p;}
 try{
   let p=await page();

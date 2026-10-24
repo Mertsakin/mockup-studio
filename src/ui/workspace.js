@@ -2,6 +2,7 @@ import {state} from '../state/state.js';
 import {activate,boardSize,doc,moveBoard,onBoards,renameBoard} from './boards.js';
 import {gradCss,layout,setStageGeometry} from './layout.js';
 import {onUi,panning,setUi,ui} from './ui-state.js';
+import {t as tx} from '../lang.js';
 import {$,clamp} from '../util.js';
 
 /* The workspace: an infinite canvas holding the artboards (Figma-like).
@@ -49,7 +50,7 @@ function renderBoards(){
       o={el,label:el.querySelector('.ab-label'),img:el.querySelector('img'),size:el.querySelector('.ab-size')};
       o.label.addEventListener('pointerdown',e=>{if(!o.editing)dragBoard(e,b.id);});
       o.label.addEventListener('dblclick',e=>{e.stopPropagation();editLabel(o,b);});
-      o.label.title='Taşımak için sürükle, yeniden adlandırmak için çift tıkla';
+      o.label.title=tx('Taşımak için sürükle, yeniden adlandırmak için çift tıkla');
       el.addEventListener('pointerdown',e=>{if(e.button!==0||panning()||e.target===o.label)return;if(b.id!==doc.active){e.stopPropagation();pick(b.id);}});
       els.set(b.id,o);world.appendChild(el);
     }
@@ -68,7 +69,7 @@ function pick(id){activate(id);setUi({kind:'board'});}
 // double-click on a board's name: rename it in place (Enter / leaving the field saves, Esc cancels)
 function editLabel(o,b){
   if(o.editing)return;o.editing=true;
-  const inp=document.createElement('input');inp.className='ab-ren';inp.value=b.name;inp.setAttribute('aria-label','Artboard adı');inp.spellcheck=false;
+  const inp=document.createElement('input');inp.className='ab-ren';inp.value=b.name;inp.setAttribute('aria-label',tx('Artboard adı'));inp.spellcheck=false;
   o.label.textContent='';o.label.appendChild(inp);inp.focus();inp.select();
   const end=ok=>{if(!o.editing)return;o.editing=false;const v=inp.value;inp.remove();o.label.textContent=b.name;if(ok)renameBoard(b.id,v);};
   inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')end(true);else if(e.key==='Escape')end(false);});

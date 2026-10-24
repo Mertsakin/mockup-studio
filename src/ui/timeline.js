@@ -15,6 +15,7 @@ import {selectItem} from './items.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
 import {toast} from './toast.js';
 import {setUi,ui} from './ui-state.js';
+import {fmt,t as tx} from '../lang.js';
 import {$,$$} from '../util.js';
 
 /* Canlandır mode UI: the timeline under the stage (rows = the camera, the devices, the 2D items, the lights, with
@@ -48,6 +49,7 @@ const LABEL={px:'Yatay',py:'Dikey',pz:'Derinlik',ry:'Dönüş',rx:'Eğim',rz:'Ya
   x:'Yatay',y:'Dikey',w:'Genişlik',h:'Yükseklik',size:'Boyut',rot:'Döndürme',opacity:'Opaklık',
   zoom:'Yakınlık',fov:'Objektif',panX:'Yatay kayma',panY:'Dikey kayma',fnum:'Diyafram',focusDist:'Odak uzaklığı',
   az:'Yön',el:'Yükseklik',dist:'Uzaklık',intensity:'Yoğunluk',angle:'Huzme açısı',penumbra:'Huzme kenarı'};
+const lbl=k=>tx(LABEL[k]);  // a value's label in the UI language
 // the value field of each animatable value, per target kind (the ◆ attaches to its label)
 const SLIDER={
   device:{px:'s-d-px',py:'s-d-py',pz:'s-d-pz',ry:'s-d-ry',rx:'s-d-rx',rz:'s-d-rz',scale:'s-d-scale',lidAngle:'s-d-lid',scroll:'s-d-scroll'},
@@ -57,7 +59,7 @@ const SLIDER={
 const POSE_BTN={device:'#poseKey',item:'#itemPoseKey',camera:'#camPoseKey',light:'#lightPoseKey'};
 const EASES=[['smooth','Yumuşak','M2 20 C 14 20, 22 2, 34 2'],['linear','Doğrusal','M2 20 L 34 2'],['hold','Ani','M2 20 L 30 20 L 30 2 L 34 2'],['back','Geri tepme','M2 20 C 12 20, 18 -6, 34 2']];
 const DEV_ICON={phone:'smartphone',tablet:'tablet',laptop:'laptop',monitor:'monitor',browser:'window-frame',page:'display',custom:'gallery-wide'};
-const fmtT=t=>t.toFixed(2).replace('.',',');
+const fmtT=t=>fmt(t,2);
 const deg=v=>Math.round(v)+'°',pct=v=>Math.round(v*100)+'%';
 function fmtV(o,k,v){
   switch(kindOf(o)){
@@ -69,10 +71,10 @@ function fmtV(o,k,v){
 // names like the layer tree's: the base name, numbered when it repeats
 function labels(list,base){const n={},seen={};list.forEach(x=>{const b=base(x);n[b]=(n[b]||0)+1;});
   return list.map(x=>{const b=base(x);seen[b]=(seen[b]||0)+1;return n[b]>1?b+' '+seen[b]:b;});}
-const devNames=()=>labels(state.devices,typeName);
-const lightNames=()=>labels(state.lights,L=>L.mod==='custom'?'Işık':modOf(L.mod).n);
+const devNames=()=>labels(state.devices,d=>tx(typeName(d)));
+const lightNames=()=>labels(state.lights,L=>L.mod==='custom'?tx('Işık'):tx(modOf(L.mod).n));
 function nameOf(o){
-  switch(kindOf(o)){case 'camera':return 'Kamera';case 'light':return lightNames()[state.lights.indexOf(o)];case 'device':return devNames()[state.devices.indexOf(o)];default:return o.name;}
+  switch(kindOf(o)){case 'camera':return tx('Kamera');case 'light':return lightNames()[state.lights.indexOf(o)];case 'device':return devNames()[state.devices.indexOf(o)];default:return o.name;}
 }
 const fps=()=>state.anim.fps||30;
 const open=new Set();  // target refs whose value rows are unfolded
@@ -97,7 +99,7 @@ function setZoom(z,x){
 function setScroll(s){const v=Math.max(0,Math.min(maxScroll(),s));if(v!==view.scroll){view.scroll=v;draw(true);}}
 // the ruler's label step: the widest that keeps labels ~110 px apart; frames when a frame is wide enough
 function tickStep(){const p=pps();for(const s of [5/fps(),.25,.5,1,2,5,10])if(s*p>=110)return s;return 10;}
-const fmtTick=s=>(Number.isInteger(s)?String(s):fmtT(s))+' sn';
+const fmtTick=s=>(Number.isInteger(s)?String(s):fmtT(s))+' '+tx('sn');
 
 /* ---------- drawing: the structure is rebuilt only when it changes; the playhead moves every frame */
 let sig='';
@@ -130,12 +132,12 @@ function build(){
     const ref=refOf(d);
     // name cell
     const n=document.createElement('div');n.className='tl-name'+(prop?' subrow':'');n.dataset.ref=ref;
-    if(prop===FXROW){n.innerHTML='<span class="nm">Metin efekti</span>';}
-    else if(prop){n.innerHTML='<span class="nm"></span>'+NAV+'<span class="sub"></span>';n.firstChild.textContent=LABEL[prop];n.dataset.prop=prop;}
+    if(prop===FXROW){n.innerHTML='<span class="nm"></span>';n.firstChild.textContent=tx('Metin efekti');}
+    else if(prop){n.innerHTML='<span class="nm"></span>'+NAV+'<span class="sub"></span>';n.firstChild.textContent=lbl(prop);n.dataset.prop=prop;}
     else{
       const anim=hasAnim(d),fx=kindOf(d)==='item'&&hasFx(d),ic=iconOf(d);n.setAttribute('aria-selected',String(isSel(d)));
-      n.innerHTML='<button type="button" class="caret" aria-label="Değerleri göster" aria-expanded="'+open.has(ref)+'"'+(anim?'':' disabled')+'>'+icon(open.has(ref)?'alt-arrow-down':'alt-arrow-right',12)+'</button>'+icon(ic,14)+'<span class="nm"></span>'+NAV+'<span class="sub">'+(fx?'efekt':'')+'</span>';
-      n.querySelector('.nm').textContent=name;if(anim)n.title=tracked(d).length+' animasyonlu değer';
+      n.innerHTML='<button type="button" class="caret" aria-label="'+tx('Değerleri göster')+'" aria-expanded="'+open.has(ref)+'"'+(anim?'':' disabled')+'>'+icon(open.has(ref)?'alt-arrow-down':'alt-arrow-right',12)+'</button>'+icon(ic,14)+'<span class="nm"></span>'+NAV+'<span class="sub">'+(fx?tx('efekt'):'')+'</span>';
+      n.querySelector('.nm').textContent=name;if(anim)n.title=tx('{n} animasyonlu değer',{n:tracked(d).length});
       n.querySelector('.caret').addEventListener('click',e=>{e.stopPropagation();open.has(ref)?open.delete(ref):open.add(ref);draw(true);});
     }
     if(prop!==FXROW){
@@ -155,15 +157,15 @@ function build(){
     for(let j=0;j<ts.length-1;j++){
       const es=new Set(keysAt(d,ts[j],prop===FXROW?null:prop).map(k=>k.ease)),e1=es.size===1?EASES.find(x=>x[0]===[...es][0]):null,w=xOf(ts[j+1])-xOf(ts[j]);
       const on=A.seg&&A.seg.ref===ref&&A.seg.prop===(prop||null)&&Math.abs(A.seg.t0-ts[j])<halfFrame(fps());
-      lh+='<div class="seg-bar'+(on?' on':'')+'" data-t0="'+ts[j]+'" data-t1="'+ts[j+1]+'" style="left:'+xOf(ts[j])+'px;width:'+w+'px" title="Geçiş: '+(e1?e1[1]:'karışık')+' · '+fmtT(ts[j])+' → '+fmtT(ts[j+1])+' sn (tıkla: türünü seç)">'+(w>40&&e1?EASE_SVG(e1[2]):'')+'</div>';
+      lh+='<div class="seg-bar'+(on?' on':'')+'" data-t0="'+ts[j]+'" data-t1="'+ts[j+1]+'" style="left:'+xOf(ts[j])+'px;width:'+w+'px" title="'+tx('Geçiş: {e} · {a} → {b} sn (tıkla: türünü seç)',{e:e1?tx(e1[1]):tx('karışık'),a:fmtT(ts[j]),b:fmtT(ts[j+1])})+'">'+(w>40&&e1?EASE_SVG(e1[2]):'')+'</div>';
     }
     // the design frame (what Tasarla and the still image show) on the device's summary row
-    if(!prop&&hasAnim(d))lh+='<span class="dmark" style="left:'+xOf(designT(d))+'px" title="Tasarım karesi ('+fmtT(designT(d))+' sn): Tasarla bu anı gösterir, oradaki değişiklikler bu kareye yazılır"></span>';
+    if(!prop&&hasAnim(d))lh+='<span class="dmark" style="left:'+xOf(designT(d))+'px" title="'+tx('Tasarım karesi ({t} sn): Tasarla bu anı gösterir, oradaki değişiklikler bu kareye yazılır',{t:fmtT(designT(d))})+'"></span>';
     lane.innerHTML=lh;
     // a text item's effects: bars from start to end (drag: move in time)
     if(prop===FXROW)['in','out'].forEach(ph=>{const f=d.fx[ph];if(!f||!FX[f.type])return;
       const b=document.createElement('div');b.className='fx-bar '+ph;b.style.left=xOf(f.t)+'px';b.style.width=Math.max(6,xOf(f.t+f.dur)-xOf(f.t))+'px';
-      b.textContent=FX[f.type].n;b.title=(ph==='in'?'Giriş':'Çıkış')+' efekti: '+FX[f.type].n+' · '+fmtT(f.t)+'–'+fmtT(f.t+f.dur)+' sn (sürükle: zamanı değiştir)';
+      b.textContent=tx(FX[f.type].n);b.title=tx(ph==='in'?'Giriş efekti: {fx} · {a}–{b} sn (sürükle: zamanı değiştir)':'Çıkış efekti: {fx} · {a}–{b} sn (sürükle: zamanı değiştir)',{fx:tx(FX[f.type].n),a:fmtT(f.t),b:fmtT(f.t+f.dur)});
       b.addEventListener('pointerdown',e=>dragFx(e,d,ph));lane.appendChild(b);});
     lane.dataset.ref=ref;if(prop&&prop!==FXROW)lane.dataset.prop=prop;
     ts.forEach(t=>{
@@ -171,7 +173,7 @@ function build(){
       const part=!prop&&keysAt(d,t,null).length<tracked(d).length;
       const b=document.createElement('button');b.type='button';b.className='kf'+(diamondOn(d,t,prop)?' on':'')+(prop?' small':'')+(part?' part':'');b.style.left=xOf(t)+'px';
       b.dataset.t=t;b.dataset.prop=prop||'';
-      b.setAttribute('aria-label',(prop?LABEL[prop]+', ':'')+'anahtar kare, '+fmtT(t)+' sn');b.title=fmtT(t)+' sn'+(part?' · '+keysAt(d,t,null).map(k=>LABEL[tracked(d).find(p=>d.tracks[p].includes(k))]).join(', '):'');
+      b.setAttribute('aria-label',(prop?lbl(prop)+', ':'')+tx('anahtar kare, {t} sn',{t:fmtT(t)}));b.title=fmtT(t)+' '+tx('sn')+(part?' · '+keysAt(d,t,null).map(k=>lbl(tracked(d).find(p=>d.tracks[p].includes(k)))).join(', '):'');
       b.addEventListener('pointerdown',e=>dragKey(e,d,t,prop));
       b.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();ui.tlFocus=true;pickTarget(d,true);if(!diamondOn(d,t,prop))selectKey(refOf(d),t,prop);keyMenu(e.clientX,e.clientY);});
       lane.appendChild(b);
@@ -181,9 +183,9 @@ function build(){
       const r=lanes.getBoundingClientRect(),t=Math.round(tOf(e.clientX-r.left)*fps())/fps();laneMenu(e.clientX,e.clientY,d,prop===FXROW?null:prop,t,prop===FXROW);});
     lanes.appendChild(lane);
   });
-  const end=document.createElement('div');end.className='end';end.style.left=xOf(dur)+'px';end.innerHTML='<span>'+String(dur).replace('.',',')+' sn</span>';
+  const end=document.createElement('div');end.className='end';end.style.left=xOf(dur)+'px';end.innerHTML='<span>'+fmt(Math.round(dur*100)/100)+' '+tx('sn')+'</span>';
   const vids=state.devices.filter(hasVideo).map(d=>duration(d.video)).filter(Boolean);
-  end.title='Süreyi değiştirmek için sürükle (en fazla 30 sn)'+(vids.length?'. Ekran videosu: '+vids.map(fmtDur).join(', '):'');end.addEventListener('pointerdown',dragEnd);lanes.appendChild(end);
+  end.title=tx('Süreyi değiştirmek için sürükle (en fazla 30 sn)')+(vids.length?'. '+tx('Ekran videosu: {v}',{v:vids.map(fmtDur).join(', ')}):'');end.addEventListener('pointerdown',dragEnd);lanes.appendChild(end);
   const ph=document.createElement('div');ph.className='ph';ph.id='tlPh';lanes.appendChild(ph);
   $('#tlEmpty').hidden=anyAnim()||state.devices.some(hasVideo);
   drawCard();drawRange();
@@ -197,7 +199,7 @@ function drawRange(){
   // along the bottom of the selection's last row: clear of the diamonds and of the card (which sits under the first row)
   const bot=Math.max(...hit.map(l=>l.offsetTop+l.offsetHeight));
   const r=document.createElement('div');r.className='range';r.style.left=xOf(a)+'px';r.style.width=(xOf(b)-xOf(a))+'px';r.style.top=(bot-5)+'px';
-  r.innerHTML='<i class="l" title="Esnet: başlangıcı sürükle (hareket hızlanır ya da yavaşlar)"></i><i class="r" title="Esnet: bitişi sürükle (hareket hızlanır ya da yavaşlar)"></i>';
+  r.innerHTML='<i class="l" title="'+tx('Esnet: başlangıcı sürükle (hareket hızlanır ya da yavaşlar)')+'"></i><i class="r" title="'+tx('Esnet: bitişi sürükle (hareket hızlanır ya da yavaşlar)')+'"></i>';
   r.querySelector('.l').addEventListener('pointerdown',e=>stretch(e,'l'));r.querySelector('.r').addEventListener('pointerdown',e=>stretch(e,'r'));
   lanes.appendChild(r);
 }
@@ -208,42 +210,42 @@ function stretch(e,side){
 }
 /* ---------- clipboard and the right-click menus */
 const MAC=/Mac|iPhone|iPad/.test(navigator.platform||''),C=MAC?'⌘':'Ctrl+';
-function copySel(){const n=copyKeys();if(n)toast(n+' anahtar kare kopyalandı');return n;}
-function cutSel(){const n=cutKeys();if(n)toast(n+' anahtar kare kesildi');return n;}
-function pasteSel(){if(!hasKeyClip())return 0;const n=pasteKeys(cur());toast(n?n+' anahtar kare yapıştırıldı · '+fmtT(A.t)+' sn':'Yapıştırılamadı: anahtarlar sürenin dışına düşüyor');return n;}
+function copySel(){const n=copyKeys();if(n)toast(tx('{n} anahtar kare kopyalandı',{n}));return n;}
+function cutSel(){const n=cutKeys();if(n)toast(tx('{n} anahtar kare kesildi',{n}));return n;}
+function pasteSel(){if(!hasKeyClip())return 0;const n=pasteKeys(cur());toast(n?tx('{n} anahtar kare yapıştırıldı · {t} sn',{n,t:fmtT(A.t)}):tx('Yapıştırılamadı: anahtarlar sürenin dışına düşüyor'));return n;}
 function keyMenu(x,y){
   const ks=selectedKeys(),n=ks.length,es=new Set(ks.map(k=>k.key.ease)),ts=ks.map(k=>k.key.t),one=Math.max(...ts)-Math.min(...ts)<halfFrame(fps())&&new Set(ks.map(k=>k.o)).size===1;
   const last=ks.every(({o,prop,key})=>o.tracks[prop][o.tracks[prop].length-1]===key);
-  openMenu(x,y,[['copy','Kopyala',copySel,C+'C'],['scissors','Kes',cutSel,C+'X'],['clipboard','İmlece yapıştır',pasteSel,C+'V',!hasKeyClip()],['copy','İmlece çoğalt',()=>duplicateKeys(),C+'D'],null,
-    ...EASES.map(([k,nm])=>['',(es.size===1&&es.has(k)?'✓ ':'')+'Geçiş: '+nm.toLowerCase(),()=>setEase(k),'',last]),null,
-    ['target','Tasarım karesi yap',setDesignFrame,'',!one],['trash-bin-minimalistic',n>1?n+' anahtar kareyi sil':'Sil',()=>deleteSelected(),'⌫']]);
+  openMenu(x,y,[['copy',tx('Kopyala'),copySel,C+'C'],['scissors',tx('Kes'),cutSel,C+'X'],['clipboard',tx('İmlece yapıştır'),pasteSel,C+'V',!hasKeyClip()],['copy',tx('İmlece çoğalt'),()=>duplicateKeys(),C+'D'],null,
+    ...EASES.map(([k,nm])=>['',(es.size===1&&es.has(k)?'✓ ':'')+tx('Geçiş: {e}',{e:tx(nm).toLowerCase()}),()=>setEase(k),'',last]),null,
+    ['target',tx('Tasarım karesi yap'),setDesignFrame,'',!one],['trash-bin-minimalistic',n>1?tx('{n} anahtar kareyi sil',{n}):tx('Sil'),()=>deleteSelected(),'⌫']]);
 }
 function laneMenu(x,y,d,prop,t,fx){
-  openMenu(x,y,[['clipboard','İmlece yapıştır',pasteSel,C+'V',!hasKeyClip()],null,
-    ['add-circle','Buraya anahtar kare ekle ('+fmtT(t)+' sn)',()=>{pickTarget(d,true);seek(t);toggleKeyAt(d,prop);},'',fx],
-    ['layers-minimalistic','Katmanın tüm anahtarlarını seç',()=>{pickTarget(d,true);selectAllKeys(d);},C+'A',!hasAnim(d)]]);
+  openMenu(x,y,[['clipboard',tx('İmlece yapıştır'),pasteSel,C+'V',!hasKeyClip()],null,
+    ['add-circle',tx('Buraya anahtar kare ekle ({t} sn)',{t:fmtT(t)}),()=>{pickTarget(d,true);seek(t);toggleKeyAt(d,prop);},'',fx],
+    ['layers-minimalistic',tx('Katmanın tüm anahtarlarını seç'),()=>{pickTarget(d,true);selectAllKeys(d);},C+'A',!hasAnim(d)]]);
 }
 /* ---------- the edit card above the selected keys, or the selected transition */
 const EASE_SVG=path=>'<svg viewBox="0 0 36 22" aria-hidden="true"><path d="'+path+'"/></svg>';
-const parseT=s=>{const m=/^(-?\d*[.,]?\d+)\s*(k|kare)?$/i.exec(String(s).trim());if(!m)return NaN;const v=+m[1].replace(',','.');return m[2]?v/fps():v;};
+const parseT=s=>{const m=/^(-?\d*[.,]?\d+)\s*(k|kare|f|fr|frames?)?$/i.exec(String(s).trim());if(!m)return NaN;const v=+m[1].replace(',','.');return m[2]?v/fps():v;};
 function drawCard(){
   const old=lanes.querySelector('.kpop');if(old)old.remove();
   const ks=selectedKeys(),seg=A.seg;if(!ks.length&&!seg)return;
   let a,b,keys,title,hit,single=null,last=false;
-  if(seg){const o=byRef(seg.ref);if(!o)return;keys=segKeys();a=seg.t0;b=seg.t1;title='Geçiş';
+  if(seg){const o=byRef(seg.ref);if(!o)return;keys=segKeys();a=seg.t0;b=seg.t1;title=tx('Geçiş@tl');
     hit=[...lanes.querySelectorAll('.lane')].filter(l=>l.dataset.ref===seg.ref&&!l.dataset.fx&&(l.dataset.prop||null)===seg.prop);}
   else{keys=ks.map(x=>x.key);const ts=keys.map(k=>k.t);a=Math.min(...ts);b=Math.max(...ts);const owners=new Set(ks.map(x=>x.o));
-    title=ks.length===1?LABEL[ks[0].prop]:owners.size===1?ks.length+' anahtar kare':ks.length+' anahtar kare · '+owners.size+' katman';
+    title=ks.length===1?lbl(ks[0].prop):owners.size===1?tx('{n} anahtar kare',{n:ks.length}):tx('{n} anahtar kare · {m} katman',{n:ks.length,m:owners.size});
     if(owners.size===1&&b-a<halfFrame(fps()))single=ks[0].o;
     hit=[...lanes.querySelectorAll('.lane')].filter(l=>!l.dataset.fx&&ks.some(x=>refOf(x.o)===l.dataset.ref&&(!l.dataset.prop||l.dataset.prop===x.prop)));
     last=ks.every(({o,prop,key})=>o.tracks[prop][o.tracks[prop].length-1]===key);}  // nothing follows: no transition to shape
   if(!hit.length)return;
   const es=new Set(keys.map(k=>k.ease)),isDesign=!!single&&Math.abs(designT(single)-a)<halfFrame(fps());
   const p=document.createElement('div');p.className='kpop';p.setAttribute('role','group');p.setAttribute('aria-label',title);
-  p.innerHTML='<b></b>'+(seg?'<span class="tf">'+fmtT(a)+' → '+fmtT(b)+' sn</span>':'<label class="tf"><input id="kpT" value="'+fmtT(a)+'" aria-label="Zaman (sn ya da kare: 36k)" spellcheck="false"><span>sn</span></label>')+
-    '<span class="eases" role="group" aria-label="Geçiş türü">'+EASES.map(([k,n,path])=>'<button type="button" data-ease="'+k+'" aria-pressed="'+(es.size>1?'mixed':es.has(k))+'"'+(last?' disabled':'')+'>'+EASE_SVG(path)+'<span class="tip">'+n+(seg?'':last?' · son kare: sonrası sabit kalır':' (sonraki kareye geçiş)')+'</span></button>').join('')+'</span>'+
-    (seg?'':'<button type="button" class="ib sm" id="kpDesign" aria-pressed="'+isDesign+'"'+(single?'':' disabled')+'>'+icon('target',14)+'<span class="tip">'+(isDesign?'Tasarım karesi: Tasarla ve durağan görsel bu anı gösterir':single?'Tasarım karesi yap':'Tasarım karesi: tek bir an seçiliyken')+'</span></button>'+
-      '<button type="button" class="ib sm del" id="kpDel" aria-label="Sil">'+icon('trash-bin-minimalistic',14)+'<span class="tip">Sil <kbd>⌫</kbd></span></button>');
+  p.innerHTML='<b></b>'+(seg?'<span class="tf">'+fmtT(a)+' → '+fmtT(b)+' '+tx('sn')+'</span>':'<label class="tf"><input id="kpT" value="'+fmtT(a)+'" aria-label="'+tx('Zaman (sn ya da kare: 36k)')+'" spellcheck="false"><span>'+tx('sn')+'</span></label>')+
+    '<span class="eases" role="group" aria-label="'+tx('Geçiş türü@tl')+'">'+EASES.map(([k,n,path])=>'<button type="button" data-ease="'+k+'" aria-pressed="'+(es.size>1?'mixed':es.has(k))+'"'+(last?' disabled':'')+'>'+EASE_SVG(path)+'<span class="tip">'+tx(n)+(seg?'':last?' · '+tx('son kare: sonrası sabit kalır'):' '+tx('(sonraki kareye geçiş)'))+'</span></button>').join('')+'</span>'+
+    (seg?'':'<button type="button" class="ib sm" id="kpDesign" aria-pressed="'+isDesign+'"'+(single?'':' disabled')+'>'+icon('target',14)+'<span class="tip">'+tx(isDesign?'Tasarım karesi: Tasarla ve durağan görsel bu anı gösterir':single?'Tasarım karesi yap':'Tasarım karesi: tek bir an seçiliyken')+'</span></button>'+
+      '<button type="button" class="ib sm del" id="kpDel" aria-label="'+tx('Sil')+'">'+icon('trash-bin-minimalistic',14)+'<span class="tip">'+tx('Sil')+' <kbd>⌫</kbd></span></button>');
   p.firstChild.textContent=title;
   lanes.appendChild(p);
   // above the topmost row of the selection, centred on its span; when the ruler is in the way, right under that row
@@ -268,22 +270,22 @@ function moveHead(){
   if(view.zoom>1&&!dragging&&A.t!==headT){const x=xOf(A.t);if(x<12||x>12+W()){view.scroll=Math.max(0,Math.min(maxScroll(),A.t*pps()-W()*.1));build();}}
   headT=A.t;
   const ph=$('#tlPh');if(ph)ph.style.left=xOf(A.t)+'px';
-  const tf=$('#tlT');if(document.activeElement!==tf)tf.value=fmtT(A.t);$('#tlDur').textContent='/ '+fmtT(state.anim.dur)+' sn';
+  const tf=$('#tlT');if(document.activeElement!==tf)tf.value=fmtT(A.t);$('#tlDur').textContent='/ '+fmtT(state.anim.dur)+' '+tx('sn');
   names.querySelectorAll('.subrow[data-prop]').forEach(n=>{const d=byRef(n.dataset.ref);if(d)n.querySelector('.sub').textContent=fmtV(d,n.dataset.prop,d[n.dataset.prop]);});
   names.querySelectorAll('.tl-name').forEach(n=>{if(n.querySelector('.knav'))syncNav(n);});
 }
 // the key navigator of a row: ◀ ▶ enabled while there is a key before / after the playhead; ◆ filled while the row has
 // a key at the playhead (half: a summary row where only some values have one), outlined while the row animates
-const NAV='<span class="knav"><button type="button" class="pv" aria-label="Önceki anahtar kare">'+icon('alt-arrow-left',10)+'<span class="tip">Önceki anahtar kare <kbd>↑</kbd></span></button>'+
-  '<button type="button" class="kd" aria-label="Bu anda anahtar kare"><i></i><span class="tip"></span></button>'+
-  '<button type="button" class="nx" aria-label="Sonraki anahtar kare">'+icon('alt-arrow-right',10)+'<span class="tip">Sonraki anahtar kare <kbd>↓</kbd></span></button></span>';
+const NAV='<span class="knav"><button type="button" class="pv" aria-label="'+tx('Önceki anahtar kare')+'">'+icon('alt-arrow-left',10)+'<span class="tip">'+tx('Önceki anahtar kare')+' <kbd>↑</kbd></span></button>'+
+  '<button type="button" class="kd" aria-label="'+tx('Bu anda anahtar kare')+'"><i></i><span class="tip"></span></button>'+
+  '<button type="button" class="nx" aria-label="'+tx('Sonraki anahtar kare')+'">'+icon('alt-arrow-right',10)+'<span class="tip">'+tx('Sonraki anahtar kare')+' <kbd>↓</kbd></span></button></span>';
 function syncNav(n){
   const d=byRef(n.dataset.ref);if(!d)return;const prop=n.dataset.prop||null,t=Math.round(A.t*fps())/fps(),hf=halfFrame(fps());
   const times=prop?d.tracks[prop]?d.tracks[prop].map(k=>k.t):[]:timesOf(d),ks=keysAt(d,t,prop);
   const at=ks.length>0,part=!prop&&at&&ks.length<tracked(d).length;
   const kd=n.querySelector('.kd');kd.classList.toggle('at',at);kd.classList.toggle('part',part);kd.classList.toggle('anim',!at&&times.length>0);
-  kd.querySelector('.tip').innerHTML=prop?(at?'Bu andaki anahtar kareyi kaldır':'Bu anda '+LABEL[prop].toLowerCase()+' için anahtar kare')
-    :part?'Bu anda eksik değerlere de anahtar kare (poz) <kbd>K</kbd>':at?'Bu andaki anahtar kareleri kaldır':'Bu anda tüm değerlere anahtar kare (poz) <kbd>K</kbd>';
+  kd.querySelector('.tip').innerHTML=prop?(at?tx('Bu andaki anahtar kareyi kaldır'):tx('Bu anda {p} için anahtar kare',{p:lbl(prop).toLowerCase()}))
+    :part?tx('Bu anda eksik değerlere de anahtar kare (poz)')+' <kbd>K</kbd>':at?tx('Bu andaki anahtar kareleri kaldır'):tx('Bu anda tüm değerlere anahtar kare (poz)')+' <kbd>K</kbd>';
   n.querySelector('.pv').disabled=!times.some(x=>x<t-hf);n.querySelector('.nx').disabled=!times.some(x=>x>t+hf);
   n.classList.toggle('has',at);
 }
@@ -291,8 +293,8 @@ function draw(force){
   if(tl.hidden)return;
   const s=structure();if(force||s!==sig){sig=s;build();}
   moveHead();
-  $('#tlPlay').innerHTML=icon(A.playing?'pause':'play')+'<span class="tip">'+(A.playing?'Durdur':'Oynat')+' <kbd>Boşluk</kbd></span>';
-  $('#tlPlay').setAttribute('aria-label',A.playing?'Durdur':'Oynat');
+  $('#tlPlay').innerHTML=icon(A.playing?'pause':'play')+'<span class="tip">'+tx(A.playing?'Durdur':'Oynat')+' <kbd>'+tx('Boşluk')+'</kbd></span>';
+  $('#tlPlay').setAttribute('aria-label',tx(A.playing?'Durdur':'Oynat'));
   $('#tlLoop').setAttribute('aria-pressed',String(!!state.anim.loop));
   $('#tlFps').textContent=fps()+' fps';
 }
@@ -422,21 +424,21 @@ const menu=document.createElement('div');menu.className='menu';menu.setAttribute
 function runPreset(id){
   const d=cur();if(!d)return;if(ui.mode!=='animate')setMode('animate');
   const p=presetsFor(d).find(x=>x.id===id),over=applyPreset(id,d);open.add(refOf(d));
-  toast(p.n+' eklendi'+(over.length?': '+over.map(k=>LABEL[k].toLowerCase()).join(', ')+' hareketinin üzerine yazıldı':''));
+  toast(tx('{p} eklendi',{p:tx(p.n)})+(over.length?': '+tx('{v} hareketinin üzerine yazıldı',{v:over.map(k=>lbl(k).toLowerCase()).join(', ')}):''));
 }
 const presetOk=(p,d)=>!!d&&(!p.ok||p.ok(d));
 $('#tlPresetBtn').addEventListener('click',e=>{
   e.stopPropagation();if(!menu.hidden){menu.hidden=true;return;}
   const d=cur(),nm=d?nameOf(d):'';menu.innerHTML='';
   presetsFor(d).filter(p=>!d||!p.ok||p.ok(d)).forEach(p=>{const b=document.createElement('button');b.type='button';b.className='mi';b.setAttribute('role','menuitem');b.disabled=!presetOk(p,d);
-    b.innerHTML='<span></span><kbd></kbd>';b.firstChild.textContent=p.n+' · '+nm;b.lastChild.textContent=p.hint;b.addEventListener('click',()=>{menu.hidden=true;runPreset(p.id);});menu.appendChild(b);});
+    b.innerHTML='<span></span><kbd></kbd>';b.firstChild.textContent=tx(p.n)+' · '+nm;b.lastChild.textContent=tx(p.hint);b.addEventListener('click',()=>{menu.hidden=true;runPreset(p.id);});menu.appendChild(b);});
   menu.hidden=false;const r=e.currentTarget.getBoundingClientRect();
   menu.style.left=Math.min(r.left,innerWidth-menu.offsetWidth-8)+'px';menu.style.top=(r.top-menu.offsetHeight-6)+'px';
   const f=menu.querySelector('.mi:not(:disabled)');if(f)f.focus();
 });
 document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!menu.contains(e.target))menu.hidden=true;});
 const chips=$('#presetChips'),itemChips=$('#itemPresetChips');
-[[chips,PRESETS],[itemChips,ITEM_PRESETS],[$('#camPresetChips'),CAM_PRESETS],[$('#lightPresetChips'),LIGHT_ANIM]].forEach(([el,list])=>list.forEach(p=>{const b=document.createElement('button');b.type='button';b.dataset.preset=p.id;b.textContent=p.n;b.title=p.hint;b.addEventListener('click',()=>runPreset(p.id));el.appendChild(b);}));
+[[chips,PRESETS],[itemChips,ITEM_PRESETS],[$('#camPresetChips'),CAM_PRESETS],[$('#lightPresetChips'),LIGHT_ANIM]].forEach(([el,list])=>list.forEach(p=>{const b=document.createElement('button');b.type='button';b.dataset.preset=p.id;b.textContent=tx(p.n);b.title=tx(p.hint);b.addEventListener('click',()=>runPreset(p.id));el.appendChild(b);}));
 
 /* ---------- inspector: ◆ beside the sliders, pose key */
 $('#poseKey').addEventListener('click',()=>addPoseKey(sel()));
@@ -448,7 +450,7 @@ function ensureDots(){
   for(const kind in SLIDER)for(const k in SLIDER[kind]){
     if(dots.some(x=>x.kind===kind&&x.prop===k&&x.el.isConnected))continue;
     const lab=document.querySelector('label[for="'+SLIDER[kind][k]+'"]');if(!lab)continue;
-    const b=document.createElement('button');b.type='button';b.className='kdot anim-only';b.dataset.prop=k;b.setAttribute('aria-label',LABEL[k]+': bu anda anahtar kare');
+    const b=document.createElement('button');b.type='button';b.className='kdot anim-only';b.dataset.prop=k;b.setAttribute('aria-label',lbl(k)+': '+tx('bu anda anahtar kare'));
     b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const o=cur();if(o&&kindOf(o)===kind)keyProp(o,k);});
     // after the value (a value field) or before the label (anything else)
     if(lab.parentNode.classList.contains('nf'))lab.parentNode.appendChild(b);else lab.prepend(b);
@@ -482,7 +484,7 @@ function syncMode(){
   const animate=ui.mode==='animate';
   $$('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===ui.mode)));
   if(tl.hidden===animate){tl.hidden=!animate;placeSlots(animate);sig='';}
-  $('#exportMenuBtn').textContent=animate?'Video dışa aktar':'Dışa aktar';
+  $('#exportMenuBtn').textContent=tx(animate?'Video dışa aktar':'Dışa aktar');
 }
 $$('#modeSeg button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
 onAnim(()=>{

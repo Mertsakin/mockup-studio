@@ -5,6 +5,8 @@
    otherwise when the user opens the sign-in dialog.
    Sign-in: OAuth (Google, GitHub, Apple; VITE_AUTH_PROVIDERS picks which buttons show) or an e-mail link (one-time,
    no password). Both return to the studio's root; the client exchanges the code and removes it from the address. */
+import {t as tx} from '../lang.js';
+
 const URL_=import.meta.env.VITE_SUPABASE_URL||'',KEY=import.meta.env.VITE_SUPABASE_ANON_KEY||'';
 const STORAGE_URL=(import.meta.env.VITE_STORAGE_URL||'').replace(/\/+$/,'');
 const PROVIDERS=(import.meta.env.VITE_AUTH_PROVIDERS??'google,github,apple').split(',').map(s=>s.trim()).filter(Boolean);
@@ -21,7 +23,7 @@ const fromLogin=(()=>{try{const v=sessionStorage.getItem('shotlight.fresh');sess
 const cameFromSignIn=/[?&]code=/.test(location.search)||/access_token=/.test(location.hash)||fromLogin;
 let sawSignedOut=false;
 function client(){
-  if(!cloudEnabled)return Promise.reject(new Error('Hesaplar bu sürümde kapalı.'));
+  if(!cloudEnabled)return Promise.reject(new Error(tx('Hesaplar bu sürümde kapalı.')));
   return clientP||(clientP=import('@supabase/supabase-js').then(({createClient})=>{
     const c=createClient(URL_,KEY,{auth:{flowType:'pkce',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     c.auth.onAuthStateChange((ev,session)=>{

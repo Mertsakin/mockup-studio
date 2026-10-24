@@ -26,7 +26,7 @@ const email=`acct-${Date.now()}@shotlight.test`,password='test-'+crypto.randomUU
 const {data:created}=await admin.auth.admin.createUser({email,password,email_confirm:true});
 let uid=created.user.id;
 const b=await chromium.launch({args:['--use-angle=metal']});
-const ctx=await b.newContext({viewport:{width:1280,height:800},acceptDownloads:true}),p=await ctx.newPage();
+const ctx=await b.newContext({locale:'tr-TR',viewport:{width:1280,height:800},acceptDownloads:true}),p=await ctx.newPage();
 const errs=[];p.on('pageerror',e=>errs.push(e.message));
 await p.addInitScript(()=>{window.__noPhotoPreview=true;});
 const toastHas=(p,re)=>p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#toast').textContent),re.source,{timeout:30000});

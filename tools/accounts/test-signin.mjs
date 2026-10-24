@@ -11,7 +11,7 @@ const L=local(),STUDIO=process.argv[2]||STUDIO_URL,SHOTS=process.env.SHOTS||'';
 const admin=createClient(L.url,L.service,NODE_OPTS);
 let fails=0;const ok=(c,m)=>{console.log((c?'  ok   ':'  FAIL ')+m);if(!c)fails++;};
 const email=`signin-${Date.now()}@shotlight.test`;
-const b=await chromium.launch({args:['--use-angle=metal']}),p=await b.newPage({viewport:{width:1280,height:800}});
+const b=await chromium.launch({args:['--use-angle=metal']}),p=await b.newPage({locale:'tr-TR',viewport:{width:1280,height:800}});
 const errs=[];p.on('pageerror',e=>errs.push(e.message));
 try{
   await p.goto(STUDIO);

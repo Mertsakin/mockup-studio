@@ -46,7 +46,7 @@ const browser=await chromium.launch({channel:'chrome',args:['--use-angle=metal']
 fs.mkdirSync(OUT,{recursive:true});
 try{
   for(const format of ['mp4','webm']){
-    const page=await browser.newPage({viewport:{width:1400,height:900}});
+    const page=await browser.newPage({locale:'tr-TR',viewport:{width:1400,height:900}});
     await page.addInitScript(()=>{window.__noPhotoPreview=true;});
     page.on('pageerror',e=>console.error('page error:',e.message));
     await page.goto(server.resolvedUrls.local[0]);

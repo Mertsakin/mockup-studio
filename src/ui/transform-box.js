@@ -7,6 +7,7 @@ import {sel,state} from '../state/state.js';
 import {syncSliders} from './sliders.js';
 import {onSyncUI} from './sync.js';
 import {onUi,panning,setUi,ui} from './ui-state.js';
+import {t as tx} from '../lang.js';
 import {$,clamp} from '../util.js';
 
 /* Free transform box (Photoshop Ctrl+T / Figma selection box) for the selected device.
@@ -19,7 +20,7 @@ const MIN=SCALE_MIN,MAX=SCALE_MAX;
 const stage=$('#stagearea'),box=document.createElement('div');
 box.className='tbox';box.hidden=true;
 box.innerHTML='<svg class="tbox-line" aria-hidden="true"><polygon/></svg>'+
-  ['nw','ne','se','sw'].map(k=>'<button type="button" class="th th-'+k+'" data-h="'+k+'" aria-label="Ölçekle"></button>').join('')+'<span class="tbox-val" hidden></span>';
+  ['nw','ne','se','sw'].map(k=>'<button type="button" class="th th-'+k+'" data-h="'+k+'" aria-label="'+tx('Ölçekle')+'"></button>').join('')+'<span class="tbox-val" hidden></span>';
 stage.appendChild(box);
 const poly=box.querySelector('polygon'),val=box.querySelector('.tbox-val'),handles=[...box.querySelectorAll('.th')];
 

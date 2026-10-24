@@ -36,6 +36,8 @@
         <div class="msep" role="separator"></div>
         <div class="mlabel">Tema</div>
         <div class="seg seg-menu" id="themeSeg" role="group" aria-label="Tema"><button type="button" data-theme="system" aria-label="Sistem" title="Sistem"><span data-icon="monitor" data-size="16"></span></button><button type="button" data-theme="light" aria-label="Açık" title="Açık"><span data-icon="sun" data-size="16"></span></button><button type="button" data-theme="dark" aria-label="Koyu" title="Koyu"><span data-icon="moon" data-size="16"></span></button></div>
+        <div class="mlabel">Dil</div>
+        <div class="seg seg-menu lang-seg" id="langSeg" role="group" aria-label="Dil"><button type="button" data-lang="tr" lang="tr">Türkçe</button><button type="button" data-lang="en" lang="en">English</button></div>
       </div>
       <input type="file" id="openProject" accept=".json,.zip,application/json,application/zip" hidden>
     </div>
@@ -387,8 +389,8 @@
             <div class="row" data-for="phone tablet"><span class="lbl">Arka yüz</span>
               <div class="seg" data-dkey="backFinish" role="group" aria-label="Arka yüz"><button data-v="matte">Mat</button><button data-v="glossy">Parlak</button></div>
             </div>
-            <div class="row" data-for="phone tablet"><span class="lbl">Yön</span>
-              <div class="seg" data-dkey="landscape"><button data-v="false">Dikey</button><button data-v="true">Yatay</button></div>
+            <div class="row" data-for="phone tablet"><span class="lbl" data-t="Yön@dev">Yön</span>
+              <div class="seg" data-dkey="landscape"><button data-v="false" data-t="Dikey@dev">Dikey</button><button data-v="true" data-t="Yatay@dev">Yatay</button></div>
             </div>
             <div class="row" data-for="phone"><span class="lbl">Ön kamera</span>
               <div class="seg" data-dkey="notch"><button data-v="hole">Delik</button><button data-v="none">Yok</button></div>
@@ -418,7 +420,7 @@
           <div class="chips" id="presetChips"></div>
         </section>
         <section class="sec" data-sec="dev-layer">
-          <h3 class="sh">Yerleşim</h3>
+          <h3 class="sh" data-t="Yerleşim@layer">Yerleşim</h3>
           <div class="seg seg-wide" id="layerBtns" role="group" aria-label="Seçili cihazın katman sırası">
             <button type="button" data-layer="front" title="En öne getir (⇧⌘])">En öne</button><button type="button" data-layer="forward" title="Bir öne (⌘])">Öne</button><button type="button" data-layer="backward" title="Bir arkaya (⌘[)">Arkaya</button><button type="button" data-layer="back" title="En arkaya gönder (⇧⌘[)">En arkaya</button>
           </div>
@@ -454,7 +456,7 @@
           <h3 class="sh">Konum ve boyut<span class="sh-acts"><button class="keybtn anim-only" type="button" id="itemPoseKey"><i aria-hidden="true"></i>Anahtar kare<span class="tip">Tüm değerler için bu anda anahtar kare <kbd>K</kbd></span></button></span></h3>
           <div class="nfgrid" id="geoGrid"></div>
           <p class="hint-sm" id="flowNote" hidden>Konumu auto layout belirliyor. Sürükleyerek ya da oklarla sırasını değiştir.</p>
-          <div class="row" id="absRow" hidden><span class="lbl">Yerleşim</span><div class="seg" id="itemAbs" role="group" aria-label="Auto layout içinde yerleşim"><button type="button" data-v="flow">Otomatik</button><button type="button" data-v="abs">Mutlak</button></div></div>
+          <div class="row" id="absRow" hidden><span class="lbl" data-t="Yerleşim@abs">Yerleşim</span><div class="seg" id="itemAbs" role="group" aria-label="Auto layout içinde yerleşim"><button type="button" data-v="flow">Otomatik</button><button type="button" data-v="abs">Mutlak</button></div></div>
           <div class="row" id="centerRow"><span class="lbl">Ortala</span><span class="cells"><button class="btn" type="button" id="itemCenterX">Yatay</button><button class="btn" type="button" id="itemCenterY">Dikey</button></span></div>
         </section>
         <section class="sec" id="alSec" data-sec="item-al" hidden>

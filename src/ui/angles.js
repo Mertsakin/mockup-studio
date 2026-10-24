@@ -3,12 +3,13 @@ import {PRESETS} from '../state/constants.js';
 import {state} from '../state/state.js';
 import {syncSliders} from './sliders.js';
 import {toast} from './toast.js';
+import {t} from '../lang.js';
 import {$} from '../util.js';
 
 /* ---------- scene presets & saved angles ---------- */
 const presetWrap=$('#presets');
 PRESETS.forEach(p=>{
-  const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=p.n;
+  const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=t(p.n);
   b.addEventListener('click',()=>{const up=state.devices.some(d=>d.type==='laptop'||d.type==='monitor');
     Object.assign(state.scene,up?p.up:p.v);syncSliders();applyTransform();});
   presetWrap.appendChild(b);
@@ -24,7 +25,7 @@ function renderSaved(){
     const chip=document.createElement('span');chip.className='chip';
     const a=document.createElement('button');a.type='button';a.textContent=s.name;
     a.addEventListener('click',()=>{applySaved(s);syncSliders();applyTransform();});
-    const x=document.createElement('button');x.type='button';x.className='x';x.textContent='×';x.setAttribute('aria-label',s.name+' açısını sil');
+    const x=document.createElement('button');x.type='button';x.className='x';x.textContent='×';x.setAttribute('aria-label',t('{a} açısını sil',{a:s.name}));
     x.addEventListener('click',()=>{saved.splice(i,1);storeSaved(saved);renderSaved();});
     chip.append(a,x);el.appendChild(chip);
   });
@@ -33,8 +34,8 @@ function renderSaved(){
 }
 $('#saveAngle').addEventListener('click',()=>{
   const n=saved.reduce((m,s)=>{const k=parseInt(String(s.name||'').replace(/\D/g,''),10);return isNaN(k)?m:Math.max(m,k);},0)+1;
-  const s={name:'Açı '+n};SKEYS.forEach(k=>s[k]=state.scene[k]);saved.push(s);
-  renderSaved();toast(storeSaved(saved)?'Açı '+n+' kaydedildi':'Açı bu oturum için eklendi');
+  const s={name:t('Açı')+' '+n};SKEYS.forEach(k=>s[k]=state.scene[k]);saved.push(s);
+  renderSaved();toast(storeSaved(saved)?t('{a} kaydedildi',{a:s.name}):t('Açı bu oturum için eklendi'));
 });
 
 export {applySaved,renderSaved,saved};

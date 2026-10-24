@@ -8,6 +8,7 @@ import {pick} from './pointer.js';
 import {syncSliders} from './sliders.js';
 import {syncAll} from './sync.js';
 import {toast} from './toast.js';
+import {t as tx} from '../lang.js';
 import {$,D2R,wrap} from '../util.js';
 
 /* Camera navigation.
@@ -52,10 +53,10 @@ function draw(){
       const dir=f.n.slice();if(i!==1)dir[A]=i===0?-1:1;if(j!==1)dir[B]=j===0?-1:1;
       const center=i===1&&j===1,cell=el('polygon',{points:[at(t0,s0),at(t1,s0),at(t1,s1),at(t0,s1)].map(p=>p.x.toFixed(2)+','+p.y.toFixed(2)).join(' '),class:'nav-hit'},g);
       cell.dataset.dir=dir.join(',');
-      if(center){cell.setAttribute('tabindex','0');cell.setAttribute('role','button');cell.setAttribute('aria-label',f.v+' bak');}
-      const tt=el('title',{},cell);tt.textContent=center?f.v:'¾ açı';
+      if(center){cell.setAttribute('tabindex','0');cell.setAttribute('role','button');cell.setAttribute('aria-label',tx('{v} bak',{v:tx(f.v)}));}
+      const tt=el('title',{},cell);tt.textContent=center?tx(f.v):tx('¾ açı');
     }
-    if(z>.3){const m=c.reduce((o,p)=>({x:o.x+p.x/4,y:o.y+p.y/4}),{x:0,y:0}),t=el('text',{x:m.x.toFixed(2),y:m.y.toFixed(2),'text-anchor':'middle','dominant-baseline':'central',class:'nav-label','font-size':(6.2+1.6*z).toFixed(2),opacity:(.35+.65*z).toFixed(2)},g);t.textContent=f.l;}
+    if(z>.3){const m=c.reduce((o,p)=>({x:o.x+p.x/4,y:o.y+p.y/4}),{x:0,y:0}),t=el('text',{x:m.x.toFixed(2),y:m.y.toFixed(2),'text-anchor':'middle','dominant-baseline':'central',class:'nav-label','font-size':(6.2+1.6*z).toFixed(2),opacity:(.35+.65*z).toFixed(2)},g);t.textContent=tx(f.l);}
   });
 }
 (function loop(){draw();requestAnimationFrame(loop);})();
@@ -89,7 +90,7 @@ function focusSelected(){
   const c=box.getCenter(new THREE.Vector3()).negate(),r=Math.max(1,box.getSize(new THREE.Vector3()).length()/2);
   const S=state.scene,p0=comp.position.clone(),r0=view.fitRadius,z0=S.zoom,px0=S.panX,py0=S.panY;
   animate(420,e=>{comp.position.lerpVectors(p0,c,e);view.fitRadius=r0+(r-r0)*e;S.zoom=z0+(1-z0)*e;S.panX=px0*(1-e);S.panY=py0*(1-e);applyTransform();},syncSliders);
-  if(state.devices.length>1)toast('Sahne artık bu cihazın etrafında dönüyor. Tümüne dönmek için Kadraja sığdır.');
+  if(state.devices.length>1)toast(tx('Sahne artık bu cihazın etrafında dönüyor. Tümüne dönmek için Kadraja sığdır.'));
 }
 $('#focusBtn').addEventListener('click',focusSelected);
 // the user takes over: stop any running animation; a double-click on a device selects it (pointer.js) and focuses

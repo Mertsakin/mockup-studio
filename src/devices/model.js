@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {fitModel} from './rt.js';
 import {ANISO,renderer,scene} from '../render/renderer.js';
 import {DEFAULT_MODEL_CM} from '../state/constants.js';
+import {fmt} from '../lang.js';
 import {V3,mkCanvas} from '../util.js';
 
 /* Imported 3D models (GLB / glTF). A model asset is the loaded file: {isModel, src (blob URL), blob, name, bytes,
@@ -149,6 +150,6 @@ function modelThumb(a){
   }catch(e){a.thumb='';}
   return a.thumb;
 }
-const fmtMB=b=>(b/1e6).toFixed(b<1e7?1:0).replace('.',',')+' MB';
+const fmtMB=b=>fmt(b/1e6,b<1e7?1:0)+' MB';
 
 export {MODEL_MAX_MB,buildModel,fmtMB,isModelFile,loadModel,loadModelFile,modelError,modelThumb,realSizeCm};

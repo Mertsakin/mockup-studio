@@ -15,12 +15,13 @@ import {fPct,makeSlider,syncSliders} from './sliders.js';
 import {onSyncUI,syncAll,syncUI} from './sync.js';
 import {toast} from './toast.js';
 import {setUi} from './ui-state.js';
+import {fmt,t} from '../lang.js';
 import {$,$$} from '../util.js';
 
 /* ---------- device list & type ---------- */
 function devLabel(d){
   const n=typeName(d),same=state.devices.filter(x=>typeName(x)===n);
-  return n+(same.length>1?' '+(same.indexOf(d)+1):'');
+  return t(n)+(same.length>1?' '+(same.indexOf(d)+1):'');
 }
 function renderDevList(){
   const el=$('#devList');el.innerHTML='';
@@ -31,12 +32,12 @@ function renderDevList(){
   });
 }
 const addSel=$('#addType');
-Object.entries(TYPES).forEach(([k,n])=>{const o=document.createElement('option');o.value=k;o.textContent=n;addSel.appendChild(o);});
+Object.entries(TYPES).forEach(([k,n])=>{const o=document.createElement('option');o.value=k;o.textContent=t(n);addSel.appendChild(o);});
 // device types: one row of icons (the name in the tooltip and for screen readers)
 const typeGrid=$('#typeGrid'),TYPE_ICON={phone:'smartphone',tablet:'tablet',laptop:'laptop',monitor:'monitor',browser:'window-frame',page:'display',custom:'gallery-wide'};
 Object.entries(TYPES).forEach(([k,n])=>{
   const b=document.createElement('button');b.type='button';b.innerHTML=icon(TYPE_ICON[k]||'smartphone',16);b.dataset.type=k;
-  b.title=k==='custom'?'Kendi çerçeven (PNG)':n;b.setAttribute('aria-label',b.title);
+  b.title=t(k==='custom'?'Kendi çerçeven (PNG)':n);b.setAttribute('aria-label',b.title);
   b.addEventListener('click',()=>{const d=sel();if(d.type===k)return;
     const solo=state.devices.length===1;d.type=k;
     if(solo){Object.assign(state.scene,DEFAULT_SCENE[k],{zoom:1,panX:0,panY:0});}
@@ -72,7 +73,7 @@ function addDeviceOf(d){
   for(let i=0;i<4;i++){const m=extent();if(m<=.85||state.scene.zoom<=ZOOM_MIN)break;state.scene.zoom=+Math.max(ZOOM_MIN,state.scene.zoom*.85/m).toFixed(3);applyTransform();}
   const m=extent();if(m>.85){d.scale=+Math.max(SCALE_MIN,d.scale*.85/m).toFixed(3);applyTransform();}
   $('#placeDetails').open=true;syncAll();
-  toast(typeName(d)+' eklendi'+(state.scene.zoom<z0-1e-3?'. Sığması için kamera geri çekildi.':''));
+  toast(t('{d} eklendi',{d:t(typeName(d))})+(state.scene.zoom<z0-1e-3?'. '+t('Sığması için kamera geri çekildi.'):''));
   return o;
 }
 /* ---------- imported 3D models (devices/model.js): a device of type 'model' */
@@ -103,10 +104,10 @@ function addModel(asset,at,name){
 // another file for an existing model device ("Modeli değiştir"): its place, size and animation stay
 function replaceModel(d,asset,name){d.model=asset;d.modelName=name||asset.name;rebuild(d,state.devices.length<2);syncAll();}
 // size: the longest edge in cm (the file's own units are metres: "Gerçek ölçü" reads them as such)
-const fCm=v=>v.toFixed(1).replace('.',',')+' cm';
-makeSlider($('#modelSlots'),{id:'d-msize',k:'modelSize',l:'Boyut',min:.5,max:1000,step:.1,reset:DEFAULT_MODEL_CM,f:fCm,log:true,
-  note:'En uzun kenarın uzunluğu. Ölçek bunun üstüne çarpan olarak gelir.',after:()=>{const d=sel();if(d&&state.devices.length<2)autoRefit();}},sel);
-$('#modelReal').addEventListener('click',()=>{const d=sel();if(!d||!d.model)return;d.modelSize=realSizeCm(d.model);autoRefit();applyTransform();syncSliders();toast('Dosyadaki ölçü: '+fCm(d.modelSize)+' (metre birimi varsayıldı)');});
+const fCm=v=>fmt(v,1)+' cm';
+makeSlider($('#modelSlots'),{id:'d-msize',k:'modelSize',l:t('Boyut'),min:.5,max:1000,step:.1,reset:DEFAULT_MODEL_CM,f:fCm,log:true,
+  note:t('En uzun kenarın uzunluğu. Ölçek bunun üstüne çarpan olarak gelir.'),after:()=>{const d=sel();if(d&&state.devices.length<2)autoRefit();}},sel);
+$('#modelReal').addEventListener('click',()=>{const d=sel();if(!d||!d.model)return;d.modelSize=realSizeCm(d.model);autoRefit();applyTransform();syncSliders();toast(t('Dosyadaki ölçü: {v} (metre birimi varsayıldı)',{v:fCm(d.modelSize)}));});
 $('#modelReplace').addEventListener('click',()=>$('#modelFile').click());
 // the last device can go too: the artboard is then empty (its background and 2D items stay)
 $('#removeDevice').addEventListener('click',()=>{
@@ -116,8 +117,8 @@ $('#removeDevice').addEventListener('click',()=>{
   if(!state.devices.length)setUi({kind:'board'});
 });
 // scrolling a long screenshot (shown only when the selected screen can scroll)
-makeSlider($('#scrollSlot'),{id:'d-scroll',k:'scroll',l:'Kaydırma',min:0,max:1,step:.001,reset:0,f:fPct,
-  note:'Uzun ekran görüntüsünde görünen bölüm. Ekranın üzerinde fare tekerleğiyle de kaydırabilirsin.',after:()=>scrollScreen(sel(),sel().scroll)},sel);
+makeSlider($('#scrollSlot'),{id:'d-scroll',k:'scroll',l:t('Kaydırma'),min:0,max:1,step:.001,reset:0,f:fPct,
+  note:t('Uzun ekran görüntüsünde görünen bölüm. Ekranın üzerinde fare tekerleğiyle de kaydırabilirsin.'),after:()=>scrollScreen(sel(),sel().scroll)},sel);
 $('#scrollSlot').appendChild($('#scrollAll'));
 $('#scrollAll').addEventListener('click',()=>{const f=sel().scroll;state.devices.forEach(d=>{if(scrollScreens(d))scrollScreen(d,f);});});
 $('#resetDevice').addEventListener('click',()=>{Object.assign(sel(),{px:0,py:0,pz:0,rx:0,ry:0,rz:0,scale:1});autoRefit();applyTransform();syncAll();});
@@ -125,7 +126,7 @@ $('#fitBtn').addEventListener('click',()=>{refit();state.scene.zoom=1;state.scen
 
 const compWrap=$('#comps');
 COMPS.forEach(c=>{
-  const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=c.n;
+  const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=t(c.n);
   b.addEventListener('click',()=>applyComp(c));compWrap.appendChild(b);
 });
 function applyComp(c){
@@ -146,18 +147,18 @@ function applyComp(c){
 /* ---------- swatches ---------- */
 // body finish: a list (null: the colour's own finish)
 const finishSel=$('#finishSel');
-finishSel.appendChild(new Option('Renge göre',''));
-Object.entries(FINISHES).forEach(([k,f])=>finishSel.appendChild(new Option(f.n,k)));
+finishSel.appendChild(new Option(t('Renge göre'),''));
+Object.entries(FINISHES).forEach(([k,f])=>finishSel.appendChild(new Option(t(f.n),k)));
 finishSel.addEventListener('change',()=>{const d=sel();d.finish=finishSel.value||null;const o=RT.get(d.id);if(o)applyColorTo(o.mats,d);req();syncUI();});
 const swWrap=$('#swatches');
 COLORS.forEach(c=>{
   const b=document.createElement('button');b.type='button';b.className='sw';b.style.background=c.c;b.dataset.k=c.k;
-  b.setAttribute('aria-label',c.n);b.title=c.n;
+  b.setAttribute('aria-label',t(c.n));b.title=t(c.n);
   b.addEventListener('click',()=>{const d=sel();d.colorKey=c.k;const o=RT.get(d.id);applyColorTo(o.mats,d);req();syncUI();});
   swWrap.appendChild(b);
 });
-const custom=document.createElement('label');custom.className='sw sw-custom';custom.dataset.k='custom';custom.title='Özel renk';
-custom.innerHTML='<input type="color" aria-label="Özel gövde rengi">';
+const custom=document.createElement('label');custom.className='sw sw-custom';custom.dataset.k='custom';custom.title=t('Özel renk');
+custom.innerHTML='<input type="color" aria-label="'+t('Özel gövde rengi')+'">';
 const customInput=custom.querySelector('input');
 customInput.addEventListener('input',()=>{const d=sel();d.custom=customInput.value;d.colorKey='custom';applyColorTo(RT.get(d.id).mats,d);req();syncUI();});
 swWrap.appendChild(custom);
@@ -175,7 +176,7 @@ function onDevice(key,d){
 }
 const screenBgEl=$('#screenBg');screenBgEl.addEventListener('input',()=>{const d=sel();d.screenBg=screenBgEl.value;setScreenTexture(d);});
 // the cover glass reflection's amount (runtime.js applyGlare; 0 = off)
-makeSlider($('#glareSlot'),{id:'d-glare',k:'glareAmt',l:'Cam yansıması',s:'Yansıma',min:0,max:1.5,step:.05,reset:1,f:fPct,w:6,
+makeSlider($('#glareSlot'),{id:'d-glare',k:'glareAmt',l:t('Cam yansıması'),s:t('Yansıma'),min:0,max:1.5,step:.05,reset:1,f:fPct,w:6,
   after:()=>{const d=sel();d.glare=d.glareAmt>0;applyGlare(RT.get(d.id),d);req();}},()=>{const d=sel();if(d&&d.glareAmt===undefined)d.glareAmt=glareAmt(d);return d;});
 const urlEl=$('#url');let urlT=null;
 urlEl.addEventListener('input',()=>{const d=sel();d.url=urlEl.value;clearTimeout(urlT);urlT=setTimeout(()=>updateChrome(d),120);});
@@ -186,7 +187,7 @@ onSyncUI(d=>{
   $$('[data-for]').forEach(el=>{el.hidden=!el.dataset.for.split(' ').includes(d.type);});
   // an imported model: no screen, no type to switch, no body colour; its own block instead
   const model=d.type==='model';$('[data-sec="dev-screen"]').hidden=model;typeGrid.hidden=model;
-  if(model){const a=d.model;$('#modelInfo').textContent=a&&!a.missing?(d.modelName||'Model')+'.glb · '+fmtMB(a.bytes||0)+' · dosyada '+fCm(realSizeCm(a)):'Model dosyası yüklenemedi: yerine gri bir blok duruyor. "Modeli değiştir" ile yeniden seç.';
+  if(model){const a=d.model;$('#modelInfo').textContent=a&&!a.missing?(d.modelName||'Model')+'.glb · '+fmtMB(a.bytes||0)+' · '+t('dosyada {v}',{v:fCm(realSizeCm(a))}):t('Model dosyası yüklenemedi: yerine gri bir blok duruyor. "Modeli değiştir" ile yeniden seç.');
     $('#modelReal').disabled=!a||!!a.missing;}
   $('#screenBgRow').hidden=d.fit!=='contain';
   swWrap.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===d.colorKey)));
