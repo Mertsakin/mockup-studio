@@ -33,6 +33,7 @@
     "denoiser": "^0.0.11",
     "gifenc": "^1.0.3",
     "jszip": "^3.10.2",
+    "mediabunny": "^1.62.1",
     "mp4-muxer": "^5.2.2",
     "three": "0.186.1",
     "three-gpu-pathtracer": "^0.0.27",

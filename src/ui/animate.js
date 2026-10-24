@@ -39,11 +39,12 @@ const hasFx=it=>!!(it.fx&&(it.fx.in||it.fx.out||it.fx.loop));
 /* ---------- time -> fields */
 // t: a time, or a function of the target. opts.sync: redraw scrolled screens now (video export) instead of on the
 // next animation frame; opts.scroll === false: leave the scroll alone (motion-blur sub-samples within one frame).
-// Screen videos follow the same rule as the scroll (devices/video.js): their frame is seeked asynchronously here
-// (the video export awaits showFrames itself), kept while the timeline plays (the videos play on their own then)
+// Screen videos follow the same rule as the scroll (devices/video.js): their frame is seeked asynchronously here,
+// kept while the timeline plays (the videos play on their own then); opts.video === false leaves them alone (the
+// video export decodes their frames itself, devices/video-decode.js)
 function applyAt(t,opts){
-  const syncScroll=opts&&opts.sync,doScroll=!(opts&&opts.scroll===false);
-  if(doScroll&&!A.playing)showFrames(o=>typeof t==='function'?t(o):t);
+  const syncScroll=opts&&opts.sync,doScroll=!(opts&&opts.scroll===false),doVideo=doScroll&&!(opts&&opts.video===false);
+  if(doVideo&&!A.playing)showFrames(o=>typeof t==='function'?t(o):t);
   let moved=false,items=false;
   targets().forEach(o=>{
     const ref=refOf(o),v=valuesAt(o,typeof t==='function'?t(o):t),seen=applied.get(ref)||{},item=kindOf(o)==='item';

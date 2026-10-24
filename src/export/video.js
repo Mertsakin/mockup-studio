@@ -1,4 +1,5 @@
-import {hasVideo,showFrames} from '../devices/video.js';
+import {openExportFrames} from '../devices/video-decode.js';
+import {hasVideo,videoDevices} from '../devices/video.js';
 import {LRT} from '../lights/runtime.js';
 import {pauseLive,renderNow} from '../render/accumulation.js';
 import {fontsReady} from '../render/text.js';
@@ -20,7 +21,10 @@ import {scheduleEnv} from '../render/environment.js';
    samples, background and 2D items composited), then encoded to H.264 with WebCodecs and muxed into an MP4.
    Deterministic: frame i shows t = i / fps whatever the machine's speed.
    Motion blur: the frame's samples are spread over half a frame interval around t (a 180° shutter), so only what
-   moves blurs, like a real camera. The screenshot scroll is set once per frame (redrawing it per sample is costly). */
+   moves blurs, like a real camera. The screenshot scroll is set once per frame (redrawing it per sample is costly).
+   Screen videos: their frames come from a WebCodecs decoder walking each video in order (devices/video-decode.js;
+   seeking the <video> element is its fallback), drawn once per frame before the samples, so the motion blur
+   sub-samples see one still frame. */
 const SAMPLES=16,DOF_SAMPLES=64,SHUTTER=.5;
 const X={res:1920,fps:30,blur:true,format:'mp4',quality:'fast'};
 /* Photo quality: every frame goes through the path tracer like the still photo export (render/pathtrace.js
@@ -48,14 +52,16 @@ async function renderVideo(onProgress){
   const stillFormat=state.format;state.format=enc.alpha?'png':'jpg';
   const hidden=[];LRT.forEach(o=>{if(o.marker.visible){o.marker.visible=false;hidden.push(o.marker);}});overlays.forEach(o=>{if(o.visible){o.visible=false;hidden.push(o);}});
   pauseLive(true);
+  let screens=null;  // the screen videos' frame source (decoder or seek), opened per export
   try{
     setCrop(null);renderer.setPixelRatio(1);renderer.setSize(W,H,false);view.aspect=W/H;applyTransform();
     // anything in 3D moving (devices, camera, lights) gets motion blur; moving lights also rebuild the reflections per frame
-    const moving=targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove=state.lights.some(hasAnim),video=state.devices.some(hasVideo),dt=1/fps(),S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
+    const moving=targets().some(o=>kindOf(o)!=='item'&&hasAnim(o)),lightsMove=state.lights.some(hasAnim),dt=1/fps(),S=dofOn()?DOF_SAMPLES:SAMPLES;  // the aperture needs more samples (bokeh)
+    screens=state.devices.some(hasVideo)?await openExportFrames(videoDevices()):null;
     for(let i=0;i<n;i++){
       if(cancel)return null;
       const t=i*dt;
-      applyAt(t,{sync:true});if(video)await showFrames(t);if(lightsMove)scheduleEnv(true);  // screen videos: the exact frame, drawn before the samples
+      applyAt(t,{sync:true,video:false});if(screens)await screens.show(t);if(lightsMove)scheduleEnv(true);  // screen videos: the exact frame, drawn before the samples
       // the focus is the frame's own (its time): the motion blur sub-samples keep it (render/lens.js)
       holdFocus(true);
       if(X.quality==='photo'){
@@ -78,6 +84,7 @@ async function renderVideo(onProgress){
     return await enc.finish();
   }finally{
     state.format=stillFormat;enc.close();holdFocus(false);
+    if(screens)await screens.close();  // the screens back on their <video> frames
     hidden.forEach(o=>{o.visible=true;});
     pauseLive(false);renderer.setPixelRatio(pr);invalidateLayout();layout();
     applyNow();req();

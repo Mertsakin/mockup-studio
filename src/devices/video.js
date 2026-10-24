@@ -10,7 +10,8 @@ import {state} from '../state/state.js';
    time mapping; Canlandır ignores it.
    Seeking is asynchronous: showFrame(d, t) remembers the wanted time and pumps the video's seeks one at a time
    (a new target while one is in flight replaces the pending one), redrawing the screen texture after each 'seeked'.
-   The video export awaits the returned promise, so every frame is exact. While the timeline plays, the videos play
+   The video export decodes the frames itself instead (video-decode.js: WebCodecs, the seek path is its fallback).
+   While the timeline plays, the videos play
    themselves (followVideos keeps them within DRIFT s of the playhead and redraws every frame); stopping seeks back to
    the exact frame. */
 const EPS=1/60,DRIFT=.12,MAX_MB=200;
@@ -44,12 +45,15 @@ function seekTo(v,t){
     v.addEventListener('seeked',onSeeked);v.currentTime=t;
   });
 }
+// the video second a device shows for artboard time t: the poster in Tasarla when one is set, else the time mapping
+// (the seek path below and the export's decoder, video-decode.js, agree on this)
+const wantedTime=(d,t)=>inDesign()&&d.videoPoster!=null?posterTime(d):videoTime(d,t);
 const pumps=new WeakMap();  // video -> {want, p (promise of the pump), drawn}
 // shows the video's frame for artboard time t on the device's screen; resolves when it is drawn
 function showFrame(d,t){
   const v=d.video;if(!v)return Promise.resolve();
   let s=pumps.get(v);if(!s){s={want:null,p:null};pumps.set(v,s);}
-  s.want=inDesign()&&d.videoPoster!=null?posterTime(d):videoTime(d,t);
+  s.want=wantedTime(d,t);
   if(s.p)return s.p;
   s.p=(async()=>{
     try{
@@ -119,4 +123,4 @@ function settleDuration(v){
   });
 }
 
-export {DRIFT,MAX_MB,duration,fmtDur,followVideos,hasVideo,isVideoFile,loadVideo,playVideos,posterTime,setVideoClock,showFrame,showFrames,showNow,shownTime,stopVideos,videoDevices,videoSize,videoTime};
+export {DRIFT,MAX_MB,duration,fmtDur,followVideos,hasVideo,isVideoFile,loadVideo,playVideos,posterTime,setVideoClock,showFrame,showFrames,showNow,shownTime,stopVideos,videoDevices,videoSize,videoTime,wantedTime};

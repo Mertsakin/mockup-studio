@@ -29,16 +29,22 @@ function drawPlaceholder(g,x,y,w,h){
   g.fillStyle='rgba(255,255,255,.72)';g.font='400 '+(s*.042)+'px "Instrument Sans", system-ui, sans-serif';
   g.fillText('Görsel seç ya da sürükle bırak',x+w/2,y+h/2+s*.05);
 }
-// pixel size of a screen source: an image or a video element
-const mediaSize=m=>[m.videoWidth||m.naturalWidth||m.width||1,m.videoHeight||m.naturalHeight||m.height||1];
-// what the screen shows: the video when there is one, else the screenshot (video.js keeps the video on its frame)
-const screenSrc=d=>d.video||d.img||null;
+// pixel size of a screen source: an image, a video element or a decoded video frame (displayWidth: after rotation)
+const mediaSize=m=>[m.displayWidth||m.videoWidth||m.naturalWidth||m.width||1,m.displayHeight||m.videoHeight||m.naturalHeight||m.height||1];
+/* A decoded frame shown in place of the device's <video> (the video export, video-decode.js): a mediabunny
+   VideoSample, drawn with its own draw() (it applies the file's rotation and flip, as the <video> element does).
+   setScreenFrame(d, null) puts the screen back on the element. Editor state, never in the document. */
+const frameOf=new WeakMap();
+function setScreenFrame(d,frame){if(frame)frameOf.set(d,frame);else frameOf.delete(d);setScreenTexture(d);}
+// what the screen shows: the decoded frame during a video export, else the video when there is one, else the
+// screenshot (video.js keeps the video on its frame)
+const screenSrc=d=>frameOf.get(d)||d.video||d.img||null;
 // scroll (0..1): for an image taller than the screen ("Doldur"), how far down the visible window sits
 function drawFit(g,img,x,y,w,h,fit,scroll=0){
-  const [iw,ih]=mediaSize(img);
+  const [iw,ih]=mediaSize(img),put=(dx,dy,dw,dh)=>{if(img.draw)img.draw(g,dx,dy,dw,dh);else g.drawImage(img,dx,dy,dw,dh);};
   g.save();g.beginPath();g.rect(x,y,w,h);g.clip();g.imageSmoothingQuality='high';
-  if(fit==='stretch')g.drawImage(img,x,y,w,h);
-  else{const s=fit==='cover'?Math.max(w/iw,h/ih):Math.min(w/iw,h/ih),dw=iw*s,dh=ih*s,dy=dh>h?-(dh-h)*scroll:(h-dh)/2;g.drawImage(img,x+(w-dw)/2,y+dy,dw,dh);}
+  if(fit==='stretch')put(x,y,w,h);
+  else{const s=fit==='cover'?Math.max(w/iw,h/ih):Math.min(w/iw,h/ih),dw=iw*s,dh=ih*s,dy=dh>h?-(dh-h)*scroll:(h-dh)/2;put(x+(w-dw)/2,y+dy,dw,dh);}
   g.restore();
 }
 // Display size of the device's screen canvas (landscape phones / tablets swap it)
@@ -125,4 +131,4 @@ function detectScreen(img){
   return {x:x0,y:y0,w:Math.min(1-x0,(maxX-minX+3)/w),h:Math.min(1-y0,(maxY-minY+3)/h)};
 }
 
-export {detectScreen,mediaSize,screenPixelWidth,screenSrc,scrollScreen,scrollScreens,setScreenTexture,updateChrome};
+export {detectScreen,mediaSize,screenPixelWidth,screenSrc,scrollScreen,scrollScreens,setScreenFrame,setScreenTexture,updateChrome};
