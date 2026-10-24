@@ -83,7 +83,6 @@ function build(){
   for(let x=step/2;x<T;x+=step)h+='<div class="tick minor" style="left:'+xOf(x)+'px"></div>';
   ruler.innerHTML=h;ruler.addEventListener('pointerdown',scrub);view.appendChild(ruler);
   const lane=document.createElement('div');lane.className='seq-lane';view.appendChild(lane);
-  lane.addEventListener('pointerdown',e=>{if(e.target!==lane)return;S.sel=null;draw();});
   if(!L.length){
     const em=document.createElement('div');em.className='seq-empty';
     em.innerHTML='<span>Sıra boş: artboard\'ları tek bir videoda art arda oynatmak için <b>+</b> ile ekle ya da</span><button class="btn sm" type="button">Tüm artboard\'ları ekle</button>';
@@ -344,11 +343,12 @@ $('#seqAddAll').addEventListener('click',addAll);
 $('#seqExport').addEventListener('click',()=>{stop();openVideoExport('seq');});
 onBoards(()=>{if(S.on)draw();});
 new ResizeObserver(()=>{if(S.on)draw();}).observe(view);
-// a press anywhere else stops the sequence (the board's own playback does the same, timeline.js); a press outside
-// the timeline panel (and its menus) also drops the selection and the transition card, like the keyframe selection
+// a press anywhere else stops the sequence (the board's own playback does the same, timeline.js); any press that is
+// not on the card itself, a chip, a clip, the + button or a menu drops the selection and closes the card (the canvas,
+// the panels, the bar, the strip's empty parts alike)
 document.addEventListener('pointerdown',e=>{
   if(S.playing&&!e.target.closest('#tlPlay,#tlLoop'))stop();
-  if(S.sel&&S.on&&!e.target.closest('#timeline,.menu')){S.sel=null;draw();}
+  if(S.sel&&S.on&&!e.target.closest('#seqView .kpop,#seqView .seq-tr,#seqView .seq-clip,#seqView .seq-add,.menu')){S.sel=null;draw();}
 },true);
 // the loop toggle of the bar applies to the sequence here
 const toggleLoop=()=>{seq().loop=!seq().loop;dirty();draw();};
