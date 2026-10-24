@@ -83,6 +83,10 @@ kbd{font:inherit;color:var(--muted)}
 .menu{position:absolute;z-index:40;background:var(--panel);border-radius:8px;box-shadow:0 0 0 1px var(--line),var(--shadow);padding:4px;min-width:208px}
 .topbar .menu{top:calc(100% + 6px);left:0}
 .topbar .pop-export{left:auto;right:0;width:260px;padding:12px}
+/* everything in the export menu fits its width: selects shrink below their longest option, long button labels wrap */
+.pop-export .row>select,.pop-export .row>label+select{flex:1 1 0;min-width:0;width:0}
+.pop-export .btn.full{white-space:normal;height:auto;min-height:var(--h);padding:5px 12px;line-height:1.25}
+.pop-export .emb>*,.pop-export .i18n-box>*{min-width:0}
 .mi{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px;border-radius:5px;width:100%;text-align:left;white-space:nowrap}
 .mi:hover,.mi:focus-visible{background:var(--accent);color:var(--on-accent);outline:none}
 .mi:hover .ic,.mi:focus-visible .ic{color:var(--on-accent)}
