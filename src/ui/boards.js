@@ -18,8 +18,9 @@ import {mkCanvas} from '../util.js';
 const GAP=160;
 // assets: the document's asset library [{img, name}] (ui/assets.js); fonts: uploaded fonts [{family, data (data URL)}];
 // langs: the document's languages (ui/i18n.js; empty: not localised, else the first is the base), lang: the one shown;
-// sequence: the boards joined into one video (state/sequence.js, ui/sequence.js)
-const doc={boards:[],active:null,assets:[],fonts:[],langs:[],lang:null,sequence:newSequence()};
+// sequence: the boards joined into one video (state/sequence.js, ui/sequence.js); emptiedByUser: the last board was
+// deleted by hand (the editor stays, with its empty state, instead of the welcome card: ui/welcome.js)
+const doc={boards:[],active:null,assets:[],fonts:[],langs:[],lang:null,sequence:newSequence(),emptiedByUser:false};
 let uid=0,DEFAULT=null;
 const subs=[];
 function onBoards(fn){subs.push(fn);}
@@ -104,8 +105,10 @@ function show(b){doc.active=b.id;restore(b.snap);bgCss();layout();syncAll();emit
 // called once at start-up, after the initial scene is built
 // a board with nothing on it (the default scene's camera, lights and background, no devices or items)
 const emptySnap=()=>{const s=JSON.parse(JSON.stringify(Object.assign({},DEFAULT,{images:{}})));s.images={};s.devices=[];s.state.items=[];s.selected=null;return s;};
-// no board at all: the live scene is emptied and the stage shows nothing (layout hides the canvas)
-function clearAll(){doc.boards=[];doc.active=null;doc.langs=[];doc.lang=null;doc.sequence=newSequence();restore(emptySnap());layout();syncAll();emit();}
+// no board at all: the live scene is emptied and the stage shows nothing (layout hides the canvas). why: 'user' (the
+// last board deleted by hand), 'keep' (undo / redo into an empty document: the reason stays what it was), else a
+// closed / new / loaded document (the welcome card, or the home page)
+function clearAll(why){if(why!=='keep')doc.emptiedByUser=why==='user';doc.boards=[];doc.active=null;doc.langs=[];doc.lang=null;doc.sequence=newSequence();restore(emptySnap());layout();syncAll();emit();}
 const hasBoard=()=>!!activeBoard();
 // adding something with no board open first opens an empty one for it
 function ensureBoard(){if(!hasBoard()){addBoard(emptySnap());return true;}return false;}
@@ -131,7 +134,7 @@ function duplicateBoard(id,where='right'){
 }
 function removeBoard(id){
   const i=doc.boards.findIndex(b=>b.id===id);if(i<0)return false;
-  if(doc.boards.length===1){clearAll();return true;}
+  if(doc.boards.length===1){clearAll('user');return true;}
   const wasActive=id===doc.active;doc.boards.splice(i,1);
   pruneSequence();  // its clips leave the sequence
   if(wasActive)show(doc.boards[Math.min(i,doc.boards.length-1)]);else emit();
@@ -156,7 +159,7 @@ function changedBoard(from,to){
 function applyDoc(d,prefer){
   doc.fonts=(d.fonts||[]).slice();doc.fonts.forEach(f=>addFontFace(f.family,f.data));
   doc.langs=(d.langs||[]).slice();doc.lang=doc.langs.includes(d.lang)?d.lang:doc.langs[0]||null;
-  if(!d.boards.length){const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);clearAll();return;}
+  if(!d.boards.length){const imgs=d.assetImages||{};doc.assets=(d.assets||[]).map(a=>({img:imgs[a.img],name:a.name})).filter(a=>a.img);clearAll('keep');return;}
   if(d.layout!==LAYOUT){
     // older layout: positions were in the export size's pixels; scale them with each board's own growth
     // (custom boards keep their size; they follow the document's first preset board)
