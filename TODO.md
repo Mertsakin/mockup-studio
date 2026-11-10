@@ -2,7 +2,7 @@
 
 Öncelik sırası, gerçekçilik ve iş akışı hızı birlikte düşünülerek verildi. Her maddeden sonra render düzeneğiyle görsel doğrulama yap.
 
-_Son güncelleme: 24 Ekim 2026._
+_Son güncelleme: 10 Kasım 2026._
 
 ## Mevcut durum
 
@@ -10,8 +10,9 @@ Stüdyo uçtan uca kullanılabilir durumda: boş belgeyle açılır (ya da son �
 
 - **Render:** three r186, PCSS gölgeler, ilerlemeli raster ("Hızlı", varsayılan) ve yol izleme ("Fotoğraf": 64 örnek / 30 sn, karolu örnekleme, kendi OIDN karolamamız, albedo + normal yardımcı girdileri, Neutral ton eşleme, kalibre edilmiş gölge yakalayıcı zemin, stüdyo HDRI'ı).
 - **Editör:** Figma benzeri kabuk, sonsuz tuval, çoklu artboard, katman ağacı, gizmo, serbest dönüştürme kutusu, görünüm küpü, geri al/yinele, proje dosyası (sistem kaydet/aç pencereleri) + IndexedDB otomatik kayıt.
-- **İçerik:** 7 cihaz tipi, 20 şablon, 2B öğeler ve varlık kütüphanesi, arka plan (şeffaf / düz / gradyan / görsel), web sitesi yakalama ve etkileşimli ekran kaydı (yalnızca dev sunucusunda).
+- **İçerik:** 7 cihaz tipi, 14 şablon × açık/koyu, 2B öğeler ve varlık kütüphanesi, arka plan (şeffaf / düz / gradyan / görsel), web sitesi yakalama ve etkileşimli ekran kaydı (yalnızca dev sunucusunda).
 - **Animasyon:** Tasarla / Canlandır modları, zaman çizelgesi, anahtar kareler, hazır hareketler, MP4 dışa aktarım; **Sıra:** artboard'lar geçişlerle (kesme, çapraz solma, solma, kaydırma, kamera uçuşu) tek videoda.
+- **Arayüz dili:** İngilizce (varsayılan) ve Türkçe; kaynak metin Türkçe, sözlük `src/lang-en.js`, seçici uygulama menüsünde, hesap menüsünde ve giriş sayfasında; `npm run i18n:test`.
 - **Hesaplar (hesaplı yapı):** giriş sayfası, Figma benzeri ana sayfa (projeler, şablonlar, çöp kutusu), bulut projeleri (Supabase + Cloudflare R2, Worker), sayfa adresleri; yerel Supabase ile testli (`npm run accounts:test`, `tools/accounts/test-*.mjs`). Üretim hesapları henüz açılmadı (`docs/uyelik.md`, `docs/lansman.md`).
 - **Pazarlama:** `landing/` geçici açılış sayfası (gizlilik notu taslağı, og görseli, telefon ölçüm sayfası); görselleri stüdyonun kendisiyle üretiliyor. Asıl web sitesi: içerik ve yerleşim wireframe'leri hazır (24 Ekim, `wireframes/site-map.html`, `site-wireframes.html`; İngilizce, çok sayfalı), tasarım kullanıcıda.
 - Açık dal / bekleyen iş yok; `main` temiz ve GitHub'a gönderilmiş.
@@ -138,6 +139,7 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 - [x] Mobil düzen: 820 px altında paneller çekmece, tuval tam genişlik (18 Ekim).
 - [x] Web sitesinden ekran görüntüsü canlı pencereden (24 Ekim): Ekran bölümünde tek düğme "Siteyi aç…" siteyi ekran kaydı penceresinde açar; gez, giriş yap, bannerları kapat, sonra Görünen / Tam sayfa görüntüyü al (her cihaz kendi genişliğinde, yakalama keskinliğinde).
 - [x] Dışa aktar menüsü ve Ekran bölümü yerleşim düzeltmeleri (24 Ekim): taşan seçim kutuları ve düğmeler, kaydırma düğmesi.
+- [x] **İngilizce arayüz** (24 Ekim): `src/lang.js` `t()` + `src/lang-en.js` (~1250 metin), açılışta statik markup çevrilir (`hydrate`), dil seçimi `?lang=` > hatırlanan > tarayıcı dili (Türkçe tarayıcıda Türkçe, başka her yerde İngilizce); belgedeki metinler çevrilmez, yeni öğeler kullanıcının dilinde; `npm run i18n:test` İngilizce stüdyoda Türkçe kalmış metin arar. [ ] Sonra: örnek ekranlar ve şablon metinlerinin İngilizce sürümleri (lansman öncesi).
 - [x] Sunum kipi (24 Ekim): ▶ ile etkin artboard tam ekranda (Figma'nın Present'i), ok tuşlarıyla artboard'lar arasında, animasyonlu artboard döngüde oynar, Esc çıkar.
 
 ## Şablonlar
@@ -165,7 +167,6 @@ Bizi ayıran: tarayıcıda yol izleme + gerçek ışık kurulumu + URL'den otoma
 ## Bilinen sorunlar
 
 - Fırçalanmış metal ve dizüstü hoparlör ızgarası uzak mesafede hafif hare (moiré) oluşturabiliyor.
-- Yol izlemede zemin kalibrasyonu çalıştırmadan çalıştırmaya ±10 seviye oynuyor (bkz. Gerçekçilik).
 - Yol izlemede zemin cihazdan uzaklaştıkça fondan %2–5 koyu kalabiliyor (yumuşak vinyet).
 - Çok geniş açılı spotlarda gölge haritası çözünürlüğü düşüyor (gölge kamerası fov = 2 × açı).
 - Işık küreleri bazı sahnelerde kadraja giriyor; asıl kontrol ışık haritası.
